@@ -29,6 +29,7 @@ set(RESPIRA_DSP_SOURCES Source/DSP/RespiraEngine.cpp)
 set(RESPIRA_DSP_HEADERS
     Source/DSP/Decimator.h
     Source/DSP/DspMath.h
+    Source/DSP/OutputStage.h
     Source/DSP/ReedBank.h
     Source/DSP/ReedModel.h
     Source/DSP/ReedTuning.h

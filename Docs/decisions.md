@@ -133,13 +133,17 @@ every new instrument. On that meter (the louder channel's RMS over 300 ms,
 scale, and the reference chord at the arm's full pressure −2.0 VU: a 23 dB
 span that no fixed gain fits between −9 and the red.
 
-Full scale is now 1 Pa (94 dB SPL), 16.5 dB louder, and an output stage
-brings the loud end down: a compressor on the louder channel's 20 ms RMS,
-10:1 above −5 VU over an 8 dB knee, whose gain drops at once and recovers over
-300 ms, then a peak limiter at −1.2 dBFS. The demo phrases read −9.2 VU at
-their median (p10 −14.7, p90 −5.2), and the Recon strokes on every preset
-−2.6 VU at most, peaking at −1.2 dBFS (`HardStrokesFit`). An engineering
-setting of the owner's target, not a listening decision.
+Full scale is now 1 Pa (94 dB SPL), 16.5 dB louder, and the portfolio's
+shared output stage (`OutputStage.h`; the owner asked for the same limiter in
+every new instrument) brings the loud end down: its compressor on the louder
+channel's 20 ms power, 10:1 above −5 VU over an 8 dB knee, taking hold at
+once and letting go over 300 ms, then its 2 ms look-ahead limiter at
+−1.5 dBFS. The plucked instruments' guard sits 3 dB higher, at −2 VU over a
+4 dB knee: their hardest chords are 7–9 dB above typical, Respira's 23 dB.
+The demo phrases read −9.2 VU at their median (p10 −14.7, p90 −5.7), and the
+Recon strokes on every preset −2.7 VU at most, peaking at −1.5 dBFS
+(`HardStrokesFit`). An engineering setting of the owner's target, not a
+listening decision.
 
 The instrument still makes no level that does not come from the bellows: the
 output stage is the recording chain after it, there because the owner asked

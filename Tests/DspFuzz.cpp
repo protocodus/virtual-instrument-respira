@@ -57,7 +57,7 @@ extern "C" int LLVMFuzzerTestOneInput(const std::uint8_t* data, std::size_t size
         block.Arm();
         engine->Render(block.Left(), block.Right(), static_cast<int>(frames));
         block.Check(frames);
-        // The output stage's peak limiter holds every sample at -1.2 dBFS
+        // The output stage's peak limiter holds every sample at -1.5 dBFS
         // (Tests/EngineTests.cpp, LoudestCase); full scale here.
         for (std::size_t i = 0; i < frames; ++i)
             Require(std::fabs(block.Left()[i]) < 1.0f && std::fabs(block.Right()[i]) < 1.0f);

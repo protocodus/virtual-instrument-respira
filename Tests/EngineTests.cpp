@@ -514,8 +514,8 @@ void PresetsSitTogether() {
     // The reference stroke for the factory bank's levels: a bass and a chord
     // button with a C major triad, the wheel opening 18 % in 2 s (eased) and
     // closing back, as a player tries a patch. Every preset sits within 1 dB of
-    // Init in RMS there, and peaks below -1.5 dBFS, where the output stage's
-    // peak limiter has nothing to do.
+    // Init in RMS there, and peaks below -1.6 dBFS, under the output stage's
+    // -1.5 dBFS ceiling, so its peak limiter has nothing to do.
     const double rate = 48000.0;
     const auto stroke = [](double t) {
         const double s = t < 2.0 ? t / 2.0 : 1.0 - (t - 2.0) / 2.0;
@@ -543,7 +543,7 @@ void PresetsSitTogether() {
         worstPeak = std::max(worstPeak, peak);
     }
     Expect(worstApart < 1.0, "PresetsSitTogether", "largest preset RMS apart from Init on the reference stroke, dB", worstApart);
-    Expect(Db(worstPeak) < -1.5, "PresetsSitTogether", "loudest peak there, dBFS", Db(worstPeak));
+    Expect(Db(worstPeak) < -1.6, "PresetsSitTogether", "loudest peak there, dBFS", Db(worstPeak));
 }
 
 void RegistersSitTogether() {
@@ -610,7 +610,7 @@ void HardStrokesFit() {
     // of its range per second, and the whole wheel rocked every half second.
     // Both drive the bellows to the arm's full pressure, some 23 dB above
     // ordinary playing; on every preset the output stage keeps the meter out
-    // of the red and the peaks under -1 dBFS.
+    // of the red and the peaks at its -1.5 dBFS ceiling.
     const double rate = 48000.0;
     std::vector<Note> notes;
     for (int k : { 24, 36, 60, 64, 67 }) notes.push_back({ 0.0, { kOn, static_cast<std::uint8_t>(k), 127 } });
@@ -634,14 +634,14 @@ void HardStrokesFit() {
     }
     Expect(leastPressure >= 2499.0, "HardStrokesFit", "every stroke reaches the arm's full pressure, Pa", leastPressure);
     Expect(worstVu < -1.0, "HardStrokesFit", "loudest on Reason's VU meter, VU", worstVu);
-    Expect(Db(worstPeak) < -1.0, "HardStrokesFit", "loudest peak, dBFS", Db(worstPeak));
+    Expect(Db(worstPeak) < -1.4, "HardStrokesFit", "loudest peak, dBFS", Db(worstPeak));
 }
 
 void LoudestCase() {
     // Every chamber of the pool sounding (every treble reed of 14 keys, bass
     // and chords), Volume and Bass at their tops, full Assist and a hand
     // slamming the bellows back and forth: the output stage still holds the
-    // peaks at -1.2 dBFS. DspFuzz and the parameter matrix allow +36 dBFS.
+    // peaks at -1.5 dBFS. DspFuzz and the parameter matrix allow full scale.
     const double rate = 48000.0;
     std::vector<Note> notes;
     for (int k = 60; k < 74; ++k) notes.push_back({ 0.0, { kOn, static_cast<std::uint8_t>(k), 127 } });
@@ -656,7 +656,7 @@ void LoudestCase() {
     double worst = 0.0;
     for (double p : t.pressure) worst = std::max(worst, std::fabs(p));
     Expect(worst >= 2499.0, "LoudestCase", "the hand reaches the pressure clamp, Pa", worst);
-    Expect(Db(Peak(t)) < -1.0, "LoudestCase", "loudest peak, dBFS", Db(Peak(t)));
+    Expect(Db(Peak(t)) < -1.4, "LoudestCase", "loudest peak, dBFS", Db(Peak(t)));
 }
 
 void NonFiniteControls() {

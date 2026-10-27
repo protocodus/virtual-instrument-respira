@@ -44,18 +44,16 @@ constexpr double kPascalToFullScale = 1.0;
 // that change the colour, not the level (RegistersSitTogether).
 constexpr std::array<double, 8> kRegisterTrimDb { { 3.45, 3.93, 1.39, 0.0, 1.46, 1.25, 1.68, -1.91 } };
 // The output stage, which the owner asked for: no red on Reason's meters
-// however hard the bellows are pushed. A compressor follows the louder
-// channel's RMS over 20 ms and above -17 dBFS (-5 VU) brings it down 10:1
-// over an 8 dB knee, so playing below about -9 VU passes untouched. Its gain
-// drops at once and recovers over 300 ms, slower than a musette's beating, so
-// the beats keep their depth. A peak limiter with no look-ahead holds what
-// gets past at -1.2 dBFS and lets go over 50 ms. On HardStrokesFit's strokes
-// the limiter takes at most 1.6 dB, on under 1 % of the samples; it never acts
-// on the demo phrases.
-constexpr double kThresholdDb = -17.0, kKneeDb = 8.0, kRatio = 10.0;
-constexpr double kDetect = 0.02, kCompRelease = 0.3;
-constexpr double kCeiling = 0.87, kLimitRelease = 0.05;
-constexpr int kGainPeriod = 16;   // samples between gain computations, ramped across
+// however hard the bellows are pushed (OutputStage.h, shared by the newer
+// instruments). Its compressor follows the louder channel's power over 20 ms
+// and above -17 dBFS (-5 VU) brings it down 10:1 over an 8 dB knee, so
+// playing below about -9 VU passes untouched; it takes hold at once and lets
+// go over 300 ms, slower than a musette's beating, so the beats keep their
+// depth. The plucked instruments' guard sits at -14 dBFS: the bellows at the
+// arm's full pressure are 23 dB above ordinary playing, where a chord struck
+// at velocity 127 is 7-9 dB. Its 2 ms look-ahead limiter holds what gets past
+// at -1.5 dBFS.
+constexpr protocodus::CompressorSettings kBellowsGuard { -17.0, 8.0, 10.0, 0.02, 0.0, 0.3 };
 constexpr double kBassLowpassHz = 2500.0;   // the bass reeds sound through the bass box's grille
 constexpr double kOpenSeconds = 0.012, kOpenVelocity = 0.009;  // pallet lift: 12 ms soft .. 3 ms hard
 constexpr double kCloseSeconds = 0.008;
@@ -113,9 +111,7 @@ void Engine::Prepare(double sampleRate) {
     bassCoeff = 1.0 - std::exp(-2.0 * kPi * kBassLowpassHz / rate);
     smoothing = 1.0 - std::exp(-1.0 / (0.02 * rate));
     bendSmoothing = 1.0 - std::exp(-1.0 / (0.005 * rate));
-    detector = 1.0 - std::exp(-1.0 / (kDetect * rate));
-    compRelease = 1.0 - std::exp(-kGainPeriod / (kCompRelease * rate));
-    limitRelease = 1.0 - std::exp(-1.0 / (kLimitRelease * rate));
+    output.Prepare(rate, kBellowsGuard);
     SetControls(controls);
     Reset();
 }
@@ -141,9 +137,7 @@ void Engine::Reset() {
     gain = gainTarget;
     bassGain = bassGainTarget;
     trebleGain = trebleGainTarget;
-    powerL = powerR = reduction = compStep = 0.0;
-    compGain = limit = 1.0;
-    untilGain = 0;
+    output.Reset();
     diag = Diagnostics {};
 }
 
@@ -421,31 +415,16 @@ void Engine::Render(float* left, float* right, int frames) {
         const double bass = (bassLow + hiss) * bassGain;
         const double l = gain * (grilleL * trebleGain + bass * bassPanL);
         const double r = gain * (grilleR * trebleGain + bass * bassPanR);
-        powerL += detector * (l * l - powerL);
-        powerR += detector * (r * r - powerR);
-        if (--untilGain <= 0) {
-            untilGain = kGainPeriod;
-            const double over = 10.0 * std::log10(Max(Max(powerL, powerR), 1.0e-20)) - kThresholdDb;
-            const double slope = 1.0 / kRatio - 1.0;
-            const double target = over <= -0.5 * kKneeDb ? 0.0
-                : over >= 0.5 * kKneeDb ? slope * over
-                : slope * (over + 0.5 * kKneeDb) * (over + 0.5 * kKneeDb) / (2.0 * kKneeDb);
-            reduction = target < reduction ? target : reduction + compRelease * (target - reduction);
-            compStep = (DbToGain(reduction) - compGain) / kGainPeriod;
-        }
-        compGain += compStep;
-        const double outL = l * compGain, outR = r * compGain;
-        const double peak = Max(Abs(outL), Abs(outR));
-        limit += limitRelease * (1.0 - limit);
-        if (peak * limit > kCeiling) limit = kCeiling / peak;
-        left[i] = static_cast<float>(outL * limit);
-        right[i] = static_cast<float>(outR * limit);
+        std::array<float, 2> frame { { static_cast<float>(l), static_cast<float>(r) } };
+        output.Process(frame);
+        left[i] = frame[0];
+        right[i] = frame[1];
     }
     if (sounding == 0) {
         trebleLeft.FlushTiny();
         trebleRight.FlushTiny();
         bassSide.FlushTiny();
-        for (double* v : { &grilleL, &grilleR, &bassLow, &powerL, &powerR, &reduction })
+        for (double* v : { &grilleL, &grilleR, &bassLow })
             if (Abs(*v) < 1.0e-20) *v = 0.0;
     }
     diag.hand = hand.position;

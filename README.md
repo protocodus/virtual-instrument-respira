@@ -175,12 +175,14 @@ pallets and longer passages, and sound through the bass box's grille, a
 
 On Reason's VU meter (the louder channel's RMS over 300 ms, +12 dB) the demo
 phrases' notes read −9 at their median, and a chord at the arm's full pressure
-would read 23 dB above that. A compressor follows the louder channel's RMS
-over 20 ms and brings it down 10:1 above −5 VU, over an 8 dB knee, so playing
-below about −9 VU passes untouched; its gain drops at once and recovers over
-300 ms, slower than a musette's beating. A peak limiter holds what gets past at
-−1.2 dBFS. The hardest strokes read −2.6 VU at most. Volume sets the level
-going into the stage.
+would read 23 dB above that. The output stage is the one the newer
+Protocodus instruments share (`Source/DSP/OutputStage.h`). Its compressor
+follows the louder channel's power over 20 ms and brings it down 10:1 above
+−5 VU, over an 8 dB knee, so playing below about −9 VU passes untouched; it
+takes hold at once and lets go over 300 ms, slower than a musette's beating.
+Its peak limiter looks 2 ms ahead (96 samples at 48 kHz, the engine's
+latency) and holds what gets past at −1.5 dBFS with no gain step. The hardest
+strokes read −2.7 VU at most. Volume sets the level going into the stage.
 
 ### Controls, presets and MIDI
 
