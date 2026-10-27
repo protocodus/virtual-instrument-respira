@@ -58,6 +58,9 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
   each other on one reference stroke.
 - Switching a register changes the colour, not the level: each register is
   trimmed so the eight sit within 1 dB of each other.
+- The treble reeds sound through the shallow compartment under the grille,
+  a Helmholtz resonator that softens their upper harmonics above about
+  2.7 kHz.
 
 ## Downloads
 
@@ -170,6 +173,18 @@ button sounds one pitch class on an 8' (F♯3–F4) and a 4' (F♯4–F5), so an
 chord can be built from chord buttons. The bass reeds sit behind larger
 pallets and longer passages, and sound through the bass box's grille, a
 2.5 kHz low-pass.
+
+### Radiation
+
+The treble pallet holes open into the shallow compartment under the grille,
+which radiates through the grille's slots: a perforated-panel Helmholtz
+resonator, a second-order low-pass on the treble side. Per unit of grille
+area its air mass is ρl′/open and its compliance depth/ρc², so
+f = c/2π·√(open/(depth·l′)), loaded by radiation (ρc) and the grille cloth's
+flow resistance. Typical values (a 35 mm deep compartment, a grille 30 %
+open, 3 mm slots in 1 mm sheet, cloth of 30 rayl) give 2.7 kHz at Q 0.55,
+rolling off without a peak; their plausible spread is 1.6–4.0 kHz. **Grille**
+then sets the treble side's brightness above it.
 
 ### The output stage
 

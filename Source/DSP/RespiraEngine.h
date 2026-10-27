@@ -107,6 +107,20 @@ private:
         float gainL = 0.0f, gainR = 0.0f;
     };
 
+    // Second-order low-pass (bilinear, prewarped), transposed direct form II.
+    struct Lowpass2 {
+        double b0 = 1.0, b1 = 0.0, b2 = 0.0, a1 = 0.0, a2 = 0.0, z1 = 0.0, z2 = 0.0;
+        void SetLowpass(double hz, double q, double rate);
+        void Clear() { z1 = z2 = 0.0; }
+        void FlushTiny();
+        double Process(double x) {
+            const double y = b0 * x + z1;
+            z1 = b1 * x - a1 * y + z2;
+            z2 = b2 * x - a2 * y;
+            return y;
+        }
+    };
+
     // The hand on the bellows, from a stepwise controller stream. The wheel's
     // path is rebuilt first: between steps it keeps the speed of the last one
     // (a slow wheel sends a step only every so often), slowing as a step fails
@@ -151,6 +165,7 @@ private:
     int sounding = 0;
     std::array<Cell, kMaxCells> cells {};
     Decimator trebleLeft, trebleRight, bassSide;
+    Lowpass2 compartmentL, compartmentR;   // the treble grille's compartment
     double grilleCoeff = 0.0, bassCoeff = 0.0;
     double grilleL = 0.0, grilleR = 0.0, bassLow = 0.0;
     double gain = 0.0, gainTarget = 0.0, bassGain = 0.0, bassGainTarget = 0.0, smoothing = 0.0;

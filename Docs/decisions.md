@@ -148,3 +148,20 @@ listening decision.
 The instrument still makes no level that does not come from the bellows: the
 output stage is the recording chain after it, there because the owner asked
 for it. This supersedes the closing line of the 110.5 dB SPL entry above.
+
+## 2026-10-28 — the treble grille compartment, by-ear verdict pending (owner asked; engineering)
+
+The owner asked for audible realism, the body of the sound balanced against
+real recordings. Against two accordion recordings (Hussong, and a polka), the
+Paris Musette demo had far more energy above 2 kHz: against 500 Hz–1 kHz,
+2–4 kHz read −2.3 dB where the recordings read −21.2 and −10.7, and 4–8 kHz
+−17.8 dB against their −30.6 and −18.8. The treble reeds sounded straight into the air;
+on an accordion their pallet holes open into the shallow compartment under
+the grille, which radiates through the grille's slots. That compartment is a
+perforated-panel Helmholtz resonator, derived from its depth, the grille's
+open area and the slots' effective length (RespiraEngine.cpp,
+`kCompartmentDepth`); none of them is measured, so the typical values ship
+(2.7 kHz, Q 0.55: 2–4 kHz at −6.5 dB, 4–8 kHz at −29.1 dB on the same demo)
+with the plausible extremes as candidates. Pack `01-musette`
+(listening-2026-10-28): A the engine before, B 4.0 kHz, C 2.7 kHz (shipping),
+D 1.6 kHz. Verdict: pending.
