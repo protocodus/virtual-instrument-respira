@@ -128,6 +128,12 @@ private:
             power = std::max(power, sample * sample);
         averaged_ += (power - averaged_) * average_;
         envelope_ += (averaged_ - envelope_) * (averaged_ > envelope_ ? attack_ : release_);
+        // After the input stops both decay toward 0 through subnormals,
+        // which are slow without flush-to-zero; 1e-30 is 300 dB down.
+        if (averaged_ < 1.0e-30f)
+            averaged_ = 0.0f;
+        if (envelope_ < 1.0e-30f)
+            envelope_ = 0.0f;
         if (phase_ == 0) {
             from_ = to_;
             to_ = envelope_ > kneeStart_ ? Gain(envelope_) : 1.0f;
