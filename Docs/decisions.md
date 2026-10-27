@@ -92,3 +92,20 @@ come back the estimates ship; a verdict is recorded here as chosen by ear.
   2.5 Pa (102 dB SPL), and each factory preset's Volume puts it within 1.5 dB
   of Init on one reference stroke, peaking below −3 dBFS, which
   `Respira.Engine` checks.
+
+## 2026-10-27 — full scale at 110.5 dB SPL, after Reason's Recon test (engineering)
+
+Not a listening decision. Reason's Recon test of the Rack build (0.1.0d1)
+clipped on hard strokes: a bass, a chord and a C major triad with the wheel
+swept at 60 % of its range per second, or the whole wheel rocked every half
+second, went over full scale on all nine patches. Both strokes reach the arm's
+2.5 kPa, where the chord's reeds beat to peaks about 13 dB above its RMS: up to
++8.0 dBFS at 2.5 Pa full scale, the worst of every preset across 44.1, 48 and
+96 kHz, blocks of 64 and 512, 7- and 14-bit wheels, Oversampling 1× and 4×,
+Momentum 0, 25 and 200 ms and strokes of 0.6, 2 and 4 wheel ranges a second.
+Full scale is now 6.7 Pa (110.5 dB SPL), 8.5 dB lower, which puts that worst
+case at −0.5 dBFS. `Respira.Engine` (`HardStrokesFit`) checks both Recon
+strokes on every preset. Everything is 8.5 dB quieter: the moderate reference
+stroke now peaks near −14 dBFS, and the presets keep their levels against
+Init. A limiter would have kept the old level, but it is a level that does not
+come from the bellows.

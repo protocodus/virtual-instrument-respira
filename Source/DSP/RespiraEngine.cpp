@@ -29,11 +29,15 @@ constexpr double kValveEddy = 3.0e-3;       // m
 constexpr double kValveBreath = 0.0196;
 constexpr double kHandCatchUp = 25.0;       // 1/s: how fast the hand closes on the wheel position
 // The radiated sound is the pallet flow's rate of change as from a small
-// source 1 m away; 2.5 Pa there (102 dB SPL) is digital full scale, so a
-// moderate stroke on a bass, a chord and a triad peaks near -6 dBFS and a hard
-// one still fits. The factory presets set their Volume so each sits within
-// 1.5 dB of Init on that stroke (Tests/EngineTests.cpp, PresetsSitTogether).
-constexpr double kPascalToFullScale = 0.4;
+// source 1 m away; 6.7 Pa there (110.5 dB SPL) is digital full scale. A bass,
+// a chord and a triad at the arm's full pressure beat to peaks of +8.0 dBFS on
+// a 2.5 Pa scale (the worst of every preset at 44.1-96 kHz, blocks of 64 and
+// 512, 7- and 14-bit wheels, Oversampling 1x and 4x, Momentum 0-200 ms), and
+// Reason's Recon test clipped there; on this scale they peak at -0.5 dBFS
+// (Tests/EngineTests.cpp, HardStrokesFit). The factory presets set their
+// Volume so each sits within 1.5 dB of Init on a moderate stroke
+// (PresetsSitTogether).
+constexpr double kPascalToFullScale = 0.15;
 constexpr double kBassLowpassHz = 2500.0;   // the bass reeds sound through the bass box's grille
 constexpr double kOpenSeconds = 0.012, kOpenVelocity = 0.009;  // pallet lift: 12 ms soft .. 3 ms hard
 constexpr double kCloseSeconds = 0.008;

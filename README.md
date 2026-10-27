@@ -52,8 +52,9 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
   pallet stays open about 1 mm, so the note softens and bends with the
   bellows as a half-pressed key's does. The register switches reach held
   keys.
-- Digital full scale is 2.5 Pa at 1 m, so a hard stroke fits; the factory
-  presets sit within 1.5 dB of each other on one reference stroke.
+- Digital full scale is 6.7 Pa at 1 m (110.5 dB SPL), so a chord struck at
+  the arm's full pressure stays under it; the factory presets sit within
+  1.5 dB of each other on one reference stroke.
 
 ## Downloads
 
@@ -108,8 +109,8 @@ the pressure across a closing gap rises while the tongue moves into the slot;
 the force leads the displacement and the tongue self-oscillates (Fletcher
 1979; Ricot, Caussé and Misdariis 2005; Millot and Baumann 2007). Nothing is
 an oscillator: no air, no sound. The radiated sound is the rate of change of
-the flow out of the pallet hole, as from a small source 1 m away, with 2.5 Pa
-(102 dB SPL) at digital full scale.
+the flow out of the pallet hole, as from a small source 1 m away, with 6.7 Pa
+(110.5 dB SPL) at digital full scale.
 
 The jet through the gap is turbulent. Eddies about 0.3 mm across, each
 fluctuating by about 10 %, form independently along the gap's edge (twice the

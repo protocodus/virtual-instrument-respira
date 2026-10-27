@@ -527,6 +527,36 @@ void PresetsSitTogether() {
     Expect(Db(worstPeak) < -3.0, "PresetsSitTogether", "loudest peak there, dBFS", Db(worstPeak));
 }
 
+void HardStrokesFit() {
+    // The reference chord (a bass and a chord button with a C major triad)
+    // struck hard, as Reason's Recon test played it: the wheel swept at 60 %
+    // of its range per second, and the whole wheel rocked every half second.
+    // Both drive the bellows to the arm's full pressure; every preset still
+    // peaks under full scale, with half a decibel to spare.
+    const double rate = 48000.0;
+    std::vector<Note> notes;
+    for (int k : { 24, 36, 60, 64, 67 }) notes.push_back({ 0.0, { kOn, static_cast<std::uint8_t>(k), 127 } });
+    const auto sweep = [](double t) { const double p = std::fmod(t, 2.0); return p < 1.0 ? 0.2 + 0.6 * p : 1.4 - 0.6 * p; };
+    const auto rock = [](double t) { const double p = std::fmod(t, 1.0); return p < 0.5 ? 2.0 * p : 2.0 - 2.0 * p; };
+    double worstPeak = 0.0, leastPressure = 1.0e9;
+    for (int preset = -1; preset < static_cast<int>(kPresets.size()); ++preset) {
+        const Controls controls = preset < 0 ? Controls {} : kPresets[static_cast<std::size_t>(preset)].ToControls();
+        for (const auto& hand : { std::function<double(double)>(sweep), std::function<double(double)>(rock) }) {
+            Engine e;
+            e.Prepare(rate);
+            e.SetControls(controls);
+            e.Reset();
+            const Take t = Play(e, rate, 2.0, notes, hand);
+            double pressure = 0.0;
+            for (double p : t.pressure) pressure = std::max(pressure, std::fabs(p));
+            worstPeak = std::max(worstPeak, Peak(t));
+            leastPressure = std::min(leastPressure, pressure);
+        }
+    }
+    Expect(leastPressure >= 2499.0, "HardStrokesFit", "every stroke reaches the arm's full pressure, Pa", leastPressure);
+    Expect(Db(worstPeak) < -0.5, "HardStrokesFit", "loudest peak, dBFS", Db(worstPeak));
+}
+
 void LoudestCase() {
     // Every chamber of the pool sounding (every treble reed of 14 keys, bass
     // and chords), Volume and Bass at their tops, full Assist and a hand
@@ -589,6 +619,7 @@ int main() {
     ReleaseAndAllNotesOff();
     VoiceLimit();
     PresetsSitTogether();
+    HardStrokesFit();
     LoudestCase();
     NonFiniteControls();
     std::printf("%d failure(s)\n", failures);
