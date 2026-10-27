@@ -12,7 +12,7 @@ namespace respira {
 struct Preset {
     const char* name;
     // Physical values in Control order: register, musette, bellows, assist,
-    // grille, width, bass, volume, keyboard, air, momentum.
+    // grille, width, bass, volume, keyboard, air, momentum, oversampling.
     std::array<double, kControlCount> values;
 
     Controls ToControls() const {
@@ -23,14 +23,14 @@ struct Preset {
 };
 
 inline constexpr std::array<Preset, 8> kPresets { {
-    { "Clarinet Solo", { 0, 22, 2, 0.5, 9000, 0.6, -2, 2, 0, 0, 25 } },
-    { "Bassoon Low", { 1, 22, 2, 0.5, 6000, 0.5, 0, 3, 0, 0, 25 } },
-    { "Violin Folk", { 2, 14, 2, 0.5, 9000, 0.6, -3, 4, 0, 0, 25 } },
-    { "Paris Musette", { 3, 28, 2, 0.5, 10000, 0.7, -3, 2, 0, 0, 25 } },
-    { "Tango Bandoneon", { 4, 22, 2, 0.5, 6500, 0.5, 2, -7, 0, 0, 25 } },
-    { "Organ Bellows", { 5, 22, 2, 0.5, 8000, 0.6, -2, -3, 0, 0, 25 } },
-    { "Bright Oboe", { 6, 22, 2, 0.5, 14000, 0.6, -4, 3, 0, 0, 25 } },
-    { "Master Tutti", { 7, 18, 2, 0.6, 9000, 0.8, 0, -10, 0, 0, 25 } },
+    { "Clarinet Solo", { 0, 22, 2, 0.5, 9000, 0.6, -2, 2, 0, 0, 25, 0 } },
+    { "Bassoon Low", { 1, 22, 2, 0.5, 6000, 0.5, 0, 3, 0, 0, 25, 0 } },
+    { "Violin Folk", { 2, 14, 2, 0.5, 9000, 0.6, -3, 4, 0, 0, 25, 0 } },
+    { "Paris Musette", { 3, 28, 2, 0.5, 10000, 0.7, -3, 2, 0, 0, 25, 0 } },
+    { "Tango Bandoneon", { 4, 22, 2, 0.5, 6500, 0.5, 2, -7, 0, 0, 25, 0 } },
+    { "Organ Bellows", { 5, 22, 2, 0.5, 8000, 0.6, -2, -3, 0, 0, 25, 0 } },
+    { "Bright Oboe", { 6, 22, 2, 0.5, 14000, 0.6, -4, 3, 0, 0, 25, 0 } },
+    { "Master Tutti", { 7, 18, 2, 0.6, 9000, 0.8, 0, -10, 0, 0, 25, 0 } },
 } };
 
 } // namespace respira

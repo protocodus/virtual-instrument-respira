@@ -1,4 +1,5 @@
-// Engine contracts: air only from the hand's motion, pitch and pitch bend, rates, routing,
+// Engine contracts: air only from the hand's motion, pitch and pitch bend, rates and
+// Oversampling, routing,
 // the air button and Assist, the controller stream and the arm's momentum, block-partition
 // invariance and determinism, release and voice limits.
 #include "DSP/RespiraEngine.h"
@@ -153,6 +154,50 @@ void PitchAcrossRates() {
     }
     Expect(std::fabs(cents[0] - cents[1]) < 2.0, "PitchAcrossRates", "44.1 kHz against 48 kHz, cents", cents[0] - cents[1]);
     Expect(std::fabs(cents[2] - cents[1]) < 2.0, "PitchAcrossRates", "96 kHz against 48 kHz, cents", cents[2] - cents[1]);
+}
+
+// The largest change between neighbouring samples of the left channel.
+double LargestStep(const std::vector<float>& x) {
+    double step = 0.0;
+    for (std::size_t i = 1; i < x.size(); ++i) step = std::max(step, std::fabs(static_cast<double>(x[i]) - x[i - 1]));
+    return step;
+}
+
+void OversamplingKeepsTheSound() {
+    // Oversampling refines the reeds' time step, not the instrument: pitch and
+    // level hold at every setting, and a change while a note sounds is
+    // continuous.
+    const double rate = 48000.0;
+    double cents[3] = {}, level[3] = {};
+    Take steady;
+    for (int i = 0; i < 3; ++i) {
+        auto e = Make(rate, 0, [i](Controls& c) { c[kOversampling] = i; });
+        const Take t = Play(*e, rate, 2.0, { { 0.0, { kOn, 69, 100 } } }, PullThenPush);
+        cents[i] = Cents(PeakHz(t.left, rate, 0.8, 1.8, 440.0), 440.0);
+        level[i] = Db(Rms(t.left, rate, 0.8, 1.8));
+        if (i == 0) steady = t;
+    }
+    for (int i = 1; i < 3; ++i) {
+        Expect(std::fabs(cents[i] - cents[0]) < 1.0, "OversamplingKeepsTheSound",
+               i == 1 ? "2x against 1x, cents" : "4x against 1x, cents", cents[i] - cents[0]);
+        Expect(std::fabs(level[i] - level[0]) < 0.5, "OversamplingKeepsTheSound",
+               i == 1 ? "2x against 1x, dB" : "4x against 1x, dB", level[i] - level[0]);
+    }
+    struct Span { double from, to; int setting; };
+    auto e = Make(rate, 0);
+    Controls controls = e->GetControls();
+    std::vector<Note> notes { { 0.0, { kOn, 69, 100 } } };
+    Take changed;
+    for (const Span& span : { Span { 0.0, 0.9, 0 }, Span { 0.9, 1.3, 2 }, Span { 1.3, 1.6, 1 }, Span { 1.6, 2.0, 0 } }) {
+        controls[kOversampling] = span.setting;
+        e->SetControls(controls);
+        const Take part = Play(*e, rate, span.to - span.from, notes, [&span](double s) { return PullThenPush(span.from + s); });
+        notes.clear();
+        changed.left.insert(changed.left.end(), part.left.begin(), part.left.end());
+    }
+    const double step = LargestStep(changed.left) / LargestStep(steady.left);
+    Expect(std::isfinite(step) && step < 1.25, "OversamplingKeepsTheSound",
+           "changed mid-note (1x, 4x, 2x, 1x): largest sample step against steady 1x", step);
 }
 
 void MasterTune() {
@@ -430,6 +475,7 @@ int main() {
     AirFromMotion();
     StillnessStopsTheSound();
     PitchAcrossRates();
+    OversamplingKeepsTheSound();
     MasterTune();
     PitchBend();
     MusetteBeat();

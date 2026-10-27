@@ -1,9 +1,9 @@
 #pragma once
 
-// 4x to 1x decimation: two cascaded half-band stages, each a two-path
-// polyphase allpass. The same structure and coefficients as Maremba's
-// Oversampler.h (protocodus/virtual-instrument-maremba), which the Respira
-// prototype was voiced with.
+// 2^n to 1 decimation, n = 1..kMaxStages: cascaded half-band stages, each a
+// two-path polyphase allpass. The same structure and coefficients as
+// Maremba's Oversampler.h (protocodus/virtual-instrument-maremba), which the
+// Respira prototype was voiced with.
 
 #include "DspMath.h"
 
@@ -11,14 +11,19 @@
 
 namespace respira {
 
-class Decimator4x {
+class Decimator {
 public:
-    void Reset() { *this = Decimator4x {}; }
+    static constexpr int kMaxStages = 4;
 
-    float Process(const float* in) {
-        const float a = stage[0].Decimate(in[0], in[1]);
-        const float b = stage[0].Decimate(in[2], in[3]);
-        return stage[1].Decimate(a, b);
+    void Reset() { *this = Decimator {}; }
+
+    // Decimates the 2^stages samples in `in`, overwriting them. Stage 0 is the
+    // last (to the output rate), so a change of `stages` keeps the state of the
+    // stages both settings share; the ones added start empty.
+    float Process(float* in, int stages) {
+        for (int s = stages - 1, n = 1 << stages; s >= 0; --s, n /= 2)
+            for (int k = 0; k < n / 2; ++k) in[k] = stage[s].Decimate(in[2 * k], in[2 * k + 1]);
+        return in[0];
     }
 
     // Zeroes states below about -400 dB so a silent input never leaves them
@@ -53,7 +58,7 @@ private:
         }
     };
 
-    Halfband stage[2];
+    Halfband stage[kMaxStages];
 };
 
 } // namespace respira

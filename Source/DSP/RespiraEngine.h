@@ -61,7 +61,9 @@ struct Diagnostics {
 
 class Engine {
 public:
-    static constexpr int kOversample = 4;
+    // The reeds run at kBaseOversample times the host rate; Oversampling
+    // multiplies that by 1, 2 or 4.
+    static constexpr int kBaseOversample = 4, kMaxOversample = kBaseOversample * 4;
     static constexpr int kMaxCells = 72;
 
     Engine();
@@ -117,6 +119,8 @@ private:
 
     Controls controls;
     double rate = 48000.0, internalRate = 192000.0;
+    int oversample = kBaseOversample, stages = 2;   // internal steps per sample, its log2
+    double turbulence = 0.0;
     double masterTune = 0.0;
     double bend2 = 1.0, bend2Target = 1.0, bendSmoothing = 0.0;   // tongue stiffness scale
     Hand hand;
@@ -128,7 +132,7 @@ private:
     std::uint32_t noise = 1u;
     int sounding = 0;
     std::array<Cell, kMaxCells> cells {};
-    Decimator4x trebleLeft, trebleRight, bassSide;
+    Decimator trebleLeft, trebleRight, bassSide;
     double grilleCoeff = 0.0, bassCoeff = 0.0;
     double grilleL = 0.0, grilleR = 0.0, bassLow = 0.0;
     double gain = 0.0, gainTarget = 0.0, bassGain = 0.0, bassGainTarget = 0.0, smoothing = 0.0;

@@ -46,3 +46,16 @@ The default, 25 ms, is voiced, not measured or chosen by ear: a reversal then
 takes 84 ms, and a bellows shake of four cycles a second keeps 72 % of its
 travel. The demo strokes were re-fitted to their target pressures through it
 (`Tools/fit_bellows.py`).
+
+## 2026-10-27 — Oversampling 1×, 2×, 4× (owner; mapping by engineering)
+
+The owner asked every new instrument for an oversampling setting of 1×, 2×
+and 4×, default 1×, on the back. Respira's reeds already ran at four times the
+host rate, which their pitch and stability were voiced at, so the setting
+multiplies that rate: 1× is the engine as it was, to the bit; 2× and 4× run
+the reeds at eight and sixteen times the host rate through one and two more
+half-band stages. The gap turbulence is white per step, so its force scales
+with the square root of the step rate and the noise the reeds hear keeps its
+spectrum. Measured on the Clarinet, Paris Musette and Master Tutti demos, 2×
+and 4× stay within 0.4 dB of 1× and an A4 keeps its pitch to the cent; this
+is a quality option, not a voicing choice.

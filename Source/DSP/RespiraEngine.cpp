@@ -72,7 +72,6 @@ Engine::Engine() { Prepare(48000.0); }
 
 void Engine::Prepare(double sampleRate) {
     rate = sampleRate > 1000.0 && sampleRate < 1.0e6 ? sampleRate : 48000.0;
-    internalRate = rate * kOversample;
     bassCoeff = 1.0 - std::exp(-2.0 * kPi * kBassLowpassHz / rate);
     smoothing = 1.0 - std::exp(-1.0 / (0.02 * rate));
     bendSmoothing = 1.0 - std::exp(-1.0 / (0.005 * rate));
@@ -108,6 +107,17 @@ void Engine::SetControls(const Controls& next) {
         if (info.steps > 0) controls[i] = std::floor(controls[i] + 0.5);
     }
     grilleCoeff = 1.0 - std::exp(-2.0 * kPi * Min(controls[kGrille], 0.45 * rate) / rate);
+    const int index = static_cast<int>(controls[kOversampling]);
+    const double nextRate = rate * (kBaseOversample << index);
+    for (auto& c : cells)   // a lifting or closing pallet keeps its travel time
+        c.openRate *= internalRate / nextRate;
+    oversample = kBaseOversample << index;
+    stages = 2 + index;
+    internalRate = nextRate;
+    // The gap turbulence is white per internal step; its force scales with the
+    // square root of the step rate so its spectrum, and the noise the reeds
+    // hear, stays the same at every Oversampling.
+    turbulence = kTurbulence * Sqrt(static_cast<double>(oversample) / kBaseOversample);
     gainTarget = kRho / (4.0 * kPi) * kPascalToFullScale * DbToGain(controls[kVolume]);
     bassGainTarget = DbToGain(controls[kBass]);
     const double bassPan = -0.9 * controls[kWidth];
@@ -248,7 +258,7 @@ void Engine::Render(float* left, float* right, int frames) {
         pressure = Clamp(pressure + dt * kBellowsStiffness * (handFlow - airFlow - leak), -kMaxPressure, kMaxPressure);
         bend2 += bendSmoothing * (bend2Target - bend2);
 
-        float tl[kOversample] = {}, tr[kOversample] = {}, b[kOversample] = {};
+        float tl[kMaxOversample] = {}, tr[kMaxOversample] = {}, b[kMaxOversample] = {};
         double drawn = 0.0, open = 0.0;
         int active = 0;
         for (auto& c : cells) {
@@ -256,7 +266,7 @@ void Engine::Render(float* left, float* right, int frames) {
             ++active;
             const CellSpec& spec = c.spec;
             double lift = 0.0;
-            for (int k = 0; k < kOversample; ++k) {
+            for (int k = 0; k < oversample; ++k) {
                 c.open = c.held ? Min(1.0, c.open + c.openRate) : Max(0.0, c.open - closeRate);
                 // The pallet lifts off and settles smoothly: the hole area follows
                 // a raised cosine of the key travel, so the jet starts and stops
@@ -264,7 +274,7 @@ void Engine::Render(float* left, float* right, int frames) {
                 lift = c.open >= 1.0 ? 1.0 : c.open <= 0.0 ? 0.0 : 0.5 - 0.5 * std::cos(kPi * c.open);
                 // Turbulence in the gap: a small random force that also seeds the reeds.
                 noise = noise * 1664525u + 1013904223u;
-                const double pushForce = kTurbulence * Unit(noise) * spec.push.area * Abs(pressure);
+                const double pushForce = turbulence * Unit(noise) * spec.push.area * Abs(pressure);
                 const double out = StepCell(spec.push, spec.pull, spec.chamber, c.state, pressure, lift, dtIn,
                                             invDtIn, pushForce, -pushForce, drawn, bend2);
                 const float o = static_cast<float>(out);
@@ -279,12 +289,12 @@ void Engine::Render(float* left, float* right, int frames) {
         }
         sounding = active;
         demand = open;
-        airFlow = drawn / kOversample;
+        airFlow = drawn / oversample;
         airFlowSmoothed += 0.002 * (airFlow - airFlowSmoothed);
 
-        grilleL += grilleCoeff * (trebleLeft.Process(tl) - grilleL);
-        grilleR += grilleCoeff * (trebleRight.Process(tr) - grilleR);
-        bassLow += bassCoeff * (bassSide.Process(b) - bassLow);
+        grilleL += grilleCoeff * (trebleLeft.Process(tl, stages) - grilleL);
+        grilleR += grilleCoeff * (trebleRight.Process(tr, stages) - grilleR);
+        bassLow += bassCoeff * (bassSide.Process(b, stages) - bassLow);
         gain += smoothing * (gainTarget - gain);
         bassGain += smoothing * (bassGainTarget - bassGain);
         const double bass = bassLow * bassGain;

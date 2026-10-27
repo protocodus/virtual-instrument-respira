@@ -44,7 +44,8 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
   below C3) for single-channel hosts such as Reason; an air button; a
   reed-tuning table made offline, so a note-on does no simulation; a pitch
   bend of two semitones each way; Momentum, so the hand trails the wheel and
-  the bellows reverse smoothly.
+  the bellows reverse smoothly; Oversampling, 1×, 2× or 4× the engine's own
+  rate.
 
 ## Downloads
 
@@ -110,7 +111,9 @@ reed's does: an A4 is within 2 cents at playing pressure (about 550 Pa) and
 about 8 cents flat when pressed at 1.4 kPa.
 
 The cells run at four times the host rate (192 kHz at 48 kHz) and are
-decimated by two half-band allpass stages. The pallet lifts in 12 ms for a
+decimated by two half-band allpass stages; Oversampling at 2× or 4× runs them
+at eight or sixteen times the host rate through three or four stages, with
+the gap turbulence scaled so its spectrum stays the same. The pallet lifts in 12 ms for a
 soft key and 3 ms for a hard one, along a raised cosine, so velocity sets the
 attack, and closes in 8 ms. Up to 72 chambers sound at once; a new one takes
 the oldest released chamber first.
@@ -147,6 +150,7 @@ pallets and longer passages, and sound through the bass box's grille, a
 | Keyboard | split, full | split: C1–B1 bass buttons, C2–B2 chord buttons, C3 up treble |
 | Air | off, on | the air valve |
 | Momentum | 0–200 ms | how far the arm trails the wheel; 0 follows it exactly |
+| Oversampling | 1×, 2×, 4× | the reeds' time step: 1× is four times the host rate; 2× and 4× cost about two and four times the CPU |
 
 `Source/DSP/RespiraControls.h` holds these for every front end;
 `Source/DSP/RespiraPresets.h` holds the eight factory presets, one per
