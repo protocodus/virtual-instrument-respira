@@ -47,6 +47,7 @@ struct ReedSpec {
     double invMass = 0.0, omega2 = 0.0, damping = 0.0; // 1/m_eff, (2 pi f0)^2, omega0 / Q
     double drag = 0.0;                       // quadratic air drag on the tongue / m_eff, 1/m
     double slotInertance = 0.0;              // rho * depth / slot area, kg/m^4
+    double breath = 0.0;                     // turbulent fluctuation of the gap flow per unit noise
 };
 
 struct ReedState {
@@ -89,6 +90,13 @@ inline ReedSpec MakeReed(double f0, double q, double setScale = 1.0) {
     // 8 is a voicing estimate that keeps tip excursions near a tenth of the length.
     r.drag = 0.5 * kRho * 8.0 * r.area / mass;
     r.slotInertance = kRho * r.plate / (r.length * r.width);
+    // The jet through the gap is turbulent (a Reynolds number near 10^3 at
+    // 26 m/s through a 0.5 mm gap), so its volume flow fluctuates. Eddies the
+    // size of the gap, ~0.3 mm, are roughly independent along the 2L + W edge
+    // the jet leaves by, each with a turbulence intensity of ~10 %: the total
+    // flow fluctuates by 0.1 / sqrt(N) of itself. The noise it is scaled by is
+    // uniform, with an RMS of 1 / sqrt(3).
+    r.breath = std::sqrt(3.0) * 0.1 / std::sqrt((2.0 * r.length + r.width) / 0.3e-3);
     return r;
 }
 
@@ -114,14 +122,14 @@ inline double GapArea(const ReedSpec& r, double x) {
 // pushes through the slot). tune2 scales the tongue's stiffness, so its pitch
 // moves by sqrt(tune2): the pitch wheel, which no real reed has.
 inline double StepReed(const ReedSpec& r, ReedState& s, double dp, double dt, double invDt, double force,
-                       double tune2 = 1.0) {
+                       double tune2 = 1.0, double flowNoise = 0.0) {
     const double area = GapArea(r, s.x);
-    const double a = 0.5 * kRho / (kCd * kCd * area * area);
     const double inertia = r.slotInertance * invDt;
-    const double b = kLaminar / area + inertia;
     const double c = dp + inertia * s.flow;
     double flow = 0.0, drop = 0.0;
-    if (c > 0.0) {
+    if (c > 0.0) {   // else the valve holds the gap shut: the silent reed of the pair
+        const double a = 0.5 * kRho / (kCd * kCd * area * area);
+        const double b = kLaminar / area + inertia;
         flow = 2.0 * c / (b + Sqrt(b * b + 4.0 * a * c));
         drop = dp - inertia * (flow - s.flow);
     }
@@ -131,7 +139,7 @@ inline double StepReed(const ReedSpec& r, ReedState& s, double dp, double dt, do
     s.x += dt * s.v;
     // The tongue only acts as a piston between the two sides while it seals the
     // slot; above or below the plate the air it pushes escapes around it.
-    return flow + r.area * s.v * (r.clearArea / area);
+    return flow * (1.0 + r.breath * flowNoise) + r.area * s.v * (r.clearArea / area);
 }
 
 struct ChamberSpec {
@@ -173,29 +181,44 @@ struct CellState {
     double vent = 0.0;       // flow out of the pallet hole, m^3/s
 };
 
-// Flow through the pallet hole (positive out to the room), implicit like the gap.
-inline double StepVent(const ChamberSpec& c, double open, double pressure, double flow, double invDt) {
+// The pallet hole's flow law at opening `open` (0 closed .. 1 open) and time
+// step 1 / invDt. It changes only while the pallet moves, so the engine keeps
+// it from step to step.
+struct Vent {
+    double inertia = 0.0, a = 0.0, b = 0.0;
+    bool open = false;
+};
+
+inline Vent MakeVent(const ChamberSpec& c, double open, double invDt) {
+    Vent v;
+    if (open <= 0.0) return v;
     const double area = c.ventArea * open;
-    if (open <= 0.0) return 0.0;
-    const double inertia = (c.channelInertance + c.palletInertance / open) * invDt;
-    const double a = 0.5 * kRho / (kCd * kCd * area * area);
-    const double b = kLaminar / area + inertia;
-    const double drive = pressure + inertia * flow;
+    v.inertia = (c.channelInertance + c.palletInertance / open) * invDt;
+    v.a = 0.5 * kRho / (kCd * kCd * area * area);
+    v.b = kLaminar / area + v.inertia;
+    v.open = true;
+    return v;
+}
+
+// Flow through the pallet hole (positive out to the room), implicit like the gap.
+inline double StepVent(const Vent& v, double pressure, double flow) {
+    if (!v.open) return 0.0;
+    const double drive = pressure + v.inertia * flow;
     const double m = Abs(drive);
-    const double out = 2.0 * m / (b + Sqrt(b * b + 4.0 * a * m));
+    const double out = 2.0 * m / (v.b + Sqrt(v.b * v.b + 4.0 * v.a * m));
     return drive >= 0.0 ? out : -out;
 }
 
-// One step of a whole cell at bellows pressure pb with the pallet `open`
-// (0 closed .. 1 open). Returns the volume flow out of the pallet hole's time
-// derivative (the radiated monopole source strength) and adds the flow drawn
-// from the bellows to `fromBellows`.
-inline double StepCell(const ReedSpec& push, const ReedSpec& pull, const ChamberSpec& chamber, CellState& s,
-                       double pb, double open, double dt, double invDt, double pushForce, double pullForce,
-                       double& fromBellows, double tune2 = 1.0) {
-    const double intoChamber = StepReed(push, s.push, pb - s.pressure, dt, invDt, pushForce, tune2);
-    const double outOfChamber = StepReed(pull, s.pull, s.pressure - pb, dt, invDt, pullForce, tune2);
-    const double vent = StepVent(chamber, open, s.pressure, s.vent, invDt);
+// One step of a whole cell at bellows pressure pb through the pallet hole
+// `vent`. Returns the volume flow out of the pallet hole's time derivative (the
+// radiated monopole source strength) and adds the flow drawn from the bellows
+// to `fromBellows`.
+inline double StepCell(const ReedSpec& push, const ReedSpec& pull, const ChamberSpec& chamber, const Vent& hole,
+                       CellState& s, double pb, double dt, double invDt, double pushForce, double pullForce,
+                       double& fromBellows, double tune2 = 1.0, double flowNoise = 0.0) {
+    const double intoChamber = StepReed(push, s.push, pb - s.pressure, dt, invDt, pushForce, tune2, flowNoise);
+    const double outOfChamber = StepReed(pull, s.pull, s.pressure - pb, dt, invDt, pullForce, tune2, flowNoise);
+    const double vent = StepVent(hole, s.pressure, s.vent);
     const double radiated = (vent - s.vent) * invDt;
     s.vent = vent;
     s.pressure += dt * chamber.stiffness * (intoChamber - outOfChamber - vent);

@@ -20,8 +20,12 @@
 //   CC64       air button, held with Air: vents the bellows so the hand can
 //              move without sound
 //   CC120/123  all notes off
+//   channel pressure  holds that channel's keys part way down: full pressure
+//              leaves each pallet lifted 1 mm, so a strong bellows bends
+//              the reeds flat and quieter, as a half-pressed key does
 //   pitch bend +-2 semitones, retuning every sounding tongue
 // Other channels play as channel 1. Velocity sets how fast the pallet lifts.
+// The register switches act on held keys too, as the slides they move do.
 //
 // JUCE-free, C++17, no allocation, locks or exceptions after construction.
 
@@ -76,6 +80,7 @@ public:
     void SetMasterTune(double cents);     // applies to the next notes
     void SetPitchBend(double amount);     // -1 .. 1, kBendSemitones each way, sounding reeds too
     void SetHand(double position);        // 0 closed .. 1 open
+    void SetChannelPressure(int channel, double amount);   // 0 keys fully down .. 1 half pressed
     void Midi(const std::uint8_t* bytes, int size);
     void AllNotesOff();
     void Render(float* left, float* right, int frames);
@@ -89,8 +94,11 @@ private:
         int reed = 0;            // rank * 128 + table key: one chamber per reed
         int rank = 0;
         std::uint64_t order = 0;
-        double open = 0.0, openRate = 0.0, closedFor = 0.0;
+        double open = 0.0, openRate = 0.0, closedFor = 0.0;   // key travel, 0 closed .. 1 down
+        double depth = 1.0;      // travel the held key rests at (channel pressure)
+        double lift = 0.0;       // pallet opening for `open`
         CellSpec spec;
+        Vent vent;               // the pallet hole's flow law at `lift`
         CellState state;
         float gainL = 0.0f, gainR = 0.0f;
     };
@@ -115,17 +123,23 @@ private:
     void NoteOn(int channel, int key, int velocity);
     void NoteOff(int channel, int key);
     void StartCell(int rank, int key, int source, int velocity);
+    void SwitchRegister(int from, int to);
     void UpdatePan(Cell& cell) const;
 
     Controls controls;
     double rate = 48000.0, internalRate = 192000.0;
     int oversample = kBaseOversample, stages = 2;   // internal steps per sample, its log2
-    double turbulence = 0.0;
+    double noiseScale = 1.0, turbulence = 0.0;
     double masterTune = 0.0;
     double bend2 = 1.0, bend2Target = 1.0, bendSmoothing = 0.0;   // tongue stiffness scale
     Hand hand;
     double pressure = 0.0, airFlow = 0.0, airFlowSmoothed = 0.0, demand = 0.0;
     bool airPedal = false;
+    double valve = 0.0;   // air valve opening, 0..1
+    double valveNoiseA = 0.0, valveNoiseB = 0.0, valveSound = 0.0;   // its jet's flow fluctuation
+    int registerIndex = static_cast<int>(kControlInfo[kRegister].initial);
+    std::array<std::uint8_t, 128> trebleHeld {};   // velocity of each held treble key, 0 when up
+    std::array<double, 3> channelDepth { 1.0, 1.0, 1.0 };
     int msb = 0, lsb = 0;
     bool fineWheel = false;
     std::uint64_t order = 0;

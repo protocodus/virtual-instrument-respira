@@ -46,6 +46,14 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
   bend of two semitones each way; Momentum, so the hand trails the wheel and
   the bellows reverse smoothly; Oversampling, 1×, 2× or 4× the engine's own
   rate.
+- The jet through each reed's gap is turbulent, so a reed breathes a little
+  around its tone; the air button is an orifice whose rushing air is heard.
+- Channel pressure holds the keys part way down: at full pressure each
+  pallet stays open about 1 mm, so the note softens and bends with the
+  bellows as a half-pressed key's does. The register switches reach held
+  keys.
+- Digital full scale is 2.5 Pa at 1 m, so a hard stroke fits; the factory
+  presets sit within 1.5 dB of each other on one reference stroke.
 
 ## Downloads
 
@@ -81,8 +89,13 @@ full register with bass takes 4–5 L/s against a tenth of a litre for one A4
 reed. **Assist** scales the hand's air by the reeds that are open, so one
 wheel speed gives about one pressure whatever is played: at 1 entirely, at 0
 not at all (the strict instrument), and halfway by default. The **Air**
-switch, or a held sustain pedal (CC64), opens the air valve, so the hand can
-reposition the bellows without sound.
+switch, or a held sustain pedal (CC64), lifts the pad off the air valve, a
+25 mm hole in the bass end, in the time a pallet takes, so the hand can
+reposition the bellows without the reeds speaking. Air leaves through it as
+through a reed gap, by Bernoulli's law with a laminar term (4 L/s at 100 Pa),
+and its jet is turbulent: eddies about the pad's 3 mm lift fluctuate
+independently round the hole's edge, and the flow's fluctuation radiates as
+the reeds' flow does, through the bass side: the hiss of a working air button.
 
 ### Reed cells
 
@@ -95,8 +108,15 @@ the pressure across a closing gap rises while the tongue moves into the slot;
 the force leads the displacement and the tongue self-oscillates (Fletcher
 1979; Ricot, Caussé and Misdariis 2005; Millot and Baumann 2007). Nothing is
 an oscillator: no air, no sound. The radiated sound is the rate of change of
-the flow out of the pallet hole, as from a small source 1 m away, with 1 Pa
-(94 dB SPL) at digital full scale.
+the flow out of the pallet hole, as from a small source 1 m away, with 2.5 Pa
+(102 dB SPL) at digital full scale.
+
+The jet through the gap is turbulent. Eddies about 0.3 mm across, each
+fluctuating by about 10 %, form independently along the gap's edge (twice the
+tongue's length plus its width), so the flow fluctuates by 10 % over the
+square root of their number: a little breath around the tone, more on a big
+low reed's long gap than on a high one's. The same random draw is the small
+force that seeds the tongue.
 
 Tongue length and width follow typical accordion reed sizes scaled with
 pitch, the thickness is whatever gives the pitch, and a chamber whose
@@ -113,9 +133,15 @@ about 8 cents flat when pressed at 1.4 kPa.
 The cells run at four times the host rate (192 kHz at 48 kHz) and are
 decimated by two half-band allpass stages; Oversampling at 2× or 4× runs them
 at eight or sixteen times the host rate through three or four stages, with
-the gap turbulence scaled so its spectrum stays the same. The pallet lifts in 12 ms for a
-soft key and 3 ms for a hard one, along a raised cosine, so velocity sets the
-attack, and closes in 8 ms. Up to 72 chambers sound at once; a new one takes
+the gap turbulence scaled so its spectrum stays the same at every host rate
+and Oversampling. The pallet lifts in 12 ms for a soft key and 3 ms for a hard
+one, along a raised cosine, so velocity sets the attack, and closes in 8 ms.
+Channel pressure lets a held key rise part way: at full pressure its travel
+rests at 0.30, a pallet opening of 0.2 (about 1 mm), where the reed's pitch
+follows the bellows pressure as a half-pressed key's does. The model's C4
+falls 5.9 Hz per kPa there against the 5.1 Hz/kPa measured with the pallet
+lifted 1 mm (Adachi et al., Forum Acusticum 2026), and 1.5 Hz/kPa fully open
+against 2.5. Up to 72 chambers sound at once; a new one takes
 the oldest released chamber first.
 
 ### Registers and the bass side
@@ -125,7 +151,9 @@ M+ (8', tuned below and above M for the tremolo) and H (4', an octave up,
 breaking back an octave at the top so that no reed sounds above C♯7). The
 eight register switches combine them: Clarinet (M), Bassoon (L), Violin (M,
 M+), Musette (M−, M, M+), Bandoneon (L, M), Organ (L, H), Oboe (M, H) and
-Master (all five). **Musette** sets the M+ detune at A4 in cents; the beat
+Master (all five). A switch moves slides over the reed blocks, so it reaches
+held keys too: the ranks it opens start to speak as from the softest key
+stroke and the ones it shuts fall silent. **Musette** sets the M+ detune at A4 in cents; the beat
 rises with pitch as f^0.7, as tuners set tremolo reeds, and M− sits the same
 interval below.
 
@@ -154,12 +182,15 @@ pallets and longer passages, and sound through the bass box's grille, a
 
 `Source/DSP/RespiraControls.h` holds these for every front end;
 `Source/DSP/RespiraPresets.h` holds the eight factory presets, one per
-register, each setting its Volume so the presets sit in one level range.
+register, each setting its Volume so it sits within 1.5 dB of Init on one
+reference stroke (a bass, a chord and a C major triad on a moderate 2 s pull
+and push), with its peak below −3 dBFS.
 
 MIDI channel 1 is the keyboard (split as above, or all treble), channel 2 the
 bass buttons and channel 3 the chord buttons by pitch class; other channels
-play as channel 1. CC1 + CC33 are the hand, CC64 the air valve, CC120 and
-CC123 release every key. Pitch bend retunes every sounding tongue, up to two
+play as channel 1. CC1 + CC33 are the hand, CC64 the air valve, channel
+pressure how far the channel's held keys rise, CC120 and CC123 release every
+key. Pitch bend retunes every sounding tongue, up to two
 semitones each way, by scaling its stiffness; no real reed bends that far, but
 a pitch wheel should do what it says.
 
@@ -170,9 +201,10 @@ a pitch wheel should do what it says.
   packages and no host validation. The Reason Rack Extension adapter is the
   first front end.
 - **Voiced, not measured.** Reed dimensions, chambers, pallets, the bellows
-  stiffness and the reeds' loss are typical values scaled with pitch, and the
-  pressure-to-loudness balance is by ear (the prototype's); no recording of a
-  real accordion is part of the model or its tests.
+  stiffness, the reeds' loss and the turbulence levels are typical values or
+  estimates scaled with pitch, and the full-scale reference is set by a
+  reference stroke, not a measured level; no recording of a real accordion is
+  part of the model or its tests.
 - **CPU.** A full-register chord over bass and chords (28 chambers) takes
   about a quarter of one core in the development container at 48 kHz (0.25×
   realtime for the Master Tutti demo, 0.01× for the single clarinet reed),

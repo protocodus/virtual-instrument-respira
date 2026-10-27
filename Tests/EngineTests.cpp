@@ -1,5 +1,5 @@
 // Engine contracts: air only from the hand's motion, pitch and pitch bend, rates and
-// Oversampling, routing,
+// Oversampling, routing, register switches on held keys, half-pressed keys,
 // the air button and Assist, the controller stream and the arm's momentum, block-partition
 // invariance and determinism, release and voice limits.
 #include "DSP/RespiraEngine.h"
@@ -254,6 +254,68 @@ void SplitKeyboardRouting() {
     Expect(cellsAfter(0, 1.0, { { 0.0, { kOn + 2, 69, 100 } } }) == 2, "SplitKeyboardRouting", "channel 3 is always chord buttons", 0);
 }
 
+void RegisterActsOnHeldNotes() {
+    // The register switches move slides, so they reach keys already held: a
+    // held A4 on Clarinet (M) gains the tremolo reeds on Musette (M, M-, M+),
+    // then drops to the 16' rank alone on Bassoon, sounding A3. A key let go
+    // stays silent through a switch.
+    const double rate = 48000.0;
+    auto e = Make(rate, 0);
+    Controls controls = e->GetControls();
+    const auto opening = [](double from) { return [from](double s) { return 0.3 + 0.12 * (from + s); }; };
+    Play(*e, rate, 0.6, { { 0.0, { kOn, 69, 100 } } }, opening(0.0));
+    const int clarinet = e->Diag().cells;
+    controls[kRegister] = 3;
+    e->SetControls(controls);
+    Play(*e, rate, 0.4, {}, opening(0.6));
+    const int musette = e->Diag().cells;
+    controls[kRegister] = 1;
+    e->SetControls(controls);
+    const Take bassoon = Play(*e, rate, 0.8, {}, opening(1.0));
+    const int bassoonCells = e->Diag().cells;
+    Expect(clarinet == 1 && musette == 3 && bassoonCells == 1, "RegisterActsOnHeldNotes",
+           "chambers sounding on Clarinet, Musette, Bassoon: 1, 3, 1", clarinet * 100 + musette * 10 + bassoonCells);
+    const double a3 = Cents(PeakHz(bassoon.left, rate, 0.3, 0.8, 220.0), 220.0);
+    Expect(std::fabs(a3) < 5.0, "RegisterActsOnHeldNotes", "switched to Bassoon, the held A4 sounds A3, cents", a3);
+    Expect(Db(Rms(bassoon.left, rate, 0.3, 0.8)) > -50.0, "RegisterActsOnHeldNotes", "and keeps sounding, dBFS RMS",
+           Db(Rms(bassoon.left, rate, 0.3, 0.8)));
+    Play(*e, rate, 0.1, { { 0.0, { kOff, 69, 0 } } }, opening(1.8));
+    controls[kRegister] = 7;
+    e->SetControls(controls);
+    Play(*e, rate, 0.05, {}, opening(1.9));
+    Expect(e->Diag().cells == 0, "RegisterActsOnHeldNotes", "a released key stays silent through a switch", e->Diag().cells);
+}
+
+void HalfPressedKeys() {
+    // Channel pressure holds the keys part way down; at full pressure the
+    // pallet stays lifted 1 mm, where a strong bellows bends the reed flat and
+    // quietens it. Okada measured C4 falling 5.1 Hz per kPa of bellows
+    // pressure there (Adachi et al., Forum Acusticum 2026). Played here as a
+    // push on Clarinet's C4, the pressure rising as the half-open pallet
+    // passes less air.
+    const double rate = 48000.0;
+    struct Result { double hz, db, pa; };
+    const auto push = [rate](double speed, int amount, double releaseAt) {
+        auto e = Make(rate, 0);
+        const auto channelPressure = static_cast<std::uint8_t>(amount);
+        const Take t = Play(*e, rate, 2.0, { { 0.0, { kOn, 60, 100 } }, { 0.0, { 0xD0, channelPressure, 0 } },
+                                             { releaseAt, { 0xD0, 0, 0 } } },
+                            [speed](double s) { return 0.9 - speed * s; });
+        return Result { PeakHz(t.left, rate, 1.2, 2.0, releaseAt < 2.0 || amount == 0 ? 261.63 : 254.0),
+                        Db(Rms(t.left, rate, 1.2, 2.0)), MeanPressure(t, rate, 1.2, 2.0) };
+    };
+    const Result open = push(0.2, 0, 9.0), half = push(0.2, 127, 9.0), gentle = push(0.1, 127, 9.0);
+    Expect(Cents(half.hz, open.hz) < -20.0, "HalfPressedKeys", "full channel pressure on a strong push, cents", Cents(half.hz, open.hz));
+    Expect(open.db - half.db > 6.0, "HalfPressedKeys", "and quieter, dB", open.db - half.db);
+    Expect(half.db > -50.0, "HalfPressedKeys", "but still sounding, dBFS RMS", half.db);
+    const double slope = (half.hz - gentle.hz) / ((half.pa - gentle.pa) * 1.0e-3);
+    Expect(slope < -0.6 * 5.1 && slope > -1.6 * 5.1, "HalfPressedKeys",
+           "half-pressed C4 against bellows pressure, Hz/kPa (Okada: -5.1)", slope);
+    const Result released = push(0.2, 127, 0.8);
+    Expect(std::fabs(Cents(released.hz, open.hz)) < 3.0, "HalfPressedKeys", "pressure let go: back to the open pitch, cents",
+           Cents(released.hz, open.hz));
+}
+
 void AirButtonVents() {
     const double rate = 48000.0;
     auto played = Make(rate, 3);
@@ -430,6 +492,41 @@ void VoiceLimit() {
     Expect(std::isfinite(Peak(t)) && Rms(t.left, rate, 0.5, 1.0) > 1.0e-3, "VoiceLimit", "and still sound, RMS", Rms(t.left, rate, 0.5, 1.0));
 }
 
+void PresetsSitTogether() {
+    // The reference stroke for the factory bank's levels: a bass and a chord
+    // button with a C major triad, the wheel opening 18 % in 2 s (eased) and
+    // closing back, as a player tries a patch. Every preset sits within 1.5 dB
+    // of Init in RMS there, and peaks below -3 dBFS.
+    const double rate = 48000.0;
+    const auto stroke = [](double t) {
+        const double s = t < 2.0 ? t / 2.0 : 1.0 - (t - 2.0) / 2.0;
+        return 0.41 + 0.18 * (0.5 - 0.5 * std::cos(kPi * s));
+    };
+    std::vector<Note> notes;
+    for (int k : { 24, 36, 60, 64, 67 }) notes.push_back({ 0.0, { kOn, static_cast<std::uint8_t>(k), 100 } });
+    const auto level = [&](const Controls& controls, double& peak) {
+        Engine e;
+        e.Prepare(rate);
+        e.SetControls(controls);
+        e.Reset();
+        const Take t = Play(e, rate, 4.0, notes, stroke);
+        peak = Peak(t);
+        return 0.5 * (Db(Rms(t.left, rate, 0.5, 4.0)) + Db(Rms(t.right, rate, 0.5, 4.0)));
+    };
+    double initPeak = 0.0, worstPeak = 0.0, worstApart = 0.0;
+    const double init = level(Controls {}, initPeak);
+    worstPeak = initPeak;
+    for (const Preset& preset : kPresets) {
+        double peak = 0.0;
+        const double apart = level(preset.ToControls(), peak) - init;
+        std::printf("     %-16s %+5.2f dB against Init, peak %+6.2f dBFS\n", preset.name, apart, Db(peak));
+        worstApart = std::max(worstApart, std::fabs(apart));
+        worstPeak = std::max(worstPeak, peak);
+    }
+    Expect(worstApart < 1.5, "PresetsSitTogether", "largest preset RMS apart from Init on the reference stroke, dB", worstApart);
+    Expect(Db(worstPeak) < -3.0, "PresetsSitTogether", "loudest peak there, dBFS", Db(worstPeak));
+}
+
 void LoudestCase() {
     // Every chamber of the pool sounding (every treble reed of 14 keys, bass
     // and chords), Volume and Bass at their tops, full Assist and a hand
@@ -480,6 +577,8 @@ int main() {
     PitchBend();
     MusetteBeat();
     SplitKeyboardRouting();
+    RegisterActsOnHeldNotes();
+    HalfPressedKeys();
     AirButtonVents();
     AssistScalesTheHand();
     WheelPlacementIsOneValue();
@@ -489,6 +588,7 @@ int main() {
     DeterministicAfterReset();
     ReleaseAndAllNotesOff();
     VoiceLimit();
+    PresetsSitTogether();
     LoudestCase();
     NonFiniteControls();
     std::printf("%d failure(s)\n", failures);

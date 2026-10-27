@@ -59,3 +59,36 @@ with the square root of the step rate and the noise the reeds hear keeps its
 spectrum. Measured on the Clarinet, Paris Musette and Master Tutti demos, 2×
 and 4× stay within 0.4 dB of 1× and an A4 keeps its pitch to the cent; this
 is a quality option, not a voicing choice.
+
+## 2026-10-27 — five realism changes, by-ear verdicts pending (owner asked; engineering)
+
+The owner asked for five audible changes that bring Respira closer to a real
+accordion. Each is derived, not fitted; the two turbulence levels are
+estimates with a stated range. A–Z listening packs went to the owner on
+2026-10-27, each with A as the engine before these changes. Until the verdicts
+come back the estimates ship; a verdict is recorded here as chosen by ear.
+
+- **Breath in the reed gap.** The gap flow carries its own turbulence: eddies
+  about 0.3 mm across, each fluctuating ~10 %, along the gap's 2L + W edge, so
+  the flow fluctuates by 0.1/√N of itself. Pack `breath`: B 0.3×, C the
+  estimate (shipping), D 2×. Verdict: pending.
+- **The air button as an orifice, with its hiss.** The valve was a linear
+  vent (4 L/s at 100 Pa), silent. It is now a 25 mm hole (Cd 0.65, the same
+  4.0 L/s at 100 Pa) opening in a pallet's time, whose jet fluctuates 2 % in
+  eddies of the pad's 3 mm lift and radiates through the bass side. Pack
+  `valve`: B orifice without hiss, C 0.4×, D the estimate (shipping), E 1.9×.
+  Verdict: pending.
+- **Half-pressed keys.** Channel pressure holds a channel's keys part way
+  down; at full pressure the pallet stays lifted 1 mm, where the model's C4
+  falls 5.9 Hz per kPa against the 5.1 Hz/kPa Adachi et al. measured (Forum
+  Acusticum 2026). Pack `halfpress`: B shipping. Verdict: pending; A takes it
+  back out.
+- **Registers reach held keys.** A register switch moves slides over the reed
+  blocks, so the ranks it opens start under held keys and the ones it shuts
+  fall silent. Pack `register`: B shipping. Verdict: pending; A takes it back
+  out.
+- **One level for every preset.** Not a listening decision. At 1 Pa full
+  scale a full register clipped on a demo-like stroke. Full scale is now
+  2.5 Pa (102 dB SPL), and each factory preset's Volume puts it within 1.5 dB
+  of Init on one reference stroke, peaking below −3 dBFS, which
+  `Respira.Engine` checks.

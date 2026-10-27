@@ -40,7 +40,8 @@ int main(int argc, char** argv) {
         double air = 0.0, total = 0.0;
         for (int i = 0; i < n; ++i) {
             air = 0.0;
-            StepCell(spec.push, spec.pull, spec.chamber, s, pressure, std::fmin(1.0, i / (0.004 * rate)), dt, rate, 0.0, 0.0, air);
+            StepCell(spec.push, spec.pull, spec.chamber, MakeVent(spec.chamber, std::fmin(1.0, i / (0.004 * rate)), rate), s, pressure, dt,
+                     rate, 0.0, 0.0, air);
             if (i >= from) total += air;
         }
         std::printf("%4d  %9.2f  %11.2f  %6.1f  %8.3f\n", key, spec.hz, hz, hz > 0.0 ? 1200.0 * std::log2(hz / spec.hz) : 0.0,

@@ -30,7 +30,7 @@ inline double SoundingHz(const ReedSpec& reed, const ChamberSpec& chamber, doubl
     std::vector<double> xs(static_cast<std::size_t>(n - from));
     for (int i = 0; i < n; ++i) {
         double air = 0.0;
-        StepCell(reed, reed, chamber, s, p, std::fmin(1.0, i / (0.004 * rate)), dt, rate, 0.0, 0.0, air);
+        StepCell(reed, reed, chamber, MakeVent(chamber, std::fmin(1.0, i / (0.004 * rate)), rate), s, p, dt, rate, 0.0, 0.0, air);
         if (i >= from) xs[static_cast<std::size_t>(i - from)] = s.push.x;
     }
     double mean = 0.0, low = 1.0, high = -1.0;

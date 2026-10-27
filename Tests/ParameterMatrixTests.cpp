@@ -93,9 +93,12 @@ public:
         // chamber pool at the clamp with Volume and Bass at their tops below
         // +30 dBFS (Tests/EngineTests.cpp, LoudestCase); twice that here.
         limits.ceiling = 64.0f;
-        // The air button vents the bellows (kAirValve), so held notes go quiet
-        // by design while it is on in either row.
-        limits.soundsWhileHeld = Value(c.values, kAir) < 0.5 && Value(c.base, kAir) < 0.5;
+        // The air button vents the bellows, so held notes go quiet by design
+        // while it is on in either row; and the air rushing through it hisses
+        // while the hand keeps moving, keys or none, so no silence is due.
+        const bool air = Value(c.values, kAir) >= 0.5 || Value(c.base, kAir) >= 0.5;
+        limits.soundsWhileHeld = !air;
+        if (air) limits.releaseSeconds = -1.0;
         return limits;
     }
 
