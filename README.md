@@ -52,9 +52,10 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
   pallet stays open about 1 mm, so the note softens and bends with the
   bellows as a half-pressed key's does. The register switches reach held
   keys.
-- Digital full scale is 6.7 Pa at 1 m (110.5 dB SPL), so a chord struck at
-  the arm's full pressure stays under it; the factory presets sit within
-  1 dB of each other on one reference stroke.
+- Ordinary playing reads about −9 on Reason's VU meter, and an output
+  compressor and peak limiter keep a chord at the arm's full pressure out of
+  the red, its peaks under −1 dBFS. The factory presets sit within 1 dB of
+  each other on one reference stroke.
 - Switching a register changes the colour, not the level: each register is
   trimmed so the eight sit within 1 dB of each other.
 
@@ -111,8 +112,8 @@ the pressure across a closing gap rises while the tongue moves into the slot;
 the force leads the displacement and the tongue self-oscillates (Fletcher
 1979; Ricot, Caussé and Misdariis 2005; Millot and Baumann 2007). Nothing is
 an oscillator: no air, no sound. The radiated sound is the rate of change of
-the flow out of the pallet hole, as from a small source 1 m away, with 6.7 Pa
-(110.5 dB SPL) at digital full scale.
+the flow out of the pallet hole, as from a small source 1 m away, with 1 Pa
+(94 dB SPL) at digital full scale.
 
 The jet through the gap is turbulent. Eddies about 0.3 mm across, each
 fluctuating by about 10 %, form independently along the gap's edge (twice the
@@ -170,6 +171,17 @@ chord can be built from chord buttons. The bass reeds sit behind larger
 pallets and longer passages, and sound through the bass box's grille, a
 2.5 kHz low-pass.
 
+### The output stage
+
+On Reason's VU meter (the louder channel's RMS over 300 ms, +12 dB) the demo
+phrases' notes read −9 at their median, and a chord at the arm's full pressure
+would read 23 dB above that. A compressor follows the louder channel's RMS
+over 20 ms and brings it down 10:1 above −5 VU, over an 8 dB knee, so playing
+below about −9 VU passes untouched; its gain drops at once and recovers over
+300 ms, slower than a musette's beating. A peak limiter holds what gets past at
+−1.2 dBFS. The hardest strokes read −2.6 VU at most. Volume sets the level
+going into the stage.
+
 ### Controls, presets and MIDI
 
 | Control | Range | What it does |
@@ -181,7 +193,7 @@ pallets and longer passages, and sound through the bass box's grille, a
 | Grille | 2–16 kHz | brightness of the treble grille |
 | Width | 0–1 | treble keys across the right, bass side to the left |
 | Bass | −24 to +6 dB | bass and chord side level |
-| Volume | −36 to +6 dB | output level |
+| Volume | −36 to +6 dB | level into the output stage |
 | Keyboard | split, full | split: C1–B1 bass buttons, C2–B2 chord buttons, C3 up treble |
 | Air | off, on | the air valve |
 | Momentum | 0–200 ms | how far the arm trails the wheel; 0 follows it exactly |
@@ -209,8 +221,8 @@ a pitch wheel should do what it says.
   first front end.
 - **Voiced, not measured.** Reed dimensions, chambers, pallets, the bellows
   stiffness, the reeds' loss and the turbulence levels are typical values or
-  estimates scaled with pitch, and the full-scale reference is set by a
-  reference stroke, not a measured level; no recording of a real accordion is
+  estimates scaled with pitch, and the full-scale reference is set so the
+  demo phrases read −9 VU, not by a measured level; no recording of a real accordion is
   part of the model or its tests.
 - **CPU.** A full-register chord over bass and chords (28 chambers) takes
   about a quarter of one core in the development container at 48 kHz (0.25×

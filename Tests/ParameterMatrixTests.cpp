@@ -89,10 +89,6 @@ public:
 
     Limits LimitsFor(const Case& c) const override {
         Limits limits;
-        // No limiter: the bellows pressure clamp bounds the output, the full
-        // chamber pool at the clamp with Volume and Bass at their tops below
-        // +30 dBFS (Tests/EngineTests.cpp, LoudestCase); twice that here.
-        limits.ceiling = 64.0f;
         // The air button vents the bellows, so held notes go quiet by design
         // while it is on in either row; and the air rushing through it hisses
         // while the hand keeps moving, keys or none, so no silence is due.

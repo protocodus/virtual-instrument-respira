@@ -122,3 +122,25 @@ bass side is untouched, and a register change glides over the same 20 ms as
 the other level controls. `RegistersSitTogether` checks all eight within 1 dB
 on Init's controls, and the factory presets were re-levelled to sit within
 1 dB of Init (`PresetsSitTogether`, tightened from 1.5 dB).
+
+## 2026-10-27 — −9 VU typical, with an output compressor and peak limiter (owner)
+
+The owner asked for every new instrument to read "usually" around −7 on
+Reason's VU meter with nothing in the red on the hardest chord, then chose
+−9 with a clean peak limiter for Aculele and asked for the same limiter in
+every new instrument. On that meter (the louder channel's RMS over 300 ms,
++12 dB) Respira's demo phrases read −25.4 VU at their median at 6.7 Pa full
+scale, and the reference chord at the arm's full pressure −2.0 VU: a 23 dB
+span that no fixed gain fits between −9 and the red.
+
+Full scale is now 1 Pa (94 dB SPL), 16.5 dB louder, and an output stage
+brings the loud end down: a compressor on the louder channel's 20 ms RMS,
+10:1 above −5 VU over an 8 dB knee, whose gain drops at once and recovers over
+300 ms, then a peak limiter at −1.2 dBFS. The demo phrases read −9.2 VU at
+their median (p10 −14.7, p90 −5.2), and the Recon strokes on every preset
+−2.6 VU at most, peaking at −1.2 dBFS (`HardStrokesFit`). An engineering
+setting of the owner's target, not a listening decision.
+
+The instrument still makes no level that does not come from the bellows: the
+output stage is the recording chain after it, there because the owner asked
+for it. This supersedes the closing line of the 110.5 dB SPL entry above.

@@ -29,15 +29,13 @@ constexpr double kValveEddy = 3.0e-3;       // m
 constexpr double kValveBreath = 0.0196;
 constexpr double kHandCatchUp = 25.0;       // 1/s: how fast the hand closes on the wheel position
 // The radiated sound is the pallet flow's rate of change as from a small
-// source 1 m away; 6.7 Pa there (110.5 dB SPL) is digital full scale. A bass,
-// a chord and a triad at the arm's full pressure beat to peaks of +8.0 dBFS on
-// a 2.5 Pa scale (the worst of every preset at 44.1-96 kHz, blocks of 64 and
-// 512, 7- and 14-bit wheels, Oversampling 1x and 4x, Momentum 0-200 ms), and
-// Reason's Recon test clipped there; on this scale they peak at -0.5 dBFS
-// (Tests/EngineTests.cpp, HardStrokesFit). The factory presets set their
-// Volume so each sits within 1 dB of Init on a moderate stroke
-// (PresetsSitTogether).
-constexpr double kPascalToFullScale = 0.15;
+// source 1 m away; 1 Pa there (94 dB SPL) is digital full scale, so the notes
+// of the demo phrases read -9 on Reason's VU meter (the louder channel's RMS
+// over 300 ms, +12 dB) at their median (Tests/EngineTests.cpp, TypicalLevel). A bass, a chord and a triad at the arm's full pressure are
+// some 23 dB louder; the output stage below keeps them out of the red. The
+// factory presets set their Volume so each sits within 1 dB of Init on a
+// moderate stroke (PresetsSitTogether).
+constexpr double kPascalToFullScale = 1.0;
 // Each register's trim on the treble side, so switching one does not jump the
 // level: on Init's controls and the reference stroke (Tests/EngineTests.cpp,
 // PresetsSitTogether), a C3, a C4-E4-G4 triad, a G4, a C5 and a C6 average the
@@ -45,6 +43,19 @@ constexpr double kPascalToFullScale = 0.15;
 // Master register 1.9 dB, one reed 3.5-3.9 dB); the owner asked for registers
 // that change the colour, not the level (RegistersSitTogether).
 constexpr std::array<double, 8> kRegisterTrimDb { { 3.45, 3.93, 1.39, 0.0, 1.46, 1.25, 1.68, -1.91 } };
+// The output stage, which the owner asked for: no red on Reason's meters
+// however hard the bellows are pushed. A compressor follows the louder
+// channel's RMS over 20 ms and above -17 dBFS (-5 VU) brings it down 10:1
+// over an 8 dB knee, so playing below about -9 VU passes untouched. Its gain
+// drops at once and recovers over 300 ms, slower than a musette's beating, so
+// the beats keep their depth. A peak limiter with no look-ahead holds what
+// gets past at -1.2 dBFS and lets go over 50 ms. On HardStrokesFit's strokes
+// the limiter takes at most 1.6 dB, on under 1 % of the samples; it never acts
+// on the demo phrases.
+constexpr double kThresholdDb = -17.0, kKneeDb = 8.0, kRatio = 10.0;
+constexpr double kDetect = 0.02, kCompRelease = 0.3;
+constexpr double kCeiling = 0.87, kLimitRelease = 0.05;
+constexpr int kGainPeriod = 16;   // samples between gain computations, ramped across
 constexpr double kBassLowpassHz = 2500.0;   // the bass reeds sound through the bass box's grille
 constexpr double kOpenSeconds = 0.012, kOpenVelocity = 0.009;  // pallet lift: 12 ms soft .. 3 ms hard
 constexpr double kCloseSeconds = 0.008;
@@ -102,6 +113,9 @@ void Engine::Prepare(double sampleRate) {
     bassCoeff = 1.0 - std::exp(-2.0 * kPi * kBassLowpassHz / rate);
     smoothing = 1.0 - std::exp(-1.0 / (0.02 * rate));
     bendSmoothing = 1.0 - std::exp(-1.0 / (0.005 * rate));
+    detector = 1.0 - std::exp(-1.0 / (kDetect * rate));
+    compRelease = 1.0 - std::exp(-kGainPeriod / (kCompRelease * rate));
+    limitRelease = 1.0 - std::exp(-1.0 / (kLimitRelease * rate));
     SetControls(controls);
     Reset();
 }
@@ -127,6 +141,9 @@ void Engine::Reset() {
     gain = gainTarget;
     bassGain = bassGainTarget;
     trebleGain = trebleGainTarget;
+    powerL = powerR = reduction = compStep = 0.0;
+    compGain = limit = 1.0;
+    untilGain = 0;
     diag = Diagnostics {};
 }
 
@@ -402,14 +419,33 @@ void Engine::Render(float* left, float* right, int frames) {
         bassGain += smoothing * (bassGainTarget - bassGain);
         trebleGain += smoothing * (trebleGainTarget - trebleGain);
         const double bass = (bassLow + hiss) * bassGain;
-        left[i] = static_cast<float>(gain * (grilleL * trebleGain + bass * bassPanL));
-        right[i] = static_cast<float>(gain * (grilleR * trebleGain + bass * bassPanR));
+        const double l = gain * (grilleL * trebleGain + bass * bassPanL);
+        const double r = gain * (grilleR * trebleGain + bass * bassPanR);
+        powerL += detector * (l * l - powerL);
+        powerR += detector * (r * r - powerR);
+        if (--untilGain <= 0) {
+            untilGain = kGainPeriod;
+            const double over = 10.0 * std::log10(Max(Max(powerL, powerR), 1.0e-20)) - kThresholdDb;
+            const double slope = 1.0 / kRatio - 1.0;
+            const double target = over <= -0.5 * kKneeDb ? 0.0
+                : over >= 0.5 * kKneeDb ? slope * over
+                : slope * (over + 0.5 * kKneeDb) * (over + 0.5 * kKneeDb) / (2.0 * kKneeDb);
+            reduction = target < reduction ? target : reduction + compRelease * (target - reduction);
+            compStep = (DbToGain(reduction) - compGain) / kGainPeriod;
+        }
+        compGain += compStep;
+        const double outL = l * compGain, outR = r * compGain;
+        const double peak = Max(Abs(outL), Abs(outR));
+        limit += limitRelease * (1.0 - limit);
+        if (peak * limit > kCeiling) limit = kCeiling / peak;
+        left[i] = static_cast<float>(outL * limit);
+        right[i] = static_cast<float>(outR * limit);
     }
     if (sounding == 0) {
         trebleLeft.FlushTiny();
         trebleRight.FlushTiny();
         bassSide.FlushTiny();
-        for (double* v : { &grilleL, &grilleR, &bassLow })
+        for (double* v : { &grilleL, &grilleR, &bassLow, &powerL, &powerR, &reduction })
             if (Abs(*v) < 1.0e-20) *v = 0.0;
     }
     diag.hand = hand.position;

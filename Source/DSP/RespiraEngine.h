@@ -151,6 +151,11 @@ private:
     double grilleL = 0.0, grilleR = 0.0, bassLow = 0.0;
     double gain = 0.0, gainTarget = 0.0, bassGain = 0.0, bassGainTarget = 0.0, smoothing = 0.0;
     double trebleGain = 1.0, trebleGainTarget = 1.0;   // the register's trim
+    // The output stage: the compressor's detector, its gain reduction in dB
+    // and the gain ramped toward it, and the peak limiter's gain.
+    double detector = 0.0, compRelease = 0.0, limitRelease = 0.0;
+    double powerL = 0.0, powerR = 0.0, reduction = 0.0, compGain = 1.0, compStep = 0.0, limit = 1.0;
+    int untilGain = 0;
     float bassPanL = 0.0f, bassPanR = 0.0f;
     Diagnostics diag;
 };

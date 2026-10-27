@@ -57,11 +57,10 @@ extern "C" int LLVMFuzzerTestOneInput(const std::uint8_t* data, std::size_t size
         block.Arm();
         engine->Render(block.Left(), block.Right(), static_cast<int>(frames));
         block.Check(frames);
-        // The bellows pressure clamp bounds every reed's drive: the full chamber
-        // pool at the clamp with Volume and Bass at their tops stays below
-        // +30 dBFS (Tests/EngineTests.cpp, LoudestCase); twice that here.
+        // The output stage's peak limiter holds every sample at -1.2 dBFS
+        // (Tests/EngineTests.cpp, LoudestCase); full scale here.
         for (std::size_t i = 0; i < frames; ++i)
-            Require(std::fabs(block.Left()[i]) < 64.0f && std::fabs(block.Right()[i]) < 64.0f);
+            Require(std::fabs(block.Left()[i]) < 1.0f && std::fabs(block.Right()[i]) < 1.0f);
         const auto& d = engine->Diag();
         Require(std::isfinite(d.pressure) && std::fabs(d.pressure) <= 2500.0 && d.cells >= 0
                 && d.cells <= respira::Engine::kMaxCells);
