@@ -32,3 +32,17 @@ Not listening decisions; recorded so they are not taken for physics.
   pitch class, C3 up treble, so a single-channel host such as Reason plays the
   bass side from one keyboard. Channels 2 and 3 still reach the bass and chord
   buttons directly.
+
+## 2026-10-27 — Momentum: the arm trails the wheel (owner, voiced default)
+
+The owner asked for the hand to have momentum, since a hand moving a bellows
+lags and smooths what it is asked to do. The arm now follows the wheel's
+rebuilt path as a critically damped mass with time constant **Momentum**
+(0–200 ms): in a steady stroke it trails by twice that time, it never travels
+past the wheel, and a reversal takes 3.36 time constants (10–90 % of the
+velocity swing). At 0 the engine is the earlier one, sample for sample.
+
+The default, 25 ms, is voiced, not measured or chosen by ear: a reversal then
+takes 84 ms, and a bellows shake of four cycles a second keeps 72 % of its
+travel. The demo strokes were re-fitted to their target pressures through it
+(`Tools/fit_bellows.py`).

@@ -43,7 +43,8 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
   the hand travel of a single reed; a split keyboard (bass and chord buttons
   below C3) for single-channel hosts such as Reason; an air button; a
   reed-tuning table made offline, so a note-on does no simulation; a pitch
-  bend of two semitones each way.
+  bend of two semitones each way; Momentum, so the hand trails the wheel and
+  the bellows reverse smoothly.
 
 ## Downloads
 
@@ -62,7 +63,11 @@ The mod wheel (CC1, with CC33 for 14 bits) is the hand's position, from the
 bellows closed (0) to fully open (1). A wheel sends steps, so the hand keeps
 the speed of the last step until the next one arrives, slowing if it does not,
 and closes on the latest position: even a 7-bit wheel moved slowly gives a
-steady air flow. The hand moves air at its speed times **Bellows**, the litres
+steady air flow. The arm follows that path with **Momentum**, as a critically
+damped mass with that time constant (25 ms by default, voiced): it trails a
+steady stroke by twice that time, turns the bellows round in about 84 ms where
+the wheel turns at once, and never travels past the wheel; at 0 the wheel
+moves the bellows directly. The hand moves air at its speed times **Bellows**, the litres
 one full sweep of the wheel moves (2 L by default, a hand's stroke rather than
 the whole bellows), and the bellows pressure follows
 dp/dt = K (Q_hand − Q_reeds − Q_leak), with K = 4·10⁶ Pa/m³ (the air in the
@@ -141,6 +146,7 @@ pallets and longer passages, and sound through the bass box's grille, a
 | Volume | −36 to +6 dB | output level |
 | Keyboard | split, full | split: C1–B1 bass buttons, C2–B2 chord buttons, C3 up treble |
 | Air | off, on | the air valve |
+| Momentum | 0–200 ms | how far the arm trails the wheel; 0 follows it exactly |
 
 `Source/DSP/RespiraControls.h` holds these for every front end;
 `Source/DSP/RespiraPresets.h` holds the eight factory presets, one per

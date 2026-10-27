@@ -1,5 +1,5 @@
 // Engine contracts: air only from the hand's motion, pitch and pitch bend, rates, routing,
-// the air button and Assist, the controller stream, block-partition
+// the air button and Assist, the controller stream and the arm's momentum, block-partition
 // invariance and determinism, release and voice limits.
 #include "DSP/RespiraEngine.h"
 #include "DSP/RespiraPresets.h"
@@ -269,6 +269,60 @@ void CoarseWheelGivesSteadyAir() {
     Expect(low > 0.5 * sum / count, "CoarseWheelGivesSteadyAir", "weakest moment against the mean", low / (sum / count));
 }
 
+struct HandTrace {
+    std::vector<double> position, velocity;
+};
+
+// The hand's path through Diag while the wheel follows `wheel(seconds)` sample by sample.
+HandTrace TraceHand(double rate, double seconds, double momentum, const std::function<double(double)>& wheel) {
+    auto e = Make(rate, 3, [&](Controls& c) { c[kMomentum] = momentum; });
+    HandTrace trace;
+    float l = 0.0f, r = 0.0f;
+    for (int i = 0; i < static_cast<int>(seconds * rate); ++i) {
+        e->SetHand(wheel(i / rate));
+        e->Render(&l, &r, 1);
+        trace.position.push_back(e->Diag().hand);
+        trace.velocity.push_back(e->Diag().handVelocity);
+    }
+    return trace;
+}
+
+// Seconds the velocity takes, after `start`, from 10 % to 90 % of its swing from `from` to `to`.
+double SwingSeconds(const HandTrace& t, double rate, double start, double from, double to) {
+    int a = -1, b = -1;
+    for (int i = static_cast<int>(start * rate); i < static_cast<int>(t.velocity.size()); ++i) {
+        if (a < 0 && (t.velocity[static_cast<std::size_t>(i)] - from) * (to - from) > 0.1 * (to - from) * (to - from)) a = i;
+        if (b < 0 && (t.velocity[static_cast<std::size_t>(i)] - from) * (to - from) >= 0.9 * (to - from) * (to - from)) b = i;
+    }
+    return a < 0 || b < 0 ? 1.0e9 : (b - a) / rate;
+}
+
+void MomentumSmoothsTheHand() {
+    // The wheel opens at 0.2 a second and turns back instantly at 1 s. The arm
+    // follows it as a critically damped mass: in a steady stroke it trails by
+    // 2 T times the speed, it turns the bellows round in 3.36 T (10-90 % of
+    // the velocity swing) and never travels past the wheel.
+    const double rate = 48000.0, speed = 0.2, momentum = 25.0, T = momentum * 1.0e-3;
+    const auto wheel = [&](double t) { return t < 1.0 ? 0.3 + speed * t : 0.3 + speed * (2.0 - t); };
+    const HandTrace direct = TraceHand(rate, 1.5, 0.0, wheel), arm = TraceHand(rate, 1.5, momentum, wheel);
+    const double lag = wheel(0.9) - arm.position[static_cast<std::size_t>(0.9 * rate)];
+    Expect(std::fabs(lag / (2.0 * T * speed) - 1.0) < 0.05, "MomentumSmoothsTheHand",
+           "steady lag against 2 T speed", lag / (2.0 * T * speed));
+    const double turn = SwingSeconds(arm, rate, 0.9, speed, -speed);
+    Expect(std::fabs(turn / (3.358 * T) - 1.0) < 0.05, "MomentumSmoothsTheHand", "reversal against 3.36 T", turn / (3.358 * T));
+    Expect(SwingSeconds(direct, rate, 0.9, speed, -speed) < 0.002, "MomentumSmoothsTheHand",
+           "without Momentum the bellows turn with the wheel, s", SwingSeconds(direct, rate, 0.9, speed, -speed));
+    double highest = 0.0;
+    for (double p : arm.position) highest = std::max(highest, p);
+    Expect(highest <= wheel(1.0), "MomentumSmoothsTheHand", "the arm turns before the wheel's furthest point", highest);
+    // Shorter than two samples, the arm is held stable and moves with the wheel.
+    const HandTrace brief = TraceHand(rate, 1.5, 0.01, wheel);
+    double apart = 0.0;
+    for (std::size_t i = 0; i < brief.position.size(); ++i)
+        apart = std::max(apart, std::isfinite(brief.position[i]) ? std::fabs(brief.position[i] - direct.position[i]) : 1.0e9);
+    Expect(apart < 1.0e-4, "MomentumSmoothsTheHand", "0.01 ms Momentum against none, largest position difference", apart);
+}
+
 std::vector<Note> Phrase() {
     std::vector<Note> notes { { 0.0, { kOn, 69, 100 } }, { 0.0, { kOn, 33, 90 } }, { 0.3, { kOn, 45, 80 } },
                               { 0.7, { kOff, 45, 0 } }, { 0.9, { kOn, 72, 127 } }, { 1.4, { kOff, 69, 0 } },
@@ -384,6 +438,7 @@ int main() {
     AssistScalesTheHand();
     WheelPlacementIsOneValue();
     CoarseWheelGivesSteadyAir();
+    MomentumSmoothsTheHand();
     BlockPartitionInvariance();
     DeterministicAfterReset();
     ReleaseAndAllNotesOff();

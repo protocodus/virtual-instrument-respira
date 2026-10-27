@@ -38,10 +38,10 @@ enum Group { kTreble, kBassButtons, kChordButtons };
 
 } // namespace
 
-void Engine::Hand::Tick(double dt) {
+void Engine::Hand::Tick(double dt, double momentum) {
     if (!placed) {
         if (!received) return;
-        position = lastTarget = target;
+        wheel = position = lastTarget = target;
         placed = true;
     }
     if (target != lastTarget) {
@@ -53,9 +53,19 @@ void Engine::Hand::Tick(double dt) {
     }
     sinceStep += dt;
     if (Abs(speed) * sinceStep > Abs(lastStep)) speed = lastStep / sinceStep;
-    const double next = Clamp(position + dt * (speed + kHandCatchUp * (target - position)), 0.0, 1.0);
-    velocity = (next - position) / dt;
-    position = next;
+    const double next = Clamp(wheel + dt * (speed + kHandCatchUp * (target - wheel)), 0.0, 1.0);
+    const double wheelVelocity = (next - wheel) / dt;
+    wheel = next;
+    if (momentum <= 0.0) {
+        position = wheel;
+        velocity = wheelVelocity;
+        return;
+    }
+    // Semi-implicit Euler, kept well inside its stable range (w dt <= 0.5)
+    // for a Momentum shorter than two samples.
+    const double w = Min(1.0e3 / momentum, 0.5 / dt);
+    velocity += dt * w * (w * (wheel - position) - 2.0 * velocity);
+    position = Clamp(position + dt * velocity, 0.0, 1.0);
 }
 
 Engine::Engine() { Prepare(48000.0); }
@@ -229,7 +239,7 @@ void Engine::Render(float* left, float* right, int frames) {
     const double litres = controls[kBellows] * 1.0e-3, assist = controls[kAssist];
     const bool airValve = airPedal || controls[kAir] >= 0.5;
     for (int i = 0; i < frames; ++i) {
-        hand.Tick(dt);
+        hand.Tick(dt, controls[kMomentum]);
         // Assist makes the hand's stroke move as much more air as the open
         // reeds take beyond one A4 reed, so one wheel speed gives one pressure
         // whatever is played; at 0 the hand moves the bellows' own air only.

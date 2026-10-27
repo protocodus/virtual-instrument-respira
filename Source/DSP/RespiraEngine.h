@@ -93,18 +93,21 @@ private:
         float gainL = 0.0f, gainR = 0.0f;
     };
 
-    // The hand on the bellows, from a stepwise controller stream. Between
-    // steps it keeps the speed of the last one (a slow wheel sends a step only
-    // every so often), slowing as a step fails to arrive, and closes on the
-    // latest position, so even a 7-bit wheel gives a continuous air flow.
+    // The hand on the bellows, from a stepwise controller stream. The wheel's
+    // path is rebuilt first: between steps it keeps the speed of the last one
+    // (a slow wheel sends a step only every so often), slowing as a step fails
+    // to arrive, and closes on the latest position, so even a 7-bit wheel gives
+    // a continuous air flow. The arm then follows that path with Momentum: a
+    // critically damped mass with that time constant, so the bellows reverse
+    // and stop smoothly, a little behind the wheel, and never overshoot it.
     struct Hand {
         // The first position received is where the hand starts, taken at the
         // next tick so that a 14-bit CC1 + CC33 pair places it as one value.
         bool received = false, placed = false;
         double target = 0.0, lastTarget = 0.0;
-        double position = 0.0, velocity = 0.0;
-        double speed = 0.0, lastStep = 0.0, sinceStep = 1.0;
-        void Tick(double dt);
+        double wheel = 0.0, speed = 0.0, lastStep = 0.0, sinceStep = 1.0;
+        double position = 0.0, velocity = 0.0;   // the arm, which moves the bellows
+        void Tick(double dt, double momentum);
     };
 
     void NoteOn(int channel, int key, int velocity);
