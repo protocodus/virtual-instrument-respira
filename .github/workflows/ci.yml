@@ -1,0 +1,134 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  BUILD_NUMBER: ${{ github.run_number }}
+
+# A newer push to the same branch cancels the older, still-running check.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Respira has no plug-in yet, so there is no plugin-macos job, no package and
+# no main-build or release workflow: every job builds the JUCE-free engine.
+jobs:
+  dsp-tests:
+    name: DSP unit, audio and perf tiers
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python for the checks
+        id: python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Configure DSP build
+        run: >-
+          cmake -S . -B build-dsp -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
+          -DRESPIRA_REQUIRE_PYTHON_TESTS=ON
+          "-DPython3_EXECUTABLE=${{ steps.python.outputs.python-path }}"
+
+      - name: Build engine, tools and tests
+        run: cmake --build build-dsp --parallel
+
+      - name: Unit tier
+        run: ctest --test-dir build-dsp -L '^unit$' --no-tests=error --output-on-failure
+
+      - name: Audio tier
+        run: ctest --test-dir build-dsp -L '^audio$' --no-tests=error --output-on-failure
+
+      - name: Perf tier
+        run: ctest --test-dir build-dsp -L '^perf$' --no-tests=error --output-on-failure
+
+      - name: Render the demos for review
+        run: ./build-dsp/RenderRespiraPresetDemos --jobs 4 Docs/audio/midi build-dsp/demo-audio
+
+      - name: Upload demo audio and CPU figures
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-audio-respira-build-${{ github.run_number }}
+          path: |
+            build-dsp/demo-audio/*.wav
+            build-dsp/cpu.json
+          if-no-files-found: error
+          retention-days: 7
+
+  dsp-tests-macos:
+    name: DSP unit tier, macOS
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Build and run the unit tier
+        run: |
+          cmake -S . -B build-dsp -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
+          cmake --build build-dsp --parallel
+          ctest --test-dir build-dsp -L '^unit$' --no-tests=error --output-on-failure
+
+  dsp-tests-windows:
+    name: DSP unit tier, Windows
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Build and run the unit tier
+        run: |
+          cmake -S "." -B "build-win" -A x64 -DBUILD_TESTING=ON
+          cmake --build "build-win" --config Release --parallel
+          ctest --test-dir "build-win" -C Release -L "^unit$" --no-tests=error --output-on-failure
+
+  sanitizers:
+    name: Unit and fuzz tiers under ASan and UBSan, C++17 engine
+    runs-on: ubuntu-24.04
+    env:
+      ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+      UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Configure sanitized Clang build with libFuzzer
+        run: >-
+          cmake -S . -B build-asan -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_TESTING=ON
+          -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+          -DRESPIRA_ENABLE_SANITIZERS=ON -DRESPIRA_BUILD_FUZZER=ON
+
+      - name: Build
+        run: cmake --build build-asan --parallel
+
+      - name: C++17 engine with the Rack's -fno-builtin
+        run: cmake --build build-asan --target RespiraDSPCxx17
+
+      - name: Unit tier
+        run: ctest --test-dir build-asan -L '^unit$' --no-tests=error --output-on-failure
+
+      - name: Fuzz tier
+        run: ctest --test-dir build-asan -L '^fuzz$' --no-tests=error --output-on-failure
+
+      - name: Upload fuzz reproducers
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-reproducers-respira-${{ github.run_number }}
+          path: |
+            build-asan/crash-*
+            build-asan/oom-*
+            build-asan/timeout-*
+          if-no-files-found: ignore
+          retention-days: 7
