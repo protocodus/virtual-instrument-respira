@@ -150,6 +150,7 @@ private:
     double grilleCoeff = 0.0, bassCoeff = 0.0;
     double grilleL = 0.0, grilleR = 0.0, bassLow = 0.0;
     double gain = 0.0, gainTarget = 0.0, bassGain = 0.0, bassGainTarget = 0.0, smoothing = 0.0;
+    double trebleGain = 1.0, trebleGainTarget = 1.0;   // the register's trim
     float bassPanL = 0.0f, bassPanR = 0.0f;
     Diagnostics diag;
 };

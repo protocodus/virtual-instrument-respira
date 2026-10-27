@@ -54,7 +54,9 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
   keys.
 - Digital full scale is 6.7 Pa at 1 m (110.5 dB SPL), so a chord struck at
   the arm's full pressure stays under it; the factory presets sit within
-  1.5 dB of each other on one reference stroke.
+  1 dB of each other on one reference stroke.
+- Switching a register changes the colour, not the level: each register is
+  trimmed so the eight sit within 1 dB of each other.
 
 ## Downloads
 
@@ -154,7 +156,11 @@ eight register switches combine them: Clarinet (M), Bassoon (L), Violin (M,
 M+), Musette (M−, M, M+), Bandoneon (L, M), Organ (L, H), Oboe (M, H) and
 Master (all five). A switch moves slides over the reed blocks, so it reaches
 held keys too: the ranks it opens start to speak as from the softest key
-stroke and the ones it shuts fall silent. **Musette** sets the M+ detune at A4 in cents; the beat
+stroke and the ones it shuts fall silent. Each register's treble side is
+trimmed so all eight average one level on a C3, a C4 triad and a C6: untrimmed,
+Master is 1.9 dB louder than Musette and a single rank 3.5–3.9 dB softer, as
+on a real accordion, but a switch here changes the colour, not the level.
+**Musette** sets the M+ detune at A4 in cents; the beat
 rises with pitch as f^0.7, as tuners set tremolo reeds, and M− sits the same
 interval below.
 
@@ -183,7 +189,7 @@ pallets and longer passages, and sound through the bass box's grille, a
 
 `Source/DSP/RespiraControls.h` holds these for every front end;
 `Source/DSP/RespiraPresets.h` holds the eight factory presets, one per
-register, each setting its Volume so it sits within 1.5 dB of Init on one
+register, each setting its Volume so it sits within 1 dB of Init on one
 reference stroke (a bass, a chord and a C major triad on a moderate 2 s pull
 and push), with its peak below −3 dBFS.
 

@@ -5,6 +5,7 @@
 #include "DSP/RespiraEngine.h"
 #include "DSP/RespiraPresets.h"
 
+#include <array>
 #include <cmath>
 #include <cstdio>
 #include <functional>
@@ -495,8 +496,8 @@ void VoiceLimit() {
 void PresetsSitTogether() {
     // The reference stroke for the factory bank's levels: a bass and a chord
     // button with a C major triad, the wheel opening 18 % in 2 s (eased) and
-    // closing back, as a player tries a patch. Every preset sits within 1.5 dB
-    // of Init in RMS there, and peaks below -3 dBFS.
+    // closing back, as a player tries a patch. Every preset sits within 1 dB of
+    // Init in RMS there, and peaks below -3 dBFS.
     const double rate = 48000.0;
     const auto stroke = [](double t) {
         const double s = t < 2.0 ? t / 2.0 : 1.0 - (t - 2.0) / 2.0;
@@ -523,8 +524,38 @@ void PresetsSitTogether() {
         worstApart = std::max(worstApart, std::fabs(apart));
         worstPeak = std::max(worstPeak, peak);
     }
-    Expect(worstApart < 1.5, "PresetsSitTogether", "largest preset RMS apart from Init on the reference stroke, dB", worstApart);
+    Expect(worstApart < 1.0, "PresetsSitTogether", "largest preset RMS apart from Init on the reference stroke, dB", worstApart);
     Expect(Db(worstPeak) < -3.0, "PresetsSitTogether", "loudest peak there, dBFS", Db(worstPeak));
+}
+
+void RegistersSitTogether() {
+    // Switching a register changes the colour, not the level: on Init's
+    // controls and the reference stroke, a C3, a C4-E4-G4 triad and a C6
+    // average within 1 dB of the Musette register's (RespiraEngine.cpp,
+    // kRegisterTrimDb).
+    const double rate = 48000.0;
+    const auto stroke = [](double t) {
+        const double s = t < 2.0 ? t / 2.0 : 1.0 - (t - 2.0) / 2.0;
+        return 0.41 + 0.18 * (0.5 - 0.5 * std::cos(kPi * s));
+    };
+    const std::vector<std::vector<int>> gestures { { 48 }, { 60, 64, 67 }, { 84 } };
+    std::array<double, 8> level {};
+    for (int reg = 0; reg < 8; ++reg) {
+        for (const auto& keys : gestures) {
+            auto e = Make(rate, 0, [reg](Controls& c) { c = Controls {}; c[kRegister] = reg; });
+            std::vector<Note> notes;
+            for (int k : keys) notes.push_back({ 0.0, { kOn, static_cast<std::uint8_t>(k), 100 } });
+            const Take t = Play(*e, rate, 4.0, notes, stroke);
+            level[static_cast<std::size_t>(reg)] += 0.5 * (Db(Rms(t.left, rate, 0.5, 4.0)) + Db(Rms(t.right, rate, 0.5, 4.0))) / 3.0;
+        }
+    }
+    double worst = 0.0;
+    for (int reg = 0; reg < 8; ++reg) {
+        const double apart = level[static_cast<std::size_t>(reg)] - level[3];
+        std::printf("     %-10s %+5.2f dB against Musette\n", kRegisters[static_cast<std::size_t>(reg)].name, apart);
+        worst = std::max(worst, std::fabs(apart));
+    }
+    Expect(worst < 1.0, "RegistersSitTogether", "largest register RMS apart from Musette, dB", worst);
 }
 
 void HardStrokesFit() {
@@ -619,6 +650,7 @@ int main() {
     ReleaseAndAllNotesOff();
     VoiceLimit();
     PresetsSitTogether();
+    RegistersSitTogether();
     HardStrokesFit();
     LoudestCase();
     NonFiniteControls();

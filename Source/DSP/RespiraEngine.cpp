@@ -35,9 +35,16 @@ constexpr double kHandCatchUp = 25.0;       // 1/s: how fast the hand closes on 
 // 512, 7- and 14-bit wheels, Oversampling 1x and 4x, Momentum 0-200 ms), and
 // Reason's Recon test clipped there; on this scale they peak at -0.5 dBFS
 // (Tests/EngineTests.cpp, HardStrokesFit). The factory presets set their
-// Volume so each sits within 1.5 dB of Init on a moderate stroke
+// Volume so each sits within 1 dB of Init on a moderate stroke
 // (PresetsSitTogether).
 constexpr double kPascalToFullScale = 0.15;
+// Each register's trim on the treble side, so switching one does not jump the
+// level: on Init's controls and the reference stroke (Tests/EngineTests.cpp,
+// PresetsSitTogether), a C3, a C4-E4-G4 triad, a G4, a C5 and a C6 average the
+// Musette register's RMS. More reeds are louder on a real accordion too (the
+// Master register 1.9 dB, one reed 3.5-3.9 dB); the owner asked for registers
+// that change the colour, not the level (RegistersSitTogether).
+constexpr std::array<double, 8> kRegisterTrimDb { { 3.45, 3.93, 1.39, 0.0, 1.46, 1.25, 1.68, -1.91 } };
 constexpr double kBassLowpassHz = 2500.0;   // the bass reeds sound through the bass box's grille
 constexpr double kOpenSeconds = 0.012, kOpenVelocity = 0.009;  // pallet lift: 12 ms soft .. 3 ms hard
 constexpr double kCloseSeconds = 0.008;
@@ -119,6 +126,7 @@ void Engine::Reset() {
     grilleL = grilleR = bassLow = 0.0;
     gain = gainTarget;
     bassGain = bassGainTarget;
+    trebleGain = trebleGainTarget;
     diag = Diagnostics {};
 }
 
@@ -150,6 +158,7 @@ void Engine::SetControls(const Controls& next) {
     turbulence = kTurbulence * noiseScale;
     gainTarget = kRho / (4.0 * kPi) * kPascalToFullScale * DbToGain(controls[kVolume]);
     bassGainTarget = DbToGain(controls[kBass]);
+    trebleGainTarget = DbToGain(kRegisterTrimDb[static_cast<std::size_t>(reg)]);
     const double bassPan = -0.9 * controls[kWidth];
     bassPanL = static_cast<float>(std::cos((bassPan + 1.0) * kPi / 4.0));
     bassPanR = static_cast<float>(std::sin((bassPan + 1.0) * kPi / 4.0));
@@ -391,9 +400,10 @@ void Engine::Render(float* left, float* right, int frames) {
         bassLow += bassCoeff * (bassSide.Process(b, stages) - bassLow);
         gain += smoothing * (gainTarget - gain);
         bassGain += smoothing * (bassGainTarget - bassGain);
+        trebleGain += smoothing * (trebleGainTarget - trebleGain);
         const double bass = (bassLow + hiss) * bassGain;
-        left[i] = static_cast<float>(gain * (grilleL + bass * bassPanL));
-        right[i] = static_cast<float>(gain * (grilleR + bass * bassPanR));
+        left[i] = static_cast<float>(gain * (grilleL * trebleGain + bass * bassPanL));
+        right[i] = static_cast<float>(gain * (grilleR * trebleGain + bass * bassPanR));
     }
     if (sounding == 0) {
         trebleLeft.FlushTiny();

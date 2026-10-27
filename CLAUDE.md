@@ -222,7 +222,7 @@ DSP change is called done.
   `TRAVELS` and `.mid` files on their own.
 - Air figures beside the code (ReedBank.h's `airWeight`, the README's How it
   works) come from `ProbeReed`; re-run it when the reed model changes.
-- The factory presets set their Volume so every register sits within 1.5 dB
+- The factory presets set their Volume so every register sits within 1 dB
   of Init on one reference stroke (`PresetsSitTogether` in
   `Tests/EngineTests.cpp`); a change to the output reference
   (`kPascalToFullScale`) or the reed model re-checks those levels.

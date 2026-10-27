@@ -109,3 +109,16 @@ strokes on every preset. Everything is 8.5 dB quieter: the moderate reference
 stroke now peaks near −14 dBFS, and the presets keep their levels against
 Init. A limiter would have kept the old level, but it is a level that does not
 come from the bellows.
+
+## 2026-10-27 — registers at one level (owner)
+
+The owner asked for the mic and register options to sit at one level, so that
+switching one does not jump the output. Untrimmed, the registers spread over
+5.9 dB on Init's controls (Master 1.9 dB above Musette, Clarinet and Bassoon
+3.5–3.9 dB below it), which is what more reeds do on a real accordion. Each
+register now trims its treble side (`kRegisterTrimDb`) so that a C3, a C4–E4–G4
+triad, a G4, a C5 and a C6 on the reference stroke average Musette's RMS; the
+bass side is untouched, and a register change glides over the same 20 ms as
+the other level controls. `RegistersSitTogether` checks all eight within 1 dB
+on Init's controls, and the factory presets were re-levelled to sit within
+1 dB of Init (`PresetsSitTogether`, tightened from 1.5 dB).
