@@ -1,4 +1,4 @@
-// Engine contracts: air only from the hand's motion, pitch, rates, routing,
+// Engine contracts: air only from the hand's motion, pitch and pitch bend, rates, routing,
 // the air button and Assist, the controller stream, block-partition
 // invariance and determinism, release and voice limits.
 #include "DSP/RespiraEngine.h"
@@ -164,6 +164,23 @@ void MasterTune() {
     const Take u = Play(*plain, rate, 2.0, { { 0.0, { kOn, 69, 100 } } }, PullThenPush);
     const double cents = Cents(PeakHz(t.left, rate, 0.8, 1.8, 466.16), PeakHz(u.left, rate, 0.8, 1.8, 440.0));
     Expect(std::fabs(cents - 100.0) < 1.0, "MasterTune", "+100 cents against the untuned A4, cents", cents);
+}
+
+void PitchBend() {
+    // The wheel retunes reeds already sounding: bent fully up half a second
+    // into the note, and fully down from before it, against an unbent take.
+    const double rate = 48000.0, up = 2.0 * 8191.0 / 8192.0;
+    auto plain = Make(rate, 0);
+    const Take u = Play(*plain, rate, 2.0, { { 0.0, { kOn, 69, 100 } } }, PullThenPush);
+    const double reference = PeakHz(u.left, rate, 0.9, 1.8, 440.0);
+    auto e = Make(rate, 0);
+    const Take t = Play(*e, rate, 2.0, { { 0.0, { kOn, 69, 100 } }, { 0.5, { 0xE0, 0x7F, 0x7F } } }, PullThenPush);
+    const double raised = Cents(PeakHz(t.left, rate, 0.9, 1.8, 440.0 * std::pow(2.0, up / 12.0)), reference);
+    Expect(std::fabs(raised - 100.0 * up) < 3.0, "PitchBend", "full up on a sounding reed, cents", raised);
+    auto d = Make(rate, 0);
+    const Take w = Play(*d, rate, 2.0, { { 0.0, { 0xE0, 0x00, 0x00 } }, { 0.0, { kOn, 69, 100 } } }, PullThenPush);
+    const double lowered = Cents(PeakHz(w.left, rate, 0.9, 1.8, 440.0 / std::pow(2.0, 2.0 / 12.0)), reference);
+    Expect(std::fabs(lowered + 200.0) < 3.0, "PitchBend", "full down, cents", lowered);
 }
 
 void MusetteBeat() {
@@ -344,6 +361,7 @@ void NonFiniteControls() {
     e->SetControls(broken);
     e->SetHand(std::nan(""));
     e->SetMasterTune(std::nan(""));
+    e->SetPitchBend(std::nan(""));
     bool defaults = true;
     for (int i = 0; i < kControlCount; ++i) defaults = defaults && e->GetControls()[i] == kControlInfo[static_cast<std::size_t>(i)].initial;
     const Take t = Play(*e, rate, 1.0, { { 0.0, { kOn, 69, 100 } } }, PullThenPush);
@@ -359,6 +377,7 @@ int main() {
     StillnessStopsTheSound();
     PitchAcrossRates();
     MasterTune();
+    PitchBend();
     MusetteBeat();
     SplitKeyboardRouting();
     AirButtonVents();

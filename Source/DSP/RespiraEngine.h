@@ -20,6 +20,7 @@
 //   CC64       air button, held with Air: vents the bellows so the hand can
 //              move without sound
 //   CC120/123  all notes off
+//   pitch bend +-2 semitones, retuning every sounding tongue
 // Other channels play as channel 1. Velocity sets how fast the pallet lifts.
 //
 // JUCE-free, C++17, no allocation, locks or exceptions after construction.
@@ -68,7 +69,10 @@ public:
     void Reset();                         // silence, bellows at rest, hand unplaced
     void SetControls(const Controls& controls);
     const Controls& GetControls() const { return controls; }
+    static constexpr double kBendSemitones = 2.0;
+
     void SetMasterTune(double cents);     // applies to the next notes
+    void SetPitchBend(double amount);     // -1 .. 1, kBendSemitones each way, sounding reeds too
     void SetHand(double position);        // 0 closed .. 1 open
     void Midi(const std::uint8_t* bytes, int size);
     void AllNotesOff();
@@ -111,6 +115,7 @@ private:
     Controls controls;
     double rate = 48000.0, internalRate = 192000.0;
     double masterTune = 0.0;
+    double bend2 = 1.0, bend2Target = 1.0, bendSmoothing = 0.0;   // tongue stiffness scale
     Hand hand;
     double pressure = 0.0, airFlow = 0.0, airFlowSmoothed = 0.0, demand = 0.0;
     bool airPedal = false;

@@ -111,8 +111,10 @@ inline double GapArea(const ReedSpec& r, double x) {
 // solved implicitly (the gap can be tiny, which makes it stiff). The tongue
 // feels the part of dp that falls across the gap itself. Returns the volume
 // leaving the upstream side per second (gap flow plus the volume the tongue
-// pushes through the slot).
-inline double StepReed(const ReedSpec& r, ReedState& s, double dp, double dt, double invDt, double force) {
+// pushes through the slot). tune2 scales the tongue's stiffness, so its pitch
+// moves by sqrt(tune2): the pitch wheel, which no real reed has.
+inline double StepReed(const ReedSpec& r, ReedState& s, double dp, double dt, double invDt, double force,
+                       double tune2 = 1.0) {
     const double area = GapArea(r, s.x);
     const double a = 0.5 * kRho / (kCd * kCd * area * area);
     const double inertia = r.slotInertance * invDt;
@@ -124,7 +126,8 @@ inline double StepReed(const ReedSpec& r, ReedState& s, double dp, double dt, do
         drop = dp - inertia * (flow - s.flow);
     }
     s.flow = flow;
-    s.v += dt * ((r.area * drop + force) * r.invMass - r.omega2 * (s.x - r.rest) - (r.damping + r.drag * Abs(s.v)) * s.v);
+    s.v += dt * ((r.area * drop + force) * r.invMass - r.omega2 * tune2 * (s.x - r.rest)
+                 - (r.damping + r.drag * Abs(s.v)) * s.v);
     s.x += dt * s.v;
     // The tongue only acts as a piston between the two sides while it seals the
     // slot; above or below the plate the air it pushes escapes around it.
@@ -189,9 +192,9 @@ inline double StepVent(const ChamberSpec& c, double open, double pressure, doubl
 // from the bellows to `fromBellows`.
 inline double StepCell(const ReedSpec& push, const ReedSpec& pull, const ChamberSpec& chamber, CellState& s,
                        double pb, double open, double dt, double invDt, double pushForce, double pullForce,
-                       double& fromBellows) {
-    const double intoChamber = StepReed(push, s.push, pb - s.pressure, dt, invDt, pushForce);
-    const double outOfChamber = StepReed(pull, s.pull, s.pressure - pb, dt, invDt, pullForce);
+                       double& fromBellows, double tune2 = 1.0) {
+    const double intoChamber = StepReed(push, s.push, pb - s.pressure, dt, invDt, pushForce, tune2);
+    const double outOfChamber = StepReed(pull, s.pull, s.pressure - pb, dt, invDt, pullForce, tune2);
     const double vent = StepVent(chamber, open, s.pressure, s.vent, invDt);
     const double radiated = (vent - s.vent) * invDt;
     s.vent = vent;

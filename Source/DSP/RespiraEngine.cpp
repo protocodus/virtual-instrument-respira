@@ -65,6 +65,7 @@ void Engine::Prepare(double sampleRate) {
     internalRate = rate * kOversample;
     bassCoeff = 1.0 - std::exp(-2.0 * kPi * kBassLowpassHz / rate);
     smoothing = 1.0 - std::exp(-1.0 / (0.02 * rate));
+    bendSmoothing = 1.0 - std::exp(-1.0 / (0.005 * rate));
     SetControls(controls);
     Reset();
 }
@@ -73,6 +74,7 @@ void Engine::Reset() {
     for (auto& c : cells) c = Cell {};
     hand = Hand {};
     pressure = airFlow = airFlowSmoothed = demand = 0.0;
+    bend2 = bend2Target = 1.0;
     airPedal = false;
     msb = lsb = 0;
     fineWheel = false;
@@ -106,6 +108,11 @@ void Engine::SetControls(const Controls& next) {
 }
 
 void Engine::SetMasterTune(double cents) { masterTune = cents == cents ? Clamp(cents, -100.0, 100.0) : 0.0; }
+
+void Engine::SetPitchBend(double amount) {
+    const double semitones = kBendSemitones * (amount == amount ? Clamp(amount, -1.0, 1.0) : 0.0);
+    bend2Target = std::pow(2.0, semitones / 6.0);   // (2^(st/12))^2
+}
 
 void Engine::SetHand(double position) {
     hand.target = position == position ? Clamp(position, 0.0, 1.0) : hand.target;
@@ -211,6 +218,8 @@ void Engine::Midi(const std::uint8_t* bytes, int size) {
         else if (d1 == 64) airPedal = d2 >= 64;
         else if (d1 == 120 || d1 == 123) AllNotesOff();
         if (d1 == 1 || d1 == 33) SetHand(fineWheel ? (msb * 128 + lsb) / 16383.0 : msb / 127.0);
+    } else if (type == 0xE0 && size > 2) {
+        SetPitchBend((d2 * 128 + d1 - 8192) / 8192.0);
     }
 }
 
@@ -227,6 +236,7 @@ void Engine::Render(float* left, float* right, int frames) {
         const double handFlow = -litres * hand.velocity * (1.0 + assist * (Max(demand, 1.0) - 1.0));
         const double leak = (kBellowsLeak + (airValve ? kAirValve : 0.0)) * pressure;
         pressure = Clamp(pressure + dt * kBellowsStiffness * (handFlow - airFlow - leak), -kMaxPressure, kMaxPressure);
+        bend2 += bendSmoothing * (bend2Target - bend2);
 
         float tl[kOversample] = {}, tr[kOversample] = {}, b[kOversample] = {};
         double drawn = 0.0, open = 0.0;
@@ -246,7 +256,7 @@ void Engine::Render(float* left, float* right, int frames) {
                 noise = noise * 1664525u + 1013904223u;
                 const double pushForce = kTurbulence * Unit(noise) * spec.push.area * Abs(pressure);
                 const double out = StepCell(spec.push, spec.pull, spec.chamber, c.state, pressure, lift, dtIn,
-                                            invDtIn, pushForce, -pushForce, drawn);
+                                            invDtIn, pushForce, -pushForce, drawn, bend2);
                 const float o = static_cast<float>(out);
                 if (spec.bass) b[k] += o;
                 else { tl[k] += o * c.gainL; tr[k] += o * c.gainR; }

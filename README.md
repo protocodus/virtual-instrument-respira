@@ -42,7 +42,8 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 - New against the prototype: Assist, so a full chord does not need forty times
   the hand travel of a single reed; a split keyboard (bass and chord buttons
   below C3) for single-channel hosts such as Reason; an air button; a
-  reed-tuning table made offline, so a note-on does no simulation.
+  reed-tuning table made offline, so a note-on does no simulation; a pitch
+  bend of two semitones each way.
 
 ## Downloads
 
@@ -148,7 +149,9 @@ register, each setting its Volume so the presets sit in one level range.
 MIDI channel 1 is the keyboard (split as above, or all treble), channel 2 the
 bass buttons and channel 3 the chord buttons by pitch class; other channels
 play as channel 1. CC1 + CC33 are the hand, CC64 the air valve, CC120 and
-CC123 release every key.
+CC123 release every key. Pitch bend retunes every sounding tongue, up to two
+semitones each way, by scaling its stiffness; no real reed bends that far, but
+a pitch wheel should do what it says.
 
 ## Known gaps
 
