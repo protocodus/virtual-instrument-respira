@@ -78,7 +78,8 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 - The mechanism sounds, with or without air: a key knocks as it lands on its
   felt, harder and brighter for a faster stroke, and its pallet as the spring
   seats it; bass and chord buttons, the register switches and the air button
-  knock too. **Mechanics** sets their level, which is estimated, not measured.
+  knock too. **Mechanics** sets their level, which is estimated, not measured;
+  its default, 10 dB above the estimate, was chosen by ear.
 - The reed plates are half as thick again, so a low tongue played mezzo
   forte no longer swings out past the far side of its plate: A#2–A3 get back
   the 4th harmonic it nearly cancelled (chosen by ear).
@@ -279,7 +280,9 @@ high-pass, where a real accordion's mechanism sound begins (Niewczas, Łódź
 side's knocks leave through the bass box, as its reeds do. At 1 m, with
 **Mechanics** at 0 dB, a soft key peaks at 42 dB SPL, a moderate one at 46,
 a hard one at 64 and a pallet at 41, where ordinary playing reads 73 dB RMS:
-heard in quiet passages and between notes, as real mechanisms are.
+heard in quiet passages and between notes, as real mechanisms are. By ear
+the mechanism was chosen 10 dB above that estimate, so Mechanics defaults to
++10 dB in Init and every factory preset.
 
 ### The output stage
 
@@ -311,7 +314,7 @@ strokes read −1.7 VU at most. Volume sets the level going into the stage.
 | Air | off, on | the air valve |
 | Momentum | 0–200 ms | how far the arm trails the wheel; 0 follows it exactly |
 | Oversampling | 1×, 2×, 4× | the reeds' time step: 1× is four times the host rate; 2× and 4× cost about two and four times the CPU |
-| Mechanics | −40 to +20 dB | the keys', pallets', buttons' and switches' knocks, against the estimate (The mechanism); at −40 dB they are all but silent |
+| Mechanics | −40 to +20 dB | the keys', pallets', buttons' and switches' knocks, against the estimate (The mechanism); +10 dB by default, chosen by ear; at −40 dB they are all but silent |
 
 `Source/DSP/RespiraControls.h` holds these for every front end;
 `Source/DSP/RespiraPresets.h` holds the eight factory presets, one per

@@ -406,3 +406,15 @@ reference gestures' median now reads −4.6 VU (−5.8), and on the presets'
 reference stroke the limiter now trims the loudest presets' peaks by up to
 0.3 dB (measured with its ceiling lifted), so that check holds the peaks at
 the ceiling rather than below it.
+
+## 2026-10-28 — Mechanics at +10 dB by default, B chosen by ear (owner)
+
+Pack `08-mechanics` (listening-2026-10-28): Clarinet Solo, keys fingered with
+a still hand, then a melody over bass and chord buttons, a register switch
+and a held chord; A the engine before the mechanism (no knocks), B, C and D
+Mechanics at +10, −10 and 0 dB (the estimate), not in that order, untrimmed
+because level was what was judged. Verdict, by ear: B. Mechanics defaults to
++10 dB in Init and every factory preset: a soft key peaks near 52 dB SPL at
+1 m and a hard one near 74, where ordinary playing reads 73 dB RMS. The
+choice sets the default within the estimate's stated ±10 dB uncertainty; it
+does not measure the mechanism's level, which stays a known gap.
