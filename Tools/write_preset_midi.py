@@ -6,6 +6,7 @@ is played for: long tones shaped by the bellows on the single clarinet reed, a
 low line on the bassoon reed, a folk tune and a Paris waltz on the tremolo
 registers, a marcato tango, a chorale on the organ register, a quick tune on
 the oboe and a bellows shake on the full register. Every phrase is original.
+A legato line overlaps its keys by KEY_OVERLAP, as a player's legato does.
 The .mid files are the committed sources the demo renderer reads; this script
 only records how they were written. Re-run it only to change a phrase on
 purpose, and commit the changed .mid files on their own:
@@ -38,6 +39,11 @@ BANK = ROOT / "Source/DSP/RespiraPresets.h"
 
 PPQ = 480
 WHEEL_STEP = 0.005   # seconds between hand positions
+# How long a legato line's next key goes down before the last comes up: a
+# player's habit, not a measurement. A reed falls silent as its pallet closes
+# (8 ms) and the next takes tens of milliseconds to speak, so keys that only
+# meet leave a gap 25-40 dB deep at every note.
+KEY_OVERLAP = 0.03
 NAMES = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
 BASS_BUTTONS, CHORD_BUTTONS, TREBLE = 24, 36, 48   # C1, C2, C3 on the split keyboard
 
@@ -157,6 +163,19 @@ class Phrase:
             beat += length
         return beat
 
+    def slur(self, beat, notes, velocity=96):
+        """A legato line of (pitch, beats) pairs from `beat`: each key goes down
+        KEY_OVERLAP before the last comes up, and the last is held its full
+        length."""
+        overlap = KEY_OVERLAP * self.bpm / 60.0
+        for i, (pitch, length) in enumerate(notes):
+            following = notes[i + 1][0] if i + 1 < len(notes) else None
+            if following == pitch:
+                raise ValueError(f"{pitch} repeats in a slur; a key cannot overlap itself")
+            self.treble(beat, length + (overlap if following else 0.0), pitch, velocity)
+            beat += length
+        return beat
+
     def bass(self, beat, length, root, velocity=90):
         """A bass button: the pitch class of `root` ('A', 'F#')."""
         self.note(beat, length, BASS_BUTTONS + n(root + "0") % 12, velocity)
@@ -213,7 +232,7 @@ def clarinet_solo():
         Stroke(6.1, 8.4, 350),
         Stroke(8.4, 11.6, 250, shape=(1.4, 0.35)),
     ], ease=0.10))
-    p.line(0, [("A4", 4), ("C5", 1.5), ("B4", 1.5), ("E4", 4.6)], legato=0.99)
+    p.slur(0, [("A4", 4), ("C5", 1.5), ("B4", 1.5), ("E4", 4.6)])
     return p
 
 
@@ -225,9 +244,8 @@ def bassoon_low():
         Stroke(4.0, 8.0, 480),
         Stroke(8.0, 11.4, 300, shape=(1.2, 0.5)),
     ]))
-    p.line(0, [("A3", 1), ("C4", 0.5), ("B3", 0.5), ("A3", 1), ("E3", 1),
-               ("F3", 1), ("E3", 0.5), ("D3", 0.5), ("E3", 1), ("G#3", 1)], velocity=100)
-    p.treble(8, 3, "A3", 100)
+    p.slur(0, [("A3", 1), ("C4", 0.5), ("B3", 0.5), ("A3", 1), ("E3", 1),
+               ("F3", 1), ("E3", 0.5), ("D3", 0.5), ("E3", 1), ("G#3", 1), ("A3", 3)], velocity=100)
     for bar, (roots, chord) in enumerate([(("A", "E"), ("A", "C", "E")), (("D", "E"), ("E", "G#", "B"))]):
         for half, root in enumerate(roots):
             p.bass(4 * bar + 2 * half, 0.8, root)
@@ -245,7 +263,7 @@ def violin_folk():
         Stroke(6.0, 12.0, 380),
         Stroke(12.0, 15.4, 260, shape=(1.2, 0.5)),
     ]))
-    p.line(0, [("D5", 1), ("A4", 1), ("F4", 1), ("G4", 1), ("A4", 0.5), ("Bb4", 0.5), ("A4", 1),
+    p.slur(0, [("D5", 1), ("A4", 1), ("F4", 1), ("G4", 1), ("A4", 0.5), ("Bb4", 0.5), ("A4", 1),
                ("D5", 1.5), ("C5", 0.5), ("Bb4", 1), ("A4", 1), ("G4", 1), ("E4", 1), ("D4", 3)])
     harmony = [("D", ("D", "F", "A")), ("D", ("D", "F", "A")), ("Bb", ("Bb", "D", "F")),
                ("A", ("A", "C#", "G")), ("D", ("D", "F", "A"))]
@@ -268,12 +286,10 @@ def paris_musette():
         Stroke(12, 18, 480),
         Stroke(18, 24, 300, shape=(1.3, 0.6)),
     ], ease=0.08))
-    melody = [(0, 1, "D5"), (1, .5, "B4"), (1.5, .5, "C5"), (2, 1, "D5"), (3, 2, "G5"), (5, 1, "F#5"),
-              (6, 1, "E5"), (7, .5, "C5"), (7.5, .5, "D5"), (8, 1, "E5"), (9, 2, "A5"), (11, 1, "G5"),
-              (12, 1, "F#5"), (13, .5, "E5"), (13.5, .5, "F#5"), (14, 1, "G5"), (15, 1, "A5"), (16, 1, "F#5"),
-              (17, 1, "D5"), (18, 1, "C6"), (19, 1, "A5"), (20, 1, "F#5"), (21, 3, "G5")]
-    for beat, length, pitch in melody:
-        p.treble(beat, length * 0.95, pitch)
+    p.slur(0, [("D5", 1), ("B4", .5), ("C5", .5), ("D5", 1), ("G5", 2), ("F#5", 1),
+               ("E5", 1), ("C5", .5), ("D5", .5), ("E5", 1), ("A5", 2), ("G5", 1),
+               ("F#5", 1), ("E5", .5), ("F#5", .5), ("G5", 1), ("A5", 1), ("F#5", 1),
+               ("D5", 1), ("C6", 1), ("A5", 1), ("F#5", 1), ("G5", 3)])
     harmony = [("G", ("G", "B", "D")), ("D", ("G", "B", "D")), ("C", ("C", "E", "G")), ("G", ("C", "E", "G")),
                ("D", ("D", "F#", "C")), ("A", ("D", "F#", "C")), ("D", ("D", "F#", "C")), ("G", ("G", "B", "D"))]
     for bar, (root, chord) in enumerate(harmony):
