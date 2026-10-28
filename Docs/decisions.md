@@ -183,7 +183,7 @@ traced (README, Known gaps). The same check passes the bass box: 0.70 at its
 resonance, within 2 dB of the layer up to 2 kHz, darker than it above about
 2.5 kHz. Pack `01-musette` is withdrawn.
 
-## 2026-10-28 — the bass box, by-ear verdict pending (owner asked; engineering)
+## 2026-10-28 — the bass box, C chosen by ear (owner asked; engineering)
 
 The bass side sounded through a voiced 2.5 kHz one-pole low-pass. The bass
 pallets open into the bass box, the space under the bass end cover, which
@@ -192,7 +192,9 @@ vents through the cover's holes: a perforated-panel Helmholtz resonator
 Q 1.3. On the Bassoon Low demo, 2–4 kHz falls from −13.9 to −19.5 dB and
 4–8 kHz from −27.9 to −33.0 dB against 500 Hz–1 kHz. Pack `02-bass`
 (listening-2026-10-28): A the engine before, B 2.0 kHz (Q 0.85), C 960 Hz
-(shipping), D 550 Hz (Q 1.9). Verdict: pending. The packs 02–04 were
+(shipping), D 550 Hz (Q 1.9). Verdict, by ear: C, "probably" the best and
+not far from B or D. The typical geometry stays; a choice this close licenses
+keeping it, not narrowing its depth, porosity or hole size. The packs 02–04 were
 re-rendered once the treble compartment was withdrawn; these figures are
 from them.
 
