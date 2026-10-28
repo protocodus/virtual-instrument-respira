@@ -651,8 +651,10 @@ void PresetsSitTogether() {
     // The reference stroke for the factory bank's levels: a bass and a chord
     // button with a C major triad, the wheel opening 18 % in 2 s (eased) and
     // closing back, as a player tries a patch. Every preset sits within 1 dB of
-    // Init in RMS there, and peaks below -1.6 dBFS, under the output stage's
-    // -1.5 dBFS ceiling, so its peak limiter has nothing to do.
+    // Init in RMS there, and its peaks stay at the output stage's -1.5 dBFS
+    // ceiling. They stayed under it while the compressor took hold from -9 VU;
+    // from -5 VU, chosen by ear, the limiter trims the loudest presets' peaks
+    // here by up to 0.3 dB (measured with the ceiling lifted).
     const double rate = 48000.0;
     const auto stroke = [](double t) {
         const double s = t < 2.0 ? t / 2.0 : 1.0 - (t - 2.0) / 2.0;
@@ -680,7 +682,7 @@ void PresetsSitTogether() {
         worstPeak = std::max(worstPeak, peak);
     }
     Expect(worstApart < 1.0, "PresetsSitTogether", "largest preset RMS apart from Init on the reference stroke, dB", worstApart);
-    Expect(Db(worstPeak) < -1.6, "PresetsSitTogether", "loudest peak there, dBFS", Db(worstPeak));
+    Expect(Db(worstPeak) < -1.4, "PresetsSitTogether", "loudest peak there, dBFS", Db(worstPeak));
 }
 
 void RegistersSitTogether() {
@@ -715,11 +717,12 @@ void RegistersSitTogether() {
 
 void TypicalLevel() {
     // The output reference puts ordinary playing at -9 on Reason's VU meter:
-    // the demo phrases' notes read -9.0 VU at their median (measured
-    // 2026-10-28). Here a C3, a C4-E4-G4 triad, a C6 and the reference chord
-    // on the reference stroke and Init's controls stand in for them; that
-    // stroke is firmer than most of the phrases', and their median reads
-    // -5.8 VU. A change to the output reference, the output stage or the reed
+    // the demo phrases read -9.6 VU at their median while a reed sounds
+    // (measured 2026-10-28). Here a C3, a C4-E4-G4 triad, a C6 and the
+    // reference chord on the reference stroke and Init's controls stand in for
+    // them; that stroke is firmer than most of the phrases', and their median
+    // reads -4.6 VU. It read -5.8 while the output compressor took hold from
+    // -9 VU, which the phrases' louder notes reach and these gestures sit in. A change to the output reference, the output stage or the reed
     // model re-checks both. Key velocity only sets how fast a pallet lifts, so
     // it does not move these levels.
     const double rate = 48000.0;
@@ -738,7 +741,7 @@ void TypicalLevel() {
     }
     std::sort(levels.begin(), levels.end());
     const double median = 0.5 * (levels[levels.size() / 2 - 1] + levels[levels.size() / 2]);
-    Expect(std::fabs(median - -5.8) < 1.0, "TypicalLevel", "median VU of the reference gestures", median);
+    Expect(std::fabs(median - -4.6) < 1.0, "TypicalLevel", "median VU of the reference gestures", median);
 }
 
 void HardStrokesFit() {

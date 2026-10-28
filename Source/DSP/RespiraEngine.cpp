@@ -45,15 +45,16 @@ constexpr std::array<double, 8> kRegisterTrimDb { { 3.45, 3.93, 1.39, 0.0, 1.46,
 // The output stage, which the owner asked for: no red on Reason's meters
 // however hard the bellows are pushed (OutputStage.h, shared by the newer
 // instruments). Its compressor follows the louder channel's power over 20 ms
-// and above -17 dBFS (-5 VU) brings it down 10:1 over an 8 dB knee, so
-// playing below about -9 VU passes untouched; it takes hold at once and lets
-// go over 300 ms, slower than a musette's beating, so the beats keep their
-// depth. The plucked instruments' guard reads the meter's 300 ms over a knee
+// and above -15 dBFS (-3 VU) brings it down 20:1 over a 4 dB knee, so
+// playing below about -5 VU passes untouched: chosen by ear over 10:1 from
+// -9 VU, which flattened a swell (Docs/decisions.md). It takes hold at once
+// and lets go over 300 ms, slower than a musette's beating, so the beats keep
+// their depth. The plucked instruments' guard reads the meter's 300 ms over a knee
 // centred at -15 dBFS and 16 dB wide: the bellows reach the arm's full
 // pressure within tens of milliseconds and 23 dB above ordinary playing,
 // where a chord struck at velocity 127 is 7-9 dB, so they need a faster,
 // firmer guard. Its 2 ms look-ahead limiter holds what gets past at -1.5 dBFS.
-constexpr protocodus::CompressorSettings kBellowsGuard { -17.0, 8.0, 10.0, 0.02, 0.0, 0.3 };
+constexpr protocodus::CompressorSettings kBellowsGuard { -15.0, 4.0, 20.0, 0.02, 0.0, 0.3 };
 // The bass pallets open into the bass box, the space under the bass end cover
 // round the bass mechanism, which vents through the cover's holes: a
 // perforated-panel Helmholtz resonator (Compartment::Set). Typical values: 40

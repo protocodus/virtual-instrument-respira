@@ -82,6 +82,9 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 - The reed plates are half as thick again, so a low tongue played mezzo
   forte no longer swings out past the far side of its plate: A#2–A3 get back
   the 4th harmonic it nearly cancelled (chosen by ear).
+- The output compressor takes hold from −5 VU instead of −9, and firmer, so a
+  swell on the bellows rises further before it is held (chosen by ear); the
+  hardest strokes still stay out of the red.
 
 ## Downloads
 
@@ -284,12 +287,13 @@ On Reason's VU meter (the louder channel's RMS over 300 ms, +12 dB) the demo
 phrases' notes read −9 at their median, and a chord at the arm's full pressure
 would read 23 dB above that. The output stage is the one the newer
 Protocodus instruments share (`Source/DSP/OutputStage.h`). Its compressor
-follows the louder channel's power over 20 ms and brings it down 10:1 above
-−5 VU, over an 8 dB knee, so playing below about −9 VU passes untouched; it
-takes hold at once and lets go over 300 ms, slower than a musette's beating.
+follows the louder channel's power over 20 ms and brings it down 20:1 above
+−3 VU, over a 4 dB knee, so playing below about −5 VU passes untouched and a
+swell keeps its rise (chosen by ear); it takes hold at once and lets go over
+300 ms, slower than a musette's beating.
 Its peak limiter looks 2 ms ahead (96 samples at 48 kHz, the engine's
 latency) and holds what gets past at −1.5 dBFS with no gain step. The hardest
-strokes read −3.0 VU at most. Volume sets the level going into the stage.
+strokes read −1.7 VU at most. Volume sets the level going into the stage.
 
 ### Controls, presets and MIDI
 

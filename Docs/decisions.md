@@ -385,3 +385,24 @@ half-pressed C4 bends 4.2 Hz/kPa (4.7 before, 5.1 measured), the unit, audio
 and perf tiers pass, and the demos are 0.5–2.5 dB brighter above 1 kHz. The
 choice licenses this estimate of the thickness, not fitting it to the 4th
 harmonic.
+
+## 2026-10-28 — the output compressor from −5 VU at 20:1, B chosen by ear (owner; engineering)
+
+The owner heard the decrescendo of pack `06-pallet` fall too little, which the
+output compressor caused (about 4.5 dB against 10 without it): its knee ran
+from −9 to −1 VU at 10:1, so a swell's top was flattened. Pack `07-swell`
+(listening-2026-10-28): Clarinet Solo, a held A4 swelling from nothing to
+forte and back on one pull, then a C4–E4–G4 triad doing the same on the push;
+A the knee from −9 to −1 VU at 10:1, B from −5 to −1 VU at 20:1, the limiter
+the same, B trimmed −1.47 dB to A's RMS. Untrimmed the swells rose 9.6 dB in
+B against 7.9 in A. Verdict, by ear: B.
+
+B ships. The hardest strokes read −1.7 VU at most (−2.9 before), still out of
+the red, peaking at the limiter's −1.5 dBFS. The demo phrases read −9.6 VU at
+their median while a reed sounds, 0.4 dB above A on the same measure (p90
+−4.4 against −5.9), so the output reference stays. Two engine checks assumed
+the old knee and were re-derived, each with its reason beside it: the
+reference gestures' median now reads −4.6 VU (−5.8), and on the presets'
+reference stroke the limiter now trims the loudest presets' peaks by up to
+0.3 dB (measured with its ceiling lifted), so that check holds the peaks at
+the ceiling rather than below it.
