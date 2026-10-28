@@ -1,6 +1,6 @@
 // Engine contracts: air only from the hand's motion, the bellows' turn, pitch and pitch bend, rates and
 // Oversampling, routing, register switches on held keys, the 4' rank's break, half-pressed keys,
-// the air button and Assist, the controller stream and the arm's momentum, block-partition
+// the air button and Assist, a hard push on a held key, the controller stream and the arm's momentum, block-partition
 // invariance and determinism, release and voice limits, the noise scaling.
 #include "DSP/RespiraEngine.h"
 #include "DSP/RespiraPresets.h"
@@ -696,6 +696,24 @@ void HardStrokesFit() {
     Expect(Db(worstPeak) < -1.4, "HardStrokesFit", "loudest peak, dBFS", Db(worstPeak));
 }
 
+void HardPushSpeaks() {
+    // A key held first, then the whole wheel swept in under half a second, on
+    // a pull and on a push: the bellows reaches the arm's full pressure before
+    // the reed swings. A tongue that pressure could blow into its slot would
+    // sit there silent (ReedModel.h, the tip weights); C3-G#4 on Bassoon
+    // stayed at -61 to -68 dBFS so. Every one speaks within 0.45 s.
+    const double rate = 48000.0;
+    double quietest = 0.0;
+    for (int key = 48; key <= 68; ++key)
+        for (const double direction : { 1.0, -1.0 }) {
+            auto e = Make(rate, 1);
+            const Take t = Play(*e, rate, 0.45, { { 0.0, { kOn, static_cast<std::uint8_t>(key), 100 } } },
+                                [direction](double s) { return 0.5 - direction * (0.4 - 2.0 * s); });
+            quietest = std::min(quietest, Db(Rms(t.left, rate, 0.25, 0.45)));
+        }
+    Expect(quietest > -50.0, "HardPushSpeaks", "quietest held key on a hard pull or push, dBFS RMS", quietest);
+}
+
 void LoudestCase() {
     // Every chamber of the pool sounding (every treble reed of 14 keys, bass
     // and chords), Volume and Bass at their tops, full Assist and a hand
@@ -807,6 +825,7 @@ int main() {
     RegistersSitTogether();
     TypicalLevel();
     HardStrokesFit();
+    HardPushSpeaks();
     LoudestCase();
     WidthGlides();
     CascadeVarianceScales();

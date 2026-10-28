@@ -9,7 +9,6 @@ namespace respira {
 
 namespace {
 
-constexpr double kMaxPressure = 2500.0;     // what the player's arm can put on the bellows, Pa
 // Pa per m^3 of air the hand moves but the reeds do not take. The air in a
 // ~6 L bellows alone is 2.4e7; the folds and the player's arm give a few
 // times more, which keeps the pressure from collapsing whenever a chord opens.
@@ -76,10 +75,10 @@ constexpr double kOpenSeconds = 0.012, kOpenVelocity = 0.009;  // pallet lift: 1
 constexpr double kCloseSeconds = 0.008;
 constexpr double kQuietSeconds = 0.02;      // a closed chamber is let go after this
 // Key travel at full channel pressure: a pallet opening of 0.2 (raised cosine
-// of the travel), where the model's C4 falls 5.9 Hz per kPa of bellows
+// of the travel), where the model's C4 falls 4.7 Hz per kPa of bellows
 // pressure against the 5.1 Hz/kPa Okada measured with the pallet lifted 1 mm
 // (Adachi et al., "Aerodynamic mechanism of accordion pitch bending", Forum
-// Acusticum 2026). Fully open the model falls 1.5 Hz/kPa, measured 2.5.
+// Acusticum 2026). Fully open the model falls 1.3 Hz/kPa, measured 2.5.
 constexpr double kHalfPressed = 0.29517;    // acos(1 - 2 * 0.2) / pi
 constexpr double kTurbulence = 2.0e-3;      // gap turbulence force per Pa of bellows pressure and m^2
 constexpr double kNoiseRate = 192000.0;     // internal rate the turbulence levels are set at

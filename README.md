@@ -68,6 +68,10 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 - From D6 up, Oboe and Master no longer double the 8' with the broken-back
   4' in unison, which beat slowly and could almost cancel a held note; the
   top octave holds a steady level.
+- A key held while the bellows is pushed hard to the arm's full pressure no
+  longer stays silent: many notes from C3 to G#4 could, until the pressure
+  eased. The low reeds' tip weights now keep each tongue short of its slot
+  at that pressure.
 
 ## Downloads
 
@@ -136,7 +140,10 @@ up to their rate, the jet's speed over 2π times their size (about 15 kHz at
 is the small force that seeds the tongue.
 
 Tongue length and width follow typical accordion reed sizes scaled with
-pitch, the thickness is whatever gives the pitch, and a chamber whose
+pitch, the thickness is whatever gives the pitch, and the low reeds carry
+brass tip weights, as real ones do: enough that the arm's full pressure,
+held still, leaves each tongue at least its clearance short of the slot, so a
+bellows pushed hard before the reed swings cannot blow it shut and silent. A chamber whose
 Helmholtz resonance would fall near its reed is made smaller, as reed makers
 do with wax in the top octaves. Against the one published harmonic
 measurement of an accordion's 8' reeds (A#2–A3, mezzo forte, 50 cm;
@@ -160,10 +167,10 @@ one, along a raised cosine, so velocity sets the attack, and closes in 8 ms.
 Channel pressure lets a held key rise part way: at full pressure its travel
 rests at 0.30, a pallet opening of 0.2 (about 1 mm), where the reed's pitch
 follows the bellows pressure as a half-pressed key's does. The model's C4
-falls 5.9 Hz per kPa there against the 5.1 Hz/kPa measured with the pallet
-lifted 1 mm (Adachi et al., Forum Acusticum 2026), and 1.5 Hz/kPa fully open
+falls 4.7 Hz per kPa there against the 5.1 Hz/kPa measured with the pallet
+lifted 1 mm (Adachi et al., Forum Acusticum 2026), and 1.3 Hz/kPa fully open
 against 2.5. At the 70 dBA of a published bend measurement, a half-pressed
-A#2–A3 at a steady bellows pressure falls 13 cents, close to the 16 a player
+A#2–A3 at a steady bellows pressure falls 12 cents, close to the 16 a player
 reached with the finger alone, but loses 20 dB where the player's lost 11
 (Known gaps).
 Up to 72 chambers sound at once; a new one takes
@@ -311,7 +318,7 @@ a pitch wheel should do what it says.
   bent A#2–A3 by closing the pallet part way at a steady bellows pressure:
   16 cents flat on average and 11 dB quieter (the mean over the first twenty
   harmonics). Respira's 8' cells at that loudness, with the pallet opened 0.2
-  as full channel pressure holds it, fall 13 cents and 20 dB
+  as full channel pressure holds it, fall 12 cents and 20 dB
   (`CompareHarmonics`): nearly twice the level for a slightly smaller bend.
   The player found no bend possible from C6 up; a single C6 cell still bends
   17–28 cents at 200–400 Pa, while from E6–G6 up the half-open pallet
@@ -334,6 +341,13 @@ a pitch wheel should do what it says.
   pressure peaked with its chamber tuned near twice its pitch (Cottingham,
   ICA 2016, preliminary); the model's C7 chamber resonates at 1.75 times its reed's pitch,
   a C6's at 2.7.
+- **Low reeds start late on a hard push.** When the bellows reaches the
+  arm's full pressure before a low reed swings, the tongue sits near the
+  slot's mouth and its swing grows slowly: on Bassoon with the wheel swept
+  in 1.5 s, C3–F#3 reach their level 0.6–0.9 s after the key, a C4 in
+  0.35 s. A quicker or gentler stroke starts them at once. Heavier tip
+  weights would start them sooner, but no measurement says how far real
+  reeds sit from their slots.
 - **The demos' bellows is fitted, not played.** Each stroke's travel comes
   from a target pressure through `Tools/fit_bellows.py`; a player's hand would
   be less even.

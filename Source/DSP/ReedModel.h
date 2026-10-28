@@ -34,6 +34,7 @@ constexpr double kRhoC2 = 1.4118e5;   // rho * c^2, Pa (c = 343 m/s)
 constexpr double kCd = 0.65;          // discharge coefficient of the reed gap
 constexpr double kSteelDensity = 7850.0;
 constexpr double kSteelE = 2.0e11;
+constexpr double kMaxPressure = 2500.0;  // what the player's arm can put on the bellows, Pa
 // Laminar term of the gap pressure drop, so the flow law stays smooth near zero
 // flow: it equals the Bernoulli term at about 1 m/s.
 constexpr double kLaminar = 0.6;
@@ -79,9 +80,14 @@ inline ReedSpec MakeReed(double f0, double q, double setScale = 1.0) {
     const double w0 = 2.0 * kPi * f0;
     // Low reeds carry brass tip weights, which keep the tongue stiff enough not
     // to be blown statically through its slot: at most an eighth of the slot
-    // depth of static deflection at 1 kPa. The weight adds mass, not air loss,
-    // so the damping stays that of the bare tongue (and Q rises).
-    const double stiffness = std::fmax(tongueMass * w0 * w0, r.area * 1000.0 / (0.125 * r.plate));
+    // depth of static deflection at 1 kPa, and short of the slot by at least
+    // its clearance at the arm's full pressure. Without the second, a reed the
+    // bellows reached full pressure on before it swung sat at the slot's mouth
+    // and never spoke (293 of the 706, 62-415 Hz), as an accordion's reeds
+    // choke when set too low. The weight adds mass, not air loss, so the
+    // damping stays that of the bare tongue (and Q rises).
+    const double stiffness = std::fmax(tongueMass * w0 * w0,
+        std::fmax(r.area * 1000.0 / (0.125 * r.plate), r.area * kMaxPressure / (-r.rest - clearance)));
     const double mass = stiffness / (w0 * w0);
     r.invMass = 1.0 / mass;
     r.omega2 = w0 * w0;
