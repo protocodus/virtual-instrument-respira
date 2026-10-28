@@ -310,6 +310,7 @@ void Engine::StartCell(int rank, int key, int source, int velocity) {
     cell->order = ++order;
     cell->closedFor = 0.0;
     cell->depth = channelDepth[static_cast<std::size_t>(source / 128)];
+    cell->settled = false;
     // A sharper key stroke lifts the pallet faster.
     cell->openRate = 1.0 / ((kOpenSeconds - kOpenVelocity * velocity / 127.0) * internalRate);
 }
@@ -466,7 +467,13 @@ void Engine::Render(float* left, float* right, int frames) {
                 if (spec.bass) b[k] += o;
                 else { tl[k] += o * c.gainL; tr[k] += o * c.gainR; }
             }
-            open += c.lift * spec.airWeight;
+            // Assist counts a held key in full once its pallet is down, however
+            // far channel pressure holds it: a half-open pallet passes 0.3-0.9
+            // of the open air, not its share of the opening, and counting the
+            // opening took the hand's air away, so half-pressed low notes died.
+            c.settled = c.settled || (c.held && c.open == travel);
+            const double full = c.depth >= 1.0 ? 1.0 : 0.5 - 0.5 * std::cos(kPi * c.depth);
+            open += (c.held && c.settled ? 1.0 : Min(1.0, c.lift / full)) * spec.airWeight;
             if (!c.held && c.open <= 0.0) {
                 c.closedFor += dt;
                 if (c.closedFor > kQuietSeconds) c.active = false;

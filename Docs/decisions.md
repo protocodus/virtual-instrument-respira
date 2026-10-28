@@ -225,6 +225,26 @@ box: in the air-button passage its level is unchanged (−55 dBFS), and above
 A the engine before, B through the bass box (shipping). Verdict, by ear: B,
 "probably" better. It stays.
 
+## 2026-10-28 — what Assist counts while a key is half-pressed, B chosen by ear (owner)
+
+Assist moves extra air for the reeds that are open. It counted each reed by
+its pallet's opening, but a half-open pallet's reed still draws 0.3–0.9 of
+its open air (single cells at 200–400 Pa), so half-pressing a key took the
+hand's extra air away and the pressure fell. Counting a held key in full once
+its pallet is down raises the pressure as the pallet throttles, like pushing
+the bellows harder into a bend. Both are defensible readings of what a
+player's arm does; ordinary playing is bit-identical in both. Pack `05-bend`
+(listening-2026-10-28): Clarinet Solo on a steady pull at about 200 Pa, C3
+then A3 bent by channel pressure 0 → full → 0; A counting the opening (then
+shipping), B counting the held key. Verdict, by ear: B, "good". B ships
+(`AssistHoldsHalfPressedKeys`). With the tip weights of the same day, bent
+from open a C3 falls 11 cents and 7 dB and an A3 16 cents and 13 dB, against
+a concert accordion's 24 and 14, and 13 and 10, with the finger alone, and
+29 and 8, and 17 and 5, with bellows and finger (Elejalde-García et al.
+2021). The choice licenses the counting rule only: a low key struck under
+full channel pressure overbends, A#2–G#3 by 34–64 cents against at most 34
+measured, and stays a known gap.
+
 ## 2026-10-28 — three experiments not kept (engineering)
 
 Tried during the overnight realism work and left out, each for a reason a

@@ -72,6 +72,9 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
   longer stays silent: many notes from C3 to G#4 could, until the pressure
   eased. The low reeds' tip weights now keep each tongue short of its slot
   at that pressure.
+- A half-pressed key keeps its share of Assist's air, so at a steady wheel the
+  pressure rises into the bend, as when the bellows is pushed harder: low notes
+  bend instead of fading (chosen by ear).
 
 ## Downloads
 
@@ -323,13 +326,15 @@ a pitch wheel should do what it says.
   The player found no bend possible from C6 up; a single C6 cell still bends
   17–28 cents at 200–400 Pa, while from E6–G6 up the half-open pallet
   silences the reed.
-  At a steady wheel, Assist changes the picture: it counts each reed by its
-  pallet's opening, but a half-open pallet's reed still draws 0.3–0.9 of its
-  open air, so half-pressing takes the hand's extra air away and the pressure
-  falls; a low note then barely bends (C3: 2 cents where the player reached
-  24, 11 dB quieter), and one struck under full channel pressure can fade out. Counting held keys
-  in full instead raises the pressure into the bend but overbends A#2–C#3
-  (37–81 cents against at most 34 measured); a listening test of the two is pending.
+  At a steady wheel, Assist counts a held key in full however far channel
+  pressure lets it rise (chosen by ear over counting the pallet's opening,
+  which let the pressure fall), so half-pressing raises the pressure into the
+  bend. Bent from open on a steady pull at about 200 Pa, a C3 falls 11 cents
+  and 7 dB where the player reached 24 cents and 14 dB with the finger alone
+  and 29 and 8 with bellows and finger; an A3 16 cents and 13 dB, against 13
+  and 10, and 17 and 5. A low key struck under full channel pressure
+  overbends: A#2–G#3 fall 34–64 cents as the pressure climbs to 1.0–1.4 kPa,
+  against at most 34 measured.
 - **The top octave speaks slowly, unchecked.** With the bellows already at
   540 Pa, an A4 reaches its level about 50 ms after the key (some 20
   periods), a C6 about 90 ms and a C7 about 130 ms (some 270 periods): the

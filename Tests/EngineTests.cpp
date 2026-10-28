@@ -422,6 +422,21 @@ void AssistScalesTheHand() {
     Expect(p1 > 3.0 * p0, "AssistScalesTheHand", "full Assist against none on a full chord, pressure ratio", p1 / std::max(p0, 1.0e-9));
 }
 
+void AssistHoldsHalfPressedKeys() {
+    // Assist counts a held key in full once its pallet is down, so a C3
+    // half-pressed at a steady wheel throttles its pallet and the pressure
+    // rises into the bend, as when a player pushes the bellows harder. Chosen
+    // by ear over counting the pallet's opening, which took the hand's extra
+    // air away and let the pressure fall (Docs/decisions.md).
+    const double rate = 48000.0;
+    const auto pull = [](double s) { return 0.1 + 0.054 * s; };
+    auto open = Make(rate, 0), half = Make(rate, 0);
+    const Take a = Play(*open, rate, 1.6, { { 0.0, { kOn, 48, 90 } } }, pull);
+    const Take b = Play(*half, rate, 1.6, { { 0.0, { kOn, 48, 90 } }, { 0.6, { 0xD0, 127, 0 } } }, pull);
+    const double ratio = MeanPressure(b, rate, 1.2, 1.6) / MeanPressure(a, rate, 1.2, 1.6);
+    Expect(ratio > 1.5, "AssistHoldsHalfPressedKeys", "half-pressed against open C3 at one wheel speed, pressure ratio", ratio);
+}
+
 void WheelPlacementIsOneValue() {
     // A 14-bit pair arriving together places the hand once: no stroke from the
     // MSB alone, read on the 7-bit scale, to the full value.
@@ -814,6 +829,7 @@ int main() {
     HalfPressedKeys();
     AirButtonVents();
     AssistScalesTheHand();
+    AssistHoldsHalfPressedKeys();
     WheelPlacementIsOneValue();
     CoarseWheelGivesSteadyAir();
     MomentumSmoothsTheHand();

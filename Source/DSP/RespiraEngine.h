@@ -100,6 +100,7 @@ private:
         std::uint64_t order = 0;
         double open = 0.0, openRate = 0.0, closedFor = 0.0;   // key travel, 0 closed .. 1 down
         double depth = 1.0;      // travel the held key rests at (channel pressure)
+        bool settled = false;    // the pallet has reached the held key's travel
         double lift = 0.0;       // pallet opening for `open`
         CellSpec spec;
         Vent vent;               // the pallet hole's flow law at `lift`
