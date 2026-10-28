@@ -427,13 +427,19 @@ a pitch wheel should do what it says.
   and 10, and 17 and 5. A low key struck under full channel pressure
   overbends: A#2–G#3 fall 34–64 cents as the pressure climbs to 1.0–1.4 kPa,
   against at most 34 measured.
-- **The top octave speaks slowly, unchecked.** With the bellows already at
-  540 Pa, an A4 reaches its level about 50 ms after the key (some 20
+- **The top octave speaks slowly, half checked.** With the bellows already
+  at 540 Pa, an A4 reaches its level about 50 ms after the key (some 20
   periods), a C6 about 90 ms and a C7 about 130 ms (some 270 periods): the
   pallet's 3–12 ms lift is slow against a high reed's period, so it grows from
-  the gap's turbulence rather than from a kick. No measured onset times of
-  accordion reeds were found to check this against. The literature agrees in
-  direction only: high accordion reeds can be hard to sound when their
+  the gap's turbulence rather than from a kick. A recording has no key time,
+  so the wait before a note is heard is unchecked, but how fast it grows once
+  heard can be read from the bandoneon library's staccato notes (one take
+  each; 2 ms RMS, from −20 to −3 dB of the take's peak): 28–42 ms from C4 to
+  D5, 48–53 ms at A5 and C6, an uneven 104 ms at F5. Tango Bandoneon played
+  an octave up, so that the same two reeds sound, grows in 25–43 ms with the
+  bellows at 730 Pa (27–30 ms from F5 to C6) and 13–19 ms at 1.8 kPa: no
+  slower than the bandoneon, and at the top a little quicker. The literature
+  agrees in direction only: high accordion reeds can be hard to sound when their
   chamber's resonance comes near their pitch, and a 622 Hz reed's starting
   pressure peaked with its chamber tuned near twice its pitch (Cottingham,
   ICA 2016, preliminary); the model's C7 chamber resonates at 1.75 times its reed's pitch,
