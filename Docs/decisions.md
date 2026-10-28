@@ -187,13 +187,14 @@ resonance, within 2 dB of the layer up to 2 kHz, darker than it above about
 
 The bass side sounded through a voiced 2.5 kHz one-pole low-pass. The bass
 pallets open into the bass box, the space under the bass end cover, which
-vents through the cover's holes: the treble compartment's Helmholtz
-resonator, deeper and far less open (RespiraEngine.cpp, `kBassBoxDepth`).
-The typical values ship, 960 Hz at Q 1.3. On the Bassoon Low demo, whose high
-partials come mostly from the bass side, 4–8 kHz falls from −30.2 to −44.7 dB
-against 500 Hz–1 kHz. Pack `02-bass` (listening-2026-10-28): A the engine
-before, B 2.0 kHz (Q 0.85), C 960 Hz (shipping), D 550 Hz (Q 1.9). Verdict:
-pending.
+vents through the cover's holes: a perforated-panel Helmholtz resonator
+(RespiraEngine.cpp, `kBassBoxDepth`). The typical values ship, 960 Hz at
+Q 1.3. On the Bassoon Low demo, 2–4 kHz falls from −13.9 to −19.5 dB and
+4–8 kHz from −27.9 to −33.0 dB against 500 Hz–1 kHz. Pack `02-bass`
+(listening-2026-10-28): A the engine before, B 2.0 kHz (Q 0.85), C 960 Hz
+(shipping), D 550 Hz (Q 1.9). Verdict: pending. The packs 02–04 were
+re-rendered once the treble compartment was withdrawn; these figures are
+from them.
 
 ## 2026-10-28 — the breath's spectrum, by-ear verdict pending (engineering)
 
@@ -206,8 +207,8 @@ valve's hiss was already shaped so. The gap's breath now is too, with the
 same 0.3 mm eddies and the jet's speed from the bellows pressure (about
 15 kHz at 500 Pa), its variance kept at the estimate; the force that seeds the
 tongues stays white. On held Clarinet notes the floor between the harmonics
-rises 7–10 dB. Pack `03-clarinet` (listening-2026-10-28): A the engine before,
-B shaped (shipping), C shaped at half the fluctuation. Verdict: pending; the
+rises 7–9 dB below 8 kHz. Pack `03-clarinet` (listening-2026-10-28): A the
+engine before, B shaped (shipping), C shaped at half the fluctuation. Verdict: pending; the
 2026-10-27 breath verdict, also pending, was asked of the white version.
 
 ## 2026-10-28 — the air valve's hiss through the bass box, by-ear verdict pending (engineering)
@@ -216,7 +217,7 @@ The air valve is a hole in the bass end, under the bass end cover with the bass
 mechanism, so its jet's hiss leaves through the cover's holes like the bass
 reeds' sound; it went straight to the output. It now passes through the bass
 box: in the air-button passage its level is unchanged (−55 dBFS), and above
-2 kHz it falls 16–43 dB, a darker rush. Pack `04-air` (listening-2026-10-28):
+2 kHz it falls 16–44 dB, a darker rush. Pack `04-air` (listening-2026-10-28):
 A the engine before, B through the bass box (shipping). Verdict: pending.
 
 ## 2026-10-28 — three experiments not kept (engineering)
