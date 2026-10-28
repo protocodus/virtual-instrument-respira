@@ -329,7 +329,13 @@ and against Okada's C4 reed (2.5 Hz/kPa open; the model 1.4).
   0.14 mm, the gap of Adachi et al.'s reed).** At 0.14 mm the A5's harmonics
   grew with loudness as the bandoneon's do, but every other note's 5th and
   7th grew 0.3–0.7 dB per dB too fast, loudness rose 8.4 dB per doubling of
-  pressure in place of 5.8, and the C4 bent 0.8 Hz/kPa.
+  pressure in place of 5.8, and the C4 bent 0.8 Hz/kPa. At 0.07 mm (checked
+  again the same day, after the bandoneon benchmark reached the 15th) the
+  slopes of the 9th–15th fell to 0.40–0.65 dB per dB of mean error from
+  0.55–0.88, but the A#2–A3 15th–20th harmonics at 70 dBA fell 11 dB below
+  the one accordion measurement (6 dB now) and a half-pressed key lost 26 dB
+  (20 now, 11 measured): the two measurements pull the clearance opposite
+  ways, so it stays.
 
 The brass tip weights are what keep C2–B2 stiff, and they are plausible: a
 weighted C2 tongue's stiffness is close to a 50 mm steel strip's with a gram
