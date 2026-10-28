@@ -411,8 +411,13 @@ a pitch wheel should do what it says.
   here to show. Only a much lossier tongue comes close: four times the loss
   (a Q near 75 from F5 to C6, where the model has 290–320) makes them brighten
   as the bandoneon's do, though E4–D5 stay flat and the top tips then swing
-  3–5 % of their length. No measured Q of an accordion tongue in its slot
-  was found to say whether that is real, so the cause is not traced.
+  3–5 % of their length. No measured Q of an accordion tongue was found. The
+  nearest, a brass harmonica reed's 95 at 444 Hz (Millot and Baumann, Acta
+  Acustica 2007), would be 150–290 on a steel tongue of that pitch, which
+  carries two to three times its mass per area, if the air took all of that
+  loss: the model's 250 sits inside, 75 far below. Set to 150, only the C6
+  brightens as the bandoneon's does, so a lossier tongue is probably not the
+  cause either, and it is not traced.
 - **Half-pressed keys lose too much level.** In the same paper a player
   bent A#2–A3 by closing the pallet part way at a steady bellows pressure:
   16 cents flat on average and 11 dB quieter (the mean over the first twenty
@@ -442,7 +447,11 @@ a pitch wheel should do what it says.
   D5, 48–53 ms at A5 and C6, an uneven 104 ms at F5. Tango Bandoneon played
   an octave up, so that the same two reeds sound, grows in 25–43 ms with the
   bellows at 730 Pa (27–30 ms from F5 to C6) and 13–19 ms at 1.8 kPa: no
-  slower than the bandoneon, and at the top a little quicker. The literature
+  slower than the bandoneon, and at the top a little quicker. Both start dull
+  and brighten as they grow: as the bandoneon's E4–D5 cross −20 dB, their
+  3–10 kHz band sits 15–18 dB further below the whole than at the peak and
+  catches up within 20–40 ms (its C4 and C6 start bright, its F5 stays dull
+  for 80 ms); Respira's sits 12–15 dB below and catches up as fast. The literature
   agrees in direction only: high accordion reeds can be hard to sound when their
   chamber's resonance comes near their pitch, and a 622 Hz reed's starting
   pressure peaked with its chamber tuned near twice its pitch (Cottingham,

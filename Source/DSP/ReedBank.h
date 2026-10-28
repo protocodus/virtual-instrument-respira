@@ -93,7 +93,11 @@ inline ReedVariation Variation(int rank, int index, int side) {
     return { 1.0 + 0.10 * Unit(h), 1.0 + 0.20 * Unit(Hash(h, 1)), 0.8 * Unit(Hash(h, 2)) };
 }
 
-// The bare tongue's quality factor in air: a voicing estimate.
+// The bare tongue's quality factor in air: a voicing estimate. No accordion
+// tongue's has been found measured. A brass harmonica reed at 444 Hz has 95
+// (Millot and Baumann, Acta Acustica 93, 2007, Table 2: 12.95 x 2.1 mm,
+// 110 um); a steel tongue here carries two to three times its mass per area,
+// so with all of that loss in the air it would come to 150-290 at A4.
 inline double ReedQ(double hz) { return 250.0 * std::pow(hz / 440.0, 0.3); }
 
 // A reed sounds below its natural frequency under its air load; the tuning
