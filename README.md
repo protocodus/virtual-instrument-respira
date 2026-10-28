@@ -420,9 +420,9 @@ a pitch wheel should do what it says.
   matches it there. Above it the evidence is weak. Against the bandoneon
   samples' held notes (G2–A5 on Tango Bandoneon, harmonics per octave against
   1–2 kHz) Respira is brighter by 6 dB on average at 2–4 kHz, 7 dB at
-  4–8 kHz and 15 dB at 8–16 kHz; against 500 Hz–1 kHz the demos read 2–15 dB more than
-  a polka recording at 2–4 kHz and 11–19 dB more above 4 kHz (Bassoon Low,
-  through the bass box, 2–4 dB), and more again than a Hussong recording. The
+  4–8 kHz and 15 dB at 8–16 kHz; against 500 Hz–1 kHz the demos read 3–14 dB more than
+  a polka recording at 2–4 kHz and 11–20 dB more above 4 kHz (Bassoon Low,
+  through the bass box, 4 dB), and more again than a Hussong recording. The
   two recordings differ from each other by 10–15 dB up there, a bandoneon is
   not an accordion, and none of their microphones, distances or rooms is
   known. The chambers' ringing is not the cause: radiation at the pallet
