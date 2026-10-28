@@ -665,3 +665,24 @@ fall silent at 200 Pa. A real valveless reed would leak less only if the top
 reeds were set lower than the model's 0.24–0.28 mm, and no set for them was
 found; inventing one is outside what a listening test can license, so the
 reeds keep their valves.
+
+## 2026-10-28 — the tongue's drag by the oscillating-plate law, not kept (engineering)
+
+Not a listening decision; recorded so it is not tried again unexamined. The
+tongue's face-on drag coefficient is a constant 8, the middle of a flat
+plate's measured law in oscillating flow, Cd = 10 KC^−1/3 with
+KC = 2π (tip swing) / width (Keulegan and Carpenter 1958, as Graham 1980
+fitted it). With the law itself, the swing read each step from the tongue's
+displacement and velocity, small swings meet more drag and large ones less.
+Against the bandoneon (`CompareBandoneon`, loudest at 1.5 kPa) the pitch
+slopes moved towards it: over the loudest 15 dB a mean error of −0.22 cents
+per dB (−0.41 shipping), over 30 dB 0.01 (−0.12). The odd harmonics'
+loudness slopes barely moved (the A5's 9th–15th 0.16–0.87 dB per dB against
+0.07–0.76; the bandoneon's 1.42–2.10). Against Elejalde-García et al.
+(`CompareHarmonics`) the 2nd–20th fell from 2.9 to 3.2 dB RMS, and a
+half-pressed A#2–A3 bent 8.8 cents (8.5). The top octave's slow start at
+piano did not move: an A6 at 100 Pa grew by e every 0.13 s (0.12) and sounded
+4.6 dB softer. A better pitch slope against a worse fit to the one accordion
+measurement, with the bellows pressure behind the bandoneon's slopes
+unknown, does not decide it, and the law costs a cube root on every reed
+step, so the constant stays.

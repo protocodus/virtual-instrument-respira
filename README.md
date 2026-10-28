@@ -192,7 +192,10 @@ is made smaller, as reed makers do with wax in the top octaves. Against the
 one published harmonic measurement of an accordion's 8' reeds (A#2–A3, mezzo
 forte, 50 cm; `Tools/CompareHarmonics.cpp`), the 2nd–14th harmonics agree
 within 2.3 dB on average at its loudness, though the 2nd sits 9 dB under, and
-the 15th–20th average −13.9 dB against the measured −13.4. Heard without its chamber, a reed's gap flow
+the 15th–20th average −13.9 dB against the measured −13.4. The 2nd is low
+because, while the tongue seals its slot, the air it sweeps through arrives
+almost opposite the gap's own 2nd harmonic: at A3 the gap flow's 2nd is 7 dB
+under its fundamental, their sum's 23 dB. Heard without its chamber, a reed's gap flow
 agrees with a lab measurement of a real accordion-type reed block (Pomberger
 et al., DAGA 2021, E3, G4 and E6) within 1–6 dB over the first 15 harmonics.
 Every push and pull tongue differs a little
@@ -499,7 +502,14 @@ a pitch wheel should do what it says.
   from A2 to A5, 39 at C6, 85 at A6 and 130 at C7, and once started it is
   soon at 55 dBA (A6–B6 at 95–120 Pa), the paper's piano. There its A6–B6
   took 80–130 ms; Respira's take 1.1–1.3 s, growing slowly so near their
-  starting pressure, so soft high notes swell in late. A recording has no key time, so the wait
+  starting pressure, so soft high notes swell in late. How fast a swing
+  grows depends on how far above its starting pressure the reed is: an A6's
+  grows by a factor e every 0.53 s at 85 Pa, 0.12 s at 100 Pa and 20 ms at
+  200 Pa, so it reaches the measured times only from about 175 Pa, where it
+  is already 10–13 dB louder than at 100 Pa. Neither the oscillating-plate
+  law the tongue's drag coefficient comes from (Graham 1980, in place of its
+  constant 8) nor a set half or 1.7 times as high changes how steeply the
+  level rises just above the starting pressure. A recording has no key time, so the wait
   before a note is heard is unchecked, but how fast it grows once heard can be
   read from the bandoneon library's staccato notes (one take each; 2 ms RMS,
   from −20 to −3 dB of the take's peak): 28–42 ms from C4 to D5, 48–53 ms at
