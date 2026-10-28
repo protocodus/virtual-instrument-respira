@@ -638,7 +638,8 @@ measurement of attack times (Llanos-Vázquez et al. 2014, Acta Acustica 100,
 Table I), so the choice licenses that one fitted hinge; it is recorded as
 such beside the code. At 70 dBA A4–B4 now take 52–57 ms (measured 60–70),
 A5–B5 36–44 (50) and A6–B6 92–127 (60–100), where they took 65–71, 111–128
-and 215–311. The top reeds start from 15–27 % less pressure.
+and 215–311. The top reeds start from 28–37 % less pressure in their cells
+(A5 32 Pa, C6 39, A6 85, C7 130).
 
 What it costs: from A5 to C6 the pitch falls 0.50 cents per dB of loudness
 over the loudest 30 dB where the bandoneon's falls 0.36–0.37; a half-pressed
@@ -648,3 +649,19 @@ and master tune, which rebuilt each reed at the new pitch and so changed its
 tip share, put A4 1.1 cents short of +100. Master tune now retunes each tongue
 at its root and re-sets it as a reed is made, so a hard push still speaks at
 −100 cents; A4 reads −100.3 and +100.4.
+
+## 2026-10-28 — valveless reeds from C6 up, not kept (engineering)
+
+Not a listening decision; recorded so it is not tried again unexamined.
+Elejalde-García et al. (2021) found no half-pressed bend possible from C6 up
+and put it down to those tongues having no valve strips; practitioners say
+valves stop around B5–C6. With the reeds from C6 up valveless (the idle
+reed of the pair passing air back, its tongue blown away from its slot), a
+half-pressed C6–G6 bends 1–2 cents at 400 Pa, as measured, where the valved
+reeds bend 22–28. But the idle reed's set gap, open in parallel with the
+sounding one, shunts the chamber: an open C6–C7 cell sounds 15 dB quieter at
+200 Pa and starts from 100–300 Pa instead of 40–150, and half-pressed E6–G6
+fall silent at 200 Pa. A real valveless reed would leak less only if the top
+reeds were set lower than the model's 0.24–0.28 mm, and no set for them was
+found; inventing one is outside what a listening test can license, so the
+reeds keep their valves.

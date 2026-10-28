@@ -495,10 +495,11 @@ a pitch wheel should do what it says.
   forte, 70 dBA at 50 cm), played at that loudness A4–B4 take 52–57 ms
   (measured 60–70), A5–B5 36–44 ms (50) and A6–B6 92–127 ms (60–100); where
   the tongue's tip share stops falling, A5, was fitted to it. But a high reed
-  needs more pressure to start at all: 18–30 Pa from A2 to A4 in a cell
-  pulled steadily, 45 Pa at A5, 162 at A6 and 228 at C7, where 225–240 Pa
-  plays A6–B6 at 70 dBA, so the top octave has no piano, where the paper's
-  A6–B6 took 80–130 ms at 55 dBA. A recording has no key time, so the wait
+  needs more pressure to start at all: in its cell, drawing steadily, 24–32 Pa
+  from A2 to A5, 39 at C6, 85 at A6 and 130 at C7, and once started it is
+  soon at 55 dBA (A6–B6 at 95–120 Pa), the paper's piano. There its A6–B6
+  took 80–130 ms; Respira's take 1.1–1.3 s, growing slowly so near their
+  starting pressure, so soft high notes swell in late. A recording has no key time, so the wait
   before a note is heard is unchecked, but how fast it grows once heard can be
   read from the bandoneon library's staccato notes (one take each; 2 ms RMS,
   from −20 to −3 dB of the take's peak): 28–42 ms from C4 to D5, 48–53 ms at
