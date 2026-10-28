@@ -1,7 +1,7 @@
 // Engine contracts: air only from the hand's motion, pitch and pitch bend, rates and
 // Oversampling, routing, register switches on held keys, half-pressed keys,
 // the air button and Assist, the controller stream and the arm's momentum, block-partition
-// invariance and determinism, release and voice limits.
+// invariance and determinism, release and voice limits, the noise scaling.
 #include "DSP/RespiraEngine.h"
 #include "DSP/RespiraPresets.h"
 
@@ -681,6 +681,28 @@ void WidthGlides() {
     Expect(first - settled < -15.0, "WidthGlides", "its first ms against its settled change, dB", first - settled);
 }
 
+void CascadeVarianceScales() {
+    // The breath and the valve hiss divide their two-stage noise by the square
+    // root of CascadeVariance, so it has to match the cascade on the engine's
+    // own draw, from long eddies to short.
+    for (const double c : { 0.02, 0.2, 0.7 }) {
+        std::uint32_t noise = 1u;
+        double a = 0.0, b = 0.0, sum = 0.0, squares = 0.0;
+        const int warm = 10000, count = 4000000;
+        for (int i = 0; i < warm + count; ++i) {
+            noise = noise * 1664525u + 1013904223u;
+            a += c * (1.7320508075688772 * Unit(noise) - a);
+            b += c * (a - b);
+            if (i < warm) continue;
+            sum += b;
+            squares += b * b;
+        }
+        const double variance = squares / count - (sum / count) * (sum / count);
+        const double ratio = variance / CascadeVariance(c);
+        Expect(std::fabs(ratio - 1.0) < 0.02, "CascadeVarianceScales", "measured over predicted variance", ratio);
+    }
+}
+
 void NonFiniteControls() {
     const double rate = 48000.0;
     auto e = Make(rate, 3);
@@ -726,6 +748,7 @@ int main() {
     HardStrokesFit();
     LoudestCase();
     WidthGlides();
+    CascadeVarianceScales();
     NonFiniteControls();
     std::printf("%d failure(s)\n", failures);
     return failures == 0 ? 0 : 1;

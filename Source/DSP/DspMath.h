@@ -22,4 +22,11 @@ inline double Min(double a, double b) { return a < b ? a : b; }
 inline double Max(double a, double b) { return a > b ? a : b; }
 inline double Clamp(double x, double low, double high) { return x < low ? low : (x > high ? high : x); }
 
+// The variance two cascaded one-pole low-passes, y += c (x - y), leave of
+// unit-variance white noise: c^4 (1 + r^2) / (1 - r^2)^3, r = 1 - c.
+inline double CascadeVariance(double c) {
+    const double r = 1.0 - c, d = 1.0 - r * r;
+    return c * c * c * c * (1.0 + r * r) / (d * d * d);
+}
+
 } // namespace respira

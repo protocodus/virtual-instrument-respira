@@ -402,13 +402,12 @@ void Engine::Render(float* left, float* right, int frames) {
             const double q = Min(2.0 * p / (b + Sqrt(b * b + 4.0 * a * p)), p / (dt * kBellowsStiffness));
             vented = pressure >= 0.0 ? q : -q;
             // Two one-pole stages at the eddies' rate shape white noise, scaled
-            // back to unit variance (the cascade's c^4 (1 + a^2) / (1 - a^2)^3).
-            const double w = q / (kCd * area) / kValveEddy * dt, c = w / (1.0 + w), r = 1.0 - c;
+            // back to unit variance.
+            const double w = q / (kCd * area) / kValveEddy * dt, c = w / (1.0 + w);
             noise = noise * 1664525u + 1013904223u;
             valveNoiseA += c * (1.7320508075688772 * Unit(noise) - valveNoiseA);
             valveNoiseB += c * (valveNoiseA - valveNoiseB);
-            const double variance = c * c * c * c * (1.0 + r * r) / ((1.0 - r * r) * (1.0 - r * r) * (1.0 - r * r));
-            const double fluctuation = kValveBreath * q * valveNoiseB / Sqrt(Max(variance, 1.0e-30));
+            const double fluctuation = kValveBreath * q * valveNoiseB / Sqrt(Max(CascadeVariance(c), 1.0e-30));
             hiss = (fluctuation - valveSound) * rate;
             valveSound = fluctuation;
         } else if (valveSound != 0.0) {
@@ -420,12 +419,12 @@ void Engine::Render(float* left, float* right, int frames) {
         bend2 += bendSmoothing * (bend2Target - bend2);
 
         // Two one-pole stages at the eddies' rate, scaled back to the white
-        // draw's variance (the cascade's c^4 (1 + a^2) / (1 - a^2)^3). Below
-        // about 1 m/s the gap flow is laminar (ReedModel.h, kLaminar), which
-        // also keeps the scale finite as the bellows pressure passes zero.
+        // draw's variance. Below about 1 m/s the gap flow is laminar
+        // (ReedModel.h, kLaminar), which also keeps the scale finite as the
+        // bellows pressure passes zero.
         const double jet = Max(Sqrt(2.0 * Abs(pressure) / kRho), 1.0);
-        const double eddy = jet / kGapEddy * dtIn, ec = eddy / (1.0 + eddy), er = 1.0 - ec;
-        const double breathScale = 1.0 / Sqrt(Max(ec * ec * ec * ec * (1.0 + er * er) / ((1.0 - er * er) * (1.0 - er * er) * (1.0 - er * er)), 1.0e-30));
+        const double eddy = jet / kGapEddy * dtIn, ec = eddy / (1.0 + eddy);
+        const double breathScale = 1.0 / Sqrt(Max(CascadeVariance(ec), 1.0e-30));
         float tl[kMaxOversample] = {}, tr[kMaxOversample] = {}, b[kMaxOversample] = {};
         double drawn = 0.0, open = 0.0;
         int active = 0;
