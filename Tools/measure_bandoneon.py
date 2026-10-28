@@ -23,7 +23,7 @@ comes within 20 dB of its loudest frame, while within SPAN dB of it, so the
 attack is left out. The slopes are least squares fits against the level of
 the pitch in cents and of h_k - h_1 in dB, averaged over a note's takes.
 
-Each note has two reeds an octave apart, so only the odd harmonics (3, 5, 7)
+Each note has two reeds an octave apart, so only the odd harmonics (3 to 15)
 belong to the note's reed alone; the even ones mix in the octave reed.
 """
 from pathlib import Path
@@ -38,6 +38,7 @@ RIGHT = {"C": 60, "E": 64, "G": 67, "B": 71, "D": 74, "F": 77, "A": 81, "C3": 84
 LEFT = {"C": 36, "E": 40, "G": 43, "B": 47, "D": 50, "F": 53, "A": 57, "C2": 60}
 SHARP_CENTS = 12.0
 HARMONICS = 16
+ODD = (3, 5, 7, 9, 11, 13, 15)
 
 # The library's WAVs carry chunks scipy does not read; the audio is unaffected.
 warnings.filterwarnings("ignore", category=wavfile.WavFileWarning)
@@ -99,7 +100,7 @@ def slopes(path, key, span):
     begin = t[np.argmax(level > peak - 20)] + 0.3
     use = (t >= begin) & (level > peak - span)
     result = [np.polyfit(level[use], cents[use], 1)[0]]
-    for k in (3, 5, 7):
+    for k in ODD:
         y = h[use, k - 1] - h[use, 0]
         ok = np.isfinite(y)
         result.append(np.polyfit(level[use][ok], y[ok], 1)[0])
@@ -116,11 +117,12 @@ def main():
         if any(word in name for word in ("stac", "latigo", "exp ", "exp inz", "exp der")):
             continue
         takes.setdefault(note_of(name), []).append(path)
-    print("// key, cents/dB over the top 30 dB and 15 dB, d(h3, h5, h7 - h1)/d(level) over the top 30 dB")
+    print("// key, cents/dB over the top 30 dB and 15 dB, d(h3, h5 .. h15 - h1)/d(level) over the top 30 dB")
     for key in sorted(takes):
         wide = np.mean([slopes(p, key, 30) for p in takes[key]], axis=0)
         narrow = np.mean([slopes(p, key, 15)[0] for p in takes[key]])
-        print(f"    {{ {key}, {wide[0]:.2f}, {narrow:.2f}, {wide[1]:.2f}, {wide[2]:.2f}, {wide[3]:.2f} }},   // {len(takes[key])} takes")
+        odd = ", ".join(f"{v:.2f}" for v in wide[1:])
+        print(f"    {{ {key}, {wide[0]:.2f}, {narrow:.2f}, {{ {odd} }} }},   // {len(takes[key])} takes")
 
 
 if __name__ == "__main__":

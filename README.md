@@ -171,7 +171,8 @@ the microphone matters: over the loudest 15 dB, with the loudest at 1.5 kPa,
 single 8' cells go 0.47 cents flat per dB louder on average, as the
 bandoneon's do, and over the loudest 30 dB their 3rd, 5th and 7th harmonics
 gain 0.55–0.64 dB per dB on the fundamental against its 0.64–0.80. Below
-that the two part (Known gaps).
+that the two part, and from E4 up their 9th–15th harmonics hardly grow at all
+(Known gaps).
 
 The cells run at four times the host rate (192 kHz at 48 kHz) and are
 decimated by two half-band allpass stages; Oversampling at 2× or 4× runs them
@@ -393,9 +394,21 @@ a pitch wheel should do what it says.
   the bandoneon's softest notes were played at is not known, so this may be
   how loudness follows pressure rather than how pitch does; Okada's C4 reed
   (Adachi et al. 2026) falls 2.5 Hz per kPa with its pallet open against
-  Respira's 1.3, which points the same way. The A5 is the one note whose
-  tone parts: the bandoneon's 3rd–7th harmonics gain 1.2–1.7 dB per dB on its
-  fundamental, Respira's 0.2–0.6.
+  Respira's 1.3, which points the same way.
+- **A loud treble is not brighter.** Over the loudest 30 dB of the
+  bandoneon's held notes from E4 to C6, its 9th–15th harmonics gain 1.4 dB
+  per dB on the fundamental on average (0.9–2.1), so a forte note is much
+  brighter than a piano one; at the A5 even the 3rd–7th gain 1.2–1.7.
+  Respira's 8' cells gain 0.2 there (−0.4 to 0.8, `CompareBandoneon`); from
+  C2 to C4 the two agree (0.8 against 0.7), and over the loudest 15 dB the
+  gap is the same. None of the tongue's air drag and loss (changed until
+  tips up to F5 swing 15 % of their length at 600 Pa, a typical figure in
+  playing), the
+  slot's depth, the tongue's set, its clearance, the slot air's inertia, or
+  a second bending mode of the tongue moves it. A laser vibrometer sees a
+  harmonium reed's own motion gain harmonics as it is blown harder (Puranik
+  and Scavone, Forum Acusticum 2023), but a second mode driven by the same
+  pressure stays far too small here to show; the cause is not traced.
 - **Half-pressed keys lose too much level.** In the same paper a player
   bent A#2–A3 by closing the pallet part way at a steady bellows pressure:
   16 cents flat on average and 11 dB quieter (the mean over the first twenty
