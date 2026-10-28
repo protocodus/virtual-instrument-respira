@@ -90,6 +90,10 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
   resonance, so the tone is brighter above 2 kHz: the low notes' 15th–20th
   harmonics sit on the one published measurement instead of 7 dB under it
   (chosen by ear).
+- Low notes are in tune once they settle: the tuning was read before a low
+  reed's swing had finished growing, so C2–B2 sounded up to 3.5 cents sharp
+  at the tuning pressure, the bass buttons up to 2.7, and the 16' rank's
+  C1–B1 (Keyboard on every key) up to 17.
 
 ## Downloads
 
@@ -183,8 +187,9 @@ Every push and pull tongue differs a little
 from its neighbours (set ±10 %, loss ±20 %, tuning ±0.8 cents, fixed per
 instrument). A reed sounds below its natural frequency under load, so
 `Tools/GenerateReedTuning.cpp` simulates every reed in its chamber at 400 Pa
-and writes `Source/DSP/ReedTuning.h`, the natural-to-sounding ratios the
-engine builds reeds from at note-on. Pitch still moves with pressure as a real
+until its pitch settles (a C2 takes some 3 s, the 16' rank's C1 some 10 s) and
+writes `Source/DSP/ReedTuning.h`, the natural-to-sounding ratios the engine
+builds reeds from at note-on. Pitch still moves with pressure as a real
 reed's does: an A4 is within 2 cents at playing pressure (about 550 Pa) and
 about 8 cents flat when pressed at 1.4 kPa. Against a bandoneon's held notes
 from C2 to C6 (`Tools/CompareBandoneon.cpp`, from a Pianobook library by

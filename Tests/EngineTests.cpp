@@ -426,6 +426,32 @@ void TopOctaveSteady() {
     Expect(worst < 2.0, "TopOctaveSteady", "a held E6 or C7 on Oboe, 100 ms level off a straight line at most, dB", worst);
 }
 
+void LowReedHoldsItsTuning() {
+    // A low reed settles slowly: a C2 tongue's swing, and its pitch with it,
+    // grows for some 3 s at the tuning pressure. The tuning table is made from
+    // the settled pitch (Tools/ReedProbe.h); made from the growing one, this
+    // C2 sounded 3.3 cents sharp once settled. Here the hand holds the bellows
+    // at the tuning pressure on a pull, and the pitch is read off the strong
+    // 3rd harmonic, where the DFT's 0.02 Hz steps are 0.18 cents.
+    const double rate = 48000.0;
+    std::unique_ptr<Engine> e = Make(rate, 0, [](Controls& c) {
+        c[kKeyboard] = 1.0;
+        c[kMomentum] = 0.0;
+    });
+    double hand = 0.02, integral = 0.0;
+    const Take t = Play(*e, rate, 4.0, { { 0.3, { kOn, 36, 100 } } }, [&](double s) {
+        const double error = kTuningPressure * std::min(1.0, s / 0.3) + e->Diag().pressure;
+        integral += error / rate;
+        hand = std::min(1.0, hand + std::max(-0.05, 0.0014 * error + 0.0035 * integral) / rate);
+        return hand;
+    });
+    const double wanted = NoteHz(36) * std::pow(2.0, Variation(kRankM, TuningIndex(kRankM, 36), 1).tuneCents / 1200.0);
+    Expect(std::fabs(MeanPressure(t, rate, 3.0, 4.0) + kTuningPressure) < 20.0, "LowReedHoldsItsTuning",
+           "pull pressure held, Pa", -MeanPressure(t, rate, 3.0, 4.0));
+    const double cents = Cents(PeakHz(t.left, rate, 3.0, 4.0, 3.0 * wanted), 3.0 * wanted);
+    Expect(std::fabs(cents) < 1.0, "LowReedHoldsItsTuning", "C2 on Clarinet at the tuning pressure, cents off its tuning", cents);
+}
+
 void HalfPressedKeys() {
     // Channel pressure holds the keys part way down; at full pressure the
     // pallet stays lifted 1 mm, where a strong bellows bends the reed flat and
@@ -893,6 +919,7 @@ int main() {
     SplitKeyboardRouting();
     RegisterActsOnHeldNotes();
     TopOctaveSteady();
+    LowReedHoldsItsTuning();
     HalfPressedKeys();
     AirButtonVents();
     AssistScalesTheHand();

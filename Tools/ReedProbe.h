@@ -19,36 +19,47 @@ constexpr double kRate = 192000.0;
 
 // Frequency of a push reed (with its chamber) speaking at bellows pressure p,
 // from the tongue's upward crossings of its mean once it has settled; 0 if it
-// does not speak.
+// does not speak. Low reeds settle slowly: their pitch rises as their swing
+// grows, a C2 for some 3 s and the 16' rank's C1 for some 10 s at 400 Pa, so a
+// fixed run read them several cents flat and tuned them that much sharp. The
+// reed runs in windows of 0.25 s (at least 40 periods), for at most 20 s, until
+// two in a row agree within 0.005 cents, or one swings less than the last and
+// under a fifth of the slot depth: a reed dying away.
 inline double SoundingHz(const ReedSpec& reed, const ChamberSpec& chamber, double nominalHz, double p,
                          double rate = kRate) {
     CellState s;
     s.push.x = s.pull.x = reed.rest;
     const double dt = 1.0 / rate;
-    const int n = static_cast<int>(rate * std::fmin(1.6, 0.35 + 60.0 / nominalHz));
-    const int from = n * 6 / 10;
-    std::vector<double> xs(static_cast<std::size_t>(n - from));
-    for (int i = 0; i < n; ++i) {
-        double air = 0.0;
-        StepCell(reed, reed, chamber, MakeVent(chamber, std::fmin(1.0, i / (0.004 * rate)), rate), s, p, dt, rate, 0.0, 0.0, air);
-        if (i >= from) xs[static_cast<std::size_t>(i - from)] = s.push.x;
-    }
-    double mean = 0.0, low = 1.0, high = -1.0;
-    for (double x : xs) { mean += x; low = std::fmin(low, x); high = std::fmax(high, x); }
-    mean /= static_cast<double>(xs.size());
-    if (high - low < 0.2 * reed.plate) return 0.0;
-    double first = -1.0, last = -1.0, previous = xs[0];
-    int crossings = 0;
-    for (std::size_t i = 1; i < xs.size(); ++i) {
-        if (previous < mean && xs[i] >= mean) {
-            const double t = (static_cast<double>(i) - 1.0 + (mean - previous) / (xs[i] - previous)) / rate;
-            if (first < 0.0) first = t;
-            last = t;
-            ++crossings;
+    const int window = static_cast<int>(rate * std::fmax(0.25, 40.0 / nominalHz)), windows = static_cast<int>(20.0 * rate) / window;
+    std::vector<double> xs(static_cast<std::size_t>(window));
+    double hz = 0.0, swing = 0.0;
+    for (int w = 0, i = 0; w < windows; ++w) {
+        for (double& x : xs) {
+            double air = 0.0;
+            StepCell(reed, reed, chamber, MakeVent(chamber, std::fmin(1.0, i++ / (0.004 * rate)), rate), s, p, dt, rate, 0.0, 0.0, air);
+            x = s.push.x;
         }
-        previous = xs[i];
+        double mean = 0.0, low = 1.0, high = -1.0;
+        for (double x : xs) { mean += x; low = std::fmin(low, x); high = std::fmax(high, x); }
+        mean /= static_cast<double>(xs.size());
+        if (high - low < 0.2 * reed.plate && high - low < swing) return 0.0;
+        swing = high - low;
+        double first = -1.0, last = -1.0, previous = xs[0];
+        int crossings = 0;
+        for (std::size_t j = 1; j < xs.size(); ++j) {
+            if (previous < mean && xs[j] >= mean) {
+                const double t = (static_cast<double>(j) - 1.0 + (mean - previous) / (xs[j] - previous)) / rate;
+                if (first < 0.0) first = t;
+                last = t;
+                ++crossings;
+            }
+            previous = xs[j];
+        }
+        const double next = crossings > 2 ? (crossings - 1) / (last - first) : 0.0;
+        if (next > 0.0 && hz > 0.0 && swing >= 0.2 * reed.plate && std::fabs(1200.0 * std::log2(next / hz)) < 0.005) return next;
+        hz = next;
     }
-    return crossings > 2 ? (crossings - 1) / (last - first) : 0.0;
+    return swing >= 0.2 * reed.plate ? hz : 0.0;
 }
 
 // Radiated source strength (m^3/s^2) of one cell over its last `analysed` of
