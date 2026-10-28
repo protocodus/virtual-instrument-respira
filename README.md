@@ -265,7 +265,10 @@ a pitch wheel should do what it says.
   realtime for the Master Tutti demo, 0.02× for the single clarinet reed),
   and a chord change briefly doubles that while the released chambers close.
   Only the reed gap's constants are made once per reed (about 7 % of the
-  time); the reed step itself is not optimised.
+  time). Running the oversampled steps outside the chamber loop, and one
+  reciprocal of the gap area per reed step in place of three divisions,
+  were tried and changed nothing measurable (within the container's ±3 %
+  timing noise), so the reed step itself stays as written.
 - **Chord buttons are pitch classes**, not Stradella's fixed major, minor,
   seventh and diminished rows, and there are no bass register switches.
 - **One turbulence seed.** Two engines given the same input play identical
