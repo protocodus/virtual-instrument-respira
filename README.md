@@ -169,8 +169,9 @@ ear: at mezzo forte the low tongues swing inside them. Each chamber is a
 channel as long as its reed, closed under the tongue's tip and open at the
 root end to the pallet hole, simulated as a duct in sections of at most 5 mm
 (halving them moves the harmonics by under 1 dB below 8 kHz and 2.5 dB
-above); the gap's air enters, and its pressure acts on the tongue, along the
-slot where the gap opens. A chamber whose resonance would fall near its reed
+above), 10 mm on the bass side, whose bass box hides the difference (every
+demo within 0.1 dB in every octave band); the gap's air enters, and its
+pressure acts on the tongue, along the slot where the gap opens. A chamber whose resonance would fall near its reed
 is made smaller, as reed makers do with wax in the top octaves. Against the
 one published harmonic measurement of an accordion's 8' reeds (A#2–A3, mezzo
 forte, 50 cm; `Tools/CompareHarmonics.cpp`), the 2nd–14th harmonics agree
@@ -354,14 +355,18 @@ a pitch wheel should do what it says.
   demo phrases read −9 VU, not by a measured level; no recording of a real accordion is
   part of the model or its tests.
 - **CPU.** A full-register chord over bass and chords (28 chambers) takes
-  about a third of one core in the development container at 48 kHz (0.32×
-  realtime for the Master Tutti demo, 0.03× for the single clarinet reed),
+  under a third of one core in the development container at 48 kHz (0.28×
+  realtime for the Master Tutti demo, 0.02× for the single clarinet reed),
   and a chord change briefly doubles that while the released chambers close.
-  Only the reed gap's constants are made once per reed (about 7 % of the
-  time). Running the oversampled steps outside the chamber loop, and one
-  reciprocal of the gap area per reed step in place of three divisions,
-  were tried and changed nothing measurable (within the container's ±3 %
-  timing noise), so the reed step itself stays as written.
+  The reed chambers' ducts are about a quarter of it, and the rest is close
+  to what the model's arithmetic needs. Rewrites that kept the output bit
+  for bit (the cells stepped side by side, the push and pull reeds in two
+  lanes, the duct's loops two sections at a time or fused into one) gained
+  nothing measurable or ran slower, as did one reciprocal of the gap area per
+  reed step and the oversampled steps outside the chamber loop (within the
+  container's ±5 % timing noise). Treble sections of 7.5 or 10 mm would save
+  about 10–15 % but take 3–21 dB off 8–16 kHz, a cut made by the grid, not
+  the physics.
 - **The mechanism's level and brightness.** No measurement of how loud an
   accordion's mechanism is against its reeds was found, so Mechanics is in
   dB against an estimate: the key's own radiation, while the force really

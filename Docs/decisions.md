@@ -489,3 +489,16 @@ gives 1.3). The harmonic measurement rejects that: at the pressure that reads
 its 70 dBA (428 Pa with the smaller holes) the 15th–20th fall to −19.9 dB
 against the measured −13.4, and a half-pressed key, the pallet opened 0.2,
 falls silent. The shipping hole stays, and the open slope stays a known gap.
+
+## 2026-10-28 — the bass side's chambers in 10 mm sections (engineering)
+
+Not a listening decision; recorded so it is not taken for physics. Asked to
+bring the CPU cost down, the bass and chord reeds' ducts take sections of up
+to 10 mm instead of 5. Their sound leaves through the bass box, whose
+resonance near 960 Hz takes off what the longer sections change: with the
+tuning table regenerated (bass entries move by at most 0.19 cents) every demo
+stays within 0.1 dB of the 5 mm duct in every octave band from 62 Hz to
+24 kHz. Bassoon Low renders 8–9 % faster and Master Tutti 3–5 %. At 15 mm
+Master Tutti's lowest octave moved 0.6 dB, at 20 mm 1.4 dB, so 10 mm is the
+longest kept. The treble side stays at 5 mm: 7.5 mm there took 3–6 dB off
+8–16 kHz and 10 mm up to 21 dB, a cut the grid makes, not the chamber.
