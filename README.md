@@ -159,7 +159,11 @@ rests at 0.30, a pallet opening of 0.2 (about 1 mm), where the reed's pitch
 follows the bellows pressure as a half-pressed key's does. The model's C4
 falls 5.9 Hz per kPa there against the 5.1 Hz/kPa measured with the pallet
 lifted 1 mm (Adachi et al., Forum Acusticum 2026), and 1.5 Hz/kPa fully open
-against 2.5. Up to 72 chambers sound at once; a new one takes
+against 2.5. At the 70 dBA of a published bend measurement, a half-pressed
+A#2–A3 at a steady bellows pressure falls 13 cents, close to the 16 a player
+reached with the finger alone, but loses 20 dB where the player's lost 11
+(Known gaps).
+Up to 72 chambers sound at once; a new one takes
 the oldest released chamber first.
 
 ### Registers and the bass side
@@ -298,6 +302,19 @@ a pitch wheel should do what it says.
   (`Docs/decisions.md`). Separately, against 500 Hz–1 kHz the demos read 3–9 dB more than a
   polka recording at 1–4 kHz; the recording's distance, room and registers
   are not known, and the cause is not traced.
+- **Half-pressed keys lose too much level.** In the same paper a player
+  bent A#2–A3 by closing the pallet part way at a steady bellows pressure:
+  16 cents flat on average and 11 dB quieter (the mean over the first twenty
+  harmonics). Respira's 8' cells at that loudness, with the pallet opened 0.2
+  as full channel pressure holds it, fall 13 cents and 20 dB
+  (`CompareHarmonics`), so for a given bend they lose about twice the level.
+  At a steady wheel, Assist adds to it: it counts each reed by its pallet's
+  opening, but a half-open pallet's reed still draws 0.3–0.9 of its open air,
+  so half-pressing takes the hand's extra air away and the pressure falls; a
+  low note bent after it sounds barely moves (C3: 2 cents, 11 dB quieter),
+  and one struck under full channel pressure can fade out. Counting held keys
+  in full instead raises the pressure into the bend but overbends A#2–C#3
+  (37–81 cents against at most 34 measured); a listening test of the two is pending.
 - **The top octave speaks slowly, unchecked.** With the bellows already at
   540 Pa, an A4 reaches its level about 50 ms after the key (some 20
   periods), a C6 about 90 ms and a C7 about 130 ms (some 270 periods): the
@@ -330,7 +347,8 @@ The offline tools: `RenderRespira <preset> <in.mid> <out.wav> [trace.csv]`
 renders any MIDI file with a trace of the hand and the bellows;
 `ProbeReed [pressure] [rank]` prints what single reeds sound and the air they
 take; `CompareHarmonics [pressure]` sets the first twenty harmonics of single
-8' notes against a published accordion measurement; `GenerateReedTuning Source/DSP/ReedTuning.h` re-tunes every reed after
+8' notes, and how far a half-open pallet bends them, against a published
+accordion measurement; `GenerateReedTuning Source/DSP/ReedTuning.h` re-tunes every reed after
 a change to the reed model. `python3 Tools/fit_bellows.py
 build-dsp/RenderRespira` re-fits the demo strokes and
 `python3 Tools/write_preset_midi.py` writes the demo MIDI.

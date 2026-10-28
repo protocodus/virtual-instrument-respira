@@ -23,6 +23,12 @@
 // source); a real accordion's body and room would read louder at the same
 // pressure. Each note is analysed over its last half second: a Hann-windowed
 // DFT at each harmonic of the sounding pitch, the levels averaged in dB.
+//
+// The same paper bent those notes by closing the pallet part way at a steady
+// bellows pressure ("only finger", Tables 1 and 2): 16.1 cents flat and
+// 11.1 dB quieter on average, the level being the mean over the first twenty
+// harmonics. Respira's cells are bent at the same pressure with the pallet
+// opened 0.2, as full channel pressure holds it (kHalfPressed, RespiraEngine.cpp).
 #include "ReedProbe.h"
 #include "DSP/ReedTuning.h"
 
@@ -42,10 +48,11 @@ constexpr std::array<double, kHarmonics> kMeasured { {
     -9.9, -12.7, -12.9, -15.5, -12.8, -16.7, -11.2, -14.8, -12.3, -12.6,
 } };
 constexpr double kMeasuredDbA = 70.0, kDistance = 0.5, kSeconds = 2.0, kAnalysed = 0.5;
+constexpr double kMeasuredBendCents = -16.1, kMeasuredBendDb = -11.1, kHalfPressedOpening = 0.2;
 
 // Radiated source strength (m^3/s^2) of `key`'s 8' cell over its last
-// kAnalysed seconds at bellows pressure -pressure.
-std::vector<double> Play(int key, double pressure) {
+// kAnalysed seconds at bellows pressure -pressure, the pallet opened `opening`.
+std::vector<double> Play(int key, double pressure, double opening) {
     const CellSpec spec = MakeCell(kRankM, key, 0.0, kReedTuning[kRankM][TuningIndex(kRankM, key)]);
     CellState s;
     s.push.x = spec.push.rest;
@@ -55,7 +62,7 @@ std::vector<double> Play(int key, double pressure) {
     std::vector<double> out;
     for (int i = 0; i < n; ++i) {
         double air = 0.0;
-        const double radiated = StepCell(spec.push, spec.pull, spec.chamber, MakeVent(spec.chamber, std::fmin(1.0, i / (0.004 * rate)), rate),
+        const double radiated = StepCell(spec.push, spec.pull, spec.chamber, MakeVent(spec.chamber, opening * std::fmin(1.0, i / (0.004 * rate)), rate),
                                          s, -pressure, dt, rate, 0.0, 0.0, air);
         if (i >= from) out.push_back(radiated);
     }
@@ -109,16 +116,23 @@ double AWeight(double f) {
 struct Note {
     std::array<double, kHarmonics> harmonics {};   // dB re the fundamental
     double dbA = 0.0;                               // at kDistance in free field
+    double cents = 0.0;                             // sounding pitch re the key's
+    double level = 0.0;                             // mean of the harmonics' levels, dB
 };
 
-Note Analyse(int key, double pressure) {
-    const std::vector<double> x = Play(key, pressure);
-    const double f0 = Pitch(x, 440.0 * std::pow(2.0, (key - 69) / 12.0)), h1 = Amplitude(x, f0);
+Note Analyse(int key, double pressure, double opening) {
+    const std::vector<double> x = Play(key, pressure, opening);
+    const double nominal = 440.0 * std::pow(2.0, (key - 69) / 12.0);
+    const double f0 = Pitch(x, nominal), h1 = Amplitude(x, f0);
     Note note;
+    note.cents = 1200.0 * std::log2(f0 / nominal);
     double power = 0.0;
     for (int n = 1; n <= kLevelHarmonics; ++n) {
         const double a = Amplitude(x, n * f0);
-        if (n <= kHarmonics) note.harmonics[static_cast<std::size_t>(n - 1)] = 20.0 * std::log10(a / h1);
+        if (n <= kHarmonics) {
+            note.harmonics[static_cast<std::size_t>(n - 1)] = 20.0 * std::log10(a / h1);
+            note.level += 20.0 * std::log10(a) / kHarmonics;
+        }
         const double rms = kRho / (4.0 * kPi * kDistance) * a / std::sqrt(2.0);
         power += rms * rms * std::pow(10.0, AWeight(n * f0) / 10.0);
     }
@@ -126,13 +140,15 @@ Note Analyse(int key, double pressure) {
     return note;
 }
 
-Note AnalyseAll(double pressure) {
+Note AnalyseAll(double pressure, double opening = 1.0) {
     Note mean;
     for (int key = kLow; key <= kHigh; ++key) {
-        const Note note = Analyse(key, pressure);
+        const Note note = Analyse(key, pressure, opening);
         for (int n = 0; n < kHarmonics; ++n)
             mean.harmonics[static_cast<std::size_t>(n)] += note.harmonics[static_cast<std::size_t>(n)] / (kHigh - kLow + 1);
         mean.dbA += note.dbA / (kHigh - kLow + 1);
+        mean.cents += note.cents / (kHigh - kLow + 1);
+        mean.level += note.level / (kHigh - kLow + 1);
     }
     return mean;
 }
@@ -179,5 +195,9 @@ int main(int argc, char** argv) {
     std::printf("\n\nmean of     2-4   5-8  9-14 15-20\n");
     bands("measured", kMeasured);
     bands("Respira", model.harmonics);
+    const Note bent = AnalyseAll(pressure, kHalfPressedOpening);
+    std::printf("\nbent, pallet opened %.1f   cents    dB\n", kHalfPressedOpening);
+    std::printf("%-23s%8.1f%6.1f\n", "measured (only finger)", kMeasuredBendCents, kMeasuredBendDb);
+    std::printf("%-23s%8.1f%6.1f\n", "Respira", bent.cents - model.cents, bent.level - model.level);
     return 0;
 }
