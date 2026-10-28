@@ -699,8 +699,11 @@ show. Probed offline with Tango Bandoneon's pair (16' and 8' at the
 bandoneon's key + 12), each cell's channel meeting at one hole of their
 two holes' area: over the loudest 30 dB from G4 to C6, the 9th–15th
 harmonics gained 0.49 dB per dB on the fundamental on average, against 0.27
-through separate holes and the bandoneon's 1.45. A fifth of the gap, for
-an engine that would group cells by key and solve each key's junction every
-step, retune every register whose reeds now pull on each other, and put the
-musette's beating at risk of locking, is not enough to make the change on
-this evidence.
+through separate holes and the bandoneon's 1.45. The musette's three
+reeds did not lock through the shared hole, but at 300 Pa their beating
+flattened (the envelope's swing 3.5 dB against 5.1 at A4, 2.6 against 4.3
+at A3) and its rate moved by up to 0.6 Hz (A5, 9.75 Hz against 9.14). A
+fifth of the gap, for an engine that would group cells by key and solve
+each key's junction every step, retune every register whose reeds now pull
+on each other and change the musette's beating, is not enough to make the
+change on this evidence.
