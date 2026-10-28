@@ -196,6 +196,7 @@ constexpr int kMaxSections = 16;   // the longest chamber, 75 mm, in 5 mm sectio
 struct ChamberSpec {
     double ventArea = 0.0;           // this chamber's share of the open pallet hole, m^2
     double palletInertance = 0.0;    // air mass of the open pallet hole, kg/m^4
+    double endInertance = 0.0;       // the part of it that is the outer end's air mass, kg/m^4
     double channelInertance = 0.0;   // air mass from the last section's middle to the hole, kg/m^4
     int sections = 1;
     double sectionStiffness = 0.0;   // rho c^2 / a section's volume, Pa per m^3
@@ -219,8 +220,9 @@ struct ChamberSpec {
 // with the same weights. Tips at the closed end match the measurement; at the
 // pallet hole the 15th-20th fell 16 dB under it, and with the two tongues
 // riveted at opposite ends some keys stayed silent on a sudden hard push
-// (Docs/decisions.md). The duct's wall losses (about 0.3 dB over a 61 mm
-// channel at 8 kHz) and the hole's radiation resistance are left out.
+// (Docs/decisions.md). The duct's wall losses are left out: about 0.3 dB
+// over a 61 mm channel at 8 kHz, though at a chamber's first resonance, where
+// the air passes many times, they would take another 2-4 dB off its peak.
 //
 // Bass-side reeds sit behind the larger pallets and longer air passages of the
 // bass mechanism (bassBox): 1.7x the hole area and twice the air path. Without
@@ -236,6 +238,7 @@ inline ChamberSpec MakeChamber(const ReedSpec& r, double f0, bool bassBox, doubl
     const double path = bassBox ? 2.0 : 1.0;
     c.ventArea = 6.0e-5 * std::sqrt(L / 0.026) * (bassBox ? 1.7 : 1.0);
     c.palletInertance = path * kRho * (0.006 + 1.7 * std::sqrt(c.ventArea / kPi)) / c.ventArea;
+    c.endInertance = kRho * 0.85 * std::sqrt(c.ventArea / kPi) / c.ventArea;
     const auto inertance = [&] { return c.palletInertance + path * kRho * 0.6 * L / (width * depth); };
     const double minResonance = 1.4 * f0, w = 2.0 * kPi * minResonance;
     // f_H = 1 / (2 pi sqrt(M V / (rho c^2))), lumped: shrink the depth until
@@ -262,6 +265,7 @@ inline ChamberSpec MakeChamber(const ReedSpec& r, double f0, bool bassBox, doubl
 struct CellState {
     ReedState push, pull;
     double vent = 0.0;       // flow out of the pallet hole, m^3/s
+    double endFlow = 0.0;    // the part of it that moves the outer end's air mass, m^3/s
     double p[kMaxSections] = {};       // each section's pressure, Pa (relative to the room)
     double u[kMaxSections + 1] = {};   // flow into each section from the closed end's side; u[sections] is the vent
 };
@@ -269,8 +273,16 @@ struct CellState {
 // The pallet hole's flow law at opening `open` (0 closed .. 1 open) and time
 // step 1 / invDt. It changes only while the pallet moves, so the engine keeps
 // it from step to step.
+//
+// The hole's outer end radiates into the room: its end correction's air mass
+// (0.85 a, flanged) works in parallel with the radiation resistance rho c / A,
+// Beranek's circuit for a piston in a baffle (Acoustics, 1954): a resistance
+// rising as f^2 under the mass well below ka = 1, and rho c / A above. Without
+// it the chambers' standing waves rang at Q 70-370 (A3, E4 and A5 under a
+// swept flow); with it at 26-48.
 struct Vent {
     double inertia = 0.0, a = 0.0, b = 0.0, b2 = 0.0;
+    double end = 0.0, endStep = 0.0;   // the outer end's load per step, and dt over its air mass
     bool open = false;
 };
 
@@ -278,21 +290,25 @@ inline Vent MakeVent(const ChamberSpec& c, double open, double invDt) {
     Vent v;
     if (open <= 0.0) return v;
     const double area = c.ventArea * open;
-    v.inertia = (c.channelInertance + c.palletInertance / open) * invDt;
+    v.inertia = (c.channelInertance + (c.palletInertance - c.endInertance) / open) * invDt;
+    v.endStep = open / (c.endInertance * invDt);
+    v.end = 1.0 / (v.endStep + area / (kRhoC2 / 343.0));
     v.a = 0.5 * kRho / (kCd * kCd * area * area);
-    v.b = kLaminar / area + v.inertia;
+    v.b = kLaminar / area + v.inertia + v.end;
     v.b2 = v.b * v.b;
     v.open = true;
     return v;
 }
 
 // Flow through the pallet hole (positive out to the room), implicit like the gap.
-inline double StepVent(const Vent& v, double pressure, double flow) {
-    if (!v.open) return 0.0;
-    const double drive = pressure + v.inertia * flow;
+inline double StepVent(const Vent& v, double pressure, double flow, double& endFlow) {
+    if (!v.open) return endFlow = 0.0;
+    const double drive = pressure + v.inertia * flow + v.end * endFlow;
     const double m = Abs(drive);
     const double out = 2.0 * m / (v.b + Sqrt(v.b2 + 4.0 * v.a * m));
-    return drive >= 0.0 ? out : -out;
+    const double flowOut = drive >= 0.0 ? out : -out;
+    endFlow += v.endStep * v.end * (flowOut - endFlow);
+    return flowOut;
 }
 
 // One step of a whole cell at bellows pressure pb through the pallet hole
@@ -307,7 +323,7 @@ inline double StepCell(const ReedSpec& push, const ReedSpec& pull, const Chamber
     for (int i = 0; i < n; ++i) reedPressure += chamber.weight[i] * s.p[i];
     const double intoChamber = StepReed(push, s.push, pb - reedPressure, dt, invDt, pushForce, tune2, flowNoise);
     const double outOfChamber = StepReed(pull, s.pull, reedPressure - pb, dt, invDt, pullForce, tune2, flowNoise);
-    const double vent = StepVent(hole, s.p[n - 1], s.vent);
+    const double vent = StepVent(hole, s.p[n - 1], s.vent, s.endFlow);
     const double radiated = (vent - s.vent) * invDt;
     s.vent = vent;
     // Flows from the old pressures, then pressures from the new flows.

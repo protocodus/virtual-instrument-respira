@@ -707,3 +707,40 @@ fifth of the gap, for an engine that would group cells by key and solve
 each key's junction every step, retune every register whose reeds now pull
 on each other and change the musette's beating, is not enough to make the
 change on this evidence.
+
+## 2026-10-28 — the pallet hole radiates into the room (engineering)
+
+Not a listening decision: adopted under the owner's standing direction to
+take well-grounded candidates, with A (before) and B (after) rendered for
+the owner to hear. The pallet hole's outer end carried only its air mass,
+an end correction of 0.85 a; the radiation resistance a hole in a board
+meets was missing, so above the reed the chamber lost energy only through
+the jet, and under a swept flow its standing waves rang at Q 68 and 366
+(A5, at 3.4 and 11.0 f0), 90 (E4, 6.3 f0) and 101 (A3, 8.1 f0). The outer
+end is now Beranek's circuit for a piston in a baffle (Acoustics, 1954):
+the same end mass in parallel with ρc/A, which is the mass alone at low
+frequencies, a resistance rising as f² below ka = 1 (1.4 times the exact
+flanged piston's there) and ρc/A above. It adds no constant: ρ, c, the
+hole's area and its end correction were already the model's.
+
+- The resonances fall to Q 26 and 48 (A5; the one at 11 f0 is 25 dB
+  lower), 33 (E4) and 37 (A3).
+- `CompareHarmonics` (A#2–A3 at 70 dBA, now 175 Pa): the 2nd–14th stay
+  within 2.3 dB of the measurement on average, the 2nd 8.3 dB under (9.0
+  before), the 15th–20th −13.9 dB against the measured −13.4 (unchanged);
+  half-pressed, 8.6 cents and 12.2 dB (8.5 and 12.1).
+- `CompareBandoneon`: every pitch and harmonic slope within 0.03 of before.
+- The demos, octave bands against 500 Hz–1 kHz: 0.6–1.5 dB less at
+  4–8 kHz and 0–2.4 dB less at 8–16 kHz (Bassoon Low most), spectral
+  centroids 75–175 Hz lower. Against the bandoneon's held notes the mean
+  excess falls from 6.1, 8.1 and 15.5 dB at 2–4, 4–8 and 8–16 kHz to 5.8,
+  7.2 and 14.5. The demos stay 11–20 dB brighter than a polka recording
+  above 4 kHz, so the chambers' ringing was not the cause of that gap.
+- CPU: within the run-to-run spread on seven demos, Master Tutti 6 % more.
+
+The duct's visco-thermal wall losses (Kirchhoff's boundary layers) were
+probed with it, taken at each chamber's first resonance: Q 20–24, another
+2–4 dB off the peaks. They are not added. They grow as √f, so a fixed
+coefficient is right only at the one frequency it is taken at, and the
+thermal half, as a fixed conductance, would leak the chamber's mean
+pressure, for a third of what the radiation did at the peaks.

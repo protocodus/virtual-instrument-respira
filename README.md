@@ -101,6 +101,10 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
   reed's swing had finished growing, so C2–B2 sounded up to 3.5 cents sharp
   at the tuning pressure, the bass buttons up to 2.7, and the 16' rank's
   C1–B1 (Keyboard on every key) up to 17.
+- Each pallet hole radiates into the room as a hole in a board does, its air
+  meeting the room's resistance as well as its own mass: the reed chambers'
+  resonances ring at Q 26–48 instead of 70–370, and the demos are 0.6–1.5 dB
+  softer at 4–8 kHz and up to 2.4 dB above.
 
 ## Downloads
 
@@ -187,15 +191,18 @@ root end to the pallet hole, simulated as a duct in sections of at most 5 mm
 (halving them moves the harmonics by under 1 dB below 8 kHz and 2.5 dB
 above), 10 mm on the bass side, whose bass box hides the difference (every
 demo within 0.1 dB in every octave band); the gap's air enters, and its
-pressure acts on the tongue, along the slot where the gap opens. A chamber whose resonance would fall near its reed
+pressure acts on the tongue, along the slot where the gap opens. The pallet
+hole's outer end radiates: its air mass works in parallel with the radiation
+resistance ρc/A, as a piston in a baffle does (Beranek), so the chambers'
+standing waves ring at Q 26–48. A chamber whose resonance would fall near its reed
 is made smaller, as reed makers do with wax in the top octaves. Against the
 one published harmonic measurement of an accordion's 8' reeds (A#2–A3, mezzo
 forte, 50 cm; `Tools/CompareHarmonics.cpp`), the 2nd–14th harmonics agree
-within 2.3 dB on average at its loudness, though the 2nd sits 9 dB under, and
+within 2.3 dB on average at its loudness, though the 2nd sits 8 dB under, and
 the 15th–20th average −13.9 dB against the measured −13.4. The 2nd is low
 because, while the tongue seals its slot, the air it sweeps through arrives
 almost opposite the gap's own 2nd harmonic: at A3 the gap flow's 2nd is 7 dB
-under its fundamental, their sum's 23 dB. Heard without its chamber, a reed's gap flow
+under its fundamental, their sum's 22 dB. Heard without its chamber, a reed's gap flow
 agrees with a lab measurement of a real accordion-type reed block (Pomberger
 et al., DAGA 2021, E3, G4 and E6) within 1–6 dB over the first 15 harmonics.
 Every push and pull tongue differs a little
@@ -227,7 +234,7 @@ rests at 0.38, a pallet opening of 0.32, where the model's C4 falls the
 5.1 Hz per kPa of bellows pressure measured with the pallet lifted 1 mm
 (Adachi et al., Forum Acusticum 2026); fully open it falls 2.3 Hz/kPa
 against the measured 2.5. At the 70 dBA of a published bend measurement, a
-half-pressed A#2–A3 at a steady bellows pressure falls 8.5 cents and loses
+half-pressed A#2–A3 at a steady bellows pressure falls 8.6 cents and loses
 12 dB, where a player's fell 16 cents and lost 11 with the finger alone
 (Known gaps).
 Up to 72 chambers sound at once; a new one takes
@@ -412,14 +419,16 @@ a pitch wheel should do what it says.
   50 cm) reaches only the 20th harmonic, 4.4 kHz, and the reed chamber's duct
   matches it there. Above it the evidence is weak. Against the bandoneon
   samples' held notes (G2–A5 on Tango Bandoneon, harmonics per octave against
-  1–2 kHz) Respira sits 6 dB from them on average at 4–8 kHz but 13 dB
-  brighter at 8–16 kHz; against 500 Hz–1 kHz the demos read 2–15 dB more than
+  1–2 kHz) Respira is brighter by 6 dB on average at 2–4 kHz, 7 dB at
+  4–8 kHz and 15 dB at 8–16 kHz; against 500 Hz–1 kHz the demos read 2–15 dB more than
   a polka recording at 2–4 kHz and 11–19 dB more above 4 kHz (Bassoon Low,
   through the bass box, 2–4 dB), and more again than a Hussong recording. The
   two recordings differ from each other by 10–15 dB up there, a bandoneon is
   not an accordion, and none of their microphones, distances or rooms is
-  known. The duct leaves out its wall losses (about 0.3 dB over a 61 mm
-  channel at 8 kHz), the pallet hole's radiation resistance, the chamber's
+  known. The chambers' ringing is not the cause: radiation at the pallet
+  hole took their resonances from Q 70–370 to 26–48, and the demos above
+  4 kHz by only 0.6–2.4 dB. The duct leaves out its wall losses (they would
+  take another 2–4 dB off its resonances' peaks), the chamber's
   irregular shape and the tongue inside it, and puts both tongues' tips at
   its closed end: the measurement favours that (at the pallet hole the
   15th–20th fell 16 dB under it), but no drawing of a reed block was found to
@@ -476,7 +485,7 @@ a pitch wheel should do what it says.
   paper a player bent A#2–A3 by closing the pallet part way at a steady
   bellows pressure: 16 cents flat on average and 11 dB quieter (the mean
   over the first twenty harmonics). Respira's 8' cells at that loudness, with
-  the pallet opened 0.32 as full channel pressure holds it, fall 8.5 cents
+  the pallet opened 0.32 as full channel pressure holds it, fall 8.6 cents
   and 12 dB (`CompareHarmonics`). The player found no bend possible from C6
   up, on tongues with no valves; Respira's all have valves, and a single cell
   from E5 to G6 bends 12–23 cents at 200 Pa and 22–28 at 400.
