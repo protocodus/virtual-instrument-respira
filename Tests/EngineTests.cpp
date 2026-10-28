@@ -1,4 +1,4 @@
-// Engine contracts: air only from the hand's motion, pitch and pitch bend, rates and
+// Engine contracts: air only from the hand's motion, the bellows' turn, pitch and pitch bend, rates and
 // Oversampling, routing, register switches on held keys, half-pressed keys,
 // the air button and Assist, the controller stream and the arm's momentum, block-partition
 // invariance and determinism, release and voice limits, the noise scaling.
@@ -151,6 +151,34 @@ void AirFromMotion() {
     Expect(std::fabs(pullCents) < 4.0, "AirFromMotion", "pull reed sounds A4, cents", pullCents);
     Expect(std::fabs(pushCents) < 4.0, "AirFromMotion", "push reed sounds A4, cents", pushCents);
     Expect(Db(Rms(t.left, rate, 2.5, 3.8)) > -50.0, "AirFromMotion", "the push is audible, dBFS RMS", Db(Rms(t.left, rate, 2.5, 3.8)));
+}
+
+void TurnWithoutClick() {
+    // Turning the bellows passes the pressure through zero, where the sounding
+    // reed stops and its partner starts. A click there would stand out in the
+    // top octaves, read here as the second difference (rising 12 dB per
+    // octave) in 2 ms frames: within 50 ms of the zero crossing they stay
+    // below their highest while the note sounds.
+    const double rate = 48000.0;
+    auto e = Make(rate, 0);
+    const Take t = Play(*e, rate, 3.0, { { 0.0, { kOn, 69, 100 } } }, PullThenPush);
+    std::size_t cross = 0;
+    for (std::size_t i = static_cast<std::size_t>(2.0 * rate / 32); i < t.pressure.size() && cross == 0; ++i)
+        if (t.pressure[i] > 0.0) cross = i * 32;
+    const auto frame = static_cast<std::size_t>(0.002 * rate), near = static_cast<std::size_t>(0.05 * rate);
+    double sounding = 0.0, turn = 0.0;
+    for (std::size_t a = 2; a + frame <= t.left.size(); a += frame) {
+        double sum = 0.0;
+        for (std::size_t i = a; i < a + frame; ++i) {
+            const double d = static_cast<double>(t.left[i]) - 2.0 * t.left[i - 1] + t.left[i - 2];
+            sum += d * d;
+        }
+        const double rms = std::sqrt(sum / static_cast<double>(frame)), at = static_cast<double>(a) / rate;
+        if (at >= 1.0 && at < 1.8) sounding = std::max(sounding, rms);
+        if (cross > 0 && a + frame + near > cross && a < cross + near) turn = std::max(turn, rms);
+    }
+    Expect(cross > 0, "TurnWithoutClick", "the pressure turns after the hand, s", static_cast<double>(cross) / rate);
+    Expect(Db(turn) < Db(sounding), "TurnWithoutClick", "top octaves at the turn against the sounding note, dB", Db(turn) - Db(sounding));
 }
 
 void StillnessStopsTheSound() {
@@ -728,6 +756,7 @@ void NonFiniteControls() {
 int main() {
     SilentWithoutMotion();
     AirFromMotion();
+    TurnWithoutClick();
     StillnessStopsTheSound();
     RatesKeepTheSound();
     OversamplingKeepsTheSound();
