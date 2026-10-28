@@ -385,14 +385,18 @@ a pitch wheel should do what it says.
   shut there instead, as a diagnostic, the 4th comes within 3.3 dB and the
   2nd–16th within 2.4 dB RMS (4.2 now), though the 2nd falls 5 dB low and
   the 3rd–7th of C2–A3 then grow 0.0–0.6 dB per dB of loudness, against
-  the bandoneon's 0.4–1.1 and 0.5–1.0 now. A real accordion tongue does not pass
-  below its frame (Cottingham, CCRMA lecture notes, 2013), and one filmed in
-  its plate spends more of each period inside the slot as the flow grows
-  (Nussbaumer and Agarwal, ICA 2016); Respira's pass theirs at 600 Pa from D5
-  down. A thicker plate only lets them swing further, and the measured loss
-  (below) rules out a lossier tongue, so what holds a real tongue inside its
-  slot is not traced. The measured accordion dips at its 4th harmonic too,
-  about 7 dB under its neighbours.
+  the bandoneon's 0.4–1.1 and 0.5–1.0 now. A real accordion tongue does not
+  pass below its frame (Cottingham, CCRMA lecture notes, 2013), and one
+  filmed in its plate spends more of each period inside the slot as the flow
+  grows (Nussbaumer and Agarwal, ICA 2016); but plate thickness varies from
+  instrument to instrument, and a free-reed tongue commonly swings 15 % of
+  its length (Cottingham, Physics Today, 2011). Respira's tongues swing
+  about a tenth of theirs and pass their plates at 600 Pa from D5 down. Plates half as
+  thick again keep A#2–A3 inside at the measurement's loudness, which brings
+  the 4th onto it and the 2nd–16th within 2.2 dB RMS, but let them swing
+  further and pass from about 500 Pa; no measured plate thickness was found,
+  and the measured loss (below) rules out a lossier tongue. The measured
+  accordion dips at its 4th harmonic too, about 7 dB under its neighbours.
 - **Soft low notes hold their pitch.** Over the loudest 30 dB of a
   bandoneon's held notes its pitch rises 0.39 cents per dB softer on average,
   0.34–0.62 from C2 to D3, steadily down to the softest. Respira's 8' cells,
