@@ -40,8 +40,8 @@ struct Stop {
 // A treble key and the fingertip riding on it, at the key front: 5 mm of dip,
 // as reported for a Scandalli Air.
 inline constexpr Stop kTrebleKey { 0.020, 0.005, &kKeyFelt };
-// The key and its pallet, at the pallet: the 5 mm lift the pallet holes
-// assume (RespiraEngine.cpp, kHalfPressed: lifted 1 mm, open 0.2).
+// The key and its pallet, at the pallet: taken to lift as far as the key
+// front dips.
 inline constexpr Stop kTreblePallet { 0.010, 0.005, &kRestCloth };
 // A bass, chord or air button and its rod: about 3 mm of travel, the
 // thickness of a button top, as repairers give it.

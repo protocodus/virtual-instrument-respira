@@ -54,7 +54,7 @@ constexpr std::array<double, 8> kRegisterTrimDb { { 3.45, 3.93, 1.39, 0.0, 1.46,
 // pressure within tens of milliseconds and 23 dB above ordinary playing,
 // where a chord struck at velocity 127 is 7-9 dB, so they need a faster,
 // firmer guard. Its 2 ms look-ahead limiter holds what gets past at -1.5 dBFS.
-constexpr protocodus::CompressorSettings kBellowsGuard { -15.0, 4.0, 20.0, 0.02, 0.0, 0.3 };
+constexpr protocodus::CompressorSettings kBellowsGuard { -18.0, 6.0, 5.0, 0.02, 0.0, 0.3 };
 // The bass pallets open into the bass box, the space under the bass end cover
 // round the bass mechanism, which vents through the cover's holes: a
 // perforated-panel Helmholtz resonator (Compartment::Set). Typical values: 40
@@ -76,12 +76,15 @@ constexpr double kBassBoxDepth = 0.04, kBassBoxOpen = 0.10, kBassHoleLength = 0.
 constexpr double kOpenSeconds = 0.012, kOpenVelocity = 0.009;  // pallet lift: 12 ms soft .. 3 ms hard
 constexpr double kCloseSeconds = 0.008;
 constexpr double kQuietSeconds = 0.02;      // a closed chamber is let go after this
-// Key travel at full channel pressure: a pallet opening of 0.2 (raised cosine
-// of the travel), where the model's C4 falls 4.2 Hz per kPa of bellows
-// pressure against the 5.1 Hz/kPa Okada measured with the pallet lifted 1 mm
-// (Adachi et al., "Aerodynamic mechanism of accordion pitch bending", Forum
-// Acusticum 2026). Fully open the model falls 1.3 Hz/kPa, measured 2.5.
-constexpr double kHalfPressed = 0.29517;    // acos(1 - 2 * 0.2) / pi
+// Key travel at full channel pressure: the pallet opening (raised cosine of
+// the travel) at which the model's C4 falls the 5.1 Hz per kPa of bellows
+// pressure Okada measured with the pallet lifted 1 mm (Adachi et al.,
+// "Aerodynamic mechanism of accordion pitch bending", Forum Acusticum 2026),
+// 0.32 of the open area. Okada's own model fits that pallet with 150/35 the
+// open one's loss coefficient, 0.48 of its area; a fifth of a 5 mm lift, 0.2,
+// silenced half-pressed low keys at mezzo forte, where Elejalde-Garcia et al.
+// (2021) measured them bent 11 dB under open.
+constexpr double kHalfPressed = 0.38278;    // acos(1 - 2 * 0.32) / pi
 constexpr double kTurbulence = 2.0e-3;      // gap turbulence force per Pa of bellows pressure and m^2
 constexpr double kNoiseRate = 192000.0;     // internal rate the turbulence levels are set at
 // The gap jet's flow fluctuation (ReedModel.h, breath) has the spectrum of its
@@ -356,12 +359,8 @@ void Engine::StartCell(int rank, int key, int source, int velocity) {
         cell->spec = MakeCell(rank, key, controls[kMusette], kReedTuning[rank][index], rate * kBaseOversample);
         if (masterTune != 0.0) {
             const double scale = std::pow(2.0, masterTune / 1200.0);
-            const ReedVariation pushV = Variation(rank, index, 0), pullV = Variation(rank, index, 1);
-            const double q = ReedQ(cell->spec.hz);
-            const double pushHz = Sqrt(cell->spec.push.omega2) / (2.0 * kPi) * scale;
-            const double pullHz = Sqrt(cell->spec.pull.omega2) / (2.0 * kPi) * scale;
-            cell->spec.push = MakeReed(pushHz, q * pushV.qScale, pushV.setScale);
-            cell->spec.pull = MakeReed(pullHz, q * pullV.qScale, pullV.setScale);
+            Retune(cell->spec.push, scale);
+            Retune(cell->spec.pull, scale);
         }
         cell->state = CellState {};
         cell->breathA = cell->breathB = 0.0;

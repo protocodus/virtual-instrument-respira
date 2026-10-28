@@ -458,17 +458,20 @@ void HalfPressedKeys() {
     // quietens it. Okada measured C4 falling 5.1 Hz per kPa of bellows
     // pressure there (Adachi et al., Forum Acusticum 2026). Played here as a
     // push on Clarinet's C4, the pressure rising as the half-open pallet
-    // passes less air.
+    // passes less air. Played 24 dB down and read back up, so the output
+    // stage stays out of it: its 5:1 from -9 VU squeezed the 7 dB the reed
+    // quietens by to 3.
     const double rate = 48000.0;
     struct Result { double hz, db, pa; };
-    const auto push = [rate](double speed, int amount, double releaseAt) {
-        auto e = Make(rate, 0);
+    const auto push = [rate](double speed, int amount, double releaseAt, double length = 2.0) {
+        auto e = Make(rate, 0, [](Controls& c) { c[kVolume] -= 24.0; });
         const auto channelPressure = static_cast<std::uint8_t>(amount);
-        const Take t = Play(*e, rate, 2.0, { { 0.0, { kOn, 60, 100 } }, { 0.0, { 0xD0, channelPressure, 0 } },
-                                             { releaseAt, { 0xD0, 0, 0 } } },
+        const Take t = Play(*e, rate, length, { { 0.0, { kOn, 60, 100 } }, { 0.0, { 0xD0, channelPressure, 0 } },
+                                                { releaseAt, { 0xD0, 0, 0 } } },
                             [speed](double s) { return 0.9 - speed * s; });
-        return Result { PeakHz(t.left, rate, 1.2, 2.0, releaseAt < 2.0 || amount == 0 ? 261.63 : 254.0),
-                        Db(Rms(t.left, rate, 1.2, 2.0)), MeanPressure(t, rate, 1.2, 2.0) };
+        const double from = length - 0.8;
+        return Result { PeakHz(t.left, rate, from, length, releaseAt < length || amount == 0 ? 261.63 : 254.0),
+                        Db(Rms(t.left, rate, from, length)) + 24.0, MeanPressure(t, rate, from, length) };
     };
     const Result open = push(0.2, 0, 9.0), half = push(0.2, 127, 9.0), gentle = push(0.1, 127, 9.0);
     Expect(Cents(half.hz, open.hz) < -20.0, "HalfPressedKeys", "full channel pressure on a strong push, cents", Cents(half.hz, open.hz));
@@ -477,9 +480,11 @@ void HalfPressedKeys() {
     const double slope = (half.hz - gentle.hz) / ((half.pa - gentle.pa) * 1.0e-3);
     Expect(slope < -0.6 * 5.1 && slope > -1.6 * 5.1, "HalfPressedKeys",
            "half-pressed C4 against bellows pressure, Hz/kPa (Okada: -5.1)", slope);
-    const Result released = push(0.2, 127, 0.8);
-    Expect(std::fabs(Cents(released.hz, open.hz)) < 3.0, "HalfPressedKeys", "pressure let go: back to the open pitch, cents",
-           Cents(released.hz, open.hz));
+    // Read once the bellows is back at the open take's pressure: 0.4 s after
+    // letting go it was still 85 Pa above it.
+    const Result released = push(0.2, 127, 0.8, 3.0), settled = push(0.2, 0, 9.0, 3.0);
+    Expect(std::fabs(Cents(released.hz, settled.hz)) < 3.0, "HalfPressedKeys", "pressure let go: back to the open pitch, cents",
+           Cents(released.hz, settled.hz));
 }
 
 void AirButtonVents() {
@@ -523,7 +528,9 @@ void AssistHoldsHalfPressedKeys() {
     const Take a = Play(*open, rate, 1.6, { { 0.0, { kOn, 48, 90 } } }, pull);
     const Take b = Play(*half, rate, 1.6, { { 0.0, { kOn, 48, 90 } }, { 0.6, { 0xD0, 127, 0 } } }, pull);
     const double ratio = MeanPressure(b, rate, 1.2, 1.6) / MeanPressure(a, rate, 1.2, 1.6);
-    Expect(ratio > 1.5, "AssistHoldsHalfPressedKeys", "half-pressed against open C3 at one wheel speed, pressure ratio", ratio);
+    // It rises 15 % with the half-pressed pallet at 0.32 of its area; counting
+    // the opening, the pressure fell to 0.64 of open.
+    Expect(ratio > 1.0, "AssistHoldsHalfPressedKeys", "half-pressed against open C3 at one wheel speed, pressure ratio", ratio);
 }
 
 void WheelPlacementIsOneValue() {
@@ -743,14 +750,14 @@ void RegistersSitTogether() {
 
 void TypicalLevel() {
     // The output reference puts ordinary playing at -9 on Reason's VU meter:
-    // the demo phrases read -9.6 VU at their median while a reed sounds
+    // the demo phrases read -8.9 VU at their median while a reed sounds
     // (measured 2026-10-28). Here a C3, a C4-E4-G4 triad, a C6 and the
     // reference chord on the reference stroke and Init's controls stand in for
     // them; that stroke is firmer than most of the phrases', and their median
-    // reads -4.6 VU. It read -5.8 while the output compressor took hold from
-    // -9 VU, which the phrases' louder notes reach and these gestures sit in. A change to the output reference, the output stage or the reed
-    // model re-checks both. Key velocity only sets how fast a pallet lifts, so
-    // it does not move these levels.
+    // reads -5.7 VU, inside the output compressor's knee from -9 VU, which the
+    // phrases' louder notes reach too. A change to the output reference, the
+    // output stage or the reed model re-checks both. Key velocity only sets
+    // how fast a pallet lifts, so it does not move these levels.
     const double rate = 48000.0;
     const auto stroke = [](double t) {
         const double s = t < 2.0 ? t / 2.0 : 1.0 - (t - 2.0) / 2.0;
@@ -767,7 +774,7 @@ void TypicalLevel() {
     }
     std::sort(levels.begin(), levels.end());
     const double median = 0.5 * (levels[levels.size() / 2 - 1] + levels[levels.size() / 2]);
-    Expect(std::fabs(median - -4.6) < 1.0, "TypicalLevel", "median VU of the reference gestures", median);
+    Expect(std::fabs(median - -5.7) < 1.0, "TypicalLevel", "median VU of the reference gestures", median);
 }
 
 void HardStrokesFit() {
@@ -807,7 +814,7 @@ void HardPushSpeaks() {
     // A key held first, then the whole wheel swept in under half a second, on
     // a pull and on a push: the bellows reaches the arm's full pressure before
     // the reed swings. A tongue that pressure could blow into its slot would
-    // sit there silent (ReedModel.h, the tip weights); C3-G#4 on Bassoon
+    // sit there silent (ReedModel.h, the set); C3-G#4 on Bassoon
     // stayed at -61 to -68 dBFS so. Every one speaks within 0.45 s.
     const double rate = 48000.0;
     double quietest = 0.0;

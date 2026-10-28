@@ -28,7 +28,7 @@
 // bellows pressure ("only finger", Tables 1 and 2): 16.1 cents flat and
 // 11.1 dB quieter on average, the level being the mean over the first twenty
 // harmonics. Respira's cells are bent at the same pressure with the pallet
-// opened 0.2, as full channel pressure holds it (kHalfPressed, RespiraEngine.cpp).
+// opened 0.32, as full channel pressure holds it (kHalfPressed, RespiraEngine.cpp).
 #include "ReedProbe.h"
 #include "DSP/ReedTuning.h"
 
@@ -48,7 +48,7 @@ constexpr std::array<double, kHarmonics> kMeasured { {
     -9.9, -12.7, -12.9, -15.5, -12.8, -16.7, -11.2, -14.8, -12.3, -12.6,
 } };
 constexpr double kMeasuredDbA = 70.0, kDistance = 0.5, kSeconds = 2.0, kAnalysed = 0.5;
-constexpr double kMeasuredBendCents = -16.1, kMeasuredBendDb = -11.1, kHalfPressedOpening = 0.2;
+constexpr double kMeasuredBendCents = -16.1, kMeasuredBendDb = -11.1, kHalfPressedOpening = 0.32;
 
 // Radiated source strength (m^3/s^2) of `key`'s 8' cell over its last
 // kAnalysed seconds at bellows pressure -pressure, the pallet opened `opening`.
@@ -151,7 +151,7 @@ int main(int argc, char** argv) {
     bands("measured", kMeasured);
     bands("Respira", model.harmonics);
     const Note bent = AnalyseAll(pressure, kHalfPressedOpening);
-    std::printf("\nbent, pallet opened %.1f   cents    dB\n", kHalfPressedOpening);
+    std::printf("\nbent, pallet opened %.2f  cents    dB\n", kHalfPressedOpening);
     std::printf("%-23s%8.1f%6.1f\n", "measured (only finger)", kMeasuredBendCents, kMeasuredBendDb);
     std::printf("%-23s%8.1f%6.1f\n", "Respira", bent.cents - model.cents, bent.level - model.level);
     return 0;

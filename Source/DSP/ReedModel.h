@@ -35,6 +35,9 @@ constexpr double kCd = 0.65;          // discharge coefficient of the reed gap
 constexpr double kSteelDensity = 7850.0;
 constexpr double kSteelE = 2.0e11;
 constexpr double kMaxPressure = 2500.0;  // what the player's arm can put on the bellows, Pa
+// Beside the tongue in its slot: a repairer gives 0.0015 in (0.038 mm) beside
+// a properly voiced high A's tongue (Accordion Revival).
+constexpr double kClearance = 0.03e-3;
 // Laminar term of the gap pressure drop, so the flow law stays smooth near zero
 // flow: it equals the Bernoulli term at about 1 m/s.
 constexpr double kLaminar = 0.6;
@@ -61,12 +64,14 @@ struct ReedState {
 // cantilever whose length and width follow typical accordion reed sizes; its
 // thickness is whatever gives f0 with that length. Real tongues are profiled
 // (thinner towards the tip), which leaves less mass at the tip than a uniform
-// strip; short treble tongues are profiled hardest. profileMass is that share,
-// a voicing estimate (0.6 for long tongues down to 0.3 for 10 mm ones). A
-// repairer gives about 0.05 mm at the free end of the smallest piccolo
-// tongues (Accordion Revival, "Accordion Repair 3"), a share of 0.17 on a
-// linear taper, but those sound above the model's highest reed. How fast the top reeds
-// start follows this share (README, Known gaps).
+// strip; short treble tongues are profiled hardest. profileMass is that share:
+// 0.6 for long tongues, falling from 30 mm (E4) to 0.18 at 19 mm (A5) and
+// above. 0.18 is a linear taper to the 0.05 mm tip a repairer gives the
+// smallest piccolo tongues (Accordion Revival, "Accordion Repair 3") and a
+// reed maker the highest notes (rec.music.makers.squeezebox, 2004). Where the
+// fall ends, A5, puts A5-B6's attacks at 36-127 ms from -50 to -5 dB, where
+// Llanos-Vazquez et al. (2014, Acta Acustica 100, Table I) measured 50-100;
+// with 0.3 they took 111-311. The share above 30 mm stays a voicing estimate.
 inline ReedSpec MakeReed(double f0, double q, double setScale = 1.0) {
     // q is the bare tongue's quality factor in air.
     ReedSpec r;
@@ -79,26 +84,27 @@ inline ReedSpec MakeReed(double f0, double q, double setScale = 1.0) {
     // measurement (Elejalde-Garcia et al. 2021; Tools/CompareHarmonics).
     r.plate = 0.0018 + 0.0225 * r.length;
     r.rest = -(0.0001 + 0.010 * r.length) * setScale;
-    // The same repairer gives 0.0015 in (0.038 mm) beside a properly voiced
-    // high A's tongue.
-    const double clearance = 0.03e-3;
-    r.clearArea = (2.0 * r.length + r.width) * clearance;
+    r.clearArea = (2.0 * r.length + r.width) * kClearance;
     // First cantilever mode: f = 0.1615 (t / L^2) sqrt(E / rho).
     const double thickness = f0 * r.length * r.length / (0.1615 * std::sqrt(kSteelE / kSteelDensity));
-    const double profileMass = 0.3 + 0.3 * std::fmin(1.0, std::fmax(0.0, (r.length - 0.010) / 0.020));
+    const double profileMass = 0.18 + 0.42 * std::fmin(1.0, std::fmax(0.0, (r.length - 0.019) / 0.011));
     const double tongueMass = profileMass * 0.25 * kSteelDensity * r.length * r.width * thickness;
     r.area = 0.39 * r.length * r.width;
     const double w0 = 2.0 * kPi * f0;
     // Low reeds carry brass tip weights, which keep the tongue stiff enough not
     // to be blown statically through its slot: at most an eighth of the slot
-    // depth of static deflection at 1 kPa, and short of the slot by at least
-    // its clearance at the arm's full pressure. Without the second, a reed the
-    // bellows reached full pressure on before it swung sat at the slot's mouth
-    // and never spoke (293 of the 706, 62-415 Hz), as an accordion's reeds
-    // choke when set too low. The weight adds mass, not air loss, so the
-    // damping stays that of the bare tongue (and Q rises).
-    const double stiffness = std::fmax(tongueMass * w0 * w0,
-        std::fmax(r.area * 1000.0 / (0.125 * r.plate), r.area * kMaxPressure / (-r.rest - clearance)));
+    // depth of static deflection at 1 kPa. A reed the bellows reaches the
+    // arm's full pressure on before it swings must still stop short of the
+    // slot by its clearance, or it sits at the slot's mouth and never speaks,
+    // as an accordion's reeds choke when set too low. Weighting the tongue for
+    // that made the low reeds rise more slowly; setting it higher instead was
+    // chosen by ear (Docs/decisions.md). At C4 that gives 0.32 mm/kPa of tip
+    // compliance and 2.3 Hz/kPa of pitch fall with the pallet open, where Okada
+    // measured 0.24 and 2.5 on one reed set 0.3 mm high (this one 0.8 mm;
+    // Adachi et al., Forum Acusticum 2026). The weight adds mass, not air
+    // loss, so the damping stays that of the bare tongue (and Q rises).
+    const double stiffness = std::fmax(tongueMass * w0 * w0, r.area * 1000.0 / (0.125 * r.plate));
+    r.rest = std::fmin(r.rest, -(r.area * kMaxPressure / stiffness + kClearance));
     const double mass = stiffness / (w0 * w0);
     r.invMass = 1.0 / mass;
     r.omega2 = w0 * w0;
@@ -123,6 +129,16 @@ inline ReedSpec MakeReed(double f0, double q, double setScale = 1.0) {
     r.cube = r.length * r.length * r.length;
     r.cube3 = 3.0 * r.length * r.length;
     return r;
+}
+
+// The same tongue retuned by `scale` at its root, then set as MakeReed sets
+// it: high enough that the arm's full pressure cannot blow it into its slot,
+// where a softened low reed choked (HardPushSpeaks at -100 cents). Rebuilding
+// the reed at the new pitch instead changed its tip share, which left A4 1 cent
+// short of a 100-cent master tune.
+inline void Retune(ReedSpec& r, double scale) {
+    r.omega2 *= scale * scale;
+    r.rest = std::fmin(r.rest, -(r.area * kMaxPressure * r.invMass / r.omega2 + kClearance));
 }
 
 // Gap area for tip displacement x. The tongue bends as (s/L)^2 along its length,

@@ -553,3 +553,98 @@ half-pressed level loss not at all, and `CompareHarmonics` rejects it: the
 instead of 2.1 (−10.1 dB on the fundamental against −5.7 measured and the
 shipping −7.8). Adachi's model
 has no slot, so the two air masses may overlap; the slot's stays alone.
+
+## 2026-10-28 — the output compressor from −9 VU at 5:1, C chosen by ear (owner; engineering)
+
+Pack `12-dynamics` (listening-2026-10-28): Paris Musette, a bass, a chord
+button and a treble triad on four strokes, each with the hand twice as fast
+as the last. A the knee from −5 to −1 VU at 20:1 (main), B from −12 to −6 VU
+at 3.5:1, C from −9 to −3 VU at 5:1; the limiter the same. Not level-matched,
+because the level of the harder strokes was what was being judged: their
+loudest 300 ms read −13.0, −5.0, −2.6 and −2.6 VU in A, −13.0, −6.5, −4.0 and
+−3.3 in C. Verdict, by ear: C.
+
+C ships: a harder stroke still gets louder at the top, at the cost of firm
+ordinary playing coming down a little. The demo phrases read −8.9 VU at their
+median (with the low reeds of 13-bend and the bellows refitted to them), the
+hardest strokes −2.1 VU at most and peak at the limiter's −1.5 dBFS. The
+reference gestures' median in `TypicalLevel` moves from −4.6 to −5.7 VU and
+is re-pinned with that reason beside it; `HalfPressedKeys` now plays 24 dB
+down, below the stage, because its 5:1 squeezed the 7 dB a half-pressed reed
+quietens by to 3.
+
+## 2026-10-28 — lighter low reeds set higher, with a wider half-pressed pallet, B chosen by ear (owner; engineering)
+
+Pack `13-bend` (listening-2026-10-28): the 05-bend passage on Clarinet Solo.
+A main; B the low reeds weighted only so that 1 kPa bends a tongue at most an
+eighth of its slot depth, set higher so that the arm's full pressure still
+leaves each short of its slot (11-attack's B), and full channel pressure
+holding the pallet at 0.32 of its open area instead of 0.2. Matched on
+whole-file RMS (A −0.33 dB). Verdict, by ear: B.
+
+0.32 is a measurement's, not a fit to the ear: it is the opening at which the
+model's C4 falls the 5.1 Hz per kPa Okada measured with the pallet lifted
+1 mm (Adachi et al., Forum Acusticum 2026); Okada's own model gives that
+pallet 0.48 of the open area. 0.2 had assumed 1 mm to be a fifth of a 5 mm
+lift, and with B's reeds silenced half-pressed low keys at mezzo forte.
+
+What it licensed, measured on the shipping engine (with 12-dynamics C and
+14-treble B):
+
+- At 70 dBA, A2–B2 take 271–314 ms from −50 to −5 dB of the fundamental
+  (294–328 before) and A3–B3 119–136 (124–170); Llanos-Vázquez et al. (2014)
+  measured 70–100 and 60–110. On Bassoon with the wheel swept in 1.5 s, C3–F#3
+  reach their level 0.45–0.65 s after the key (0.65–0.95).
+- Okada's C4 falls 2.5 Hz per kPa with its pallet open and 5.1 half-pressed;
+  the model's 2.3 and 5.1 (1.3 and 4.3 before).
+- At the 70 dBA of Elejalde-García et al. (2021), now 165 Pa, a half-pressed
+  A#2–A3 at a steady pressure falls 8.5 cents and 12 dB (`CompareHarmonics`),
+  where the player's fell 16 and 11; before, 11 cents and 19 dB.
+
+What it costs:
+
+- `CompareHarmonics`: the 2nd harmonic of A#2–A3 at 70 dBA sits 9.0 dB under
+  the measurement (5.5 before), the 2nd–14th 2.3 dB from it on average (1.7).
+- `CompareBandoneon`, with the loudest at 1.5 kPa: over the loudest 15 dB the
+  cells now fall 0.88 cents per dB louder against the bandoneon's 0.47 (0.46
+  before); over the loudest 30 dB, 0.51 against 0.39 (0.25), and C2–D3 now
+  rise as the bandoneon's do as they soften (0.33–0.52 against 0.34–0.62).
+  With the loudest at 0.7 kPa both slopes agree within 0.04.
+- The higher set leaks more air, so the same hand makes less pressure: the
+  demo bellows were refitted (`Tools/fit_bellows.py`) after strokes fell up to
+  57 % short of their targets. A low key struck with channel pressure already
+  full at about 200 Pa does not start from A#2 to D3; bent from sounding it
+  does.
+- Three engine checks assumed the old opening and were re-derived with their
+  reasons: `HalfPressedKeys` reads the returned pitch once the bellows has
+  settled (2.1 cents from open; 0.4 s after letting go the bellows was still
+  85 Pa above the open take), and `AssistHoldsHalfPressedKeys` asks that the
+  pressure rise at all (1.15 times open; counting the opening it fell to
+  0.64), not 1.5 times.
+
+## 2026-10-28 — lighter tongue tips from A5 up, B chosen by ear (owner; engineering)
+
+Pack `14-treble` (listening-2026-10-28): a run up to C7 with staccato and
+held notes. A main, where a tongue keeps 0.3 of a uniform tongue's tip mass
+at 10 mm rising to 0.6 at 30 mm; B 0.18 from A5 (19 mm) up, rising to the
+same 0.6 at 30 mm, so nothing below E4 changes. Matched on the held A6's last
+half second (B −0.6 dB), since how much of each short note sounds was being
+judged. Verdict, by ear: B.
+
+0.18 is a linear taper to the 0.05 mm tip a repairer gives the smallest
+piccolo tongues (Accordion Revival, "Accordion Repair 3") and a reed maker
+the highest notes. Where the fall ends, A5, was fitted to the one
+measurement of attack times (Llanos-Vázquez et al. 2014, Acta Acustica 100,
+Table I), so the choice licenses that one fitted hinge; it is recorded as
+such beside the code. At 70 dBA A4–B4 now take 52–57 ms (measured 60–70),
+A5–B5 36–44 (50) and A6–B6 92–127 (60–100), where they took 65–71, 111–128
+and 215–311. The top reeds start from 15–27 % less pressure.
+
+What it costs: from A5 to C6 the pitch falls 0.50 cents per dB of loudness
+over the loudest 30 dB where the bandoneon's falls 0.36–0.37; a half-pressed
+key from E5 to G6 bends 12–28 cents at 200–400 Pa, where the player found no
+bend possible from C6 up (on valveless tongues; Respira's all have valves);
+and master tune, which rebuilt each reed at the new pitch and so changed its
+tip share, put A4 1.1 cents short of +100. Master tune now retunes each tongue
+at its root and re-sets it as a reed is made, so a hard push still speaks at
+−100 cents; A4 reads −100.3 and +100.4.
