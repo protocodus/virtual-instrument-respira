@@ -328,7 +328,12 @@ a pitch wheel should do what it says.
   periods), a C6 about 90 ms and a C7 about 130 ms (some 270 periods): the
   pallet's 3–12 ms lift is slow against a high reed's period, so it grows from
   the gap's turbulence rather than from a kick. No measured onset times of
-  accordion reeds were found to check this against.
+  accordion reeds were found to check this against. The literature agrees in
+  direction only: high accordion reeds can be hard to sound when their
+  chamber's resonance comes near their pitch, and a 622 Hz reed's starting
+  pressure peaked with its chamber tuned near twice its pitch (Cottingham,
+  ICA 2016, preliminary); the model's C7 chamber resonates at 1.75 times its reed's pitch,
+  a C6's at 2.7.
 - **The demos' bellows is fitted, not played.** Each stroke's travel comes
   from a target pressure through `Tools/fit_bellows.py`; a player's hand would
   be less even.
