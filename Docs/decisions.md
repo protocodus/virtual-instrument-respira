@@ -502,3 +502,34 @@ stays within 0.1 dB of the 5 mm duct in every octave band from 62 Hz to
 Master Tutti's lowest octave moved 0.6 dB, at 20 mm 1.4 dB, so 10 mm is the
 longest kept. The treble side stays at 5 mm: 7.5 mm there took 3–6 dB off
 8–16 kHz and 10 mm up to 21 dB, a cut the grid makes, not the chamber.
+
+## 2026-10-28 — the low reeds' tip weights: B chosen by ear, not kept as rendered (owner; engineering)
+
+Pack `11-attack` (listening-2026-10-28): Bassoon Low then Clarinet Solo,
+eight staccato notes each from C3 to A4, struck with the bellows already at a
+steady mezzo forte pull. A the shipping tip weights, sized by two rules (no
+more than an eighth of the slot depth of static bend at 1 kPa, and short of
+the slot at the arm's full 2.5 kPa); B weighted by the first rule only, with
+the set raised so that 2.5 kPa still leaves each tongue short of its slot; C
+weighted by the first rule only. Matched on whole-file RMS (B and C −2.4 dB
+against A). Verdict, by ear: B.
+
+The direction it licenses is lighter low reeds, which speak sooner: from −50
+to −5 dB of the fundamental at 70 dBA, A2–B2 take 239–280 ms in B against
+285–321 in A (C 159–193; Llanos-Vázquez et al. 2014 measured 70–100), and
+A3–B3 112–126 against 131–179 (C 60–70; measured 60–110). Okada's measured C4
+reed (Adachi et al., Forum Acusticum 2026) points the same way: it falls
+2.5 Hz per kPa with its pallet open, B's C4 2.3, C's 1.9 and A's 1.0.
+
+B does not ship as rendered, because a measurement rejects it. Its higher set
+leaks more air at rest, and through a half-open pallet that leak holds the
+chamber below the reed's starting pressure: at the 70 dBA of Elejalde-García
+et al. (2021), 165 Pa, the 8' cells from C2 to C#4 with the pallet opened 0.2
+sound 55–74 dB under their open level (A from C2 to A2 only, 31–63 dB), where
+the player measured A#2–A3 bent that way at 11 dB under open. Its set at C4,
+0.83 mm, is also well above Okada's measured 0.3 mm. `HalfPressedKeys` misses
+by 0.06 cents (the pitch returns 3.06 cents flat of open, limit 3). C was not
+chosen and would not ship either: on `HardPushSpeaks`' stroke every factory
+preset loses its low keys, from C2 up to E3 or as far as C5, and every bass
+button, which is the 0.1.0d6 fix undone. Nothing changes until a candidate in
+B's direction keeps hard pushes and half-pressed keys speaking.
