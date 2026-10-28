@@ -135,7 +135,11 @@ is the small force that seeds the tongue.
 Tongue length and width follow typical accordion reed sizes scaled with
 pitch, the thickness is whatever gives the pitch, and a chamber whose
 Helmholtz resonance would fall near its reed is made smaller, as reed makers
-do with wax in the top octaves. Every push and pull tongue differs a little
+do with wax in the top octaves. Against the one published harmonic
+measurement of an accordion's 8' reeds (A#2–A3, mezzo forte, 50 cm;
+`Tools/CompareHarmonics.cpp`), the 2nd–14th harmonics agree within 2.5 dB on
+average at its loudness, and the 15th–20th sit 6 dB low (see Known gaps).
+Every push and pull tongue differs a little
 from its neighbours (set ±10 %, loss ±20 %, tuning ±0.8 cents, fixed per
 instrument). A reed sounds below its natural frequency under load, so
 `Tools/GenerateReedTuning.cpp` simulates every reed in its chamber at 400 Pa
