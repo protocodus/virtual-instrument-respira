@@ -48,6 +48,7 @@ struct ReedSpec {
     double drag = 0.0;                       // quadratic air drag on the tongue / m_eff, 1/m
     double slotInertance = 0.0;              // rho * depth / slot area, kg/m^4
     double breath = 0.0;                     // turbulent fluctuation of the gap flow per unit noise
+    double edge = 0.0, cube = 0.0, cube3 = 0.0;   // 2L/3 + W, L^3, 3L^2: GapArea's constants, made once
 };
 
 struct ReedState {
@@ -97,6 +98,9 @@ inline ReedSpec MakeReed(double f0, double q, double setScale = 1.0) {
     // flow fluctuates by 0.1 / sqrt(N) of itself. The noise it is scaled by is
     // uniform, with an RMS of 1 / sqrt(3).
     r.breath = std::sqrt(3.0) * 0.1 / std::sqrt((2.0 * r.length + r.width) / 0.3e-3);
+    r.edge = 2.0 * r.length / 3.0 + r.width;
+    r.cube = r.length * r.length * r.length;
+    r.cube3 = 3.0 * r.length * r.length;
     return r;
 }
 
@@ -106,10 +110,10 @@ inline ReedSpec MakeReed(double f0, double q, double setScale = 1.0) {
 inline double GapArea(const ReedSpec& r, double x) {
     double open = 0.0;
     if (x < 0.0) {
-        open = (2.0 * r.length / 3.0 + r.width) * -x;
+        open = r.edge * -x;
     } else if (x > r.plate) {
         const double L = r.length, s = L * Sqrt(r.plate / x);
-        open = r.width * (x - r.plate) + 2.0 * (x * (L * L * L - s * s * s) / (3.0 * L * L) - r.plate * (L - s));
+        open = r.width * (x - r.plate) + 2.0 * (x * (r.cube - s * s * s) / r.cube3 - r.plate * (L - s));
     }
     return Sqrt(open * open + r.clearArea * r.clearArea);
 }
@@ -185,7 +189,7 @@ struct CellState {
 // step 1 / invDt. It changes only while the pallet moves, so the engine keeps
 // it from step to step.
 struct Vent {
-    double inertia = 0.0, a = 0.0, b = 0.0;
+    double inertia = 0.0, a = 0.0, b = 0.0, b2 = 0.0;
     bool open = false;
 };
 
@@ -196,6 +200,7 @@ inline Vent MakeVent(const ChamberSpec& c, double open, double invDt) {
     v.inertia = (c.channelInertance + c.palletInertance / open) * invDt;
     v.a = 0.5 * kRho / (kCd * kCd * area * area);
     v.b = kLaminar / area + v.inertia;
+    v.b2 = v.b * v.b;
     v.open = true;
     return v;
 }
@@ -205,7 +210,7 @@ inline double StepVent(const Vent& v, double pressure, double flow) {
     if (!v.open) return 0.0;
     const double drive = pressure + v.inertia * flow;
     const double m = Abs(drive);
-    const double out = 2.0 * m / (v.b + Sqrt(v.b * v.b + 4.0 * v.a * m));
+    const double out = 2.0 * m / (v.b + Sqrt(v.b2 + 4.0 * v.a * m));
     return drive >= 0.0 ? out : -out;
 }
 
