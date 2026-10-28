@@ -432,7 +432,14 @@ a pitch wheel should do what it says.
   the bandoneon's softest notes were played at is not known, so this may be
   how loudness follows pressure rather than how pitch does; Okada's C4 reed
   (Adachi et al. 2026) falls 2.5 Hz per kPa with its pallet open against
-  Respira's 1.3, which points the same way.
+  Respira's 1.3, which points the same way. Okada's reed, its measured
+  length, width, mass, pitch, damping and set put into Respira's own cell,
+  falls 2.0 Hz per kPa, so the difference lies in Respira's tongues: their
+  tip weights, sized so that a bellows slammed to full pressure cannot hold
+  them in their slots, make its C4 1.6 times as stiff as Okada's (0.15 mm
+  of tip bend per kPa against 0.24). Without the weights Respira's low reeds
+  choke on such a push, and in the same cell Okada's reed chokes too when
+  the pressure reaches 1.5 kPa within 50 ms.
 - **A loud treble is not brighter.** Over the loudest 30 dB of the
   bandoneon's held notes from E4 to C6, its 9th–15th harmonics gain 1.4 dB
   per dB on the fundamental on average (0.9–2.1), so a forte note is much
