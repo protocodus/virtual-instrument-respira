@@ -479,7 +479,15 @@ a pitch wheel should do what it says.
   (some 25 periods), a C6 about 135 ms and a C7 about 165 ms (some 340
   periods): the
   pallet's 3–12 ms lift is slow against a high reed's period, so it grows from
-  the gap's turbulence rather than from a kick. A recording has no key time,
+  the gap's turbulence rather than from a kick. Against the one measurement
+  with key times (Llanos-Vázquez et al. 2014, Acta Acustica 100: a concert
+  accordion's fundamental from −50 to −5 dB of its peak after a finger attack
+  at mezzo forte, 70 dBA at 50 cm), played at that loudness A4–B4 take
+  65–70 ms (measured 60–70), A5–B5 111–127 ms (50) and A6–B6 215–314 ms
+  (60–100). A high reed also needs more pressure to start at all: 12–21 Pa
+  from A2 to A4, 47 Pa at A5, 115 at A6 and 182 at C7, so A6 and C7 speak
+  only from about the paper's piano, 55 dBA, where its A6–B6 took 80–130 ms.
+  A recording has no key time,
   so the wait before a note is heard is unchecked, but how fast it grows once
   heard can be read from the bandoneon library's staccato notes (one take
   each; 2 ms RMS, from −20 to −3 dB of the take's peak): 28–42 ms from C4 to
@@ -503,7 +511,9 @@ a pitch wheel should do what it says.
   in 1.5 s, C3–F#3 reach their level 0.6–0.9 s after the key, a C4 in
   0.35 s. A quicker or gentler stroke starts them at once. Heavier tip
   weights would start them sooner, but no measurement says how far real
-  reeds sit from their slots.
+  reeds sit from their slots. The same weights slow a finger attack: at
+  70 dBA, A2–B2 take 294–328 ms from −50 to −5 dB and A3–B3 124–170 ms,
+  where Llanos-Vázquez et al. (2014) measured 70–100 and 60–110.
 - **The demos' bellows is fitted, not played.** Each stroke's travel comes
   from a target pressure through `Tools/fit_bellows.py`; a player's hand would
   be less even.
