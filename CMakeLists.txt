@@ -82,6 +82,11 @@ if(RESPIRA_BUILD_TOOLS)
     target_include_directories(ProbeReed PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Source")
     target_compile_options(ProbeReed PRIVATE ${RESPIRA_WARNINGS})
 
+    # Single 8' notes' harmonics against a published accordion measurement.
+    add_executable(CompareHarmonics Tools/CompareHarmonics.cpp)
+    target_link_libraries(CompareHarmonics PRIVATE RespiraDSP)
+    target_compile_options(CompareHarmonics PRIVATE ${RESPIRA_WARNINGS})
+
     # One README demo per factory preset from Docs/audio/midi (Tools/
     # PresetDemoRenderer.h is the shared portfolio copy; do not edit it here).
     add_executable(RenderRespiraPresetDemos Tools/RenderPresetDemos.cpp)

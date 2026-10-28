@@ -159,6 +159,11 @@ struct ChamberSpec {
 // wax in the top octaves, because a blown-closed reed only speaks on an
 // inertive (below-resonance) load.
 //
+// As a lumped resonator it holds only up to about that resonance: the channel
+// is as long as the reed, so k L is near 1 there. Above it a real chamber's
+// standing waves are not modelled, and this one falls 12 dB per octave
+// (Tools/CompareHarmonics.cpp, README Known gaps).
+//
 // Bass-side reeds sit behind the larger pallets and longer air passages of the
 // bass mechanism (bassBox): 1.7x the hole area and twice the air path. Without
 // that the long bass tongues, choked by a small hole, fall 50+ cents flat

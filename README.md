@@ -271,9 +271,21 @@ a pitch wheel should do what it says.
   resonances instead, and what it really loses depends on the felt, leather
   and wood inside it, which are not modelled; the bass side's top octaves
   are probably too dark.
-- **Brighter than recordings from 1 to 4 kHz.** Against 500 Hz–1 kHz, the
-  demos read 3–6 dB more at 1–2 kHz and 5–9 dB more at 2–4 kHz than a polka
-  recording, while 4–16 kHz agrees with it; the cause is not traced.
+- **The reed chamber's resonance, against a measurement.** The one
+  published harmonic measurement found, a concert accordion's 8' reeds from
+  A#2 to A3 played mezzo forte and heard at 50 cm (Elejalde-García,
+  Macho-Stadler and Llanos-Vázquez 2021), falls without a peak from the
+  fundamental to about −13 dB at the 15th–20th harmonics. Played the same way
+  (`CompareHarmonics`), Respira's 2nd–14th harmonics sit 4–6 dB higher at
+  400 Pa (within 2.5 dB at 290 Pa; the paper gives no pressure) and its
+  15th–20th 4–7 dB lower at every pressure from 290 to 1200 Pa. Each reed
+  chamber is a lumped resonator, at 1.3 kHz for C3 rising to 3.7 kHz for C7:
+  for these notes it lifts the 7th–11th harmonics by 6–20 dB and cuts 12 dB
+  per octave above. The chamber is as long as its reed, so the lumped model
+  holds only up to about its own resonance (k L ≈ 1 there). The same
+  resonance falls where the demos read 3–9 dB more than a polka recording at
+  1–4 kHz, against 500 Hz–1 kHz. A distributed chamber, and how much a real
+  one is damped, are not modelled.
 - **The top octave speaks slowly, unchecked.** With the bellows already at
   540 Pa, an A4 reaches its level about 50 ms after the key (some 20
   periods), a C6 about 90 ms and a C7 about 130 ms (some 270 periods): the
@@ -305,7 +317,8 @@ target.
 The offline tools: `RenderRespira <preset> <in.mid> <out.wav> [trace.csv]`
 renders any MIDI file with a trace of the hand and the bellows;
 `ProbeReed [pressure] [rank]` prints what single reeds sound and the air they
-take; `GenerateReedTuning Source/DSP/ReedTuning.h` re-tunes every reed after
+take; `CompareHarmonics [pressure]` sets the first twenty harmonics of single
+8' notes against a published accordion measurement; `GenerateReedTuning Source/DSP/ReedTuning.h` re-tunes every reed after
 a change to the reed model. `python3 Tools/fit_bellows.py
 build-dsp/RenderRespira` re-fits the demo strokes and
 `python3 Tools/write_preset_midi.py` writes the demo MIDI.
