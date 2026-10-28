@@ -93,8 +93,11 @@ inline ReedSpec MakeReed(double f0, double q, double setScale = 1.0) {
     r.omega2 = w0 * w0;
     r.damping = tongueMass * w0 / q / mass;
     // Face-on drag of an oscillating plate, F = rho/2 * Cd * A * v|v|. At these
-    // small excursion-to-width ratios Cd is several times the steady value of 2;
-    // 8 is a voicing estimate that keeps tip excursions near a tenth of the length.
+    // small excursion-to-width ratios Cd is several times the steady value of 2:
+    // a flat plate's measured Cd = 10 KC^-1/3, KC = 2 pi (tip swing) / width
+    // (Keulegan and Carpenter 1958, as Graham 1980 fitted it), is 5-10 over the
+    // swings of ordinary playing, 0.4-4 mm on tongues 2.2-2.6 mm wide. 8 keeps
+    // tip excursions near a tenth of the length.
     r.drag = 0.5 * kRho * 8.0 * r.area / mass;
     r.slotInertance = kRho * r.plate / (r.length * r.width);
     // The jet through the gap is turbulent (a Reynolds number near 10^3 at

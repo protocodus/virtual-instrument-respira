@@ -411,7 +411,10 @@ a pitch wheel should do what it says.
   here to show. Only a much lossier tongue comes close: four times the loss
   (a Q near 75 from F5 to C6, where the model has 290–320) makes them brighten
   as the bandoneon's do, though E4–D5 stay flat and the top tips then swing
-  3–5 % of their length. No measured Q of an accordion tongue was found. The
+  3–5 % of their length. Four times the air drag does the same, but a flat
+  plate's measured drag in oscillating flow (Keulegan and Carpenter 1958, as
+  Graham 1980 fitted it) puts the tongue's coefficient at 5–10 over these
+  swings, around the model's 8, not 32. No measured Q of an accordion tongue was found. The
   nearest, a brass harmonica reed's 95 at 444 Hz (Millot and Baumann, Acta
   Acustica 2007), would be 150–290 on a steel tongue of that pitch, which
   carries two to three times its mass per area, if the air took all of that
