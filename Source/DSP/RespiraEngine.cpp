@@ -54,21 +54,22 @@ constexpr std::array<double, 8> kRegisterTrimDb { { 3.45, 3.93, 1.39, 0.0, 1.46,
 // at velocity 127 is 7-9 dB. Its 2 ms look-ahead limiter holds what gets past
 // at -1.5 dBFS.
 constexpr protocodus::CompressorSettings kBellowsGuard { -17.0, 8.0, 10.0, 0.02, 0.0, 0.3 };
-// The treble pallet holes open into the shallow compartment under the grille,
-// which radiates through the grille's slots: a perforated-panel Helmholtz
-// resonator (Compartment::Set). Typical piano accordion values: a 35 mm deep
-// compartment, a grille 30 % open, slots with 3.6 mm of effective length (1 mm
-// sheet plus the end corrections of 3 mm slots), cloth of 30 rayl: 2.7 kHz at
-// Q 0.55, a low-pass with no peak. The plausible spread of the three
-// (25-45 mm, 20-40 %, 3-5 mm) is 1.6-4.0 kHz.
-constexpr double kCompartmentDepth = 0.035, kGrilleOpen = 0.30, kSlotLength = 0.0036, kClothRayl = 30.0;
 // The bass pallets open into the bass box, the space under the bass end cover
-// round the bass mechanism, which vents through the cover's holes: the same
-// resonator, deeper and far less open. Typical values: 40 mm deep, 10 % open,
-// holes 6 mm across in 3 mm wood (8.1 mm effective, with both end
-// corrections), the same cloth: 960 Hz at Q 1.3, rising 3 dB before the
-// roll-off. The plausible spread (30-50 mm, 5-20 %, 5-10 mm) is 0.55-2.0 kHz.
-constexpr double kBassBoxDepth = 0.04, kBassBoxOpen = 0.10, kBassHoleLength = 0.0081;
+// round the bass mechanism, which vents through the cover's holes: a
+// perforated-panel Helmholtz resonator (Compartment::Set). Typical values: 40
+// mm deep, 10 % open, holes 6 mm across in 3 mm wood (8.1 mm effective, with
+// both end corrections), cloth of 30 rayl: 960 Hz at Q 1.3, rising 3 dB before
+// the roll-off. The plausible spread (30-50 mm, 5-20 %, 5-10 mm) is 0.55-2.0
+// kHz. Lumped, the box must be shallow against the wavelength: at resonance k
+// depth = sqrt(open depth / l') = 0.70. As a plane-wave layer, the flow out
+// over the flow in is 1 / (cos kd - k (l' / open) sin kd + j (1 + cloth / rho
+// c) sin kd); the lumped box is within 2 dB of it up to 2 kHz and overstates
+// the cover's loss above about 2.5 kHz (README, Known gaps). The treble
+// compartment under the grille is no resonator: 35 mm deep under a grille 30 %
+// open with 3.6 mm slots, its lumped resonance would fall at k depth = 1.7,
+// and as a layer, averaged over its plausible depths (25-45 mm), it passes the
+// reeds within 3 dB up to 16 kHz.
+constexpr double kBassBoxDepth = 0.04, kBassBoxOpen = 0.10, kBassHoleLength = 0.0081, kClothRayl = 30.0;
 constexpr double kOpenSeconds = 0.012, kOpenVelocity = 0.009;  // pallet lift: 12 ms soft .. 3 ms hard
 constexpr double kCloseSeconds = 0.008;
 constexpr double kQuietSeconds = 0.02;      // a closed chamber is let go after this
@@ -149,8 +150,6 @@ Engine::Engine() { Prepare(48000.0); }
 
 void Engine::Prepare(double sampleRate) {
     rate = sampleRate > 1000.0 && sampleRate < 1.0e6 ? sampleRate : 48000.0;
-    compartmentL.Set(kCompartmentDepth, kGrilleOpen, kSlotLength, kClothRayl, rate);
-    compartmentR = compartmentL;
     bassBox.Set(kBassBoxDepth, kBassBoxOpen, kBassHoleLength, kClothRayl, rate);
     smoothing = 1.0 - std::exp(-1.0 / (0.02 * rate));
     bendSmoothing = 1.0 - std::exp(-1.0 / (0.005 * rate));
@@ -175,8 +174,6 @@ void Engine::Reset() {
     sounding = 0;
     trebleLeft.Reset();
     trebleRight.Reset();
-    compartmentL.Clear();
-    compartmentR.Clear();
     bassSide.Reset();
     bassBox.Clear();
     grilleL = grilleR = 0.0;
@@ -471,8 +468,8 @@ void Engine::Render(float* left, float* right, int frames) {
         airFlow = drawn / oversample;
         airFlowSmoothed += 0.002 * (airFlow - airFlowSmoothed);
 
-        grilleL += grilleCoeff * (compartmentL.Process(trebleLeft.Process(tl, stages)) - grilleL);
-        grilleR += grilleCoeff * (compartmentR.Process(trebleRight.Process(tr, stages)) - grilleR);
+        grilleL += grilleCoeff * (trebleLeft.Process(tl, stages) - grilleL);
+        grilleR += grilleCoeff * (trebleRight.Process(tr, stages) - grilleR);
         gain += smoothing * (gainTarget - gain);
         bassGain += smoothing * (bassGainTarget - bassGain);
         trebleGain += smoothing * (trebleGainTarget - trebleGain);
@@ -491,8 +488,6 @@ void Engine::Render(float* left, float* right, int frames) {
     if (sounding == 0) {
         trebleLeft.FlushTiny();
         trebleRight.FlushTiny();
-        compartmentL.FlushTiny();
-        compartmentR.FlushTiny();
         bassSide.FlushTiny();
         bassBox.FlushTiny();
         for (double* v : { &grilleL, &grilleR })

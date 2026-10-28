@@ -58,9 +58,6 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
   each other on one reference stroke.
 - Switching a register changes the colour, not the level: each register is
   trimmed so the eight sit within 1 dB of each other.
-- The treble reeds sound through the shallow compartment under the grille,
-  a Helmholtz resonator that softens their upper harmonics above about
-  2.7 kHz.
 - The bass reeds sound through the bass box, a Helmholtz resonator at about
   960 Hz behind the bass end cover's holes, in place of a plain 2.5 kHz
   low-pass: a rounder, less buzzy bass. The air valve opens into it too, so
@@ -185,22 +182,24 @@ pallets and longer passages, and sound through the bass box (see Radiation).
 
 ### Radiation
 
-The treble pallet holes open into the shallow compartment under the grille,
-which radiates through the grille's slots: a perforated-panel Helmholtz
-resonator, a second-order low-pass on the treble side. Per unit of grille
-area its air mass is ρl′/open and its compliance depth/ρc², so
-f = c/2π·√(open/(depth·l′)), loaded by radiation (ρc) and the grille cloth's
-flow resistance. Typical values (a 35 mm deep compartment, a grille 30 %
-open, 3 mm slots in 1 mm sheet, cloth of 30 rayl) give 2.7 kHz at Q 0.55,
-rolling off without a peak; their plausible spread is 1.6–4.0 kHz. **Grille**
-then sets the treble side's brightness above it.
+The treble pallet holes open into the compartment under the grille, 25–45 mm
+deep. It is not a resonator: as a lumped one, a grille 30 % open with 3 mm
+slots in 1 mm sheet would put its resonance where the compartment's depth is
+over a quarter of a wavelength, outside what a lumped model describes, and as
+a layer of air between the pallet board and the grille, averaged over those
+depths, it passes the reeds within 3 dB up to 16 kHz. The treble reeds sound
+straight out; **Grille** sets the treble side's brightness.
 
 The bass pallets open into the bass box, the space under the bass end cover
-round the bass mechanism, which vents through the cover's holes: the same
-resonator, deeper and far less open. Typical values (40 mm deep, 10 % open,
-6 mm holes in 3 mm wood) give 960 Hz at Q 1.3, a 3 dB rise before the
-roll-off; their plausible spread is 0.55–2.0 kHz. The air valve opens into
-the bass box as well, so its hiss leaves the same way.
+round the bass mechanism, which vents through the cover's holes: a
+perforated-panel Helmholtz resonator, a second-order low-pass on the bass
+side. Per unit of cover area its air mass is ρl′/open and its compliance
+depth/ρc², so f = c/2π·√(open/(depth·l′)), loaded by radiation (ρc) and the
+cloth's flow resistance. Typical values (40 mm deep, 10 % open, 6 mm holes in
+3 mm wood, cloth of 30 rayl) give 960 Hz at Q 1.3, a 3 dB rise before the
+roll-off; their plausible spread is 0.55–2.0 kHz. The box is shallow enough
+there for a lumped model, which holds within 2 dB up to 2 kHz. The air valve
+opens into the bass box as well, so its hiss leaves the same way.
 
 ### The output stage
 
@@ -266,6 +265,12 @@ a pitch wheel should do what it says.
   seventh and diminished rows, and there are no bass register switches.
 - **One turbulence seed.** Two engines given the same input play identical
   noise.
+- **The bass box above 2.5 kHz.** Its lumped resonator falls 12 dB per
+  octave there, where the box as a layer of air under the cover falls about
+  6, so the bass side's top octaves are darker than they should be.
+- **Brighter than recordings from 1 to 4 kHz.** Against 500 Hz–1 kHz, the
+  demos read 3–6 dB more at 1–2 kHz and 5–9 dB more at 2–4 kHz than a polka
+  recording, while 4–16 kHz agrees with it; the cause is not traced.
 - **The demos' bellows is fitted, not played.** Each stroke's travel comes
   from a target pressure through `Tools/fit_bellows.py`; a player's hand would
   be less even.

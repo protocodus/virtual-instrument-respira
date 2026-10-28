@@ -149,7 +149,7 @@ The instrument still makes no level that does not come from the bellows: the
 output stage is the recording chain after it, there because the owner asked
 for it. This supersedes the closing line of the 110.5 dB SPL entry above.
 
-## 2026-10-28 — the treble grille compartment, by-ear verdict pending (owner asked; engineering)
+## 2026-10-28 — the treble grille compartment, withdrawn the same night (owner asked; engineering)
 
 The owner asked for audible realism, the body of the sound balanced against
 real recordings. Against two accordion recordings (Hussong, and a polka), the
@@ -164,7 +164,24 @@ open area and the slots' effective length (RespiraEngine.cpp,
 (2.7 kHz, Q 0.55: 2–4 kHz at −6.5 dB, 4–8 kHz at −29.1 dB on the same demo)
 with the plausible extremes as candidates. Pack `01-musette`
 (listening-2026-10-28): A the engine before, B 4.0 kHz, C 2.7 kHz (shipping),
-D 1.6 kHz. Verdict: pending.
+D 1.6 kHz.
+
+Withdrawn before any listening, because the lumped model does not describe
+this compartment. A Helmholtz resonator needs a cavity shallow against the
+wavelength; at its resonance k·depth = √(open·depth/l′), 1.7 for these values
+(the depth over a quarter of a wavelength) and at least 1.0 across the
+plausible ones. Treated as a plane-wave layer between the pallet board and the
+grille, the flow out over the flow in is
+1/(cos kd − k(l′/open) sin kd + j(1 + cloth/ρc) sin kd): averaged over 25–45 mm
+it stays within 3 dB of flat up to 16 kHz, where the lumped low-pass was
+already −10 dB at 4 kHz and −31 dB at 16 kHz. The recordings agree with the
+layer above 4 kHz: without the compartment the demos (all but the bass-side
+Bassoon Low) read −15 to −22 dB at 4–8 kHz and −24 to −35 dB at 8–16 kHz
+against 500 Hz–1 kHz, the polka −18.8 and −29.4; with it they read −27 to −34
+and −48 to −58. Their excess at 1–4 kHz is real but has another cause, not
+traced (README, Known gaps). The same check passes the bass box: 0.70 at its
+resonance, within 2 dB of the layer up to 2 kHz, darker than it above about
+2.5 kHz. Pack `01-musette` is withdrawn.
 
 ## 2026-10-28 — the bass box, by-ear verdict pending (owner asked; engineering)
 

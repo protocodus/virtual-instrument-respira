@@ -108,9 +108,9 @@ private:
         double breathA = 0.0, breathB = 0.0;   // the gap turbulence, shaped to its eddies
     };
 
-    // A compartment the pallets open into, radiating through a perforated
-    // cover: a Helmholtz resonator per unit of cover area, so a second-order
-    // low-pass (bilinear, prewarped), in transposed direct form II.
+    // A shallow compartment the pallets open into, radiating through a
+    // perforated cover: a Helmholtz resonator per unit of cover area, so a
+    // second-order low-pass (bilinear, prewarped), in transposed direct form II.
     struct Compartment {
         double b0 = 1.0, b1 = 0.0, b2 = 0.0, a1 = 0.0, a2 = 0.0, z1 = 0.0, z2 = 0.0;
         // depth m, open fraction of the cover, effective hole length m
@@ -170,7 +170,7 @@ private:
     int sounding = 0;
     std::array<Cell, kMaxCells> cells {};
     Decimator trebleLeft, trebleRight, bassSide;
-    Compartment compartmentL, compartmentR, bassBox;   // under the treble grille, the bass box
+    Compartment bassBox;   // under the bass end cover
     double grilleCoeff = 0.0;
     double grilleL = 0.0, grilleR = 0.0;
     double gain = 0.0, gainTarget = 0.0, bassGain = 0.0, bassGainTarget = 0.0, smoothing = 0.0;
