@@ -218,3 +218,20 @@ reeds' sound; it went straight to the output. It now passes through the bass
 box: in the air-button passage its level is unchanged (−55 dBFS), and above
 2 kHz it falls 16–43 dB, a darker rush. Pack `04-air` (listening-2026-10-28):
 A the engine before, B through the bass box (shipping). Verdict: pending.
+
+## 2026-10-28 — three experiments not kept (engineering)
+
+Tried during the overnight realism work and left out, each for a reason a
+measurement or an estimate gave, so none went to a listening test.
+
+- **A baffle step on the treble side.** The grille's face is a baffle about
+  30 cm across, which would lift the treble side by up to 6 dB where it is
+  large against the wavelength. The demos were already brighter than both
+  recordings from 1 to 4 kHz against 500 Hz–1 kHz; a step would widen that
+  gap.
+- **Turbulence at the pallet.** The gap's eddy model applied to the jet out
+  of the pallet hole put 25–40 dB more noise into a held note than the gap's
+  own breath, far beyond any accordion recording.
+- **Turbulence only on the reed that flows.** Gating the gap's breath to the
+  reed the bellows drives made no measurable difference to the renders, so
+  it was not kept.
