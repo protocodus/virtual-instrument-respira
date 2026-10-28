@@ -578,8 +578,8 @@ void RegistersSitTogether() {
 
 void TypicalLevel() {
     // The output reference puts ordinary playing at -9 on Reason's VU meter:
-    // the demo phrases' notes read -9.2 VU at their median (measured
-    // 2026-10-27). Here a C3, a C4-E4-G4 triad, a C6 and the reference chord
+    // the demo phrases' notes read -9.0 VU at their median (measured
+    // 2026-10-28). Here a C3, a C4-E4-G4 triad, a C6 and the reference chord
     // on the reference stroke and Init's controls stand in for them; that
     // stroke is firmer than most of the phrases', and their median reads
     // -5.8 VU. A change to the output reference, the output stage or the reed

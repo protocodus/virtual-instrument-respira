@@ -212,7 +212,7 @@ follows the louder channel's power over 20 ms and brings it down 10:1 above
 takes hold at once and lets go over 300 ms, slower than a musette's beating.
 Its peak limiter looks 2 ms ahead (96 samples at 48 kHz, the engine's
 latency) and holds what gets past at −1.5 dBFS with no gain step. The hardest
-strokes read −2.7 VU at most. Volume sets the level going into the stage.
+strokes read −3.0 VU at most. Volume sets the level going into the stage.
 
 ### Controls, presets and MIDI
 
