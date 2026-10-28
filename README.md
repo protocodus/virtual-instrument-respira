@@ -379,11 +379,20 @@ a pitch wheel should do what it says.
   are not known, and the cause is not traced. Below the 15th, the 4th
   harmonic is the one large disagreement: from A#2 to A3 it sits 12 dB under
   the measurement (−22 dB against −10, averaged in dB; −17 averaged as
-  power), deepest from A#2 to D3 (−24 to −41 dB). There the air through the
-  gap and the tongue's swept volume through the slot nearly cancel at that
-  harmonic. The measured accordion dips at its 4th harmonic too, about 7 dB
-  under its neighbours, so the cancellation is probably real but too deep;
-  no free number in the model moves it, so it is left as it is.
+  power), deepest from A#2 to D3 (−24 to −41 dB). At that loudness each of
+  those tongues swings 0.7–2.1 mm out past the far face of its plate, where
+  the gap opens again, so every period carries a second pulse of air. Held
+  shut there instead, as a diagnostic, the 4th comes within 3.3 dB and the
+  2nd–16th within 2.4 dB RMS (4.2 now), though the 2nd falls 5 dB low and
+  the 3rd–7th of C2–A3 then grow 0.0–0.6 dB per dB of loudness, against
+  the bandoneon's 0.4–1.1 and 0.5–1.0 now. A real accordion tongue does not pass
+  below its frame (Cottingham, CCRMA lecture notes, 2013), and one filmed in
+  its plate spends more of each period inside the slot as the flow grows
+  (Nussbaumer and Agarwal, ICA 2016); Respira's pass theirs at 600 Pa from D5
+  down. A thicker plate only lets them swing further, and the measured loss
+  (below) rules out a lossier tongue, so what holds a real tongue inside its
+  slot is not traced. The measured accordion dips at its 4th harmonic too,
+  about 7 dB under its neighbours.
 - **Soft low notes hold their pitch.** Over the loudest 30 dB of a
   bandoneon's held notes its pitch rises 0.39 cents per dB softer on average,
   0.34–0.62 from C2 to D3, steadily down to the softest. Respira's 8' cells,
@@ -414,13 +423,10 @@ a pitch wheel should do what it says.
   3–5 % of their length. Four times the air drag does the same, but a flat
   plate's measured drag in oscillating flow (Keulegan and Carpenter 1958, as
   Graham 1980 fitted it) puts the tongue's coefficient at 5–10 over these
-  swings, around the model's 8, not 32. No measured Q of an accordion tongue was found. The
-  nearest, a brass harmonica reed's 95 at 444 Hz (Millot and Baumann, Acta
-  Acustica 2007), would be 150–290 on a steel tongue of that pitch, which
-  carries two to three times its mass per area, if the air took all of that
-  loss: the model's 250 sits inside, 75 far below. Set to 150, only the C6
-  brightens as the bandoneon's does, so a lossier tongue is probably not the
-  cause either, and it is not traced.
+  swings, around the model's 8, not 32. And impulse tests on three accordion
+  reeds in their plates (236–743 Hz) measured a Q of 200–400 (Nussbaumer and
+  Agarwal, ICA 2016), where the model has 207–293, so a lossier tongue is not
+  the cause either, and it is not traced.
 - **Half-pressed keys lose too much level.** In the same paper a player
   bent A#2–A3 by closing the pallet part way at a steady bellows pressure:
   16 cents flat on average and 11 dB quieter (the mean over the first twenty
