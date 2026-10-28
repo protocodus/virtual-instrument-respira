@@ -337,3 +337,24 @@ at its tip. Without them a C2 tongue deflects 6 mm under 1 kPa, which no
 real reed does, and its pitch rises with pressure. No measurement found gives how loudness grows with pressure, which
 decides where the bandoneon's softest notes sit, so the soft-bass gap is
 recorded, not tuned.
+
+## 2026-10-28 — the mechanism sounds, with a Mechanics level (owner)
+
+Respira's rule was that every sound comes from air the hand moves, so a key
+pressed with a still hand was silent. Real accordions knock: a key on its felt
+as it goes down, a pallet on its seat as the spring closes it, the bass
+buttons and register switches (Niewczas 2019: the mechanism's sound spans
+about 210 Hz–4 kHz, louder on older instruments and troublesome in pp
+recordings). No published measurement of its level against the reeds was
+found. Offered three options (add with a level control, add calibrated from a
+phone recording of a real accordion, leave out), the owner chose to add it
+with a Mechanics control whose default is the physics estimate, the default
+to be picked by ear. `CLAUDE.md` now names the mechanism as the one exception
+to the air-only rule.
+
+Each knock is a collision on a felt law measured on a piano action
+(Hirschkorn 2004), at the speed the engine moves the part; masses and travels
+are estimates (README, The mechanism). Mechanics is in dB against the key's
+own dipole radiation, which leaves out what the keyboard and body radiate;
+the listening pack `08-mechanics` offers the estimate and 10 dB either side
+of it, the span the estimate's uncertainty allows. Verdict pending.

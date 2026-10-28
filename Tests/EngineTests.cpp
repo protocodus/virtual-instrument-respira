@@ -1,4 +1,4 @@
-// Engine contracts: air only from the hand's motion, the bellows' turn, pitch and pitch bend, rates and
+// Engine contracts: air only from the hand's motion, the mechanism's knocks, the bellows' turn, pitch and pitch bend, rates and
 // Oversampling, routing, register switches on held keys, the 4' rank's break, half-pressed keys,
 // the air button and Assist, a hard push on a held key, the controller stream and the arm's momentum, block-partition
 // invariance and determinism, release and voice limits, the noise scaling.
@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <functional>
 #include <memory>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -133,10 +134,72 @@ double PullThenPush(double t) { return t < 2.0 ? 0.3 + 0.12 * t : std::max(0.3, 
 
 constexpr std::uint8_t kOn = 0x90, kOff = 0x80, kCc = 0xB0;
 
+// The loudest sample from `from` seconds to `to`, and when it is.
+std::pair<double, double> PeakIn(const Take& t, double rate, double from, double to) {
+    double peak = 0.0, at = from;
+    for (auto i = static_cast<std::size_t>(from * rate); i < std::min(t.left.size(), static_cast<std::size_t>(to * rate)); ++i) {
+        const double v = std::max(std::fabs(static_cast<double>(t.left[i])), std::fabs(static_cast<double>(t.right[i])));
+        if (v > peak) {
+            peak = v;
+            at = static_cast<double>(i) / rate;
+        }
+    }
+    return { peak, at };
+}
+
 void SilentWithoutMotion() {
+    // The key and the bass button knock as they land (MechanicsKnock); after
+    // that a still hand moves no air, so the reeds stay silent.
     auto e = Make(48000.0, 3);
     const Take t = Play(*e, 48000.0, 1.0, { { 0.0, { kOn, 69, 100 } }, { 0.0, { kOn, 24, 100 } } }, [](double) { return 0.5; });
-    Expect(Peak(t) < 1.0e-6, "SilentWithoutMotion", "a still hand moves no air: peak below -120 dBFS", Peak(t));
+    const double peak = PeakIn(t, 48000.0, 0.1, 1.0).first;
+    Expect(peak < 1.0e-6, "SilentWithoutMotion", "a still hand moves no air: peak from 0.1 s below -120 dBFS", peak);
+}
+
+void MechanicsKnock() {
+    // With a still hand only the mechanism sounds (Mechanics.h). A key knocks
+    // as it lands, when its stroke ends (12 ms at velocity 0 .. 3 ms at 127),
+    // its pallet as the spring seats it 8 ms after it is let go, and a
+    // faster stroke lands harder. A key let go before it lands, or held half
+    // down by channel pressure, knocks only as its pallet seats. Mechanics
+    // sets the level in dB, and the knocks peak where a real accordion's
+    // mechanism does, 300-500 Hz (Niewczas 2019).
+    const double rate = 48000.0;
+    const auto key = [&](int velocity, double mechanics, double holdSeconds, int pressure) {
+        auto e = Make(rate, 0, [mechanics](Controls& c) { c[kMechanics] = mechanics; });
+        return Play(*e, rate, 0.5, { { 0.0, { 0xD0, static_cast<std::uint8_t>(pressure), 0 } }, { 0.05, { kOn, 72, static_cast<std::uint8_t>(velocity) } },
+                                     { 0.05 + holdSeconds, { kOff, 72, 0 } } },
+                    [](double) { return 0.5; });
+    };
+    const Take soft = key(20, 0.0, 0.2, 0), hard = key(127, 0.0, 0.2, 0), quieter = key(20, -10.0, 0.2, 0);
+    const auto softPress = PeakIn(soft, rate, 0.05, 0.1), hardPress = PeakIn(hard, rate, 0.05, 0.1), softSeat = PeakIn(soft, rate, 0.25, 0.3);
+    const double landing = 0.05 + 0.012 - 0.009 * 20.0 / 127.0;
+    Expect(softPress.second > landing && softPress.second < landing + 0.004, "MechanicsKnock", "a key knocks as it lands: peak after its stroke, ms",
+           (softPress.second - landing) * 1.0e3);
+    Expect(softSeat.second > 0.258 && softSeat.second < 0.262, "MechanicsKnock", "its pallet knocks as it seats: peak after the key is let go, ms",
+           (softSeat.second - 0.25) * 1.0e3);
+    Expect(Db(hardPress.first / softPress.first) > 10.0, "MechanicsKnock", "a hard stroke against a soft one, dB", Db(hardPress.first / softPress.first));
+    const double trim = Db(PeakIn(quieter, rate, 0.05, 0.1).first / softPress.first);
+    Expect(std::fabs(trim + 10.0) < 0.1, "MechanicsKnock", "Mechanics at -10 dB, dB", trim);
+    const Take turned = key(20, 0.0, 0.005, 0), half = key(20, 0.0, 0.2, 127);
+    const double turnedPress = PeakIn(turned, rate, 0.05, 0.0575).first, halfPress = PeakIn(half, rate, 0.05, 0.25).first;
+    Expect(turnedPress < 1.0e-6, "MechanicsKnock", "a key let go before it lands: peak before its pallet seats", turnedPress);
+    Expect(PeakIn(turned, rate, 0.05, 0.1).first > 1.0e-4, "MechanicsKnock", "and then its pallet seats: peak", PeakIn(turned, rate, 0.05, 0.1).first);
+    Expect(halfPress < 1.0e-6, "MechanicsKnock", "a key held half down: peak while it is held", halfPress);
+    Expect(PeakIn(half, rate, 0.25, 0.3).first > 1.0e-4, "MechanicsKnock", "and its pallet still seats: peak", PeakIn(half, rate, 0.25, 0.3).first);
+    const double hz = [&] {
+        double best = 0.0, at = 0.0;
+        for (double f = 100.0; f <= 4000.0; f *= 1.01) {
+            double re = 0.0, im = 0.0;
+            for (auto i = static_cast<std::size_t>(0.05 * rate); i < static_cast<std::size_t>(0.1 * rate); ++i) {
+                re += soft.left[i] * std::cos(2.0 * kPi * f * static_cast<double>(i) / rate);
+                im += soft.left[i] * std::sin(2.0 * kPi * f * static_cast<double>(i) / rate);
+            }
+            if (re * re + im * im > best) { best = re * re + im * im; at = f; }
+        }
+        return at;
+    }();
+    Expect(hz > 210.0 && hz < 600.0, "MechanicsKnock", "a soft key's knock peaks at, Hz", hz);
 }
 
 void AirFromMotion() {
@@ -815,6 +878,7 @@ void NonFiniteControls() {
 
 int main() {
     SilentWithoutMotion();
+    MechanicsKnock();
     AirFromMotion();
     TurnWithoutClick();
     StillnessStopsTheSound();

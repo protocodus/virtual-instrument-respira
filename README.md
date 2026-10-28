@@ -75,6 +75,10 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 - A half-pressed key keeps its share of Assist's air, so at a steady wheel the
   pressure rises into the bend, as when the bellows is pushed harder: low notes
   bend instead of fading (chosen by ear).
+- The mechanism sounds, with or without air: a key knocks as it lands on its
+  felt, harder and brighter for a faster stroke, and its pallet as the spring
+  seats it; bass and chord buttons, the register switches and the air button
+  knock too. **Mechanics** sets their level, which is estimated, not measured.
 
 ## Downloads
 
@@ -102,8 +106,9 @@ one full sweep of the wheel moves (2 L by default, a hand's stroke rather than
 the whole bellows), and the bellows pressure follows
 dp/dt = K (Q_hand − Q_reeds − Q_leak), with K = 4·10⁶ Pa/m³ (the air in the
 bellows stiffened by its folds and the player's arm), clamped at ±2.5 kPa,
-what an arm can put on a bellows. A still hand makes no sound; the pressure
-falls as the open reeds use up what is left.
+what an arm can put on a bellows. A still hand moves no air, so the reeds
+fall silent as the open reeds use up what is left; only the mechanism still
+knocks (see The mechanism).
 
 A real accordion needs far more air for a full chord than for one reed: a
 full register with bass takes 4–5 L/s against a tenth of a litre for one A4
@@ -231,6 +236,42 @@ roll-off; their plausible spread is 0.55–2.0 kHz. The box is shallow enough
 there for a lumped model, which holds within 2 dB up to 2 kHz. The air valve
 opens into the bass box as well, so its hiss leaves the same way.
 
+### The mechanism
+
+The keys, buttons, pallets, register switches and air button knock on their
+stops, with or without air. Each knock is a collision: a part of effective
+mass m reaches its stop at the speed the engine moves it and the stop's felt
+brings it to rest. The felt's force is a measured law, (a x³ + b x² + c x)(1 +
+d ẋ) at compression x, fitted to a grand piano action's stops (Hirschkorn,
+Waterloo 2004): the felt under a key's front where a pressed key lands, and
+the back rail cloth a released key returns onto, which stands in for the
+pallet's leather on its seat. A treble key and the fingertip on it (20 g, 5 mm
+of dip) land at the end of the key's stroke, 0.4 m/s for a soft key and
+1.7 m/s for a hard one; a pallet (10 g at the pallet, 5 mm of lift, the lift
+the pallet holes assume) lands when its spring has closed it, 8 ms after the
+key is let go, at 0.6 m/s whatever the finger did. Bass and chord buttons
+(15 g, 3 mm) land like keys and their pallets like the treble's; a register
+switch (30 g, 5 mm) knocks as it is pressed, at the speed of the softest key
+stroke, the time its slides take; the air button lands like a bass button and
+its pad like a bass pallet. A key let go before it lands, or held half
+down, does not knock until its pallet seats; one pressed again before its
+pallet seats does not knock on the way up. Each key's knock differs a little
+from its neighbours' (its mass ±20 %, fixed per instrument). Masses and
+travels are estimates from typical sizes.
+
+The felt stiffens as it is compressed, so a harder stroke lands not only
+louder but shorter and brighter: a soft key's knock lasts about 3.4 ms and
+peaks near 280 Hz, a hard key's 2.6 ms, near 550 Hz. The force radiates as the
+key does, a compact body of the key's size (20 mm by 100 mm) driven by it, as
+a dipole averaged over directions, and every part radiates through that one
+coupling; the body passes it only above its lowest panel modes, a 210 Hz
+high-pass, where a real accordion's mechanism sound begins (Niewczas, Łódź
+2019, Fig. 50, which spans 210 Hz–4 kHz with its peak at 300–500 Hz). The bass
+side's knocks leave through the bass box, as its reeds do. At 1 m, with
+**Mechanics** at 0 dB, a soft key peaks at 42 dB SPL, a moderate one at 46,
+a hard one at 64 and a pallet at 41, where ordinary playing reads 73 dB RMS:
+heard in quiet passages and between notes, as real mechanisms are.
+
 ### The output stage
 
 On Reason's VU meter (the louder channel's RMS over 300 ms, +12 dB) the demo
@@ -260,6 +301,7 @@ strokes read −3.0 VU at most. Volume sets the level going into the stage.
 | Air | off, on | the air valve |
 | Momentum | 0–200 ms | how far the arm trails the wheel; 0 follows it exactly |
 | Oversampling | 1×, 2×, 4× | the reeds' time step: 1× is four times the host rate; 2× and 4× cost about two and four times the CPU |
+| Mechanics | −40 to +20 dB | the keys', pallets', buttons' and switches' knocks, against the estimate (The mechanism); at −40 dB they are all but silent |
 
 `Source/DSP/RespiraControls.h` holds these for every front end;
 `Source/DSP/RespiraPresets.h` holds the eight factory presets, one per
@@ -295,6 +337,16 @@ a pitch wheel should do what it says.
   reciprocal of the gap area per reed step in place of three divisions,
   were tried and changed nothing measurable (within the container's ±3 %
   timing noise), so the reed step itself stays as written.
+- **The mechanism's level and brightness.** No measurement of how loud an
+  accordion's mechanism is against its reeds was found, so Mechanics is in
+  dB against an estimate: the key's own radiation, while the force really
+  reaches the air through the keyboard and the body, which are not modelled.
+  The felt laws are a piano's, and the masses and travels estimates. Against
+  the one measured spectrum (Niewczas 2019, Fig. 50, about 10 dB under its
+  peak at 3–4 kHz) the treble knocks are 13–19 dB darker there and the bass
+  side's darker still through the bass box: no metal part, spring or panel
+  rings here. Pallets and keys stop on felt and never rattle against
+  each other, and the bellows' folds, straps and the player make no sound.
 - **Chord buttons are pitch classes**, not Stradella's fixed major, minor,
   seventh and diminished rows, and there are no bass register switches.
 - **One turbulence seed.** Two engines given the same input play identical

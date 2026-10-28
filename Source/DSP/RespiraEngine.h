@@ -26,10 +26,13 @@
 //   pitch bend +-2 semitones, retuning every sounding tongue
 // Other channels play as channel 1. Velocity sets how fast the pallet lifts.
 // The register switches act on held keys too, as the slides they move do.
+// The keys, buttons, pallets and switches knock on their stops (Mechanics.h),
+// with or without air.
 //
 // JUCE-free, C++17, no allocation, locks or exceptions after construction.
 
 #include "Decimator.h"
+#include "Mechanics.h"
 #include "OutputStage.h"
 #include "ReedBank.h"
 #include "RespiraControls.h"
@@ -144,11 +147,21 @@ private:
         void Tick(double dt, double momentum);
     };
 
+    // A key or button of one channel (channel * 128 + key): its travel, 0 up
+    // .. 1 down, which its pallets follow, and where it is headed.
+    struct Key {
+        double travel = 0.0, target = 0.0, rate = 0.0;   // rate: travel per sample going down
+        bool button = false, listed = false;
+    };
+
     void NoteOn(int channel, int key, int velocity);
     void NoteOff(int channel, int key);
     void StartCell(int rank, int key, int source, int velocity);
     void SwitchRegister(int from, int to);
     void UpdatePan(Cell& cell) const;
+    void MoveKey(int source);
+    void StartKnock(const Stop& stop, double speed, double massScale, bool bass, int tableKey);
+    void StepKeys();
 
     Controls controls;
     double rate = 48000.0, internalRate = 192000.0;
@@ -178,6 +191,12 @@ private:
     double trebleGain = 1.0, trebleGainTarget = 1.0;   // the register's trim
     protocodus::OutputStage<2> output;
     float bassPanL = 0.0f, bassPanR = 0.0f, bassPanLTarget = 0.0f, bassPanRTarget = 0.0f;
+    std::array<Key, 3 * 128> keys {};
+    std::array<std::uint16_t, 3 * 128> movingKeys {};   // the keys whose travel is changing
+    int movingCount = 0;
+    std::array<Knock, 32> knocks {};
+    BodyHighPass mechanicsL, mechanicsR, mechanicsBass;
+    double mechanicsGain = 0.0, mechanicsGainTarget = 0.0;
     Diagnostics diag;
 };
 

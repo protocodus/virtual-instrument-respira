@@ -207,10 +207,16 @@ DSP change is called done.
 
 ## Respira specifics
 
-- **The bellows is the instrument.** Sound comes only from air the hand moves
-  (mod wheel, `Engine::SetHand`); never add an oscillator, a note envelope or
-  a level that does not come from bellows pressure. A test that plays notes
-  must move the hand.
+- **The bellows is the instrument.** Every musical sound comes only from air
+  the hand moves (mod wheel, `Engine::SetHand`); never add an oscillator, a
+  note envelope or a level that does not come from bellows pressure. A test
+  that plays notes must move the hand.
+- **The mechanism is the one exception** (owner decision, 2026-10-28): keys,
+  buttons, pallets, register switches and the air button knock on their stops
+  with or without air, at the Mechanics level (`Source/DSP/Mechanics.h`). A
+  knock comes only from a part's collision with its stop at the speed the
+  engine moves it, never from an oscillator, an envelope or a sample, and it
+  acts on the output only, never on the reeds or the bellows.
 - The output stage (a compressor and peak limiter after Volume) is the
   owner's calibration, not part of the instrument: ordinary playing at −9 VU
   on Reason's meter, nothing in the red (`TypicalLevel`, `HardStrokesFit`).

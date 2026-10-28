@@ -25,6 +25,7 @@ enum Control : int {
     kAir,        // air button: vents the bellows so the hand moves without sound
     kMomentum,   // the arm's lag behind the wheel, ms: 0 the wheel moves the bellows directly
     kOversampling, // 0, 1, 2: 1x, 2x, 4x the engine's own internal rate (4x the host rate)
+    kMechanics,  // the keys', pallets', buttons' and register switches' knocks, dB re the estimate (Mechanics.h)
     kControlCount
 };
 
@@ -55,6 +56,9 @@ inline constexpr std::array<ControlInfo, kControlCount> kControlInfo { {
     // full cycles a second keeps 72 % of its travel (1 / (1 + (2 pi f T)^2)).
     { "momentum", "Momentum", 0.0, 200.0, 25.0, 0, Curve::kLinear, "ms" },
     { "oversampling", "Oversampling", 0.0, 2.0, 0.0, 3, Curve::kStepped, "" },
+    // Against an estimate, since the level is not measured (Mechanics.h); at
+    // -40 dB the hardest key peaks at about 24 dB SPL at 1 m, all but silent.
+    { "mechanics", "Mechanics", -40.0, 20.0, 0.0, 0, Curve::kLinear, "dB" },
 } };
 
 // Physical value of control `index` at normalised position n (clamped to 0..1).

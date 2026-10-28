@@ -105,6 +105,14 @@ bool Sounds(const Register& reg, int rank, int key) {
     return rank != kRankH || key + 12 <= kHighestReed || !reg.ranks[kRankM];
 }
 
+// Player's view: the bass side on the left, the treble keys spread across the
+// right from the middle register up.
+void TreblePan(int tableKey, double width, float& left, float& right) {
+    const double pan = width * Clamp(0.55 + (tableKey - 72) / 72.0, -0.2, 1.0);
+    left = static_cast<float>(std::cos((pan + 1.0) * kPi / 4.0));
+    right = static_cast<float>(std::sin((pan + 1.0) * kPi / 4.0));
+}
+
 } // namespace
 
 // Per unit of cover area the holes' air mass is rho l' / open and the
@@ -162,6 +170,7 @@ Engine::Engine() { Prepare(48000.0); }
 void Engine::Prepare(double sampleRate) {
     rate = sampleRate > 1000.0 && sampleRate < 1.0e6 ? sampleRate : 48000.0;
     bassBox.Set(kBassBoxDepth, kBassBoxOpen, kBassHoleLength, kClothRayl, rate);
+    for (BodyHighPass* body : { &mechanicsL, &mechanicsR, &mechanicsBass }) body->Set(rate);
     smoothing = 1.0 - std::exp(-1.0 / (0.02 * rate));
     bendSmoothing = 1.0 - std::exp(-1.0 / (0.005 * rate));
     output.Prepare(rate, kBellowsGuard);
@@ -194,6 +203,11 @@ void Engine::Reset() {
     bassPanL = bassPanLTarget;
     bassPanR = bassPanRTarget;
     output.Reset();
+    keys.fill(Key {});
+    movingCount = 0;
+    knocks.fill(Knock {});
+    for (BodyHighPass* body : { &mechanicsL, &mechanicsR, &mechanicsBass }) body->Clear();
+    mechanicsGain = mechanicsGainTarget;
     diag = Diagnostics {};
 }
 
@@ -216,7 +230,10 @@ void Engine::SetControls(const Controls& next) {
     stages = 2 + index;
     internalRate = nextRate;
     const int reg = static_cast<int>(controls[kRegister]);
-    if (reg != registerIndex) SwitchRegister(registerIndex, reg);
+    if (reg != registerIndex) {
+        SwitchRegister(registerIndex, reg);
+        StartKnock(kRegisterSwitch, kRegisterSwitch.travel / kOpenSeconds, 1.0, false, 72);
+    }
     registerIndex = reg;
     // The gap turbulence's force on the tongues is white per internal step; it
     // scales with the square root of the step rate so its spectrum, the noise
@@ -227,6 +244,7 @@ void Engine::SetControls(const Controls& next) {
     gainTarget = kRho / (4.0 * kPi) * kPascalToFullScale * DbToGain(controls[kVolume]);
     bassGainTarget = DbToGain(controls[kBass]);
     trebleGainTarget = DbToGain(kRegisterTrimDb[static_cast<std::size_t>(reg)]);
+    mechanicsGainTarget = kForceToFlow * DbToGain(controls[kMechanics]);
     const double bassPan = -0.9 * controls[kWidth];
     bassPanLTarget = static_cast<float>(std::cos((bassPan + 1.0) * kPi / 4.0));
     bassPanRTarget = static_cast<float>(std::sin((bassPan + 1.0) * kPi / 4.0));
@@ -252,16 +270,69 @@ void Engine::SetChannelPressure(int channel, double amount) {
     channelDepth[static_cast<std::size_t>(channel)] = depth;
     for (auto& c : cells)
         if (c.active && c.held && c.source / 128 == channel) c.depth = depth;
+    for (int source = channel * 128; source < channel * 128 + 128; ++source)
+        if (keys[static_cast<std::size_t>(source)].target > 0.0) {
+            keys[static_cast<std::size_t>(source)].target = depth;
+            MoveKey(source);
+        }
 }
 
 void Engine::UpdatePan(Cell& c) const {
-    if (c.spec.bass) return;
-    // Player's view: the bass side on the left, the treble keys spread across
-    // the right from the middle register up.
-    const int key = c.reed % 128;
-    const double pan = controls[kWidth] * Clamp(0.55 + (key - 72) / 72.0, -0.2, 1.0);
-    c.gainLTarget = static_cast<float>(std::cos((pan + 1.0) * kPi / 4.0));
-    c.gainRTarget = static_cast<float>(std::sin((pan + 1.0) * kPi / 4.0));
+    if (!c.spec.bass) TreblePan(c.reed % 128, controls[kWidth], c.gainLTarget, c.gainRTarget);
+}
+
+void Engine::MoveKey(int source) {
+    Key& k = keys[static_cast<std::size_t>(source)];
+    if (k.listed || k.travel == k.target) return;
+    k.listed = true;
+    movingKeys[static_cast<std::size_t>(movingCount++)] = static_cast<std::uint16_t>(source);
+}
+
+// A part landing on its stop. When every knock is still sounding, a new one
+// in that crowd is dropped.
+void Engine::StartKnock(const Stop& stop, double speed, double massScale, bool bass, int tableKey) {
+    for (auto& k : knocks) {
+        if (k.active) continue;
+        k.Start(stop, speed, massScale);
+        k.bass = bass;
+        if (!bass) TreblePan(tableKey, controls[kWidth], k.panL, k.panR);
+        return;
+    }
+}
+
+// The keys move as their pallets do (Render): down at the stroke's speed,
+// up in the time the spring takes. A key knocks on its felt when it reaches
+// the bottom and its pallet on its seat when it is back up; a key that turns
+// before either does not. Each key's felt and leverage differ a little from
+// its neighbours' (mass +-20 %, fixed per instrument, as the reeds differ).
+void Engine::StepKeys() {
+    const double up = 1.0 / (kCloseSeconds * rate);
+    for (int i = 0; i < movingCount;) {
+        const int source = movingKeys[static_cast<std::size_t>(i)];
+        Key& k = keys[static_cast<std::size_t>(source)];
+        const Stop* stop = nullptr;
+        double speed = 0.0;
+        if (k.travel < k.target) {
+            k.travel = Min(k.target, k.travel + k.rate);
+            if (k.travel >= 1.0) {
+                stop = k.button ? &kButton : &kTrebleKey;
+                speed = stop->travel * k.rate * rate;
+            }
+        } else {
+            k.travel = Max(k.target, k.travel - up);
+            if (k.travel <= 0.0) {
+                stop = k.button ? &kBassPallet : &kTreblePallet;
+                speed = stop->travel * up * rate;
+            }
+        }
+        if (stop) StartKnock(*stop, speed, 1.0 + 0.2 * Unit(Hash(2u, static_cast<std::uint32_t>(source))), k.button, TrebleKey(source % 128));
+        if (k.travel == k.target) {
+            k.listed = false;
+            movingKeys[static_cast<std::size_t>(i)] = movingKeys[static_cast<std::size_t>(--movingCount)];
+        } else {
+            ++i;
+        }
+    }
 }
 
 void Engine::StartCell(int rank, int key, int source, int velocity) {
@@ -323,6 +394,11 @@ void Engine::NoteOn(int channel, int key, int velocity) {
         else if (key < 48) group = kChordButtons;
     }
     const int source = channel * 128 + key;
+    Key& k = keys[static_cast<std::size_t>(source)];
+    k.target = channelDepth[static_cast<std::size_t>(channel)];
+    k.rate = 1.0 / ((kOpenSeconds - kOpenVelocity * velocity / 127.0) * rate);
+    k.button = group != kTreble;
+    MoveKey(source);
     if (group == kBassButtons) {
         StartCell(kRankBass16, PitchClass(key), source, velocity);
         StartCell(kRankBass8, PitchClass(key), source, velocity);
@@ -361,11 +437,17 @@ void Engine::NoteOff(int channel, int key) {
     for (auto& c : cells)
         if (c.active && c.held && c.source == source) c.held = false;
     if (channel == 0) trebleHeld[static_cast<std::size_t>(key)] = 0;
+    keys[static_cast<std::size_t>(source)].target = 0.0;
+    MoveKey(source);
 }
 
 void Engine::AllNotesOff() {
     for (auto& c : cells) c.held = false;
     trebleHeld.fill(0);
+    for (int source = 0; source < 3 * 128; ++source) {
+        keys[static_cast<std::size_t>(source)].target = 0.0;
+        MoveKey(source);
+    }
 }
 
 void Engine::Midi(const std::uint8_t* bytes, int size) {
@@ -402,7 +484,11 @@ void Engine::Render(float* left, float* right, int frames) {
         // reeds take beyond one A4 reed, so one wheel speed gives one pressure
         // whatever is played; at 0 the hand moves the bellows' own air only.
         const double handFlow = -litres * hand.velocity * (1.0 + assist * (Max(demand, 1.0) - 1.0));
+        const double valveWas = valve;
         valve = airValve ? Min(1.0, valve + valveOpen) : Max(0.0, valve - valveClose);
+        if (valve >= 1.0 && valveWas < 1.0) StartKnock(kButton, kButton.travel / kOpenSeconds, 1.0, true, 0);
+        if (valve <= 0.0 && valveWas > 0.0) StartKnock(kBassPallet, kBassPallet.travel / kCloseSeconds, 1.0, true, 0);
+        StepKeys();
         double vented = 0.0, hiss = 0.0;
         if (valve > 0.0) {
             const double area = kAirValveArea * valve, p = Abs(pressure);
@@ -492,11 +578,22 @@ void Engine::Render(float* left, float* right, int frames) {
         trebleGain += smoothing * (trebleGainTarget - trebleGain);
         bassPanL += glide * (bassPanLTarget - bassPanL);
         bassPanR += glide * (bassPanRTarget - bassPanR);
-        // The air valve opens into the bass box too: its hiss leaves through
-        // the bass end cover's holes with the bass reeds' sound.
-        const double bass = bassBox.Process(bassSide.Process(b, stages) + hiss) * bassGain;
-        const double l = gain * (grilleL * trebleGain + bass * bassPanL);
-        const double r = gain * (grilleR * trebleGain + bass * bassPanR);
+        double knockL = 0.0, knockR = 0.0, knockBass = 0.0;
+        for (auto& k : knocks) {
+            if (!k.active) continue;
+            const double change = k.Step(dt) * rate;
+            if (k.bass) knockBass += change;
+            else {
+                knockL += change * k.panL;
+                knockR += change * k.panR;
+            }
+        }
+        mechanicsGain += smoothing * (mechanicsGainTarget - mechanicsGain);
+        // The air valve and the bass mechanism sit in the bass box too: their
+        // sound leaves through the bass end cover's holes with the bass reeds'.
+        const double bass = bassBox.Process(bassSide.Process(b, stages) + hiss + mechanicsGain * mechanicsBass.Process(knockBass)) * bassGain;
+        const double l = gain * (grilleL * trebleGain + mechanicsGain * mechanicsL.Process(knockL) + bass * bassPanL);
+        const double r = gain * (grilleR * trebleGain + mechanicsGain * mechanicsR.Process(knockR) + bass * bassPanR);
         std::array<float, 2> frame { { static_cast<float>(l), static_cast<float>(r) } };
         output.Process(frame);
         left[i] = frame[0];
@@ -507,6 +604,7 @@ void Engine::Render(float* left, float* right, int frames) {
         trebleRight.FlushTiny();
         bassSide.FlushTiny();
         bassBox.FlushTiny();
+        for (BodyHighPass* body : { &mechanicsL, &mechanicsR, &mechanicsBass }) body->FlushTiny();
         for (double* v : { &grilleL, &grilleR })
             if (Abs(*v) < 1.0e-20) *v = 0.0;
     }
