@@ -763,8 +763,7 @@ Probed offline with the tuning regenerated:
 - But every other measurement moves away. The reeds reach 70 dBA at 51 Pa
   instead of 175, A#2–A3's 15th–20th harmonics sit 7 dB above the
   measurement (now 0.5 dB under), a half-pressed key falls silent, and from
-  C2 to E4 the pitch rises with loudness where the bandoneon's and Okada's
-  reed fall.
+  C2 to A3 the pitch rises with loudness where the bandoneon's falls.
 
 The plates' thickness, the sets and the tip weights were all voiced on the
 orifice law, so the channel law would need them voiced again against those
