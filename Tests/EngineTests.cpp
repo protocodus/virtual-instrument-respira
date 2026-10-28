@@ -1,5 +1,5 @@
 // Engine contracts: air only from the hand's motion, the bellows' turn, pitch and pitch bend, rates and
-// Oversampling, routing, register switches on held keys, half-pressed keys,
+// Oversampling, routing, register switches on held keys, the 4' rank's break, half-pressed keys,
 // the air button and Assist, the controller stream and the arm's momentum, block-partition
 // invariance and determinism, release and voice limits, the noise scaling.
 #include "DSP/RespiraEngine.h"
@@ -334,6 +334,33 @@ void RegisterActsOnHeldNotes() {
     e->SetControls(controls);
     Play(*e, rate, 0.05, {}, opening(1.9));
     Expect(e->Diag().cells == 0, "RegisterActsOnHeldNotes", "a released key stays silent through a switch", e->Diag().cells);
+}
+
+void TopOctaveSteady() {
+    // Above C#6 the 4' rank's reeds would double the 8' in unison and beat
+    // slowly against it (RespiraEngine.cpp, Sounds). On Oboe (M, H) an E6 and
+    // a C7 on a rising pull follow the pressure smoothly: their 100 ms RMS
+    // from 0.6 to 1.8 s stays within 2 dB of a straight line, where the
+    // doubled reeds strayed 3 and 8 dB.
+    const double rate = 48000.0;
+    double worst = 0.0;
+    for (int key : { 88, 96 }) {
+        auto e = Make(rate, 0, [](Controls& c) { c = Controls {}; c[kRegister] = 6; });
+        const Take t = Play(*e, rate, 1.8, { { 0.0, { kOn, static_cast<std::uint8_t>(key), 100 } } },
+                            [](double s) { return 0.3 + 0.12 * s; });
+        std::vector<double> db;
+        for (int i = 0; i < 12; ++i) db.push_back(Db(Rms(t.left, rate, 0.6 + 0.1 * i, 0.7 + 0.1 * i)));
+        double sx = 0.0, sy = 0.0, sxx = 0.0, sxy = 0.0;
+        for (std::size_t i = 0; i < db.size(); ++i) {
+            sx += static_cast<double>(i);
+            sy += db[i];
+            sxx += static_cast<double>(i * i);
+            sxy += static_cast<double>(i) * db[i];
+        }
+        const double n = static_cast<double>(db.size()), slope = (n * sxy - sx * sy) / (n * sxx - sx * sx), at0 = (sy - slope * sx) / n;
+        for (std::size_t i = 0; i < db.size(); ++i) worst = std::max(worst, std::fabs(db[i] - at0 - slope * static_cast<double>(i)));
+    }
+    Expect(worst < 2.0, "TopOctaveSteady", "a held E6 or C7 on Oboe, 100 ms level off a straight line at most, dB", worst);
 }
 
 void HalfPressedKeys() {
@@ -765,6 +792,7 @@ int main() {
     MusetteBeat();
     SplitKeyboardRouting();
     RegisterActsOnHeldNotes();
+    TopOctaveSteady();
     HalfPressedKeys();
     AirButtonVents();
     AssistScalesTheHand();

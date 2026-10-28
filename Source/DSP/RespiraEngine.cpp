@@ -96,6 +96,15 @@ double DbToGain(double db) { return std::pow(10.0, db / 20.0); }
 // Rank of the bass side a group sounds: channel 2 bass buttons, channel 3 chords.
 enum Group { kTreble, kBassButtons, kChordButtons };
 
+// Whether a register sounds `rank` for a (folded) treble key. Broken back
+// above C#7, the 4' would double the 8' in unison, a cent or so apart, and
+// the two would beat slowly down to near silence; where the 8' is open the
+// 4' stays shut there instead.
+bool Sounds(const Register& reg, int rank, int key) {
+    if (!reg.ranks[static_cast<std::size_t>(rank)]) return false;
+    return rank != kRankH || key + 12 <= kHighestReed || !reg.ranks[kRankM];
+}
+
 } // namespace
 
 // Per unit of cover area the holes' air mass is rho l' / open and the
@@ -322,7 +331,7 @@ void Engine::NoteOn(int channel, int key, int velocity) {
     } else {
         const Register& reg = kRegisters[static_cast<std::size_t>(controls[kRegister])];
         for (int rank = kRankL; rank <= kRankH; ++rank)
-            if (reg.ranks[static_cast<std::size_t>(rank)]) StartCell(rank, TrebleKey(key), source, velocity);
+            if (Sounds(reg, rank, TrebleKey(key))) StartCell(rank, TrebleKey(key), source, velocity);
         trebleHeld[static_cast<std::size_t>(key)] = static_cast<std::uint8_t>(velocity);
     }
 }
@@ -337,7 +346,7 @@ void Engine::SwitchRegister(int from, int to) {
     for (int key = 0; key < 128; ++key) {
         if (trebleHeld[static_cast<std::size_t>(key)] == 0) continue;
         for (int rank = kRankL; rank <= kRankH; ++rank) {
-            const bool was = before.ranks[static_cast<std::size_t>(rank)], is = after.ranks[static_cast<std::size_t>(rank)];
+            const bool was = Sounds(before, rank, TrebleKey(key)), is = Sounds(after, rank, TrebleKey(key));
             if (is && !was) StartCell(rank, TrebleKey(key), key, 0);
             else if (was && !is)
                 for (auto& c : cells)

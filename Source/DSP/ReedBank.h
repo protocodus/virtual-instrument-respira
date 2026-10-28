@@ -30,6 +30,10 @@ inline int TrebleKey(int key) {
     return key;
 }
 
+// C#7, the 4' rank's highest reed: above it the model's reeds need more than
+// a moderate pressure to speak (D7-F7 from about 400 Pa, C8 only at 1.5 kPa).
+constexpr int kHighestReed = 97;
+
 inline int PitchClass(int key) { return ((key % 12) + 12) % 12; }
 
 inline double NoteHz(double note) { return 440.0 * std::pow(2.0, (note - 69.0) / 12.0); }
@@ -56,7 +60,7 @@ inline double RankNote(int rank, int key, double musetteCents) {
         // The 4' rank breaks back an octave at the top, where its reeds would be
         // too small to speak: no reed sounds above C#7.
         const int note = key + 12;
-        return note > 97 ? note - 12 : note;
+        return note > kHighestReed ? note - 12 : note;
     }
     case kRankBass16: return fold(28);   // E1..D#2
     case kRankBass8: return fold(40);    // E2..D#3

@@ -65,6 +65,9 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 - The reeds' breath has the spectrum of the eddies in their gaps, so the
   estimated turbulence is heard rather than three quarters of it falling
   above 24 kHz: a little more air around soft notes.
+- From D6 up, Oboe and Master no longer double the 8' with the broken-back
+  4' in unison, which beat slowly and could almost cancel a held note; the
+  top octave holds a steady level.
 
 ## Downloads
 
@@ -170,7 +173,9 @@ the oldest released chamber first.
 
 The treble has five ranks of reeds: L (16', an octave down), M (8'), M− and
 M+ (8', tuned below and above M for the tremolo) and H (4', an octave up,
-breaking back an octave at the top so that no reed sounds above C♯7). The
+breaking back an octave at the top so that no reed sounds above C♯7; where M
+is open it stays shut there, since it would sound in unison with M a cent
+or so apart and the two would beat slowly to near silence). The
 eight register switches combine them: Clarinet (M), Bassoon (L), Violin (M,
 M+), Musette (M−, M, M+), Bandoneon (L, M), Organ (L, H), Oboe (M, H) and
 Master (all five). A switch moves slides over the reed blocks, so it reaches
