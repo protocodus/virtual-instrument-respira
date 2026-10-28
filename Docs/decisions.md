@@ -437,4 +437,6 @@ as "probably" the best), the air valve's hiss through the bass box (04, B,
 first "probably" better) and Assist counting a half-pressed key in full (05,
 B). Nothing changes; the earlier entries' hedges no longer apply. Pack
 `06-pallet` came back B as well; that candidate is not kept for the reasons
-in its entry, and the owner was asked whether to apply it anyway.
+in its entry. Asked whether to apply it anyway, the owner chose to revisit it
+once the reed chamber's top end is fixed: the fit to Okada's open slope is
+then redone and kept if the harmonic measurement allows it.
