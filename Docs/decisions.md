@@ -165,3 +165,15 @@ open area and the slots' effective length (RespiraEngine.cpp,
 with the plausible extremes as candidates. Pack `01-musette`
 (listening-2026-10-28): A the engine before, B 4.0 kHz, C 2.7 kHz (shipping),
 D 1.6 kHz. Verdict: pending.
+
+## 2026-10-28 — the bass box, by-ear verdict pending (owner asked; engineering)
+
+The bass side sounded through a voiced 2.5 kHz one-pole low-pass. The bass
+pallets open into the bass box, the space under the bass end cover, which
+vents through the cover's holes: the treble compartment's Helmholtz
+resonator, deeper and far less open (RespiraEngine.cpp, `kBassBoxDepth`).
+The typical values ship, 960 Hz at Q 1.3. On the Bassoon Low demo, whose high
+partials come mostly from the bass side, 4–8 kHz falls from −30.2 to −44.7 dB
+against 500 Hz–1 kHz. Pack `02-bass` (listening-2026-10-28): A the engine
+before, B 2.0 kHz (Q 0.85), C 960 Hz (shipping), D 550 Hz (Q 1.9). Verdict:
+pending.

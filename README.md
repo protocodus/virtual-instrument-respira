@@ -61,6 +61,9 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 - The treble reeds sound through the shallow compartment under the grille,
   a Helmholtz resonator that softens their upper harmonics above about
   2.7 kHz.
+- The bass reeds sound through the bass box, a Helmholtz resonator at about
+  960 Hz behind the bass end cover's holes, in place of a plain 2.5 kHz
+  low-pass: a rounder, less buzzy bass.
 
 ## Downloads
 
@@ -171,8 +174,7 @@ interval below.
 A bass button sounds two reeds, a 16' (E1–D♯2) and an 8' (E2–D♯3); a chord
 button sounds one pitch class on an 8' (F♯3–F4) and a 4' (F♯4–F5), so any
 chord can be built from chord buttons. The bass reeds sit behind larger
-pallets and longer passages, and sound through the bass box's grille, a
-2.5 kHz low-pass.
+pallets and longer passages, and sound through the bass box (see Radiation).
 
 ### Radiation
 
@@ -185,6 +187,12 @@ flow resistance. Typical values (a 35 mm deep compartment, a grille 30 %
 open, 3 mm slots in 1 mm sheet, cloth of 30 rayl) give 2.7 kHz at Q 0.55,
 rolling off without a peak; their plausible spread is 1.6–4.0 kHz. **Grille**
 then sets the treble side's brightness above it.
+
+The bass pallets open into the bass box, the space under the bass end cover
+round the bass mechanism, which vents through the cover's holes: the same
+resonator, deeper and far less open. Typical values (40 mm deep, 10 % open,
+6 mm holes in 3 mm wood) give 960 Hz at Q 1.3, a 3 dB rise before the
+roll-off; their plausible spread is 0.55–2.0 kHz.
 
 ### The output stage
 

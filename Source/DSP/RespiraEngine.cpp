@@ -54,18 +54,21 @@ constexpr std::array<double, 8> kRegisterTrimDb { { 3.45, 3.93, 1.39, 0.0, 1.46,
 // at velocity 127 is 7-9 dB. Its 2 ms look-ahead limiter holds what gets past
 // at -1.5 dBFS.
 constexpr protocodus::CompressorSettings kBellowsGuard { -17.0, 8.0, 10.0, 0.02, 0.0, 0.3 };
-constexpr double kBassLowpassHz = 2500.0;   // the bass reeds sound through the bass box's grille
 // The treble pallet holes open into the shallow compartment under the grille,
 // which radiates through the grille's slots: a perforated-panel Helmholtz
-// resonator. Per unit of grille area its air mass is rho l' / open and its
-// compliance depth / (rho c^2), so f = c / (2 pi) sqrt(open / (depth l')); the
-// grille is large against the wavelength there, so radiation loads it with
-// rho c, and the cloth behind it adds its flow resistance. Typical piano
-// accordion values: a 35 mm deep compartment, a grille 30 % open, slots with
-// 3.6 mm of effective length (1 mm sheet plus the end corrections of 3 mm
-// slots), cloth of 30 rayl: 2.7 kHz at Q 0.55, a low-pass with no peak. The
-// plausible spread of the three (25-45 mm, 20-40 %, 3-5 mm) is 1.6-4.0 kHz.
+// resonator (Compartment::Set). Typical piano accordion values: a 35 mm deep
+// compartment, a grille 30 % open, slots with 3.6 mm of effective length (1 mm
+// sheet plus the end corrections of 3 mm slots), cloth of 30 rayl: 2.7 kHz at
+// Q 0.55, a low-pass with no peak. The plausible spread of the three
+// (25-45 mm, 20-40 %, 3-5 mm) is 1.6-4.0 kHz.
 constexpr double kCompartmentDepth = 0.035, kGrilleOpen = 0.30, kSlotLength = 0.0036, kClothRayl = 30.0;
+// The bass pallets open into the bass box, the space under the bass end cover
+// round the bass mechanism, which vents through the cover's holes: the same
+// resonator, deeper and far less open. Typical values: 40 mm deep, 10 % open,
+// holes 6 mm across in 3 mm wood (8.1 mm effective, with both end
+// corrections), the same cloth: 960 Hz at Q 1.3, rising 3 dB before the
+// roll-off. The plausible spread (30-50 mm, 5-20 %, 5-10 mm) is 0.55-2.0 kHz.
+constexpr double kBassBoxDepth = 0.04, kBassBoxOpen = 0.10, kBassHoleLength = 0.0081;
 constexpr double kOpenSeconds = 0.012, kOpenVelocity = 0.009;  // pallet lift: 12 ms soft .. 3 ms hard
 constexpr double kCloseSeconds = 0.008;
 constexpr double kQuietSeconds = 0.02;      // a closed chamber is let go after this
@@ -85,7 +88,14 @@ enum Group { kTreble, kBassButtons, kChordButtons };
 
 } // namespace
 
-void Engine::Lowpass2::SetLowpass(double hz, double q, double rate) {
+// Per unit of cover area the holes' air mass is rho l' / open and the
+// compartment's compliance depth / (rho c^2), so f = c / (2 pi) sqrt(open /
+// (depth l')). The cover is large against the wavelength there, so radiation
+// loads it with rho c, and the cloth behind it adds its flow resistance:
+// Q = sqrt(mass / compliance) / (rho c + cloth).
+void Engine::Compartment::Set(double depth, double open, double neck, double rayl, double rate) {
+    const double mass = kRho * neck / open, compliance = depth / kRhoC2;
+    const double hz = 1.0 / (2.0 * kPi * Sqrt(mass * compliance)), q = Sqrt(mass / compliance) / (Sqrt(kRho * kRhoC2) + rayl);
     const double k = std::tan(kPi * Min(hz, 0.45 * rate) / rate), norm = 1.0 / (1.0 + k / q + k * k);
     b0 = b2 = k * k * norm;
     b1 = 2.0 * b0;
@@ -93,7 +103,7 @@ void Engine::Lowpass2::SetLowpass(double hz, double q, double rate) {
     a2 = (1.0 - k / q + k * k) * norm;
 }
 
-void Engine::Lowpass2::FlushTiny() {
+void Engine::Compartment::FlushTiny() {
     if (Abs(z1) < 1.0e-20) z1 = 0.0;
     if (Abs(z2) < 1.0e-20) z2 = 0.0;
 }
@@ -132,13 +142,9 @@ Engine::Engine() { Prepare(48000.0); }
 
 void Engine::Prepare(double sampleRate) {
     rate = sampleRate > 1000.0 && sampleRate < 1.0e6 ? sampleRate : 48000.0;
-    bassCoeff = 1.0 - std::exp(-2.0 * kPi * kBassLowpassHz / rate);
-    {
-        const double mass = kRho * kSlotLength / kGrilleOpen, compliance = kCompartmentDepth / kRhoC2;
-        const double q = Sqrt(mass / compliance) / (Sqrt(kRho * kRhoC2) + kClothRayl);
-        compartmentL.SetLowpass(1.0 / (2.0 * kPi * Sqrt(mass * compliance)), q, rate);
-        compartmentR = compartmentL;
-    }
+    compartmentL.Set(kCompartmentDepth, kGrilleOpen, kSlotLength, kClothRayl, rate);
+    compartmentR = compartmentL;
+    bassBox.Set(kBassBoxDepth, kBassBoxOpen, kBassHoleLength, kClothRayl, rate);
     smoothing = 1.0 - std::exp(-1.0 / (0.02 * rate));
     bendSmoothing = 1.0 - std::exp(-1.0 / (0.005 * rate));
     output.Prepare(rate, kBellowsGuard);
@@ -165,7 +171,8 @@ void Engine::Reset() {
     compartmentL.Clear();
     compartmentR.Clear();
     bassSide.Reset();
-    grilleL = grilleR = bassLow = 0.0;
+    bassBox.Clear();
+    grilleL = grilleR = 0.0;
     gain = gainTarget;
     bassGain = bassGainTarget;
     trebleGain = trebleGainTarget;
@@ -440,11 +447,10 @@ void Engine::Render(float* left, float* right, int frames) {
 
         grilleL += grilleCoeff * (compartmentL.Process(trebleLeft.Process(tl, stages)) - grilleL);
         grilleR += grilleCoeff * (compartmentR.Process(trebleRight.Process(tr, stages)) - grilleR);
-        bassLow += bassCoeff * (bassSide.Process(b, stages) - bassLow);
         gain += smoothing * (gainTarget - gain);
         bassGain += smoothing * (bassGainTarget - bassGain);
         trebleGain += smoothing * (trebleGainTarget - trebleGain);
-        const double bass = (bassLow + hiss) * bassGain;
+        const double bass = (bassBox.Process(bassSide.Process(b, stages)) + hiss) * bassGain;
         const double l = gain * (grilleL * trebleGain + bass * bassPanL);
         const double r = gain * (grilleR * trebleGain + bass * bassPanR);
         std::array<float, 2> frame { { static_cast<float>(l), static_cast<float>(r) } };
@@ -458,7 +464,8 @@ void Engine::Render(float* left, float* right, int frames) {
         compartmentL.FlushTiny();
         compartmentR.FlushTiny();
         bassSide.FlushTiny();
-        for (double* v : { &grilleL, &grilleR, &bassLow })
+        bassBox.FlushTiny();
+        for (double* v : { &grilleL, &grilleR })
             if (Abs(*v) < 1.0e-20) *v = 0.0;
     }
     diag.hand = hand.position;

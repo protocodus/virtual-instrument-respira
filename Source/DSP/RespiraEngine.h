@@ -107,10 +107,14 @@ private:
         float gainL = 0.0f, gainR = 0.0f;
     };
 
-    // Second-order low-pass (bilinear, prewarped), transposed direct form II.
-    struct Lowpass2 {
+    // A compartment the pallets open into, radiating through a perforated
+    // cover: a Helmholtz resonator per unit of cover area, so a second-order
+    // low-pass (bilinear, prewarped), in transposed direct form II.
+    struct Compartment {
         double b0 = 1.0, b1 = 0.0, b2 = 0.0, a1 = 0.0, a2 = 0.0, z1 = 0.0, z2 = 0.0;
-        void SetLowpass(double hz, double q, double rate);
+        // depth m, open fraction of the cover, effective hole length m
+        // (thickness plus end corrections), cloth behind it in rayl
+        void Set(double depth, double open, double neck, double rayl, double rate);
         void Clear() { z1 = z2 = 0.0; }
         void FlushTiny();
         double Process(double x) {
@@ -165,9 +169,9 @@ private:
     int sounding = 0;
     std::array<Cell, kMaxCells> cells {};
     Decimator trebleLeft, trebleRight, bassSide;
-    Lowpass2 compartmentL, compartmentR;   // the treble grille's compartment
-    double grilleCoeff = 0.0, bassCoeff = 0.0;
-    double grilleL = 0.0, grilleR = 0.0, bassLow = 0.0;
+    Compartment compartmentL, compartmentR, bassBox;   // under the treble grille, the bass box
+    double grilleCoeff = 0.0;
+    double grilleL = 0.0, grilleR = 0.0;
     double gain = 0.0, gainTarget = 0.0, bassGain = 0.0, bassGainTarget = 0.0, smoothing = 0.0;
     double trebleGain = 1.0, trebleGainTarget = 1.0;   // the register's trim
     protocodus::OutputStage<2> output;
