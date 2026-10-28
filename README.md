@@ -446,6 +446,17 @@ a pitch wheel should do what it says.
   free-reed tongue commonly swings 15 % (Cottingham, Physics Today, 2011),
   and no measured plate thickness was found. The measured accordion dips at
   its 4th harmonic too, about 7 dB under its neighbours.
+- **The treble breathes more above 4 kHz.** Between the harmonics of held
+  G4 and A5 notes on Tango Bandoneon, against the harmonics at 1–2 kHz, the
+  floor sits 12–13 dB above the bandoneon samples' at 4–8 kHz and 22–25 dB
+  above at 8–16 kHz. The gap's breath is most of it: with the breath off,
+  the floor there falls 7–15 dB, to 3–10 dB above the samples'. The breath
+  is flat up to its eddies' rate, about 15 kHz at 500 Pa, where the samples'
+  floor falls 4–10 dB per octave from 2 kHz. Its level was chosen by ear and
+  its 0.3 mm eddies are near an A5 tongue's mean opening while it passes air
+  (about 0.4 mm along its edge); the floor of a sample library may have been
+  cleaned, and the samples' G2 and A3 floors lie up to 19 dB above Respira's
+  below 4 kHz, so no other spectrum is derived from them.
 - **How far a loud note's pitch falls rests on an unknown pressure.** Over
   the loudest 30 dB of a bandoneon's held notes its pitch rises 0.39 cents
   per dB softer on average, 0.34–0.62 from C2 to D3; Respira's 8' cells, with
