@@ -272,6 +272,12 @@ a pitch wheel should do what it says.
 - **Brighter than recordings from 1 to 4 kHz.** Against 500 Hz–1 kHz, the
   demos read 3–6 dB more at 1–2 kHz and 5–9 dB more at 2–4 kHz than a polka
   recording, while 4–16 kHz agrees with it; the cause is not traced.
+- **The top octave speaks slowly, unchecked.** With the bellows already at
+  540 Pa, an A4 reaches its level about 50 ms after the key (some 20
+  periods), a C6 about 90 ms and a C7 about 130 ms (some 270 periods): the
+  pallet's 3–12 ms lift is slow against a high reed's period, so it grows from
+  the gap's turbulence rather than from a kick. No measured onset times of
+  accordion reeds were found to check this against.
 - **The demos' bellows is fitted, not played.** Each stroke's travel comes
   from a target pressure through `Tools/fit_bellows.py`; a player's hand would
   be less even.
