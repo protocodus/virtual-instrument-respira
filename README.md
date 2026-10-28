@@ -401,14 +401,18 @@ a pitch wheel should do what it says.
   brighter than a piano one; at the A5 even the 3rd–7th gain 1.2–1.7.
   Respira's 8' cells gain 0.2 there (−0.4 to 0.8, `CompareBandoneon`); from
   C2 to C4 the two agree (0.8 against 0.7), and over the loudest 15 dB the
-  gap is the same. None of the tongue's air drag and loss (changed until
-  tips up to F5 swing 15 % of their length at 600 Pa, a typical figure in
-  playing), the
-  slot's depth, the tongue's set, its clearance, the slot air's inertia, or
-  a second bending mode of the tongue moves it. A laser vibrometer sees a
-  harmonium reed's own motion gain harmonics as it is blown harder (Puranik
-  and Scavone, Forum Acusticum 2023), but a second mode driven by the same
-  pressure stays far too small here to show; the cause is not traced.
+  gap is the same. None of the tongue's air drag (cut until tips up to F5
+  swing 15 % of their length at 600 Pa, a typical figure in playing), the
+  slot's depth, the tongue's set or where its bend sits, its clearance, the
+  slot air's inertia, the volume the tongue sweeps, or a second bending mode
+  moves it. A laser vibrometer sees a harmonium reed's own motion gain
+  harmonics as it is blown harder (Puranik and Scavone, Forum Acusticum
+  2023), but a second mode driven by the same pressure stays far too small
+  here to show. Only a much lossier tongue comes close: four times the loss
+  (a Q near 75 from F5 to C6, where the model has 290–320) makes them brighten
+  as the bandoneon's do, though E4–D5 stay flat and the top tips then swing
+  3–5 % of their length. No measured Q of an accordion tongue in its slot
+  was found to say whether that is real, so the cause is not traced.
 - **Half-pressed keys lose too much level.** In the same paper a player
   bent A#2–A3 by closing the pallet part way at a steady bellows pressure:
   16 cents flat on average and 11 dB quieter (the mean over the first twenty
