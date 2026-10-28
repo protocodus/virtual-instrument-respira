@@ -245,6 +245,27 @@ a concert accordion's 24 and 14, and 13 and 10, with the finger alone, and
 full channel pressure overbends, A#2–G#3 by 34–64 cents against at most 34
 measured, and stays a known gap.
 
+## 2026-10-28 — the treble pallet hole fitted to Okada's open slope, heard as "ok", not kept (owner; engineering)
+
+Okada's rig (Adachi et al., Forum Acusticum 2026) measured a C4 reed falling
+2.5 Hz per kPa with its pallet fully open and 5.1 with it lifted 1 mm; the
+model's C4 fell 1.5 and 5.8. Pack `06-pallet` (listening-2026-10-28):
+Clarinet Solo on one pull, C4 through a crescendo, A4 through the
+decrescendo; A the shipping hole, B the treble pallet holes at 0.56 of their
+area, fitted to the open slope, with the half-press travel re-pinned to read
+5.1. Verdict, by ear: the candidate is "ok"; the owner also heard the
+decrescendo fall too little, which the output stage's compressor causes in
+both (about 4.5 dB against 10 without it), not the hole.
+
+Not kept. The tip weights changed the same day (a held key on a hard push)
+move the fit: the open slope now needs 0.45 of the area, not 0.56. There the
+one harmonic measurement rejects it (Elejalde-García et al. 2021, A#2–A3 at
+70 dBA): the 15th–20th harmonics fall 12.8 dB below it, against the shipping
+hole's 6.0, and the held A4 on Bassoon sounds 5.8 cents flat against the
+5-cent check. A weak preference for one fit does not outweigh that. The
+model's C4 now falls 1.3 Hz/kPa open and 4.7 half-pressed, against 2.5 and
+5.1 (README).
+
 ## 2026-10-28 — three experiments not kept (engineering)
 
 Tried during the overnight realism work and left out, each for a reason a
