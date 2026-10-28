@@ -307,15 +307,15 @@ a pitch wheel should do what it says.
   16 cents flat on average and 11 dB quieter (the mean over the first twenty
   harmonics). Respira's 8' cells at that loudness, with the pallet opened 0.2
   as full channel pressure holds it, fall 13 cents and 20 dB
-  (`CompareHarmonics`), so for a given bend they lose about twice the level.
+  (`CompareHarmonics`): nearly twice the level for a slightly smaller bend.
   The player found no bend possible from C6 up; a single C6 cell still bends
   17–28 cents at 200–400 Pa, while from E6–G6 up the half-open pallet
   silences the reed.
-  At a steady wheel, Assist adds to it: it counts each reed by its pallet's
-  opening, but a half-open pallet's reed still draws 0.3–0.9 of its open air,
-  so half-pressing takes the hand's extra air away and the pressure falls; a
-  low note bent after it sounds barely moves (C3: 2 cents, 11 dB quieter),
-  and one struck under full channel pressure can fade out. Counting held keys
+  At a steady wheel, Assist changes the picture: it counts each reed by its
+  pallet's opening, but a half-open pallet's reed still draws 0.3–0.9 of its
+  open air, so half-pressing takes the hand's extra air away and the pressure
+  falls; a low note then barely bends (C3: 2 cents where the player reached
+  24, 11 dB quieter), and one struck under full channel pressure can fade out. Counting held keys
   in full instead raises the pressure into the bend but overbends A#2–C#3
   (37–81 cents against at most 34 measured); a listening test of the two is pending.
 - **The top octave speaks slowly, unchecked.** With the bellows already at
