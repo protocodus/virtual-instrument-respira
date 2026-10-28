@@ -68,7 +68,12 @@ inline ReedSpec MakeReed(double f0, double q, double setScale = 1.0) {
     ReedSpec r;
     r.length = std::fmin(0.075, std::fmax(0.008, 0.026 * std::pow(440.0 / f0, 0.45)));
     r.width = std::fmin(0.0045, std::fmax(0.0016, 0.0024 * std::pow(440.0 / f0, 0.15)));
-    r.plate = 0.0012 + 0.015 * r.length;
+    // The reed plate's thickness, the slot's depth: no measured value was
+    // found, and it varies between instruments. 2.0-3.5 mm was chosen by ear
+    // over two thirds of it (Docs/decisions.md). At 70 dBA it keeps A#2-A3
+    // inside their slots, which puts their 4th harmonic on the one published
+    // measurement (Elejalde-Garcia et al. 2021; Tools/CompareHarmonics).
+    r.plate = 0.0018 + 0.0225 * r.length;
     r.rest = -(0.0001 + 0.010 * r.length) * setScale;
     const double clearance = 0.03e-3;
     r.clearArea = (2.0 * r.length + r.width) * clearance;

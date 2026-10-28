@@ -364,3 +364,24 @@ are estimates (README, The mechanism). Mechanics is in dB against the key's
 own dipole radiation, which leaves out what the keyboard and body radiate;
 the listening pack `08-mechanics` offers the estimate and 10 dB either side
 of it, the span the estimate's uncertainty allows. Verdict pending.
+
+## 2026-10-28 — the reed plates half as thick again, B chosen by ear (owner; engineering)
+
+`Tools/CompareHarmonics.cpp` found the 4th harmonic of A#2–A3 12 dB under the
+one published measurement (Elejalde-García et al. 2021, a concert accordion's
+8' reeds at 70 dBA and 50 cm): at that loudness each tongue swung 0.7–2.1 mm
+out past the far face of its 1.3–2.3 mm plate, where the gap opens again, and
+the second pulse of air each period nearly cancelled the 4th. No measured
+plate thickness was found, and it varies between instruments (Cottingham,
+Physics Today 2011). Pack `09-plate` (listening-2026-10-28): Clarinet Solo,
+A#2–A3 one after another at about 210 Pa, then the A3 through a crescendo; A
+the plates as they were, B half as thick again (2.0–3.5 mm), the tuning table
+regenerated. Verdict, by ear: B.
+
+B ships. The 4th now sits on the measurement and the 2nd–16th agree within
+2.2 dB RMS (4.2 before); the 15th–20th stay 7 dB low. The bandoneon slopes
+(`CompareBandoneon`) and Okada's open slope (1.3 Hz/kPa) barely move, the
+half-pressed C4 bends 4.2 Hz/kPa (4.7 before, 5.1 measured), the unit, audio
+and perf tiers pass, and the demos are 0.5–2.5 dB brighter above 1 kHz. The
+choice licenses this estimate of the thickness, not fitting it to the 4th
+harmonic.

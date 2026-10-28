@@ -79,6 +79,9 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
   felt, harder and brighter for a faster stroke, and its pallet as the spring
   seats it; bass and chord buttons, the register switches and the air button
   knock too. **Mechanics** sets their level, which is estimated, not measured.
+- The reed plates are half as thick again, so a low tongue played mezzo
+  forte no longer swings out past the far side of its plate: A#2–A3 get back
+  the 4th harmonic it nearly cancelled (chosen by ear).
 
 ## Downloads
 
@@ -151,12 +154,14 @@ Tongue length and width follow typical accordion reed sizes scaled with
 pitch, the thickness is whatever gives the pitch, and the low reeds carry
 brass tip weights, as real ones do: enough that the arm's full pressure,
 held still, leaves each tongue at least its clearance short of the slot, so a
-bellows pushed hard before the reed swings cannot blow it shut and silent. A chamber whose
+bellows pushed hard before the reed swings cannot blow it shut and silent.
+The reed plates, and so the slots, are 2.0–3.5 mm deep, an estimate chosen by
+ear: at mezzo forte the low tongues swing inside them. A chamber whose
 Helmholtz resonance would fall near its reed is made smaller, as reed makers
 do with wax in the top octaves. Against the one published harmonic
 measurement of an accordion's 8' reeds (A#2–A3, mezzo forte, 50 cm;
-`Tools/CompareHarmonics.cpp`), the 2nd–14th harmonics agree within 2.5 dB on
-average at its loudness, and the 15th–20th sit 6 dB low (see Known gaps).
+`Tools/CompareHarmonics.cpp`), the 2nd–14th harmonics agree within 1.5 dB on
+average at its loudness, and the 15th–20th sit 7 dB low (see Known gaps).
 Every push and pull tongue differs a little
 from its neighbours (set ±10 %, loss ±20 %, tuning ±0.8 cents, fixed per
 instrument). A reed sounds below its natural frequency under load, so
@@ -183,10 +188,10 @@ one, along a raised cosine, so velocity sets the attack, and closes in 8 ms.
 Channel pressure lets a held key rise part way: at full pressure its travel
 rests at 0.30, a pallet opening of 0.2 (about 1 mm), where the reed's pitch
 follows the bellows pressure as a half-pressed key's does. The model's C4
-falls 4.7 Hz per kPa there against the 5.1 Hz/kPa measured with the pallet
+falls 4.2 Hz per kPa there against the 5.1 Hz/kPa measured with the pallet
 lifted 1 mm (Adachi et al., Forum Acusticum 2026), and 1.3 Hz/kPa fully open
 against 2.5. At the 70 dBA of a published bend measurement, a half-pressed
-A#2–A3 at a steady bellows pressure falls 12 cents, close to the 16 a player
+A#2–A3 at a steady bellows pressure falls 11 cents, close to the 16 a player
 reached with the finger alone, but loses 20 dB where the player's lost 11
 (Known gaps).
 Up to 72 chambers sound at once; a new one takes
@@ -363,8 +368,8 @@ a pitch wheel should do what it says.
   and Llanos-Vázquez 2021), falls without a peak from the fundamental to about
   −13 dB at the 15th–20th harmonics. Respira's 8' cells read 70 dBA at 50 cm
   at about 200 Pa, as a small source in free field (`CompareHarmonics`);
-  there its 2nd–14th harmonics agree with the measurement within 2.5 dB on
-  average, but its 15th–20th sit 6 dB low, and 3–8 dB low at every pressure
+  there its 2nd–14th harmonics agree with the measurement within 1.5 dB on
+  average, but its 15th–20th sit 7 dB low, and 4–8 dB low at every pressure
   from 150 to 1200 Pa. The likely cause is the reed chamber, a lumped
   resonator (1.3 kHz for C3 rising to 3.7 kHz for C7) that cuts 12 dB per
   octave above its resonance; from A#2 to A3 that takes 5–16 dB off the
@@ -376,31 +381,24 @@ a pitch wheel should do what it says.
   loses above its resonance is not known, so it was not kept
   (`Docs/decisions.md`). Separately, against 500 Hz–1 kHz the demos read 3–9 dB more than a
   polka recording at 1–4 kHz; the recording's distance, room and registers
-  are not known, and the cause is not traced. Below the 15th, the 4th
-  harmonic is the one large disagreement: from A#2 to A3 it sits 12 dB under
-  the measurement (−22 dB against −10, averaged in dB; −17 averaged as
-  power), deepest from A#2 to D3 (−24 to −41 dB). At that loudness each of
-  those tongues swings 0.7–2.1 mm out past the far face of its plate, where
-  the gap opens again, so every period carries a second pulse of air. Held
-  shut there instead, as a diagnostic, the 4th comes within 3.3 dB and the
-  2nd–16th within 2.4 dB RMS (4.2 now), though the 2nd falls 5 dB low and
-  the 3rd–7th of C2–A3 then grow 0.0–0.6 dB per dB of loudness, against
-  the bandoneon's 0.4–1.1 and 0.5–1.0 now. A real accordion tongue does not
-  pass below its frame (Cottingham, CCRMA lecture notes, 2013), and one
-  filmed in its plate spends more of each period inside the slot as the flow
-  grows (Nussbaumer and Agarwal, ICA 2016); but plate thickness varies from
-  instrument to instrument, and a free-reed tongue commonly swings 15 % of
-  its length (Cottingham, Physics Today, 2011). Respira's tongues swing
-  about a tenth of theirs and pass their plates at 600 Pa from D5 down. Plates half as
-  thick again keep A#2–A3 inside at the measurement's loudness, which brings
-  the 4th onto it and the 2nd–16th within 2.2 dB RMS, but let them swing
-  further and pass from about 500 Pa; no measured plate thickness was found,
-  and the measured loss (below) rules out a lossier tongue. The measured
-  accordion dips at its 4th harmonic too, about 7 dB under its neighbours.
+  are not known, and the cause is not traced. Below the 15th the agreement
+  rests on the reed plates' thickness, an estimate chosen by ear
+  (`Docs/decisions.md`): with plates two thirds as thick, each A#2–A3 tongue
+  swung 0.7–2.1 mm out past the far face of its plate at that loudness, where
+  the gap opens again, so every period carried a second pulse of air and the
+  4th harmonic fell 12 dB under the measurement. Now the 4th sits on it and
+  the 2nd–16th agree within 2.2 dB RMS (4.2 before). A real accordion tongue
+  does not pass below its frame (Cottingham, CCRMA lecture notes, 2013), and
+  one filmed in its plate spends more of each period inside the slot as the
+  flow grows (Nussbaumer and Agarwal, ICA 2016). Respira's still pass their
+  plates from about 500 Pa: they swing about a tenth of their length, where a
+  free-reed tongue commonly swings 15 % (Cottingham, Physics Today, 2011),
+  and no measured plate thickness was found. The measured accordion dips at
+  its 4th harmonic too, about 7 dB under its neighbours.
 - **Soft low notes hold their pitch.** Over the loudest 30 dB of a
   bandoneon's held notes its pitch rises 0.39 cents per dB softer on average,
   0.34–0.62 from C2 to D3, steadily down to the softest. Respira's 8' cells,
-  with the loudest at 1.5 kPa, rise 0.25 on average and 0.18–0.21 from C2 to
+  with the loudest at 1.5 kPa, rise 0.26 on average and 0.18–0.23 from C2 to
   D3 (`CompareBandoneon`): in their softest 15 dB the pitch barely moves, and
   just above where a reed starts to speak it falls again. Over the loudest
   15 dB the two agree. Which pressure
@@ -412,7 +410,7 @@ a pitch wheel should do what it says.
   bandoneon's held notes from E4 to C6, its 9th–15th harmonics gain 1.4 dB
   per dB on the fundamental on average (0.9–2.1), so a forte note is much
   brighter than a piano one; at the A5 even the 3rd–7th gain 1.2–1.7.
-  Respira's 8' cells gain 0.2 there (−0.4 to 0.8, `CompareBandoneon`); from
+  Respira's 8' cells gain 0.3 there (−0.2 to 0.9, `CompareBandoneon`); from
   C2 to C4 the two agree (0.8 against 0.7), and over the loudest 15 dB the
   gap is the same. None of the tongue's air drag (cut until tips up to F5
   swing 15 % of their length at 600 Pa, a typical figure in playing), the
@@ -435,7 +433,7 @@ a pitch wheel should do what it says.
   bent A#2–A3 by closing the pallet part way at a steady bellows pressure:
   16 cents flat on average and 11 dB quieter (the mean over the first twenty
   harmonics). Respira's 8' cells at that loudness, with the pallet opened 0.2
-  as full channel pressure holds it, fall 12 cents and 20 dB
+  as full channel pressure holds it, fall 11 cents and 20 dB
   (`CompareHarmonics`): nearly twice the level for a slightly smaller bend.
   The player found no bend possible from C6 up; a single C6 cell still bends
   17–28 cents at 200–400 Pa, while from E6–G6 up the half-open pallet

@@ -76,7 +76,7 @@ constexpr double kOpenSeconds = 0.012, kOpenVelocity = 0.009;  // pallet lift: 1
 constexpr double kCloseSeconds = 0.008;
 constexpr double kQuietSeconds = 0.02;      // a closed chamber is let go after this
 // Key travel at full channel pressure: a pallet opening of 0.2 (raised cosine
-// of the travel), where the model's C4 falls 4.7 Hz per kPa of bellows
+// of the travel), where the model's C4 falls 4.2 Hz per kPa of bellows
 // pressure against the 5.1 Hz/kPa Okada measured with the pallet lifted 1 mm
 // (Adachi et al., "Aerodynamic mechanism of accordion pitch bending", Forum
 // Acusticum 2026). Fully open the model falls 1.3 Hz/kPa, measured 2.5.
