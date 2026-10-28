@@ -257,10 +257,11 @@ a pitch wheel should do what it says.
   demo phrases read −9 VU, not by a measured level; no recording of a real accordion is
   part of the model or its tests.
 - **CPU.** A full-register chord over bass and chords (28 chambers) takes
-  about a quarter of one core in the development container at 48 kHz (0.25×
-  realtime for the Master Tutti demo, 0.01× for the single clarinet reed),
+  about a quarter of one core in the development container at 48 kHz (0.23×
+  realtime for the Master Tutti demo, 0.02× for the single clarinet reed),
   and a chord change briefly doubles that while the released chambers close.
-  Nothing has been optimised yet.
+  Only the reed gap's constants are made once per reed (about 7 % of the
+  time); the reed step itself is not optimised.
 - **Chord buttons are pitch classes**, not Stradella's fixed major, minor,
   seventh and diminished rows, and there are no bass register switches.
 - **One turbulence seed.** Two engines given the same input play identical
