@@ -7,23 +7,24 @@
 // "Accordion acoustics: A study on pitch bending", Acoustics in Practice
 // AiP-2021-02 (EAA), Fig. 4. A Pigini Sirius concert accordion, right manual,
 // the 8' register outside the cassotto, each note A#2..A3 played mezzo forte
-// (about 70 dBA) on an opening bellows, a microphone 50 cm away; the sound
-// pressure level of each of the first twenty harmonics, averaged over the
-// twelve notes and fifteen takes each. kMeasured is the mean of the figure's
-// two "original sound" series (panels a and b, the same condition before the
-// two kinds of bend), read off the figure to about 0.5 dB, relative to the
-// fundamental. The paper gives no bellows pressure for mezzo forte, and does
-// not say whether it averaged levels or pressures.
+// (about 70 dBA on a sound level meter 50 cm away) on an opening bellows, a
+// microphone 50 cm away; the sound pressure level of each of the first twenty
+// harmonics, averaged over the twelve notes and fifteen takes each. kMeasured
+// is the mean of the figure's two "original sound" series (panels a and b,
+// the same condition before the two kinds of bend), read off the figure to
+// about 0.5 dB, relative to the fundamental. The paper gives no bellows
+// pressure, and does not say whether it averaged levels or pressures.
 //
-// Respira plays the same notes on Clarinet Solo (the 8' rank alone), treble on
-// every key, the hand pulling steadily at the speed that holds the bellows at
-// the given pressure (default the tuning pressure, 400 Pa; the demo phrases'
-// strokes are after 250-700 Pa). Each note is analysed over 1-2 s after the
-// hand starts, the key down from 0.3 s, on the sum of both channels: a
-// Hann-windowed DFT at each harmonic of the sounding pitch, the levels
-// averaged over the notes in dB.
-#include "DSP/RespiraEngine.h"
-#include "DSP/RespiraPresets.h"
+// Respira plays each note as ProbeReed does: one 8' cell, its pallet open, at
+// a steady bellows pressure, here drawing (the pull reed speaks). Without an
+// argument the pressure is the one at which the twelve notes read 70 dBA at
+// 50 cm on average, the radiated flow's rate of change taken as a small
+// source in free field (the engine's output reference, 1 m away, is the same
+// source); a real accordion's body and room would read louder at the same
+// pressure. Each note is analysed over its last half second: a Hann-windowed
+// DFT at each harmonic of the sounding pitch, the levels averaged in dB.
+#include "ReedProbe.h"
+#include "DSP/ReedTuning.h"
 
 #include <array>
 #include <cmath>
@@ -35,67 +36,105 @@ using namespace respira;
 
 namespace {
 
-constexpr int kHarmonics = 20, kLow = 46, kHigh = 57;   // A#2..A3
+constexpr int kHarmonics = 20, kLevelHarmonics = 40, kLow = 46, kHigh = 57;   // A#2..A3
 constexpr std::array<double, kHarmonics> kMeasured { {
     0.0, -3.1, -4.0, -10.0, -2.5, -4.4, -3.0, -7.6, -6.9, -9.7,
     -9.9, -12.7, -12.9, -15.5, -12.8, -16.7, -11.2, -14.8, -12.3, -12.6,
 } };
-constexpr double kRate = 48000.0, kStart = 0.1, kKeyAt = 0.3, kFrom = 1.0, kTo = 2.0;
+constexpr double kMeasuredDbA = 70.0, kDistance = 0.5, kSeconds = 2.0, kAnalysed = 0.5;
 
-struct Take {
-    std::vector<double> mono;
-    double pressure = 0.0;   // mean |bellows pressure| over the analysed second, Pa
+// Radiated source strength (m^3/s^2) of `key`'s 8' cell over its last
+// kAnalysed seconds at bellows pressure -pressure.
+std::vector<double> Play(int key, double pressure) {
+    const CellSpec spec = MakeCell(kRankM, key, 0.0, kReedTuning[kRankM][TuningIndex(kRankM, key)]);
+    CellState s;
+    s.push.x = spec.push.rest;
+    s.pull.x = spec.pull.rest;
+    const double rate = probe::kRate, dt = 1.0 / rate;
+    const int n = static_cast<int>(kSeconds * rate), from = n - static_cast<int>(kAnalysed * rate);
+    std::vector<double> out;
+    for (int i = 0; i < n; ++i) {
+        double air = 0.0;
+        const double radiated = StepCell(spec.push, spec.pull, spec.chamber, MakeVent(spec.chamber, std::fmin(1.0, i / (0.004 * rate)), rate),
+                                         s, -pressure, dt, rate, 0.0, 0.0, air);
+        if (i >= from) out.push_back(radiated);
+    }
+    return out;
+}
+
+// Amplitude of the sinusoid at hz in x: a Hann-windowed DFT, its phasors
+// turned by recurrence.
+double Amplitude(const std::vector<double>& x, double hz) {
+    const double n = static_cast<double>(x.size()), step = 2.0 * kPi * hz / probe::kRate, window = 2.0 * kPi / n;
+    const double cs = std::cos(step), sn = std::sin(step), wc = std::cos(window), ws = std::sin(window);
+    double re = 0.0, im = 0.0, c = 1.0, s = 0.0, hc = 1.0, hs = 0.0;
+    for (const double v : x) {
+        const double w = (0.5 - 0.5 * hc) * v;
+        re += w * c;
+        im -= w * s;
+        const double c2 = c * cs - s * sn, h2 = hc * wc - hs * ws;
+        s = s * cs + c * sn;
+        hs = hs * wc + hc * ws;
+        c = c2;
+        hc = h2;
+    }
+    return 4.0 * std::sqrt(re * re + im * im) / n;   // the Hann window sums to n / 2
+}
+
+// The sounding pitch near hz: the fundamental's peak, found coarse then fine.
+// A free reed's partials are harmonic, so the rest are read at its multiples.
+double Pitch(const std::vector<double>& x, double hz) {
+    for (const double spread : { 0.03, 0.0015 }) {
+        double best = 0.0, at = hz;
+        for (int k = -20; k <= 20; ++k) {
+            const double f = hz * (1.0 + spread * k / 20.0), a = Amplitude(x, f);
+            if (a > best) {
+                best = a;
+                at = f;
+            }
+        }
+        hz = at;
+    }
+    return hz;
+}
+
+// IEC 61672 A-weighting, dB.
+double AWeight(double f) {
+    const double f2 = f * f;
+    const double ra = 12194.0 * 12194.0 * f2 * f2
+                    / ((f2 + 20.6 * 20.6) * std::sqrt((f2 + 107.7 * 107.7) * (f2 + 737.9 * 737.9)) * (f2 + 12194.0 * 12194.0));
+    return 20.0 * std::log10(ra) + 2.0;
+}
+
+struct Note {
+    std::array<double, kHarmonics> harmonics {};   // dB re the fundamental
+    double dbA = 0.0;                               // at kDistance in free field
 };
 
-Take Play(int key, double speed) {
-    Engine engine;
-    engine.Prepare(kRate);
-    Controls controls = kPresets[0].ToControls();
-    controls[kKeyboard] = 1.0;   // split, A#2..B2 would be chord buttons
-    engine.SetControls(controls);
-    engine.Reset();
-    Take take;
-    const int keyAt = static_cast<int>(kKeyAt * kRate), from = static_cast<int>(kFrom * kRate), to = static_cast<int>(kTo * kRate);
-    for (int i = 0; i < to; ++i) {
-        if (i == keyAt) {
-            const std::uint8_t on[3] = { 0x90, static_cast<std::uint8_t>(key), 80 };
-            engine.Midi(on, 3);
-        }
-        engine.SetHand(kStart + speed * i / kRate);
-        float l = 0.0f, r = 0.0f;
-        engine.Render(&l, &r, 1);
-        if (i >= from) {
-            take.mono.push_back(static_cast<double>(l) + r);
-            take.pressure += std::fabs(engine.Diag().pressure);
-        }
+Note Analyse(int key, double pressure) {
+    const std::vector<double> x = Play(key, pressure);
+    const double f0 = Pitch(x, 440.0 * std::pow(2.0, (key - 69) / 12.0)), h1 = Amplitude(x, f0);
+    Note note;
+    double power = 0.0;
+    for (int n = 1; n <= kLevelHarmonics; ++n) {
+        const double a = Amplitude(x, n * f0);
+        if (n <= kHarmonics) note.harmonics[static_cast<std::size_t>(n - 1)] = 20.0 * std::log10(a / h1);
+        const double rms = kRho / (4.0 * kPi * kDistance) * a / std::sqrt(2.0);
+        power += rms * rms * std::pow(10.0, AWeight(n * f0) / 10.0);
     }
-    take.pressure /= static_cast<double>(to - from);
-    return take;
+    note.dbA = 10.0 * std::log10(power / (20.0e-6 * 20.0e-6));
+    return note;
 }
 
-// Magnitude of the Hann-windowed DFT of x at hz.
-double Magnitude(const std::vector<double>& x, double hz) {
-    const double step = 2.0 * kPi * hz / kRate, n = static_cast<double>(x.size());
-    double re = 0.0, im = 0.0;
-    for (std::size_t i = 0; i < x.size(); ++i) {
-        const double w = 0.5 - 0.5 * std::cos(2.0 * kPi * static_cast<double>(i) / n);
-        re += w * x[i] * std::cos(step * static_cast<double>(i));
-        im -= w * x[i] * std::sin(step * static_cast<double>(i));
+Note AnalyseAll(double pressure) {
+    Note mean;
+    for (int key = kLow; key <= kHigh; ++key) {
+        const Note note = Analyse(key, pressure);
+        for (int n = 0; n < kHarmonics; ++n)
+            mean.harmonics[static_cast<std::size_t>(n)] += note.harmonics[static_cast<std::size_t>(n)] / (kHigh - kLow + 1);
+        mean.dbA += note.dbA / (kHigh - kLow + 1);
     }
-    return std::sqrt(re * re + im * im);
-}
-
-// The largest magnitude within +-spread of hz, and where it is.
-double Peak(const std::vector<double>& x, double hz, double spread, double* at = nullptr) {
-    double best = 0.0;
-    for (int k = -20; k <= 20; ++k) {
-        const double f = hz * (1.0 + spread * k / 20.0), m = Magnitude(x, f);
-        if (m > best) {
-            best = m;
-            if (at) *at = f;
-        }
-    }
-    return best;
+    return mean;
 }
 
 double Mean(const std::array<double, kHarmonics>& h, int first, int last) {
@@ -107,41 +146,38 @@ double Mean(const std::array<double, kHarmonics>& h, int first, int last) {
 } // namespace
 
 int main(int argc, char** argv) {
-    const double target = argc > 1 ? std::atof(argv[1]) : kTuningPressure;
-    if (!(target >= 100.0 && target <= 1500.0)) {
-        std::fprintf(stderr, "usage: CompareHarmonics [pressure Pa, 100..1500]\n");
+    double pressure = argc > 1 ? std::atof(argv[1]) : 0.0;
+    if (argc > 1 && !(pressure >= 100.0 && pressure <= 2000.0)) {
+        std::fprintf(stderr, "usage: CompareHarmonics [pressure Pa, 100..2000]\n");
         return 2;
     }
-    std::array<double, kHarmonics> model {};
-    double pressure = 0.0;
-    for (int key = kLow; key <= kHigh; ++key) {
-        // The bellows pressure grows a little faster than the hand's speed.
-        double speed = 0.11 * target / 400.0;
-        Take take;
-        for (int i = 0; i < 5; ++i) {
-            take = Play(key, speed);
-            speed *= target / take.pressure;
+    Note model;
+    if (argc > 1) {
+        model = AnalyseAll(pressure);
+    } else {
+        // Bisect in log pressure for the measurement's loudness.
+        double low = 50.0, high = 2000.0;
+        for (int i = 0; i < 8; ++i) {
+            pressure = std::sqrt(low * high);
+            model = AnalyseAll(pressure);
+            (model.dbA < kMeasuredDbA ? low : high) = pressure;
         }
-        pressure += take.pressure / (kHigh - kLow + 1);
-        double f0 = 440.0 * std::pow(2.0, (key - 69) / 12.0);
-        const double h1 = Peak(take.mono, f0, 0.03, &f0);
-        for (int n = 1; n <= kHarmonics; ++n)
-            model[static_cast<std::size_t>(n - 1)] += 20.0 * std::log10(Peak(take.mono, n * f0, 0.005) / h1) / (kHigh - kLow + 1);
     }
-    std::printf("A#2..A3 on the 8' rank at %.0f Pa (mean over the notes), dB re the fundamental\n", pressure);
+    std::printf("A#2..A3 on the 8' rank at %.0f Pa, %.1f dBA at %.1f m; dB re the fundamental\n", pressure, model.dbA, kDistance);
     std::printf("harmonic  ");
     for (int n = 1; n <= kHarmonics; ++n) std::printf("%6d", n);
     std::printf("\nmeasured  ");
     for (double v : kMeasured) std::printf("%6.1f", v);
     std::printf("\nRespira   ");
-    for (double v : model) std::printf("%6.1f", v);
+    for (double v : model.harmonics) std::printf("%6.1f", v);
     std::printf("\ndifference");
-    for (int n = 0; n < kHarmonics; ++n) std::printf("%6.1f", model[static_cast<std::size_t>(n)] - kMeasured[static_cast<std::size_t>(n)]);
+    for (int n = 0; n < kHarmonics; ++n)
+        std::printf("%6.1f", model.harmonics[static_cast<std::size_t>(n)] - kMeasured[static_cast<std::size_t>(n)]);
     const auto bands = [](const char* name, const std::array<double, kHarmonics>& h) {
         std::printf("%-9s%6.1f%6.1f%6.1f%6.1f\n", name, Mean(h, 2, 4), Mean(h, 5, 8), Mean(h, 9, 14), Mean(h, 15, 20));
     };
     std::printf("\n\nmean of     2-4   5-8  9-14 15-20\n");
     bands("measured", kMeasured);
-    bands("Respira", model);
+    bands("Respira", model.harmonics);
     return 0;
 }

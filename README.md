@@ -271,21 +271,24 @@ a pitch wheel should do what it says.
   resonances instead, and what it really loses depends on the felt, leather
   and wood inside it, which are not modelled; the bass side's top octaves
   are probably too dark.
-- **The reed chamber's resonance, against a measurement.** The one
-  published harmonic measurement found, a concert accordion's 8' reeds from
-  A#2 to A3 played mezzo forte and heard at 50 cm (Elejalde-García,
-  Macho-Stadler and Llanos-Vázquez 2021), falls without a peak from the
-  fundamental to about −13 dB at the 15th–20th harmonics. Played the same way
-  (`CompareHarmonics`), Respira's 2nd–14th harmonics sit 4–6 dB higher at
-  400 Pa (within 2.5 dB at 290 Pa; the paper gives no pressure) and its
-  15th–20th 4–7 dB lower at every pressure from 290 to 1200 Pa. Each reed
-  chamber is a lumped resonator, at 1.3 kHz for C3 rising to 3.7 kHz for C7:
-  for these notes it lifts the 7th–11th harmonics by 6–20 dB and cuts 12 dB
-  per octave above. The chamber is as long as its reed, so the lumped model
-  holds only up to about its own resonance (k L ≈ 1 there). The same
-  resonance falls where the demos read 3–9 dB more than a polka recording at
-  1–4 kHz, against 500 Hz–1 kHz. A distributed chamber, and how much a real
-  one is damped, are not modelled.
+- **The top harmonics, against a measurement.** The one published
+  harmonic measurement found, a concert accordion's 8' reeds from A#2 to A3
+  played mezzo forte, about 70 dBA at 50 cm (Elejalde-García, Macho-Stadler
+  and Llanos-Vázquez 2021), falls without a peak from the fundamental to about
+  −13 dB at the 15th–20th harmonics. Respira's 8' cells read 70 dBA at 50 cm
+  at about 200 Pa, as a small source in free field (`CompareHarmonics`);
+  there its 2nd–14th harmonics agree with the measurement within 2.5 dB on
+  average, but its 15th–20th sit 6 dB low, and 3–8 dB low at every pressure
+  from 150 to 1200 Pa. The likely cause is the reed chamber, a lumped
+  resonator (1.3 kHz for C3 rising to 3.7 kHz for C7) that cuts 12 dB per
+  octave above its resonance; from A#2 to A3 that takes 5–16 dB off the
+  14th–20th harmonics on average. The chamber is as long as its reed, so the lumped
+  model holds only up to about its resonance (k L ≈ 1 there). A distributed
+  chamber would not fall that way, but what it radiates depends on where along
+  it the reed's air enters and how much it is damped, neither of which is
+  known. Separately, against 500 Hz–1 kHz the demos read 3–9 dB more than a
+  polka recording at 1–4 kHz; the recording's distance, room and registers
+  are not known, and the cause is not traced.
 - **The top octave speaks slowly, unchecked.** With the bellows already at
   540 Pa, an A4 reaches its level about 50 ms after the key (some 20
   periods), a C6 about 90 ms and a C7 about 130 ms (some 270 periods): the
