@@ -308,6 +308,9 @@ a pitch wheel should do what it says.
   harmonics). Respira's 8' cells at that loudness, with the pallet opened 0.2
   as full channel pressure holds it, fall 13 cents and 20 dB
   (`CompareHarmonics`), so for a given bend they lose about twice the level.
+  The player found no bend possible from C6 up; a single C6 cell still bends
+  17–28 cents at 200–400 Pa, while from E6–G6 up the half-open pallet
+  silences the reed.
   At a steady wheel, Assist adds to it: it counts each reed by its pallet's
   opening, but a half-open pallet's reed still draws 0.3–0.9 of its open air,
   so half-pressing takes the hand's extra air away and the pressure falls; a
