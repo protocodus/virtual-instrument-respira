@@ -63,8 +63,10 @@ constexpr protocodus::CompressorSettings kBellowsGuard { -17.0, 8.0, 10.0, 0.02,
 // kHz. Lumped, the box must be shallow against the wavelength: at resonance k
 // depth = sqrt(open depth / l') = 0.70. As a plane-wave layer, the flow out
 // over the flow in is 1 / (cos kd - k (l' / open) sin kd + j (1 + cloth / rho
-// c) sin kd); the lumped box is within 2 dB of it up to 2 kHz and overstates
-// the cover's loss above about 2.5 kHz (README, Known gaps). The treble
+// c) sin kd); the lumped box is within 2 dB of it up to 2 kHz. Above about 2.5
+// kHz the layer rings at its depth resonances, which the box's irregular
+// depth and the absorption inside it damp by amounts not known here, and the
+// lumped box overstates the loss (README, Known gaps). The treble
 // compartment under the grille is no resonator: 35 mm deep under a grille 30 %
 // open with 3.6 mm slots, its lumped resonance would fall at k depth = 1.7,
 // and as a layer, averaged over its plausible depths (25-45 mm), it passes the

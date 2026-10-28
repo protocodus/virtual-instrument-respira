@@ -267,8 +267,10 @@ a pitch wheel should do what it says.
 - **One turbulence seed.** Two engines given the same input play identical
   noise.
 - **The bass box above 2.5 kHz.** Its lumped resonator falls 12 dB per
-  octave there, where the box as a layer of air under the cover falls about
-  6, so the bass side's top octaves are darker than they should be.
+  octave there. As a layer of air under the cover the box rings at its depth
+  resonances instead, and what it really loses depends on the felt, leather
+  and wood inside it, which are not modelled; the bass side's top octaves
+  are probably too dark.
 - **Brighter than recordings from 1 to 4 kHz.** Against 500 Hz–1 kHz, the
   demos read 3–6 dB more at 1–2 kHz and 5–9 dB more at 2–4 kHz than a polka
   recording, while 4–16 kHz agrees with it; the cause is not traced.
