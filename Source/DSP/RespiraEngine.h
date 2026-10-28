@@ -105,6 +105,7 @@ private:
         Vent vent;               // the pallet hole's flow law at `lift`
         CellState state;
         float gainL = 0.0f, gainR = 0.0f;
+        double breathA = 0.0, breathB = 0.0;   // the gap turbulence, shaped to its eddies
     };
 
     // A compartment the pallets open into, radiating through a perforated

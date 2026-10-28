@@ -80,6 +80,13 @@ constexpr double kQuietSeconds = 0.02;      // a closed chamber is let go after 
 constexpr double kHalfPressed = 0.29517;    // acos(1 - 2 * 0.2) / pi
 constexpr double kTurbulence = 2.0e-3;      // gap turbulence force per Pa of bellows pressure and m^2
 constexpr double kNoiseRate = 192000.0;     // internal rate the turbulence levels are set at
+// The gap jet's flow fluctuation (ReedModel.h, breath) has the spectrum of its
+// eddies, about the gap's 0.3 mm: flat up to their rate U / (2 pi l), with U
+// the jet's speed sqrt(2 p / rho), and falling above it, as the air valve's
+// does; about 15 kHz at 500 Pa. White noise per internal step would spread
+// three quarters of the estimated fluctuation above 24 kHz, where no one
+// hears it.
+constexpr double kGapEddy = 0.3e-3;         // m
 
 double DbToGain(double db) { return std::pow(10.0, db / 20.0); }
 
@@ -201,9 +208,10 @@ void Engine::SetControls(const Controls& next) {
     const int reg = static_cast<int>(controls[kRegister]);
     if (reg != registerIndex) SwitchRegister(registerIndex, reg);
     registerIndex = reg;
-    // The gap turbulence is white per internal step; it scales with the square
-    // root of the step rate so its spectrum, and the noise the reeds make and
-    // hear, stays the same at every rate and Oversampling.
+    // The gap turbulence's force on the tongues is white per internal step; it
+    // scales with the square root of the step rate so its spectrum, the noise
+    // the reeds hear, stays the same at every rate and Oversampling. The flow's
+    // fluctuation, the noise they make, is shaped to its eddies (kGapEddy).
     noiseScale = Sqrt(internalRate / kNoiseRate);
     turbulence = kTurbulence * noiseScale;
     gainTarget = kRho / (4.0 * kPi) * kPascalToFullScale * DbToGain(controls[kVolume]);
@@ -274,6 +282,7 @@ void Engine::StartCell(int rank, int key, int source, int velocity) {
             cell->spec.pull = MakeReed(pullHz, q * pullV.qScale, pullV.setScale);
         }
         cell->state = CellState {};
+        cell->breathA = cell->breathB = 0.0;
         cell->state.push.x = cell->spec.push.rest;
         cell->state.pull.x = cell->spec.pull.rest;
         // A closed chamber sits at bellows pressure: air leaks in or out through
@@ -406,6 +415,13 @@ void Engine::Render(float* left, float* right, int frames) {
         pressure = Clamp(pressure + dt * kBellowsStiffness * (handFlow - airFlow - leak), -kMaxPressure, kMaxPressure);
         bend2 += bendSmoothing * (bend2Target - bend2);
 
+        // Two one-pole stages at the eddies' rate, scaled back to the white
+        // draw's variance (the cascade's c^4 (1 + a^2) / (1 - a^2)^3). Below
+        // about 1 m/s the gap flow is laminar (ReedModel.h, kLaminar), which
+        // also keeps the scale finite as the bellows pressure passes zero.
+        const double jet = Max(Sqrt(2.0 * Abs(pressure) / kRho), 1.0);
+        const double eddy = jet / kGapEddy * dtIn, ec = eddy / (1.0 + eddy), er = 1.0 - ec;
+        const double breathScale = 1.0 / Sqrt(Max(ec * ec * ec * ec * (1.0 + er * er) / ((1.0 - er * er) * (1.0 - er * er) * (1.0 - er * er)), 1.0e-30));
         float tl[kMaxOversample] = {}, tr[kMaxOversample] = {}, b[kMaxOversample] = {};
         double drawn = 0.0, open = 0.0;
         int active = 0;
@@ -427,9 +443,11 @@ void Engine::Render(float* left, float* right, int frames) {
                 // reeds, and the fluctuation of the jet's flow.
                 noise = noise * 1664525u + 1013904223u;
                 const double draw = Unit(noise);
+                c.breathA += ec * (draw - c.breathA);
+                c.breathB += ec * (c.breathA - c.breathB);
                 const double pushForce = turbulence * draw * spec.push.area * Abs(pressure);
                 const double out = StepCell(spec.push, spec.pull, spec.chamber, c.vent, c.state, pressure, dtIn,
-                                            invDtIn, pushForce, -pushForce, drawn, bend2, noiseScale * draw);
+                                            invDtIn, pushForce, -pushForce, drawn, bend2, breathScale * c.breathB);
                 const float o = static_cast<float>(out);
                 if (spec.bass) b[k] += o;
                 else { tl[k] += o * c.gainL; tr[k] += o * c.gainR; }

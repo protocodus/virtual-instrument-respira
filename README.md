@@ -64,6 +64,9 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 - The bass reeds sound through the bass box, a Helmholtz resonator at about
   960 Hz behind the bass end cover's holes, in place of a plain 2.5 kHz
   low-pass: a rounder, less buzzy bass.
+- The reeds' breath has the spectrum of the eddies in their gaps, so the
+  estimated turbulence is heard rather than three quarters of it falling
+  above 24 kHz: a little more air around soft notes.
 
 ## Downloads
 
@@ -125,8 +128,10 @@ The jet through the gap is turbulent. Eddies about 0.3 mm across, each
 fluctuating by about 10 %, form independently along the gap's edge (twice the
 tongue's length plus its width), so the flow fluctuates by 10 % over the
 square root of their number: a little breath around the tone, more on a big
-low reed's long gap than on a high one's. The same random draw is the small
-force that seeds the tongue.
+low reed's long gap than on a high one's. Its spectrum is the eddies': flat
+up to their rate, the jet's speed over 2π times their size (about 15 kHz at
+500 Pa), falling above it, as the air valve's does. The same random draw, white,
+is the small force that seeds the tongue.
 
 Tongue length and width follow typical accordion reed sizes scaled with
 pitch, the thickness is whatever gives the pitch, and a chamber whose

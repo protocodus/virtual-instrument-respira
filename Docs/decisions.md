@@ -177,3 +177,18 @@ partials come mostly from the bass side, 4–8 kHz falls from −30.2 to −44.7
 against 500 Hz–1 kHz. Pack `02-bass` (listening-2026-10-28): A the engine
 before, B 2.0 kHz (Q 0.85), C 960 Hz (shipping), D 550 Hz (Q 1.9). Verdict:
 pending.
+
+## 2026-10-28 — the breath's spectrum, by-ear verdict pending (engineering)
+
+The gap turbulence's flow fluctuation was white per internal step: at the
+four-times rate three quarters of its estimated variance (10 % over the square
+root of the eddies along the gap's edge) lay above 24 kHz, so the breath heard
+was about 6 dB below its own estimate. A jet's fluctuation has the spectrum of
+its eddies, flat up to their rate U / (2π l) and falling above it; the air
+valve's hiss was already shaped so. The gap's breath now is too, with the
+same 0.3 mm eddies and the jet's speed from the bellows pressure (about
+15 kHz at 500 Pa), its variance kept at the estimate; the force that seeds the
+tongues stays white. On held Clarinet notes the floor between the harmonics
+rises 7–10 dB. Pack `03-clarinet` (listening-2026-10-28): A the engine before,
+B shaped (shipping), C shaped at half the fluctuation. Verdict: pending; the
+2026-10-27 breath verdict, also pending, was asked of the white version.
