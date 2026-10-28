@@ -104,7 +104,7 @@ private:
         CellSpec spec;
         Vent vent;               // the pallet hole's flow law at `lift`
         CellState state;
-        float gainL = 0.0f, gainR = 0.0f;
+        float gainL = 0.0f, gainR = 0.0f, gainLTarget = 0.0f, gainRTarget = 0.0f;   // pan
         double breathA = 0.0, breathB = 0.0;   // the gap turbulence, shaped to its eddies
     };
 
@@ -176,7 +176,7 @@ private:
     double gain = 0.0, gainTarget = 0.0, bassGain = 0.0, bassGainTarget = 0.0, smoothing = 0.0;
     double trebleGain = 1.0, trebleGainTarget = 1.0;   // the register's trim
     protocodus::OutputStage<2> output;
-    float bassPanL = 0.0f, bassPanR = 0.0f;
+    float bassPanL = 0.0f, bassPanR = 0.0f, bassPanLTarget = 0.0f, bassPanRTarget = 0.0f;
     Diagnostics diag;
 };
 

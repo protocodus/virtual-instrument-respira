@@ -659,6 +659,28 @@ void LoudestCase() {
     Expect(Db(Peak(t)) < -1.4, "LoudestCase", "loudest peak, dBFS", Db(Peak(t)));
 }
 
+void WidthGlides() {
+    // Width moves the pan gains over the levels' 20 ms, so automating it never
+    // steps: right after a jump from 0 to 1 the difference it makes is still
+    // small. The output stage delays everything by its look-ahead.
+    const double rate = 48000.0, at = 0.5;
+    auto still = Make(rate, 0, [](Controls& c) { c[kWidth] = 0.0; });
+    auto moved = Make(rate, 0, [](Controls& c) { c[kWidth] = 0.0; });
+    const std::vector<Note> chord { { 0.0, { kOn, 64, 100 } }, { 0.0, { kOn, 76, 100 } }, { 0.0, { kOn, 36, 100 } } };
+    const Take a = Play(*still, rate, at, chord, PullThenPush), b = Play(*moved, rate, at, chord, PullThenPush);
+    Controls wide = moved->GetControls();
+    wide[kWidth] = 1.0;
+    moved->SetControls(wide);
+    const auto opening = [at](double s) { return PullThenPush(at + s); };
+    const Take c = Play(*still, rate, 0.1, {}, opening), d = Play(*moved, rate, 0.1, {}, opening);
+    std::vector<float> diff(c.left.size());
+    for (std::size_t i = 0; i < diff.size(); ++i) diff[i] = d.left[i] - c.left[i];
+    const double lag = moved->LatencySamples() / rate;
+    const double first = Db(Rms(diff, rate, lag, lag + 0.001)), settled = Db(Rms(diff, rate, 0.06, 0.1));
+    Expect(a.left == b.left && settled > -60.0, "WidthGlides", "the step changes the left channel, dBFS RMS", settled);
+    Expect(first - settled < -15.0, "WidthGlides", "its first ms against its settled change, dB", first - settled);
+}
+
 void NonFiniteControls() {
     const double rate = 48000.0;
     auto e = Make(rate, 3);
@@ -703,6 +725,7 @@ int main() {
     TypicalLevel();
     HardStrokesFit();
     LoudestCase();
+    WidthGlides();
     NonFiniteControls();
     std::printf("%d failure(s)\n", failures);
     return failures == 0 ? 0 : 1;

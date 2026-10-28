@@ -183,6 +183,8 @@ void Engine::Reset() {
     gain = gainTarget;
     bassGain = bassGainTarget;
     trebleGain = trebleGainTarget;
+    bassPanL = bassPanLTarget;
+    bassPanR = bassPanRTarget;
     output.Reset();
     diag = Diagnostics {};
 }
@@ -218,8 +220,8 @@ void Engine::SetControls(const Controls& next) {
     bassGainTarget = DbToGain(controls[kBass]);
     trebleGainTarget = DbToGain(kRegisterTrimDb[static_cast<std::size_t>(reg)]);
     const double bassPan = -0.9 * controls[kWidth];
-    bassPanL = static_cast<float>(std::cos((bassPan + 1.0) * kPi / 4.0));
-    bassPanR = static_cast<float>(std::sin((bassPan + 1.0) * kPi / 4.0));
+    bassPanLTarget = static_cast<float>(std::cos((bassPan + 1.0) * kPi / 4.0));
+    bassPanRTarget = static_cast<float>(std::sin((bassPan + 1.0) * kPi / 4.0));
     for (auto& c : cells)
         if (c.active) UpdatePan(c);
 }
@@ -250,8 +252,8 @@ void Engine::UpdatePan(Cell& c) const {
     // the right from the middle register up.
     const int key = c.reed % 128;
     const double pan = controls[kWidth] * Clamp(0.55 + (key - 72) / 72.0, -0.2, 1.0);
-    c.gainL = static_cast<float>(std::cos((pan + 1.0) * kPi / 4.0));
-    c.gainR = static_cast<float>(std::sin((pan + 1.0) * kPi / 4.0));
+    c.gainLTarget = static_cast<float>(std::cos((pan + 1.0) * kPi / 4.0));
+    c.gainRTarget = static_cast<float>(std::sin((pan + 1.0) * kPi / 4.0));
 }
 
 void Engine::StartCell(int rank, int key, int source, int velocity) {
@@ -293,6 +295,8 @@ void Engine::StartCell(int rank, int key, int source, int velocity) {
         cell->reed = reed;
         cell->rank = rank;
         UpdatePan(*cell);
+        cell->gainL = cell->gainLTarget;
+        cell->gainR = cell->gainRTarget;
     }
     cell->active = cell->held = true;
     cell->source = source;
@@ -377,6 +381,7 @@ void Engine::Midi(const std::uint8_t* bytes, int size) {
 
 void Engine::Render(float* left, float* right, int frames) {
     const double dt = 1.0 / rate, dtIn = 1.0 / internalRate, invDtIn = internalRate;
+    const float glide = static_cast<float>(smoothing);
     const double closeRate = 1.0 / (kCloseSeconds * internalRate);
     const double litres = controls[kBellows] * 1.0e-3, assist = controls[kAssist];
     const bool airValve = airPedal || controls[kAir] >= 0.5;
@@ -428,6 +433,9 @@ void Engine::Render(float* left, float* right, int frames) {
         for (auto& c : cells) {
             if (!c.active) continue;
             ++active;
+            // Width glides like the other levels, so automating it never steps.
+            c.gainL += glide * (c.gainLTarget - c.gainL);
+            c.gainR += glide * (c.gainRTarget - c.gainR);
             const CellSpec& spec = c.spec;
             const double travel = c.held ? c.depth : 0.0;
             for (int k = 0; k < oversample; ++k) {
@@ -468,6 +476,8 @@ void Engine::Render(float* left, float* right, int frames) {
         gain += smoothing * (gainTarget - gain);
         bassGain += smoothing * (bassGainTarget - bassGain);
         trebleGain += smoothing * (trebleGainTarget - trebleGain);
+        bassPanL += glide * (bassPanLTarget - bassPanL);
+        bassPanR += glide * (bassPanRTarget - bassPanR);
         // The air valve opens into the bass box too: its hiss leaves through
         // the bass end cover's holes with the bass reeds' sound.
         const double bass = bassBox.Process(bassSide.Process(b, stages) + hiss) * bassGain;
