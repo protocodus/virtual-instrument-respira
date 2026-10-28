@@ -54,56 +54,11 @@ constexpr double kMeasuredBendCents = -16.1, kMeasuredBendDb = -11.1, kHalfPress
 // kAnalysed seconds at bellows pressure -pressure, the pallet opened `opening`.
 std::vector<double> Play(int key, double pressure, double opening) {
     const CellSpec spec = MakeCell(kRankM, key, 0.0, kReedTuning[kRankM][TuningIndex(kRankM, key)]);
-    CellState s;
-    s.push.x = spec.push.rest;
-    s.pull.x = spec.pull.rest;
-    const double rate = probe::kRate, dt = 1.0 / rate;
-    const int n = static_cast<int>(kSeconds * rate), from = n - static_cast<int>(kAnalysed * rate);
-    std::vector<double> out;
-    for (int i = 0; i < n; ++i) {
-        double air = 0.0;
-        const double radiated = StepCell(spec.push, spec.pull, spec.chamber, MakeVent(spec.chamber, opening * std::fmin(1.0, i / (0.004 * rate)), rate),
-                                         s, -pressure, dt, rate, 0.0, 0.0, air);
-        if (i >= from) out.push_back(radiated);
-    }
-    return out;
+    return probe::Radiated(spec, -pressure, opening, kSeconds, kAnalysed);
 }
 
-// Amplitude of the sinusoid at hz in x: a Hann-windowed DFT, its phasors
-// turned by recurrence.
-double Amplitude(const std::vector<double>& x, double hz) {
-    const double n = static_cast<double>(x.size()), step = 2.0 * kPi * hz / probe::kRate, window = 2.0 * kPi / n;
-    const double cs = std::cos(step), sn = std::sin(step), wc = std::cos(window), ws = std::sin(window);
-    double re = 0.0, im = 0.0, c = 1.0, s = 0.0, hc = 1.0, hs = 0.0;
-    for (const double v : x) {
-        const double w = (0.5 - 0.5 * hc) * v;
-        re += w * c;
-        im -= w * s;
-        const double c2 = c * cs - s * sn, h2 = hc * wc - hs * ws;
-        s = s * cs + c * sn;
-        hs = hs * wc + hc * ws;
-        c = c2;
-        hc = h2;
-    }
-    return 4.0 * std::sqrt(re * re + im * im) / n;   // the Hann window sums to n / 2
-}
-
-// The sounding pitch near hz: the fundamental's peak, found coarse then fine.
-// A free reed's partials are harmonic, so the rest are read at its multiples.
-double Pitch(const std::vector<double>& x, double hz) {
-    for (const double spread : { 0.03, 0.0015 }) {
-        double best = 0.0, at = hz;
-        for (int k = -20; k <= 20; ++k) {
-            const double f = hz * (1.0 + spread * k / 20.0), a = Amplitude(x, f);
-            if (a > best) {
-                best = a;
-                at = f;
-            }
-        }
-        hz = at;
-    }
-    return hz;
-}
+using probe::Amplitude;
+using probe::Pitch;
 
 // IEC 61672 A-weighting, dB.
 double AWeight(double f) {

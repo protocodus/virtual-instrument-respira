@@ -87,6 +87,11 @@ if(RESPIRA_BUILD_TOOLS)
     target_include_directories(CompareHarmonics PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Source")
     target_compile_options(CompareHarmonics PRIVATE ${RESPIRA_WARNINGS})
 
+    # Single 8' notes' pitch and tone against loudness, against a bandoneon's.
+    add_executable(CompareBandoneon Tools/CompareBandoneon.cpp)
+    target_include_directories(CompareBandoneon PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Source")
+    target_compile_options(CompareBandoneon PRIVATE ${RESPIRA_WARNINGS})
+
     # One README demo per factory preset from Docs/audio/midi (Tools/
     # PresetDemoRenderer.h is the shared portfolio copy; do not edit it here).
     add_executable(RenderRespiraPresetDemos Tools/RenderPresetDemos.cpp)

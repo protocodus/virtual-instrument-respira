@@ -307,3 +307,33 @@ resonator.
   or the gap's flow pulses are sharper than a real reed's and the lumped
   chamber's roll-off had been hiding that; neither is measured. It also cost
   8–22 % more CPU (two to four sections).
+
+## 2026-10-28 — against a bandoneon: three reed changes not kept (engineering)
+
+The owner supplied a bandoneon sample library (BANDONEON v1, Miguel Lopez,
+Pianobook) as a reference. `Tools/measure_bandoneon.py` reads from its held
+notes how pitch and the odd harmonics follow loudness, and
+`Tools/CompareBandoneon.cpp` sets the 8' cells against that (README, How it
+works and Known gaps). Over the loudest 15 dB the cells bend as the
+bandoneon does; over 30 dB they bend 0.25 cents per dB against 0.39, and
+C2–D3 0.2 against 0.34–0.62. Each change below was scored with both tools,
+and against Okada's C4 reed (2.5 Hz/kPa open; the model 1.4).
+
+- **The reed gap's loss coefficient of Adachi et al.'s simulation (8, a
+  discharge coefficient of 0.35 in place of 0.65).** The C4 bent 0.7 Hz/kPa,
+  half as much as now, and the pitch and harmonic errors grew.
+- **The tongue's air drag at 0.5–8× its voicing estimate.** More drag bent
+  more, by too little to matter: 1.9 Hz/kPa at 8×, with the harmonic errors
+  growing.
+- **The clearance round the tongue in its slot at 2.3× and 4.7× (0.07 and
+  0.14 mm, the gap of Adachi et al.'s reed).** At 0.14 mm the A5's harmonics
+  grew with loudness as the bandoneon's do, but every other note's 5th and
+  7th grew 0.3–0.7 dB per dB too fast, loudness rose 8.4 dB per doubling of
+  pressure in place of 5.8, and the C4 bent 0.8 Hz/kPa.
+
+The brass tip weights are what keep C2–B2 stiff, and they are plausible: a
+weighted C2 tongue's stiffness is close to a 50 mm steel strip's with a gram
+at its tip. Without them a C2 tongue deflects 6 mm under 1 kPa, which no
+real reed does, and its pitch rises with pressure. No measurement found gives how loudness grows with pressure, which
+decides where the bandoneon's softest notes sit, so the soft-bass gap is
+recorded, not tuned.

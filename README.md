@@ -159,7 +159,14 @@ instrument). A reed sounds below its natural frequency under load, so
 and writes `Source/DSP/ReedTuning.h`, the natural-to-sounding ratios the
 engine builds reeds from at note-on. Pitch still moves with pressure as a real
 reed's does: an A4 is within 2 cents at playing pressure (about 550 Pa) and
-about 8 cents flat when pressed at 1.4 kPa.
+about 8 cents flat when pressed at 1.4 kPa. Against a bandoneon's held notes
+from C2 to C6 (`Tools/CompareBandoneon.cpp`, from a Pianobook library by
+Miguel Lopez), read against loudness so that neither the bellows pressure nor
+the microphone matters: over the loudest 15 dB, with the loudest at 1.5 kPa,
+single 8' cells go 0.47 cents flat per dB louder on average, as the
+bandoneon's do, and over the loudest 30 dB their 3rd, 5th and 7th harmonics
+gain 0.55–0.64 dB per dB on the fundamental against its 0.64–0.80. Below
+that the two part (Known gaps).
 
 The cells run at four times the host rate (192 kHz at 48 kHz) and are
 decimated by two half-band allpass stages; Oversampling at 2× or 4× runs them
@@ -324,6 +331,19 @@ a pitch wheel should do what it says.
   harmonic. The measured accordion dips at its 4th harmonic too, about 7 dB
   under its neighbours, so the cancellation is probably real but too deep;
   no free number in the model moves it, so it is left as it is.
+- **Soft low notes hold their pitch.** Over the loudest 30 dB of a
+  bandoneon's held notes its pitch rises 0.39 cents per dB softer on average,
+  0.34–0.62 from C2 to D3, steadily down to the softest. Respira's 8' cells,
+  with the loudest at 1.5 kPa, rise 0.25 on average and 0.18–0.21 from C2 to
+  D3 (`CompareBandoneon`): in their softest 15 dB the pitch barely moves, and
+  just above where a reed starts to speak it falls again. Over the loudest
+  15 dB the two agree. Which pressure
+  the bandoneon's softest notes were played at is not known, so this may be
+  how loudness follows pressure rather than how pitch does; Okada's C4 reed
+  (Adachi et al. 2026) falls 2.5 Hz per kPa with its pallet open against
+  Respira's 1.3, which points the same way. The A5 is the one note whose
+  tone parts: the bandoneon's 3rd–7th harmonics gain 1.2–1.7 dB per dB on its
+  fundamental, Respira's 0.2–0.6.
 - **Half-pressed keys lose too much level.** In the same paper a player
   bent A#2–A3 by closing the pallet part way at a steady bellows pressure:
   16 cents flat on average and 11 dB quieter (the mean over the first twenty
@@ -387,7 +407,10 @@ renders any MIDI file with a trace of the hand and the bellows;
 `ProbeReed [pressure] [rank]` prints what single reeds sound and the air they
 take; `CompareHarmonics [pressure]` sets the first twenty harmonics of single
 8' notes, and how far a half-open pallet bends them, against a published
-accordion measurement; `GenerateReedTuning Source/DSP/ReedTuning.h` re-tunes every reed after
+accordion measurement; `CompareBandoneon [top pressure]` sets how their pitch
+and tone follow their loudness against a bandoneon's, whose numbers
+`python3 Tools/measure_bandoneon.py <library folder>` measures from the
+recordings (not in this repository); `GenerateReedTuning Source/DSP/ReedTuning.h` re-tunes every reed after
 a change to the reed model. `python3 Tools/fit_bellows.py
 build-dsp/RenderRespira` re-fits the demo strokes and
 `python3 Tools/write_preset_midi.py` writes the demo MIDI.
