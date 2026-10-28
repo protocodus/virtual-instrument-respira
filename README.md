@@ -316,7 +316,14 @@ a pitch wheel should do what it says.
   loses above its resonance is not known, so it was not kept
   (`Docs/decisions.md`). Separately, against 500 Hz–1 kHz the demos read 3–9 dB more than a
   polka recording at 1–4 kHz; the recording's distance, room and registers
-  are not known, and the cause is not traced.
+  are not known, and the cause is not traced. Below the 15th, the 4th
+  harmonic is the one large disagreement: from A#2 to A3 it sits 12 dB under
+  the measurement (−22 dB against −10, averaged in dB; −17 averaged as
+  power), deepest from A#2 to D3 (−24 to −41 dB). There the air through the
+  gap and the tongue's swept volume through the slot nearly cancel at that
+  harmonic. The measured accordion dips at its 4th harmonic too, about 7 dB
+  under its neighbours, so the cancellation is probably real but too deep;
+  no free number in the model moves it, so it is left as it is.
 - **Half-pressed keys lose too much level.** In the same paper a player
   bent A#2–A3 by closing the pallet part way at a steady bellows pressure:
   16 cents flat on average and 11 dB quieter (the mean over the first twenty
