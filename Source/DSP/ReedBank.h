@@ -113,20 +113,22 @@ struct CellSpec {
 };
 
 // The cell for `rank` and a treble key (folded) or bass pitch class, with the
-// tuning table's ratios for its push and pull reeds.
-inline CellSpec MakeCell(int rank, int key, double musetteCents, const float* ratios) {
+// tuning table's ratios for its push and pull reeds, to be stepped at stepRate
+// or faster (MakeChamber).
+inline CellSpec MakeCell(int rank, int key, double musetteCents, const float* ratios, double stepRate) {
     CellSpec spec;
     const int index = TuningIndex(rank, key);
     spec.hz = NoteHz(RankNote(rank, key, musetteCents));
     spec.bass = !IsTreble(rank);
-    // Probe at 400 Pa (Tools/ProbeReed): 0.59 L/s at E2, 0.29 at A3, 0.12 at A4,
-    // 0.06 at A5, 0.03 at A6 -- close to 0.12 L/s * 440 / f.
+    // Probe at 400 Pa (Tools/ProbeReed): 0.58 L/s at C2, 0.42 at C3, 0.20 at C4,
+    // 0.11 at A4, 0.05 at C6, 0.03 at C7 -- close to 0.12 L/s * 440 / f from C3
+    // up; C2 takes 30 % less.
     spec.airWeight = 440.0 / spec.hz;
     const double q = ReedQ(spec.hz);
     for (int side = 0; side < 2; ++side) {
         const ReedVariation v = Variation(rank, index, side);
         const double wanted = spec.hz * std::pow(2.0, v.tuneCents / 1200.0);
-        if (side == 0) spec.chamber = MakeChamber(MakeReed(wanted, q * v.qScale, v.setScale), wanted, spec.bass);
+        if (side == 0) spec.chamber = MakeChamber(MakeReed(wanted, q * v.qScale, v.setScale), wanted, spec.bass, stepRate);
         const double natural = wanted * (ratios ? ratios[side] : 1.0);
         (side == 0 ? spec.push : spec.pull) = MakeReed(natural, q * v.qScale, v.setScale);
     }

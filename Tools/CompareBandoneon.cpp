@@ -66,7 +66,7 @@ struct State {
 };
 
 std::vector<State> Sweep(int key, double top) {
-    const CellSpec spec = MakeCell(kRankM, key, 0.0, kReedTuning[kRankM][TuningIndex(kRankM, key)]);
+    const CellSpec spec = MakeCell(kRankM, key, 0.0, kReedTuning[kRankM][TuningIndex(kRankM, key)], probe::kRate);
     const double analysed = std::fmax(0.25, 30.0 / spec.hz);
     std::vector<State> states;
     for (double p = 25.0; p <= top * 1.001; p *= std::pow(2.0, 0.25)) {

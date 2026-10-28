@@ -353,7 +353,7 @@ void Engine::StartCell(int rank, int key, int source, int velocity) {
     if (!cell->active) {
         const int index = TuningIndex(rank, key);
         // Musette and master tune changes reach the reeds at their next note.
-        cell->spec = MakeCell(rank, key, controls[kMusette], kReedTuning[rank][index]);
+        cell->spec = MakeCell(rank, key, controls[kMusette], kReedTuning[rank][index], rate * kBaseOversample);
         if (masterTune != 0.0) {
             const double scale = std::pow(2.0, masterTune / 1200.0);
             const ReedVariation pushV = Variation(rank, index, 0), pullV = Variation(rank, index, 1);
@@ -369,7 +369,7 @@ void Engine::StartCell(int rank, int key, int source, int velocity) {
         cell->state.pull.x = cell->spec.pull.rest;
         // A closed chamber sits at bellows pressure: air leaks in or out through
         // the clearance of whichever reed the bellows drives.
-        cell->state.pressure = pressure;
+        for (double& p : cell->state.p) p = pressure;
         cell->open = cell->lift = 0.0;
         cell->vent = Vent {};
         cell->reed = reed;

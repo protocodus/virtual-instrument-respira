@@ -440,3 +440,52 @@ B). Nothing changes; the earlier entries' hedges no longer apply. Pack
 in its entry. Asked whether to apply it anyway, the owner chose to revisit it
 once the reed chamber's top end is fixed: the fit to Okada's open slope is
 then redone and kept if the harmonic measurement allows it.
+
+## 2026-10-28 — the reed chamber as a duct, B chosen by ear (owner; engineering)
+
+Pack `10-chamber` (listening-2026-10-28): Clarinet Solo, A#2, D3 and G3 on a
+steady pull at about 210 Pa (the loudness of the one published harmonic
+measurement), then C4, G4 and D5 on a push and an A major chord held to the
+end; A the lumped chamber, B the chamber as a duct along its reed in sections
+of at most 5 mm, the gap's air entering along the slot with the tongue's tip
+at the closed end; matched on whole-file RMS (B −1.0 dB). Verdict, by ear: B.
+It ships (ReedModel.h, `MakeChamber` and `StepCell`), with the tuning table
+regenerated (it moved by at most 1.1 cents).
+
+It adds no constant: the duct has the lumped chamber's geometry and losses.
+What was measured before the choice:
+
+- Against Elejalde-García et al. 2021 (`CompareHarmonics`, A#2–A3 at
+  70 dBA): the 15th–20th harmonics average −13.7 dB against the measured
+  −13.4, where the lumped chamber read −20.2; the RMS error over the 2nd–20th
+  fell from 5.1 to 2.7 dB, over the 2nd–16th it rose from 2.2 to 2.5.
+- It converges: halving the sections moves the harmonics by under 1 dB below
+  8 kHz and 2.5 dB above. The sectioned chamber not kept earlier today (two to
+  four sections) moved 15–24 dB between grids because it was far too coarse to
+  converge; this is the model it converges to.
+- Against the bandoneon samples (harmonics per octave against 1–2 kHz, mean
+  distance over seven held notes): 2–4 kHz 3.5 → 5.7 dB, 4–8 kHz 8.5 → 6.1,
+  8–16 kHz 5.1 → 13.0, B too bright there. A bandoneon is not an accordion
+  and the recording chain is unknown, so this is weak evidence either way.
+- A half-pressed A#2–A3 falls 11.1 cents and 18.6 dB (11.2 and 20.5 before;
+  measured 16.1 and 11.1). The reeds' own gap flow is unchanged and still
+  agrees with Pomberger et al. (DAGA 2021) within 1–6 dB.
+- Master Tutti took about 0.32× realtime against 0.25× before.
+
+The choice licenses the duct's form up to the measurement's 20th harmonic
+(4.4 kHz), and its top octaves as what that form gives; it does not measure
+them (README, Known gaps, "The top octaves"). Both tongues' tips sit at the
+closed end because the measurement favours it: at the pallet hole the
+15th–20th fell 16 dB below it. A variant with the push and pull tips at
+opposite ends was dropped before listening, since a held key fell silent on
+a hard push (`HardPushSpeaks`).
+
+## 2026-10-28 — the treble pallet hole refitted on the duct, not kept (engineering)
+
+The owner asked (06-pallet, above) for the fit to Okada's open slope to be
+redone once the chamber's top end was fixed. On the duct the treble pallet
+holes need 0.40 of their area for C4 to fall 2.5 Hz/kPa open (the full hole
+gives 1.3). The harmonic measurement rejects that: at the pressure that reads
+its 70 dBA (428 Pa with the smaller holes) the 15th–20th fall to −19.9 dB
+against the measured −13.4, and a half-pressed key, the pallet opened 0.2,
+falls silent. The shipping hole stays, and the open slope stays a known gap.

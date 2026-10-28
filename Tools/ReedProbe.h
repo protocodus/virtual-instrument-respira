@@ -110,7 +110,7 @@ inline double Pitch(const std::vector<double>& x, double hz) {
 // passes of retuning at kTuningPressure (3x that if a reed will not speak).
 // A reed that never speaks keeps ratio 1.
 inline std::array<double, 2> TuneCell(int rank, int key) {
-    const CellSpec base = MakeCell(rank, key, 0.0, nullptr);
+    const CellSpec base = MakeCell(rank, key, 0.0, nullptr, kRate);
     std::array<double, 2> ratios { 1.0, 1.0 };
     for (int side = 0; side < 2; ++side) {
         const ReedVariation v = Variation(rank, TuningIndex(rank, key), side);

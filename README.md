@@ -20,14 +20,14 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 | # | Preset | Demo | Length | Peak |
 | --- | --- | --- | --- | --- |
-| 1 | Clarinet Solo | [01-clarinet-solo.wav](Docs/audio/01-clarinet-solo.wav) | 11.2 s | -4.8 dBFS |
-| 2 | Bassoon Low | [02-bassoon-low.wav](Docs/audio/02-bassoon-low.wav) | 9.6 s | -6.5 dBFS |
-| 3 | Violin Folk | [03-violin-folk.wav](Docs/audio/03-violin-folk.wav) | 10.5 s | -5.8 dBFS |
-| 4 | Paris Musette | [04-paris-musette.wav](Docs/audio/04-paris-musette.wav) | 10.7 s | -5.2 dBFS |
-| 5 | Tango Bandoneon | [05-tango-bandoneon.wav](Docs/audio/05-tango-bandoneon.wav) | 11.2 s | -2.3 dBFS |
-| 6 | Organ Bellows | [06-organ-bellows.wav](Docs/audio/06-organ-bellows.wav) | 10.6 s | -2.9 dBFS |
-| 7 | Bright Oboe | [07-bright-oboe.wav](Docs/audio/07-bright-oboe.wav) | 9.8 s | -4.5 dBFS |
-| 8 | Master Tutti | [08-master-tutti.wav](Docs/audio/08-master-tutti.wav) | 8.7 s | -2.8 dBFS |
+| 1 | Clarinet Solo | [01-clarinet-solo.wav](Docs/audio/01-clarinet-solo.wav) | 11.2 s | -3.3 dBFS |
+| 2 | Bassoon Low | [02-bassoon-low.wav](Docs/audio/02-bassoon-low.wav) | 9.6 s | -6.3 dBFS |
+| 3 | Violin Folk | [03-violin-folk.wav](Docs/audio/03-violin-folk.wav) | 10.5 s | -4.1 dBFS |
+| 4 | Paris Musette | [04-paris-musette.wav](Docs/audio/04-paris-musette.wav) | 10.7 s | -4.3 dBFS |
+| 5 | Tango Bandoneon | [05-tango-bandoneon.wav](Docs/audio/05-tango-bandoneon.wav) | 11.2 s | -1.5 dBFS |
+| 6 | Organ Bellows | [06-organ-bellows.wav](Docs/audio/06-organ-bellows.wav) | 10.6 s | -1.5 dBFS |
+| 7 | Bright Oboe | [07-bright-oboe.wav](Docs/audio/07-bright-oboe.wav) | 9.8 s | -1.6 dBFS |
+| 8 | Master Tutti | [08-master-tutti.wav](Docs/audio/08-master-tutti.wav) | 8.7 s | -1.5 dBFS |
 
 <!-- audio-demos-end -->
 
@@ -86,6 +86,10 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 - The output compressor takes hold from −5 VU instead of −9, and firmer, so a
   swell on the bellows rises further before it is held (chosen by ear); the
   hardest strokes still stay out of the red.
+- Each reed chamber is a duct as long as its reed instead of a single
+  resonance, so the tone is brighter above 2 kHz: the low notes' 15th–20th
+  harmonics sit on the one published measurement instead of 7 dB under it
+  (chosen by ear).
 
 ## Downloads
 
@@ -161,12 +165,19 @@ brass tip weights, as real ones do: enough that the arm's full pressure,
 held still, leaves each tongue at least its clearance short of the slot, so a
 bellows pushed hard before the reed swings cannot blow it shut and silent.
 The reed plates, and so the slots, are 2.0–3.5 mm deep, an estimate chosen by
-ear: at mezzo forte the low tongues swing inside them. A chamber whose
-Helmholtz resonance would fall near its reed is made smaller, as reed makers
-do with wax in the top octaves. Against the one published harmonic
-measurement of an accordion's 8' reeds (A#2–A3, mezzo forte, 50 cm;
-`Tools/CompareHarmonics.cpp`), the 2nd–14th harmonics agree within 1.5 dB on
-average at its loudness, and the 15th–20th sit 7 dB low (see Known gaps).
+ear: at mezzo forte the low tongues swing inside them. Each chamber is a
+channel as long as its reed, closed under the tongue's tip and open at the
+root end to the pallet hole, simulated as a duct in sections of at most 5 mm
+(halving them moves the harmonics by under 1 dB below 8 kHz and 2.5 dB
+above); the gap's air enters, and its pressure acts on the tongue, along the
+slot where the gap opens. A chamber whose resonance would fall near its reed
+is made smaller, as reed makers do with wax in the top octaves. Against the
+one published harmonic measurement of an accordion's 8' reeds (A#2–A3, mezzo
+forte, 50 cm; `Tools/CompareHarmonics.cpp`), the 2nd–14th harmonics agree
+within 1.7 dB on average at its loudness and the 15th–20th average −13.7 dB
+against the measured −13.4. Heard without its chamber, a reed's gap flow
+agrees with a lab measurement of a real accordion-type reed block (Pomberger
+et al., DAGA 2021, E3, G4 and E6) within 1–6 dB over the first 15 harmonics.
 Every push and pull tongue differs a little
 from its neighbours (set ±10 %, loss ±20 %, tuning ±0.8 cents, fixed per
 instrument). A reed sounds below its natural frequency under load, so
@@ -178,9 +189,9 @@ about 8 cents flat when pressed at 1.4 kPa. Against a bandoneon's held notes
 from C2 to C6 (`Tools/CompareBandoneon.cpp`, from a Pianobook library by
 Miguel Lopez), read against loudness so that neither the bellows pressure nor
 the microphone matters: over the loudest 15 dB, with the loudest at 1.5 kPa,
-single 8' cells go 0.47 cents flat per dB louder on average, as the
+single 8' cells go 0.46 cents flat per dB louder on average, as the
 bandoneon's do, and over the loudest 30 dB their 3rd, 5th and 7th harmonics
-gain 0.55–0.64 dB per dB on the fundamental against its 0.64–0.80. Below
+gain 0.48–0.57 dB per dB on the fundamental against its 0.64–0.80. Below
 that the two part, and from E4 up their 9th–15th harmonics hardly grow at all
 (Known gaps).
 
@@ -193,11 +204,11 @@ one, along a raised cosine, so velocity sets the attack, and closes in 8 ms.
 Channel pressure lets a held key rise part way: at full pressure its travel
 rests at 0.30, a pallet opening of 0.2 (about 1 mm), where the reed's pitch
 follows the bellows pressure as a half-pressed key's does. The model's C4
-falls 4.2 Hz per kPa there against the 5.1 Hz/kPa measured with the pallet
+falls 4.3 Hz per kPa there against the 5.1 Hz/kPa measured with the pallet
 lifted 1 mm (Adachi et al., Forum Acusticum 2026), and 1.3 Hz/kPa fully open
 against 2.5. At the 70 dBA of a published bend measurement, a half-pressed
 A#2–A3 at a steady bellows pressure falls 11 cents, close to the 16 a player
-reached with the finger alone, but loses 20 dB where the player's lost 11
+reached with the finger alone, but loses 19 dB where the player's lost 11
 (Known gaps).
 Up to 72 chambers sound at once; a new one takes
 the oldest released chamber first.
@@ -343,8 +354,8 @@ a pitch wheel should do what it says.
   demo phrases read −9 VU, not by a measured level; no recording of a real accordion is
   part of the model or its tests.
 - **CPU.** A full-register chord over bass and chords (28 chambers) takes
-  about a quarter of one core in the development container at 48 kHz (0.23×
-  realtime for the Master Tutti demo, 0.02× for the single clarinet reed),
+  about a third of one core in the development container at 48 kHz (0.32×
+  realtime for the Master Tutti demo, 0.03× for the single clarinet reed),
   and a chord change briefly doubles that while the released chambers close.
   Only the reed gap's constants are made once per reed (about 7 % of the
   time). Running the oversampled steps outside the chamber loop, and one
@@ -370,26 +381,24 @@ a pitch wheel should do what it says.
   resonances instead, and what it really loses depends on the felt, leather
   and wood inside it, which are not modelled; the bass side's top octaves
   are probably too dark.
-- **The top harmonics, against a measurement.** The one published
-  harmonic measurement found, a concert accordion's 8' reeds from A#2 to A3
-  played mezzo forte, about 70 dBA at 50 cm (Elejalde-García, Macho-Stadler
-  and Llanos-Vázquez 2021), falls without a peak from the fundamental to about
-  −13 dB at the 15th–20th harmonics. Respira's 8' cells read 70 dBA at 50 cm
-  at about 200 Pa, as a small source in free field (`CompareHarmonics`);
-  there its 2nd–14th harmonics agree with the measurement within 1.5 dB on
-  average, but its 15th–20th sit 7 dB low, and 4–8 dB low at every pressure
-  from 150 to 1200 Pa. The likely cause is the reed chamber, a lumped
-  resonator (1.3 kHz for C3 rising to 3.7 kHz for C7) that cuts 12 dB per
-  octave above its resonance; from A#2 to A3 that takes 5–16 dB off the
-  14th–20th harmonics on average. The chamber is as long as its reed, so the lumped
-  model holds only up to about its resonance (k L ≈ 1 there). A chamber in
-  sections, the reed's air entering towards its closed end, matched the
-  measurement within 2.1 dB but made the demos 12–15 dB brighter at
-  4–16 kHz, by an amount the number of sections set; what a real chamber
-  loses above its resonance is not known, so it was not kept
-  (`Docs/decisions.md`). Separately, against 500 Hz–1 kHz the demos read 3–9 dB more than a
-  polka recording at 1–4 kHz; the recording's distance, room and registers
-  are not known, and the cause is not traced. Below the 15th the agreement
+- **The top octaves.** The one published harmonic measurement found
+  (Elejalde-García, Macho-Stadler and Llanos-Vázquez 2021, a concert
+  accordion's 8' reeds from A#2 to A3 played mezzo forte, about 70 dBA at
+  50 cm) reaches only the 20th harmonic, 4.4 kHz, and the reed chamber's duct
+  matches it there. Above it the evidence is weak. Against the bandoneon
+  samples' held notes (G2–A5 on Tango Bandoneon, harmonics per octave against
+  1–2 kHz) Respira sits 6 dB from them on average at 4–8 kHz but 13 dB
+  brighter at 8–16 kHz; against 500 Hz–1 kHz the demos read 2–15 dB more than
+  a polka recording at 2–4 kHz and 11–19 dB more above 4 kHz (Bassoon Low,
+  through the bass box, 2–4 dB), and more again than a Hussong recording. The
+  two recordings differ from each other by 10–15 dB up there, a bandoneon is
+  not an accordion, and none of their microphones, distances or rooms is
+  known. The duct leaves out its wall losses (about 0.3 dB over a 61 mm
+  channel at 8 kHz), the pallet hole's radiation resistance, the chamber's
+  irregular shape and the tongue inside it, and puts both tongues' tips at
+  its closed end: the measurement favours that (at the pallet hole the
+  15th–20th fell 16 dB under it), but no drawing of a reed block was found to
+  confirm it (`Docs/decisions.md`). Below the 15th the agreement
   rests on the reed plates' thickness, an estimate chosen by ear
   (`Docs/decisions.md`): with plates two thirds as thick, each A#2–A3 tongue
   swung 0.7–2.1 mm out past the far face of its plate at that loudness, where
@@ -406,7 +415,7 @@ a pitch wheel should do what it says.
 - **Soft low notes hold their pitch.** Over the loudest 30 dB of a
   bandoneon's held notes its pitch rises 0.39 cents per dB softer on average,
   0.34–0.62 from C2 to D3, steadily down to the softest. Respira's 8' cells,
-  with the loudest at 1.5 kPa, rise 0.26 on average and 0.18–0.23 from C2 to
+  with the loudest at 1.5 kPa, rise 0.25 on average and 0.18–0.22 from C2 to
   D3 (`CompareBandoneon`): in their softest 15 dB the pitch barely moves, and
   just above where a reed starts to speak it falls again. Over the loudest
   15 dB the two agree. Which pressure
@@ -418,8 +427,8 @@ a pitch wheel should do what it says.
   bandoneon's held notes from E4 to C6, its 9th–15th harmonics gain 1.4 dB
   per dB on the fundamental on average (0.9–2.1), so a forte note is much
   brighter than a piano one; at the A5 even the 3rd–7th gain 1.2–1.7.
-  Respira's 8' cells gain 0.3 there (−0.2 to 0.9, `CompareBandoneon`); from
-  C2 to C4 the two agree (0.8 against 0.7), and over the loudest 15 dB the
+  Respira's 8' cells gain 0.4 there (−0.2 to 0.9, `CompareBandoneon`); from
+  C2 to C4 the two agree (0.7, and Respira's 0.8), and over the loudest 15 dB the
   gap is the same. None of the tongue's air drag (cut until tips up to F5
   swing 15 % of their length at 600 Pa, a typical figure in playing), the
   slot's depth, the tongue's set or where its bend sits, its clearance, the
@@ -441,41 +450,43 @@ a pitch wheel should do what it says.
   bent A#2–A3 by closing the pallet part way at a steady bellows pressure:
   16 cents flat on average and 11 dB quieter (the mean over the first twenty
   harmonics). Respira's 8' cells at that loudness, with the pallet opened 0.2
-  as full channel pressure holds it, fall 11 cents and 20 dB
+  as full channel pressure holds it, fall 11 cents and 19 dB
   (`CompareHarmonics`): nearly twice the level for a slightly smaller bend.
   The player found no bend possible from C6 up; a single C6 cell still bends
-  17–28 cents at 200–400 Pa, while from E6–G6 up the half-open pallet
+  16–26 cents at 200–400 Pa, while from D6–G6 up the half-open pallet
   silences the reed.
   At a steady wheel, Assist counts a held key in full however far channel
   pressure lets it rise (chosen by ear over counting the pallet's opening,
   which let the pressure fall), so half-pressing raises the pressure into the
   bend. Bent from open on a steady pull at about 200 Pa, a C3 falls 11 cents
   and 7 dB where the player reached 24 cents and 14 dB with the finger alone
-  and 29 and 8 with bellows and finger; an A3 16 cents and 13 dB, against 13
+  and 29 and 8 with bellows and finger; an A3 16 cents and 12 dB, against 13
   and 10, and 17 and 5. A low key struck under full channel pressure
-  overbends: A#2–G#3 fall 34–64 cents as the pressure climbs to 1.0–1.4 kPa,
+  overbends: A#2–G#3 fall 33–64 cents as the pressure climbs to 1.0–1.4 kPa,
   against at most 34 measured.
 - **The top octave speaks slowly, half checked.** With the bellows already
-  at 540 Pa, an A4 reaches its level about 50 ms after the key (some 20
-  periods), a C6 about 90 ms and a C7 about 130 ms (some 270 periods): the
+  at 530 Pa, an A4 comes within 3 dB of its level about 55 ms after the key
+  (some 25 periods), a C6 about 135 ms and a C7 about 165 ms (some 340
+  periods): the
   pallet's 3–12 ms lift is slow against a high reed's period, so it grows from
   the gap's turbulence rather than from a kick. A recording has no key time,
   so the wait before a note is heard is unchecked, but how fast it grows once
   heard can be read from the bandoneon library's staccato notes (one take
   each; 2 ms RMS, from −20 to −3 dB of the take's peak): 28–42 ms from C4 to
   D5, 48–53 ms at A5 and C6, an uneven 104 ms at F5. Tango Bandoneon played
-  an octave up, so that the same two reeds sound, grows in 25–43 ms with the
-  bellows at 730 Pa (27–30 ms from F5 to C6) and 13–19 ms at 1.8 kPa: no
-  slower than the bandoneon, and at the top a little quicker. Both start dull
+  an octave up, so that the same two reeds sound, grows in 29–66 ms with the
+  bellows at 730 Pa (36–66 ms from F5 to C6) and 14–20 ms at 1.8 kPa: about
+  as fast as the bandoneon at 730 Pa, though 7–14 ms slower at E4, D5 and A5,
+  and quicker at 1.8 kPa. Both start dull
   and brighten as they grow: as the bandoneon's E4–D5 cross −20 dB, their
   3–10 kHz band sits 15–18 dB further below the whole than at the peak and
   catches up within 20–40 ms (its C4 and C6 start bright, its F5 stays dull
-  for 80 ms); Respira's sits 12–15 dB below and catches up as fast. The literature
+  for 80 ms); Respira's sits 13–19 dB below and catches up as fast. The literature
   agrees in direction only: high accordion reeds can be hard to sound when their
   chamber's resonance comes near their pitch, and a 622 Hz reed's starting
   pressure peaked with its chamber tuned near twice its pitch (Cottingham,
-  ICA 2016, preliminary); the model's C7 chamber resonates at 1.75 times its reed's pitch,
-  a C6's at 2.7.
+  ICA 2016, preliminary); the model's C7 chamber first resonates at 1.9 times its reed's pitch,
+  a C6's at 3.0.
 - **Low reeds start late on a hard push.** When the bellows reaches the
   arm's full pressure before a low reed swings, the tongue sits near the
   slot's mouth and its swing grows slowly: on Bassoon with the wheel swept

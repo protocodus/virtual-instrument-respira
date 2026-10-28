@@ -161,50 +161,83 @@ inline double StepReed(const ReedSpec& r, ReedState& s, double dp, double dt, do
     return flow * (1.0 + r.breath * flowNoise) + r.area * s.v * (r.clearArea / area);
 }
 
+// The reed chamber as a duct in sections of at most kSectionLength: four or
+// more to a wavelength at 16 kHz. Half that length moves the harmonics by under
+// 1 dB below 8 kHz and 2.5 dB above (Tools/CompareHarmonics, the demos).
+constexpr double kSectionLength = 0.005;
+constexpr int kMaxSections = 16;   // the longest chamber, 75 mm, in 5 mm sections
+
 struct ChamberSpec {
-    double stiffness = 0.0;          // rho c^2 / volume, Pa per m^3
     double ventArea = 0.0;           // this chamber's share of the open pallet hole, m^2
     double palletInertance = 0.0;    // air mass of the open pallet hole, kg/m^4
-    double channelInertance = 0.0;   // air mass of the chamber channel leading to it, kg/m^4
+    double channelInertance = 0.0;   // air mass from the last section's middle to the hole, kg/m^4
+    int sections = 1;
+    double sectionStiffness = 0.0;   // rho c^2 / a section's volume, Pa per m^3
+    double sectionInertance = 0.0;   // air mass between two sections' middles, kg/m^4
+    double weight[kMaxSections] = {};   // each section's share of the gap's flow (and of its pressure on the tongue)
 };
 
-// The reed chamber is a channel alongside the tongue, open at one end to the
-// pallet hole. Its depth grows with the reed; a chamber whose Helmholtz
-// resonance would fall near the reed is made smaller, as reed makers do with
-// wax in the top octaves, because a blown-closed reed only speaks on an
-// inertive (below-resonance) load.
+// The reed chamber is a channel alongside the tongue, closed at the tongue's
+// tip and open at its root end to the pallet hole. Its depth grows with the
+// reed; a chamber whose resonance would fall near the reed is made smaller,
+// as reed makers do with wax in the top octaves, because a blown-closed reed
+// only speaks on an inertive (below-resonance) load.
 //
-// As a lumped resonator it holds only up to about that resonance: the channel
-// is as long as the reed, so k L is near 1 there. Above it a real chamber's
-// standing waves are not modelled, and this one falls 12 dB per octave
-// (Tools/CompareHarmonics.cpp, README Known gaps). Sections in its place were
-// tried and not kept: without a chamber's losses, the top octaves they gave
-// depended on how many there were (Docs/decisions.md).
+// The channel is as long as the reed, so k L is near 1 at that resonance: as
+// a single lumped resonator it held only up to there, and fell 12 dB an octave
+// above it, leaving A#2-A3's 15th-20th harmonics 7 dB under the one published
+// measurement (Elejalde-Garcia et al. 2021). As a duct it passes its standing
+// waves, which puts them on it (Tools/CompareHarmonics). The gap's air enters
+// where the gap opens: along both sides as the tongue's (s/L)^2 bend from the
+// root, and across the tip (GapArea), and the tongue feels the pressure there
+// with the same weights. Tips at the closed end match the measurement; at the
+// pallet hole the 15th-20th fell 16 dB under it, and with the two tongues
+// riveted at opposite ends some keys stayed silent on a sudden hard push
+// (Docs/decisions.md). The duct's wall losses (about 0.3 dB over a 61 mm
+// channel at 8 kHz) and the hole's radiation resistance are left out.
 //
 // Bass-side reeds sit behind the larger pallets and longer air passages of the
 // bass mechanism (bassBox): 1.7x the hole area and twice the air path. Without
 // that the long bass tongues, choked by a small hole, fall 50+ cents flat
 // between soft and loud playing.
-inline ChamberSpec MakeChamber(const ReedSpec& r, double f0, bool bassBox = false) {
+//
+// stepRate is the lowest rate the cell will be stepped at: sound must not
+// cross a section in less than a step, or the duct goes unstable.
+inline ChamberSpec MakeChamber(const ReedSpec& r, double f0, bool bassBox, double stepRate) {
     ChamberSpec c;
-    const double width = r.width + 0.004;
-    double depth = 0.003 + 0.2 * r.length;
+    const double width = r.width + 0.004, L = r.length;
+    double depth = 0.003 + 0.2 * L;
     const double path = bassBox ? 2.0 : 1.0;
-    c.ventArea = 6.0e-5 * std::sqrt(r.length / 0.026) * (bassBox ? 1.7 : 1.0);
+    c.ventArea = 6.0e-5 * std::sqrt(L / 0.026) * (bassBox ? 1.7 : 1.0);
     c.palletInertance = path * kRho * (0.006 + 1.7 * std::sqrt(c.ventArea / kPi)) / c.ventArea;
-    const auto inertance = [&] { return c.palletInertance + path * kRho * 0.6 * r.length / (width * depth); };
+    const auto inertance = [&] { return c.palletInertance + path * kRho * 0.6 * L / (width * depth); };
     const double minResonance = 1.4 * f0, w = 2.0 * kPi * minResonance;
-    // f_H = 1 / (2 pi sqrt(M V / (rho c^2))): shrink the depth until f_H >= minResonance.
-    for (int i = 0; i < 40 && kRhoC2 / (inertance() * r.length * width * depth) < w * w; ++i) depth *= 0.9;
-    c.channelInertance = inertance() - c.palletInertance;
-    c.stiffness = kRhoC2 / (r.length * width * depth);
+    // f_H = 1 / (2 pi sqrt(M V / (rho c^2))), lumped: shrink the depth until
+    // f_H >= minResonance. The duct's first resonance sits 10-15 % above it.
+    for (int i = 0; i < 40 && kRhoC2 / (inertance() * L * width * depth) < w * w; ++i) depth *= 0.9;
+    const double area = width * depth;
+    const int n = static_cast<int>(Clamp(std::floor(L / Max(kSectionLength, 343.0 / stepRate)), 1.0, kMaxSections));
+    const double dx = L / n;
+    c.sections = n;
+    c.sectionStiffness = kRhoC2 / (area * dx);
+    c.sectionInertance = kRho * dx / area;
+    // Half a section to the hole; the bass air path's second length as before.
+    c.channelInertance = kRho * 0.5 * dx / area + (path - 1.0) * kRho * 0.6 * L / area;
+    double sum = 0.0;
+    for (int i = 0; i < n; ++i) {   // section 0 at the closed end, under the tip
+        const double near = 1.0 - (i + 1) * dx / L, far = 1.0 - i * dx / L;   // distance from the root over L
+        c.weight[i] = 2.0 * L / 3.0 * (far * far * far - near * near * near) + (i == 0 ? r.width : 0.0);
+        sum += c.weight[i];
+    }
+    for (int i = 0; i < n; ++i) c.weight[i] /= sum;
     return c;
 }
 
 struct CellState {
     ReedState push, pull;
-    double pressure = 0.0;   // chamber pressure, Pa (relative to the room)
     double vent = 0.0;       // flow out of the pallet hole, m^3/s
+    double p[kMaxSections] = {};       // each section's pressure, Pa (relative to the room)
+    double u[kMaxSections + 1] = {};   // flow into each section from the closed end's side; u[sections] is the vent
 };
 
 // The pallet hole's flow law at opening `open` (0 closed .. 1 open) and time
@@ -243,12 +276,19 @@ inline double StepVent(const Vent& v, double pressure, double flow) {
 inline double StepCell(const ReedSpec& push, const ReedSpec& pull, const ChamberSpec& chamber, const Vent& hole,
                        CellState& s, double pb, double dt, double invDt, double pushForce, double pullForce,
                        double& fromBellows, double tune2 = 1.0, double flowNoise = 0.0) {
-    const double intoChamber = StepReed(push, s.push, pb - s.pressure, dt, invDt, pushForce, tune2, flowNoise);
-    const double outOfChamber = StepReed(pull, s.pull, s.pressure - pb, dt, invDt, pullForce, tune2, flowNoise);
-    const double vent = StepVent(hole, s.pressure, s.vent);
+    const int n = chamber.sections;
+    double reedPressure = 0.0;
+    for (int i = 0; i < n; ++i) reedPressure += chamber.weight[i] * s.p[i];
+    const double intoChamber = StepReed(push, s.push, pb - reedPressure, dt, invDt, pushForce, tune2, flowNoise);
+    const double outOfChamber = StepReed(pull, s.pull, reedPressure - pb, dt, invDt, pullForce, tune2, flowNoise);
+    const double vent = StepVent(hole, s.p[n - 1], s.vent);
     const double radiated = (vent - s.vent) * invDt;
     s.vent = vent;
-    s.pressure += dt * chamber.stiffness * (intoChamber - outOfChamber - vent);
+    // Flows from the old pressures, then pressures from the new flows.
+    const double g = dt / chamber.sectionInertance, k = dt * chamber.sectionStiffness, q = k * (intoChamber - outOfChamber);
+    for (int i = 1; i < n; ++i) s.u[i] += g * (s.p[i - 1] - s.p[i]);
+    s.u[n] = vent;
+    for (int i = 0; i < n; ++i) s.p[i] += q * chamber.weight[i] + k * (s.u[i] - s.u[i + 1]);
     fromBellows += intoChamber - outOfChamber;
     return radiated;
 }

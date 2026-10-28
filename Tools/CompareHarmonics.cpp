@@ -53,7 +53,7 @@ constexpr double kMeasuredBendCents = -16.1, kMeasuredBendDb = -11.1, kHalfPress
 // Radiated source strength (m^3/s^2) of `key`'s 8' cell over its last
 // kAnalysed seconds at bellows pressure -pressure, the pallet opened `opening`.
 std::vector<double> Play(int key, double pressure, double opening) {
-    const CellSpec spec = MakeCell(kRankM, key, 0.0, kReedTuning[kRankM][TuningIndex(kRankM, key)]);
+    const CellSpec spec = MakeCell(kRankM, key, 0.0, kReedTuning[kRankM][TuningIndex(kRankM, key)], probe::kRate);
     return probe::Radiated(spec, -pressure, opening, kSeconds, kAnalysed);
 }
 

@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
     const std::array<int, 7> treble { 36, 48, 60, 69, 72, 84, 96 };
     for (int i = 0; i < (IsTreble(rank) ? 7 : 12); ++i) {
         const int key = IsTreble(rank) ? treble[static_cast<std::size_t>(i)] : i, k = key;
-        const CellSpec spec = MakeCell(rank, k, 22.0, kReedTuning[rank][TuningIndex(rank, k)]);
+        const CellSpec spec = MakeCell(rank, k, 22.0, kReedTuning[rank][TuningIndex(rank, k)], probe::kRate);
         const double hz = probe::SoundingHz(spec.push, spec.chamber, spec.hz, pressure);
         // Mean air through the cell over its last half second, pallet open.
         CellState s;
