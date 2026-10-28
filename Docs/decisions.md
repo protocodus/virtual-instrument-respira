@@ -255,6 +255,9 @@ resonator.
   12–14 dB brighter than the polka recording at 4–8 kHz, which the lumped
   model matches within 3 dB. How much depended on the number of sections:
   two and four differed by 15–24 dB at 8–16 kHz, so the top octaves came from
-  the discretisation, not from the physics. What a real chamber loses above
-  its resonance, which would decide them, is not known. It also cost 8–22 %
-  more CPU (two to four sections).
+  the discretisation, not from the physics. The channel's wall losses are
+  far too small to tame them (about 0.3 dB over a 47 mm channel at 8 kHz), so
+  either a real chamber loses more above its resonance in ways not modelled,
+  or the gap's flow pulses are sharper than a real reed's and the lumped
+  chamber's roll-off had been hiding that; neither is measured. It also cost
+  8–22 % more CPU (two to four sections).
