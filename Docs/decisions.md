@@ -236,3 +236,25 @@ measurement or an estimate gave, so none went to a listening test.
 - **Turbulence only on the reed that flows.** Gating the gap's breath to the
   reed the bellows drives made no measurable difference to the renders, so
   it was not kept.
+
+## 2026-10-28 — the reed chamber in sections, not kept (engineering)
+
+Tried after `Tools/CompareHarmonics.cpp` found the 15th–20th harmonics of
+A#2–A3 6 dB below the one published measurement (README, Known gaps): the
+reed chamber as two to four compliances along its channel joined by their air
+masses, closed at the far end, the reed's air entering where its gap opens
+(along the sides as (s/L)², and across the tip), in place of the lumped
+resonator.
+
+- With the tongue's tip at the closed end, the first twenty harmonics agreed
+  with the measurement within 2.1 dB in every band, at the pressure that
+  reads its 70 dBA at 50 cm. With the tip at the pallet hole the 15th–20th
+  fell 13 dB below it. Pitch moved by under a cent and air by under 5 %.
+- Not kept. Across the demos it lifted 2–4 kHz by 3–12 dB and 4–16 kHz by
+  12–15 dB against 500 Hz–1 kHz, leaving the clarinet and tutti demos
+  12–14 dB brighter than the polka recording at 4–8 kHz, which the lumped
+  model matches within 3 dB. How much depended on the number of sections:
+  two and four differed by 15–24 dB at 8–16 kHz, so the top octaves came from
+  the discretisation, not from the physics. What a real chamber loses above
+  its resonance, which would decide them, is not known. It also cost 8–22 %
+  more CPU (two to four sections).

@@ -162,7 +162,9 @@ struct ChamberSpec {
 // As a lumped resonator it holds only up to about that resonance: the channel
 // is as long as the reed, so k L is near 1 there. Above it a real chamber's
 // standing waves are not modelled, and this one falls 12 dB per octave
-// (Tools/CompareHarmonics.cpp, README Known gaps).
+// (Tools/CompareHarmonics.cpp, README Known gaps). Sections in its place were
+// tried and not kept: without a chamber's losses, the top octaves they gave
+// depended on how many there were (Docs/decisions.md).
 //
 // Bass-side reeds sit behind the larger pallets and longer air passages of the
 // bass mechanism (bassBox): 1.7x the hole area and twice the air path. Without

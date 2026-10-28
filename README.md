@@ -283,10 +283,12 @@ a pitch wheel should do what it says.
   resonator (1.3 kHz for C3 rising to 3.7 kHz for C7) that cuts 12 dB per
   octave above its resonance; from A#2 to A3 that takes 5–16 dB off the
   14th–20th harmonics on average. The chamber is as long as its reed, so the lumped
-  model holds only up to about its resonance (k L ≈ 1 there). A distributed
-  chamber would not fall that way, but what it radiates depends on where along
-  it the reed's air enters and how much it is damped, neither of which is
-  known. Separately, against 500 Hz–1 kHz the demos read 3–9 dB more than a
+  model holds only up to about its resonance (k L ≈ 1 there). A chamber in
+  sections, the reed's air entering towards its closed end, matched the
+  measurement within 2.1 dB but made the demos 12–15 dB brighter at
+  4–16 kHz, by an amount the number of sections set; what a real chamber
+  loses above its resonance is not known, so it was not kept
+  (`Docs/decisions.md`). Separately, against 500 Hz–1 kHz the demos read 3–9 dB more than a
   polka recording at 1–4 kHz; the recording's distance, room and registers
   are not known, and the cause is not traced.
 - **The top octave speaks slowly, unchecked.** With the bellows already at
