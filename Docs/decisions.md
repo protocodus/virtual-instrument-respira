@@ -198,7 +198,7 @@ keeping it, not narrowing its depth, porosity or hole size. The packs 02–04 we
 re-rendered once the treble compartment was withdrawn; these figures are
 from them.
 
-## 2026-10-28 — the breath's spectrum, by-ear verdict pending (engineering)
+## 2026-10-28 — the breath's spectrum, B or C by ear (engineering)
 
 The gap turbulence's flow fluctuation was white per internal step: at the
 four-times rate three quarters of its estimated variance (10 % over the square
@@ -210,17 +210,20 @@ same 0.3 mm eddies and the jet's speed from the bellows pressure (about
 15 kHz at 500 Pa), its variance kept at the estimate; the force that seeds the
 tongues stays white. On held Clarinet notes the floor between the harmonics
 rises 7–9 dB below 8 kHz. Pack `03-clarinet` (listening-2026-10-28): A the
-engine before, B shaped (shipping), C shaped at half the fluctuation. Verdict: pending; the
-2026-10-27 breath verdict, also pending, was asked of the white version.
+engine before, B shaped (shipping), C shaped at half the fluctuation. Verdict, by
+ear: B or C, both good. The shaped breath stays at its estimate; the verdict
+does not choose between the estimate and half of it. The 2026-10-27 breath
+verdict, still pending, was asked of the white version.
 
-## 2026-10-28 — the air valve's hiss through the bass box, by-ear verdict pending (engineering)
+## 2026-10-28 — the air valve's hiss through the bass box, B by ear (engineering)
 
 The air valve is a hole in the bass end, under the bass end cover with the bass
 mechanism, so its jet's hiss leaves through the cover's holes like the bass
 reeds' sound; it went straight to the output. It now passes through the bass
 box: in the air-button passage its level is unchanged (−55 dBFS), and above
 2 kHz it falls 16–44 dB, a darker rush. Pack `04-air` (listening-2026-10-28):
-A the engine before, B through the bass box (shipping). Verdict: pending.
+A the engine before, B through the bass box (shipping). Verdict, by ear: B,
+"probably" better. It stays.
 
 ## 2026-10-28 — three experiments not kept (engineering)
 
