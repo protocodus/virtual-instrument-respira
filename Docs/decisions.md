@@ -418,3 +418,23 @@ because level was what was judged. Verdict, by ear: B. Mechanics defaults to
 1 m and a hard one near 74, where ordinary playing reads 73 dB RMS. The
 choice sets the default within the estimate's stated ±10 dB uncertainty; it
 does not measure the mechanism's level, which stays a known gap.
+
+## 2026-10-28 — the breath at half the estimate, C chosen by ear (owner)
+
+Pack `03-clarinet` (listening-2026-10-28), whose first verdict was "B or C,
+both good" (above), came back with a firm one: C, the shaped breath at half
+the estimated fluctuation, the eddies' turbulence intensity 5 % in place of
+10 %. C ships (ReedModel.h, `breath`). Half the estimate lies inside the
+range the breath was offered over (0.3× to 2×, pack `breath`, 2026-10-27),
+which this verdict supersedes. It licenses the level only: the eddy size,
+their count along the gap's edge and the spectrum stay as derived.
+
+## 2026-10-28 — 02-bass C, 04-air B and 05-bend B confirmed (owner)
+
+The owner returned every pack in listening-2026-10-28 on one sheet. Three
+confirm what ships: the bass box at its typical geometry (02, C, first heard
+as "probably" the best), the air valve's hiss through the bass box (04, B,
+first "probably" better) and Assist counting a half-pressed key in full (05,
+B). Nothing changes; the earlier entries' hedges no longer apply. Pack
+`06-pallet` came back B as well; that candidate is not kept for the reasons
+in its entry, and the owner was asked whether to apply it anyway.

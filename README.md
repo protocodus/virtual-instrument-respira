@@ -64,7 +64,7 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
   its hiss is a darker rush.
 - The reeds' breath has the spectrum of the eddies in their gaps, so the
   estimated turbulence is heard rather than three quarters of it falling
-  above 24 kHz: a little more air around soft notes.
+  above 24 kHz, at half the estimated level (chosen by ear).
 - From D6 up, Oboe and Master no longer double the 8' with the broken-back
   4' in unison, which beat slowly and could almost cancel a held note; the
   top octave holds a steady level.
@@ -146,10 +146,11 @@ the flow out of the pallet hole, as from a small source 1 m away, with 1 Pa
 (94 dB SPL) at digital full scale.
 
 The jet through the gap is turbulent. Eddies about 0.3 mm across, each
-fluctuating by about 10 %, form independently along the gap's edge (twice the
-tongue's length plus its width), so the flow fluctuates by 10 % over the
-square root of their number: a little breath around the tone, more on a big
-low reed's long gap than on a high one's. Its spectrum is the eddies': flat
+fluctuating by about 5 % (half the 10 % estimated, chosen by ear), form
+independently along the gap's edge (twice the tongue's length plus its
+width), so the flow fluctuates by 5 % over the square root of their number:
+a little breath around the tone, more on a big low reed's long gap than on a
+high one's. Its spectrum is the eddies': flat
 up to their rate, the jet's speed over 2π times their size (about 15 kHz at
 500 Pa), falling above it, as the air valve's does. The same random draw, white,
 is the small force that seeds the tongue.

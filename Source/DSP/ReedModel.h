@@ -108,10 +108,11 @@ inline ReedSpec MakeReed(double f0, double q, double setScale = 1.0) {
     // The jet through the gap is turbulent (a Reynolds number near 10^3 at
     // 26 m/s through a 0.5 mm gap), so its volume flow fluctuates. Eddies the
     // size of the gap, ~0.3 mm, are roughly independent along the 2L + W edge
-    // the jet leaves by, each with a turbulence intensity of ~10 %: the total
-    // flow fluctuates by 0.1 / sqrt(N) of itself. The noise it is scaled by is
-    // uniform, with an RMS of 1 / sqrt(3).
-    r.breath = std::sqrt(3.0) * 0.1 / std::sqrt((2.0 * r.length + r.width) / 0.3e-3);
+    // the jet leaves by, each with a turbulence intensity estimated at ~10 %
+    // and, by ear, half that (Docs/decisions.md): the total flow fluctuates by
+    // 0.05 / sqrt(N) of itself. The noise it is scaled by is uniform, with an
+    // RMS of 1 / sqrt(3).
+    r.breath = std::sqrt(3.0) * 0.05 / std::sqrt((2.0 * r.length + r.width) / 0.3e-3);
     r.edge = 2.0 * r.length / 3.0 + r.width;
     r.cube = r.length * r.length * r.length;
     r.cube3 = 3.0 * r.length * r.length;
