@@ -686,3 +686,21 @@ piano did not move: an A6 at 100 Pa grew by e every 0.13 s (0.12) and sounded
 measurement, with the bellows pressure behind the bandoneon's slopes
 unknown, does not decide it, and the law costs a cube root on every reed
 step, so the constant stays.
+
+## 2026-10-28 — a key's ranks through one shared pallet hole, not kept (engineering)
+
+Not a listening decision; recorded so it is not tried again unexamined. On
+an accordion every open rank of a key sounds through that key's one pallet
+hole, and a bandoneon's two reeds of a note through one pallet, so the
+reeds of a note load each other; Respira gives each cell its own hole. A
+bandoneon note's odd harmonics could then gain on its fundamental as its
+octave reed joins in, which `CompareBandoneon`, reading one 8' cell, cannot
+show. Probed offline with Tango Bandoneon's pair (16' and 8' at the
+bandoneon's key + 12), each cell's channel meeting at one hole of their
+two holes' area: over the loudest 30 dB from G4 to C6, the 9th–15th
+harmonics gained 0.49 dB per dB on the fundamental on average, against 0.27
+through separate holes and the bandoneon's 1.45. A fifth of the gap, for
+an engine that would group cells by key and solve each key's junction every
+step, retune every register whose reeds now pull on each other, and put the
+musette's beating at risk of locking, is not enough to make the change on
+this evidence.
