@@ -162,16 +162,20 @@ void StillnessStopsTheSound() {
     Expect(Db(moving) - Db(still) > 30.0, "StillnessStopsTheSound", "level drop once the hand stops, dB", Db(moving) - Db(still));
 }
 
-void PitchAcrossRates() {
-    double cents[3] = {};
+void RatesKeepTheSound() {
+    // The calibrated level holds at every host rate, as the pitch does.
+    double cents[3] = {}, level[3] = {};
     const double rates[3] = { 44100.0, 48000.0, 96000.0 };
     for (int i = 0; i < 3; ++i) {
         auto e = Make(rates[i], 0);
         const Take t = Play(*e, rates[i], 2.0, { { 0.0, { kOn, 69, 100 } } }, PullThenPush);
         cents[i] = Cents(PeakHz(t.left, rates[i], 0.8, 1.8, 440.0), 440.0);
+        level[i] = Db(Rms(t.left, rates[i], 0.8, 1.8));
     }
-    Expect(std::fabs(cents[0] - cents[1]) < 2.0, "PitchAcrossRates", "44.1 kHz against 48 kHz, cents", cents[0] - cents[1]);
-    Expect(std::fabs(cents[2] - cents[1]) < 2.0, "PitchAcrossRates", "96 kHz against 48 kHz, cents", cents[2] - cents[1]);
+    Expect(std::fabs(cents[0] - cents[1]) < 2.0, "RatesKeepTheSound", "44.1 kHz against 48 kHz, cents", cents[0] - cents[1]);
+    Expect(std::fabs(cents[2] - cents[1]) < 2.0, "RatesKeepTheSound", "96 kHz against 48 kHz, cents", cents[2] - cents[1]);
+    Expect(std::fabs(level[0] - level[1]) < 0.5, "RatesKeepTheSound", "44.1 kHz against 48 kHz, dB", level[0] - level[1]);
+    Expect(std::fabs(level[2] - level[1]) < 0.5, "RatesKeepTheSound", "96 kHz against 48 kHz, dB", level[2] - level[1]);
 }
 
 // The largest change between neighbouring samples of the left channel.
@@ -725,7 +729,7 @@ int main() {
     SilentWithoutMotion();
     AirFromMotion();
     StillnessStopsTheSound();
-    PitchAcrossRates();
+    RatesKeepTheSound();
     OversamplingKeepsTheSound();
     MasterTune();
     PitchBend();
