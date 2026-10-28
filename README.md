@@ -63,7 +63,8 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
   2.7 kHz.
 - The bass reeds sound through the bass box, a Helmholtz resonator at about
   960 Hz behind the bass end cover's holes, in place of a plain 2.5 kHz
-  low-pass: a rounder, less buzzy bass.
+  low-pass: a rounder, less buzzy bass. The air valve opens into it too, so
+  its hiss is a darker rush.
 - The reeds' breath has the spectrum of the eddies in their gaps, so the
   estimated turbulence is heard rather than three quarters of it falling
   above 24 kHz: a little more air around soft notes.
@@ -108,7 +109,8 @@ reposition the bellows without the reeds speaking. Air leaves through it as
 through a reed gap, by Bernoulli's law with a laminar term (4 L/s at 100 Pa),
 and its jet is turbulent: eddies about the pad's 3 mm lift fluctuate
 independently round the hole's edge, and the flow's fluctuation radiates as
-the reeds' flow does, through the bass side: the hiss of a working air button.
+the reeds' flow does, through the bass box (see Radiation): the hiss of a
+working air button.
 
 ### Reed cells
 
@@ -197,7 +199,8 @@ The bass pallets open into the bass box, the space under the bass end cover
 round the bass mechanism, which vents through the cover's holes: the same
 resonator, deeper and far less open. Typical values (40 mm deep, 10 % open,
 6 mm holes in 3 mm wood) give 960 Hz at Q 1.3, a 3 dB rise before the
-roll-off; their plausible spread is 0.55–2.0 kHz.
+roll-off; their plausible spread is 0.55–2.0 kHz. The air valve opens into
+the bass box as well, so its hiss leaves the same way.
 
 ### The output stage
 

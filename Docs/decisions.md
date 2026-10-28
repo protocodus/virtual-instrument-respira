@@ -192,3 +192,12 @@ tongues stays white. On held Clarinet notes the floor between the harmonics
 rises 7–10 dB. Pack `03-clarinet` (listening-2026-10-28): A the engine before,
 B shaped (shipping), C shaped at half the fluctuation. Verdict: pending; the
 2026-10-27 breath verdict, also pending, was asked of the white version.
+
+## 2026-10-28 — the air valve's hiss through the bass box, by-ear verdict pending (engineering)
+
+The air valve is a hole in the bass end, under the bass end cover with the bass
+mechanism, so its jet's hiss leaves through the cover's holes like the bass
+reeds' sound; it went straight to the output. It now passes through the bass
+box: in the air-button passage its level is unchanged (−55 dBFS), and above
+2 kHz it falls 16–43 dB, a darker rush. Pack `04-air` (listening-2026-10-28):
+A the engine before, B through the bass box (shipping). Verdict: pending.

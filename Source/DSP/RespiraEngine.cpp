@@ -468,7 +468,9 @@ void Engine::Render(float* left, float* right, int frames) {
         gain += smoothing * (gainTarget - gain);
         bassGain += smoothing * (bassGainTarget - bassGain);
         trebleGain += smoothing * (trebleGainTarget - trebleGain);
-        const double bass = (bassBox.Process(bassSide.Process(b, stages)) + hiss) * bassGain;
+        // The air valve opens into the bass box too: its hiss leaves through
+        // the bass end cover's holes with the bass reeds' sound.
+        const double bass = bassBox.Process(bassSide.Process(b, stages) + hiss) * bassGain;
         const double l = gain * (grilleL * trebleGain + bass * bassPanL);
         const double r = gain * (grilleR * trebleGain + bass * bassPanR);
         std::array<float, 2> frame { { static_cast<float>(l), static_cast<float>(r) } };
