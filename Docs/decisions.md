@@ -744,3 +744,28 @@ probed with it, taken at each chamber's first resonance: Q 20–24, another
 coefficient is right only at the one frequency it is taken at, and the
 thermal half, as a fixed conductance, would leak the chamber's mean
 pressure, for a third of what the radiation did at the peaks.
+
+## 2026-10-28 — the clearance as a viscous channel, not kept (engineering)
+
+Not a listening decision; recorded as a lead. While a tongue sits in its
+slot, `GapArea` passes air through the 0.03 mm clearance as through an
+orifice. By Poiseuille that holds only where the tongue is less than
+l* = h²√(ρΔp/2)/(12μCd) deep, about 35 µm at 50 Pa and 0.1 mm at 500 Pa;
+deeper, the clearance is a channel and passes less. Along the tongue's
+(s/L)² bend the sides then pass 2L(2√r − r) of their orifice flow and the
+tip W r, with r = l* over the depth: a third of today's leak at 1 mm deep.
+Probed offline with the tuning regenerated:
+
+- The loud treble brightens as the bandoneon's does: over the loudest
+  30 dB the mean error of the 7th–15th harmonics' slopes falls from
+  −0.41…−0.49 dB per dB to −0.04…−0.17 (`CompareBandoneon`), the gap
+  "A loud treble is not brighter" nearly closed.
+- But every other measurement moves away. The reeds reach 70 dBA at 51 Pa
+  instead of 175, A#2–A3's 15th–20th harmonics sit 7 dB above the
+  measurement (now 0.5 dB under), a half-pressed key falls silent, and from
+  C2 to E4 the pitch rises with loudness where the bandoneon's and Okada's
+  reed fall.
+
+The plates' thickness, the sets and the tip weights were all voiced on the
+orifice law, so the channel law would need them voiced again against those
+measurements, which is a direction for the owner, not a candidate.
