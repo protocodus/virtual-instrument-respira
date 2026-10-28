@@ -52,11 +52,14 @@ struct CompressorSettings {
     double releaseSeconds = 0.0;
 };
 
-// The guard for a plucked instrument calibrated to -9 VU typical: its knee is
-// centred at -2 VU on Reason's meter, at 10:1, with ballistics near the
-// meter's own. On Aculele and Aculyre it holds velocity-127 chords out of the
-// red and leaves typical playing alone, since it acts only above -4 VU.
-inline constexpr CompressorSettings kVuGuard { -14.0, 4.0, 10.0, 0.0, 0.08, 0.3 };
+// The guard for a plucked instrument calibrated to -9 VU typical: power read
+// over the meter's own 300 ms, and a knee 16 dB wide, from -11 to +5 VU on
+// Reason's meter, at 10:1. Typical playing loses about 0.1 dB, every step in
+// velocity still plays louder, and on Aculele and Aculyre the hardest chords
+// stay at or under -1.4 VU, out of the red. A detector of 100 ms or less reads
+// each pluck's attack louder than the meter does: with one, Aculele's
+// velocity-127 chords read at most 0.5 dB over its 110 ones.
+inline constexpr CompressorSettings kVuGuard { -15.0, 16.0, 10.0, 0.3, 0.01, 0.3 };
 
 template <std::size_t Channels>
 class OutputStage {

@@ -48,10 +48,11 @@ constexpr std::array<double, 8> kRegisterTrimDb { { 3.45, 3.93, 1.39, 0.0, 1.46,
 // and above -17 dBFS (-5 VU) brings it down 10:1 over an 8 dB knee, so
 // playing below about -9 VU passes untouched; it takes hold at once and lets
 // go over 300 ms, slower than a musette's beating, so the beats keep their
-// depth. The plucked instruments' guard sits at -14 dBFS: the bellows at the
-// arm's full pressure are 23 dB above ordinary playing, where a chord struck
-// at velocity 127 is 7-9 dB. Its 2 ms look-ahead limiter holds what gets past
-// at -1.5 dBFS.
+// depth. The plucked instruments' guard reads the meter's 300 ms over a knee
+// centred at -15 dBFS and 16 dB wide: the bellows reach the arm's full
+// pressure within tens of milliseconds and 23 dB above ordinary playing,
+// where a chord struck at velocity 127 is 7-9 dB, so they need a faster,
+// firmer guard. Its 2 ms look-ahead limiter holds what gets past at -1.5 dBFS.
 constexpr protocodus::CompressorSettings kBellowsGuard { -17.0, 8.0, 10.0, 0.02, 0.0, 0.3 };
 // The bass pallets open into the bass box, the space under the bass end cover
 // round the bass mechanism, which vents through the cover's holes: a
