@@ -512,6 +512,20 @@ a pitch wheel should do what it says.
   pressure peaked with its chamber tuned near twice its pitch (Cottingham,
   ICA 2016, preliminary); the model's C7 chamber first resonates at 1.9 times its reed's pitch,
   a C6's at 3.0.
+  What holds the top back is how fast a swing grows once it has started.
+  Held at 175 Pa in its cell, a tongue's swing grows 53-fold per second
+  (in nepers) at A4 but 11 at A6 and 5 at C7, where the tongue's own loss
+  takes 15–16 of what the air gives it. Neither the set (no set from 0.15 to
+  4 times the model's grows an A6 faster than 17) nor the chamber and pallet
+  hole (their air already loads the reed about as hard as helps) changes
+  that. The tongue's tip does: with half its effective mass, and so half
+  its stiffness at the same pitch, an A6 grows at 38 and a C7 at 25.
+  Short treble tongues are filed thin towards the tip, the smallest piccolo
+  tongues to about 0.05 mm at the free end (a repairer's guide, Accordion
+  Revival, "Accordion Repair 3"), which on a linear taper leaves 0.17 of a
+  uniform tongue's tip mass where the model's short tongues keep 0.30–0.36.
+  But those tongues sound an octave above the model's highest reed, and no
+  profile of a tongue in its range was found, so the model's stays.
 - **Low reeds start late on a hard push.** When the bellows reaches the
   arm's full pressure before a low reed swings, the tongue sits near the
   slot's mouth and its swing grows slowly: on Bassoon with the wheel swept

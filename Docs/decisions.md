@@ -533,3 +533,23 @@ chosen and would not ship either: on `HardPushSpeaks`' stroke every factory
 preset loses its low keys, from C2 up to E3 or as far as C5, and every bass
 button, which is the 0.1.0d6 fix undone. Nothing changes until a candidate in
 B's direction keeps hard pushes and half-pressed keys speaking.
+
+## 2026-10-28 — the reed gap's own air mass, not added (engineering)
+
+Not a listening decision; recorded so it is not tried again unexamined. On
+its own, with no chamber and a steady pressure drop, a Respira tongue starts
+only from 250–400 Pa at A3–A4 and about 1 kPa at A6: the slot's air is all
+that delays its flow. Ricot, Caussé and Misdariis (JASA 2005) studied an
+accordion reed sounding without acoustic coupling, and a reed organ's 268 Hz
+reed on a wind chamber tuned away from it started at 50–130 Pa (Cottingham,
+ICA 2019, Fig. 8). Adachi et al. (Forum Acusticum 2026) give the air at the
+gap itself a length of 0.5 √(S/π) over the gap's area S, a coefficient they
+fitted to Ricot's experiment; added to the slot's, it starts the lone tongue
+from 30–50 Pa from A3 to A5. In the cell, where the chamber and pallet hole
+already load the reed, it changes how fast a swing grows by under 10 %, the
+loudness slopes of `CompareBandoneon` by under 0.05 dB per dB and the
+half-pressed level loss not at all, and `CompareHarmonics` rejects it: the
+2nd–4th harmonics of A#2–A3 at 70 dBA sit 4.4 dB under the measurement
+instead of 2.1 (−10.1 dB on the fundamental against −5.7 measured and the
+shipping −7.8). Adachi's model
+has no slot, so the two air masses may overlap; the slot's stays alone.

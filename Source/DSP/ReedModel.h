@@ -62,7 +62,11 @@ struct ReedState {
 // thickness is whatever gives f0 with that length. Real tongues are profiled
 // (thinner towards the tip), which leaves less mass at the tip than a uniform
 // strip; short treble tongues are profiled hardest. profileMass is that share,
-// a voicing estimate (0.6 for long tongues down to 0.3 for 10 mm ones).
+// a voicing estimate (0.6 for long tongues down to 0.3 for 10 mm ones). A
+// repairer gives about 0.05 mm at the free end of the smallest piccolo
+// tongues (Accordion Revival, "Accordion Repair 3"), a share of 0.17 on a
+// linear taper, but those sound above the model's highest reed. How fast the top reeds
+// start follows this share (README, Known gaps).
 inline ReedSpec MakeReed(double f0, double q, double setScale = 1.0) {
     // q is the bare tongue's quality factor in air.
     ReedSpec r;
@@ -75,6 +79,8 @@ inline ReedSpec MakeReed(double f0, double q, double setScale = 1.0) {
     // measurement (Elejalde-Garcia et al. 2021; Tools/CompareHarmonics).
     r.plate = 0.0018 + 0.0225 * r.length;
     r.rest = -(0.0001 + 0.010 * r.length) * setScale;
+    // The same repairer gives 0.0015 in (0.038 mm) beside a properly voiced
+    // high A's tongue.
     const double clearance = 0.03e-3;
     r.clearArea = (2.0 * r.length + r.width) * clearance;
     // First cantilever mode: f = 0.1615 (t / L^2) sqrt(E / rho).
