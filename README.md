@@ -130,6 +130,11 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
   2.3 dB of both but for the Hohner's top octave. The demos with bass gain
   1–16 dB from 4 to 16 kHz; the air button's hiss and the bass side's knocks
   brighten with it.
+- The reeds are tuned as a played accordion's are, each a few cents off its
+  pitch (3 cents standard deviation, where it was under half a cent), as both
+  sample libraries' reeds sit: the octave ranks beat slowly against each
+  other, the musette beats a little faster or slower from note to note, and
+  a note's push and pull reeds differ by a few cents.
 
 ## Downloads
 
@@ -238,14 +243,16 @@ a pressure not given). Through the paper's processing, Respira's reed flow at
 208 Pa agrees with it within 2 dB over the 2nd–5th harmonics, but not above
 the 10th (Known gaps, "The top octaves").
 Every push and pull tongue differs a little
-from its neighbours (set ±10 %, loss ±20 %, tuning ±0.8 cents, fixed per
-instrument). A reed sounds below its natural frequency under load, so
-`Tools/GenerateReedTuning.cpp` simulates every reed in its chamber at 400 Pa
-until its pitch settles (a C2 takes some 3 s, the 16' rank's C1 some 10 s) and
-writes `Source/DSP/ReedTuning.h`, the natural-to-sounding ratios the engine
-builds reeds from at note-on. Pitch still moves with pressure as a real
-reed's does: an A4 is within 1 cent at playing pressure (about 550 Pa) and
-about 11 cents flat when pressed at 1.4 kPa. Against a bandoneon's held notes
+from its neighbours (set ±10 %, loss ±20 %, fixed per instrument) and is
+tuned a little off its pitch, 3 cents standard deviation, as La Melodiosa's
+and a Hohner's reeds are (`ReedBank.h`). A reed sounds below its natural
+frequency under load, so `Tools/GenerateReedTuning.cpp` simulates every reed
+in its chamber at 400 Pa until its pitch settles (a C2 takes some 3 s, the
+16' rank's C1 some 10 s) and writes `Source/DSP/ReedTuning.h`, the
+natural-to-sounding ratios the engine builds reeds from at note-on. Pitch
+still moves with pressure as a real reed's does: an A4 sounds 1.3 cents under
+its tuning at playing pressure (about 550 Pa) and about 11 cents under when
+pressed at 1.4 kPa. Against a bandoneon's held notes
 from C2 to C6 (`Tools/CompareBandoneon.cpp`, from a Pianobook library by
 Miguel Lopez), read against loudness so that neither the bellows pressure nor
 the microphone matters: over the loudest 30 dB, with the loudest at 1.5 kPa,
@@ -279,8 +286,8 @@ the oldest released chamber first.
 The treble has five ranks of reeds: L (16', an octave down), M (8'), M− and
 M+ (8', tuned below and above M for the tremolo) and H (4', an octave up,
 breaking back an octave at the top so that no reed sounds above C♯7; where M
-is open it stays shut there, since it would sound in unison with M a cent
-or so apart and the two would beat slowly to near silence). The
+is open it stays shut there, since it would sound in unison with M a few
+cents apart and the two would beat slowly to near silence). The
 eight register switches combine them: Clarinet (M), Bassoon (L), Violin (M,
 M+), Musette (M−, M, M+), Bandoneon (L, M), Organ (L, H), Oboe (M, H) and
 Master (all five). A switch moves slides over the reed blocks, so it reaches
@@ -294,7 +301,8 @@ rises with pitch as f^0.7, as tuners set tremolo reeds, and M− sits the same
 interval below. A Hohner's two-reed musette (Marek Kintosh's samples, C4–C6)
 beats as f^0.51 (0.25–0.75 at 90 %, its notes scattering 28 % about the
 line), 4.6 Hz or 18 cents at A4, between Violin Folk's 14 cents and Init's
-22 (`Tools/measure_musette.py`).
+22 (`Tools/measure_musette.py`); with each reed's own tuning (above),
+Respira's beats scatter 20 % about their law.
 
 A bass button sounds two reeds, a 16' (E1–D♯2) and an 8' (E2–D♯3); a chord
 button sounds one pitch class on an 8' (F♯3–F4) and a 4' (F♯4–F5), so any
@@ -737,9 +745,11 @@ recordings (not in this repository); `python3 -I
 Tools/compare_accordion_tone.py --melodiosa <dir> --hohner <dir> --render
 build-dsp/RenderRespira` sets held notes' octave bands at each Grille
 setting against two accordion libraries (not in this repository either),
-and `python3 -I Tools/measure_musette.py --hohner <dir>` measures one's
-musette beats; `GenerateReedTuning Source/DSP/ReedTuning.h` re-tunes every reed after
-a change to the reed model. `python3 Tools/fit_bellows.py
+`python3 -I Tools/measure_musette.py --hohner <dir>` measures one's
+musette beats, and `python3 -I Tools/measure_tuning.py --melodiosa <dir>`
+how far the other's reeds sit off their pitch;
+`GenerateReedTuning Source/DSP/ReedTuning.h` re-tunes every reed after a
+change to the reed model. `python3 Tools/fit_bellows.py
 build-dsp/RenderRespira` re-fits the demo strokes and
 `python3 Tools/write_preset_midi.py` writes the demo MIDI.
 

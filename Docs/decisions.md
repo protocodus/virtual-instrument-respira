@@ -1140,3 +1140,38 @@ What the choice licenses: a bass side as bright as two recorded accordions',
 through a box whose depth modes are modelled and whose absorption is fitted,
 not measured.
 
+
+## 2026-10-29 — the reeds' tuning scattered as two played accordions' (owner asked; engineering)
+
+Not a listening decision: adopted under the owner's standing direction to
+calibrate against the recordings provided and to take well-grounded
+candidates, with A (before) and B (after) rendered for the owner to hear
+(pack `20-tuning`, listening-2026-10-28).
+
+Every reed was tuned within ±0.8 cents of its pitch (a standard deviation of
+0.46), an assumed tolerance. Both sample libraries measure more:
+
+| Measure | Pair apart | Each reed |
+| --- | --- | --- |
+| La Melodiosa, single 16' and 4' reeds about a smooth line through their pitch (two takes a note, 1.2–1.6 cents apart; `Tools/measure_tuning.py`) | | 2.7–2.9 |
+| La Melodiosa, the two reeds of register III, two octaves apart (12 notes, two takes each, 2.1 cents apart; the same tool) | 4.2 | 3.0 |
+| The Hohner's musette pairs about their beat law (25 notes, `Tools/measure_musette.py`) | 4.6 | 3.3 |
+
+All in cents, standard deviations. The pair figures are the octave reed's
+fundamental against the low reed's 4th harmonic in the same take, and the
+two musette reeds' beat in cents about the fitted f^0.51 line; each reed's is
+the pair's over √2. Both instruments were played as found, not freshly
+tuned, and a take's pressure moves its reeds' pitches by a cent or two, which
+the takes' spread bounds. A standard deviation of 3 cents a reed (uniform,
+±5.2) stands for all three.
+
+So the octave ranks beat slowly against each other in Bandoneon, Organ,
+Master and the bass buttons, the musette's beat scatters 20 % about its law
+with Init's detune (the Hohner's 28 %; it was 3 %), and a note's push and pull
+reeds sit a few cents apart, so a bellows reversal moves its pitch a little.
+The tuning table is regenerated. The demos keep their level (within 0.3 dB
+VU each), and the unit, audio, fuzz and perf tiers pass.
+
+What the choice licenses: a reed bank tuned with a played accordion's
+scatter, measured on two instruments, in place of an assumed tolerance; not
+a claim about how closely a tuner sets a new one.

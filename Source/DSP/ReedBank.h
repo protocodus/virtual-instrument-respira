@@ -83,16 +83,23 @@ inline std::uint32_t Hash(std::uint32_t a, std::uint32_t b) {
 inline double Unit(std::uint32_t h) { return (h & 0xFFFFFF) / double(0x1000000) * 2.0 - 1.0; } // -1..1
 
 // Push and pull reeds are separate tongues, made and tuned separately: their
-// set and loss differ a little, and each is tuned to within a cent. The
-// differences are fixed per instrument, not drawn per performance.
+// set and loss differ a little, and so does their tuning. The differences are
+// fixed per instrument, not drawn per performance. Each reed sits off its
+// pitch by a standard deviation of 3 cents, as two played accordions' do:
+// La Melodiosa's single reeds scatter 2.7-2.9 cents about a smooth line
+// (two takes a note, 1.2-1.6 cents apart), its reeds two octaves apart 4.2
+// cents from each other (3.0 each; Tools/measure_tuning.py), and a Hohner's
+// musette pairs 4.6 cents about their beat law (3.3 each;
+// Tools/measure_musette.py).
 struct ReedVariation {
     double setScale, qScale, tuneCents;
 };
 
 inline ReedVariation Variation(int rank, int index, int side) {
     constexpr std::uint32_t kInstrument = 1u;
+    constexpr double kTuneSpread = 3.0 * 1.7320508075688772;   // Unit's standard deviation is 1 / sqrt(3)
     const std::uint32_t h = Hash(kInstrument, static_cast<std::uint32_t>(rank * 1000 + index * 2 + side));
-    return { 1.0 + 0.10 * Unit(h), 1.0 + 0.20 * Unit(Hash(h, 1)), 0.8 * Unit(Hash(h, 2)) };
+    return { 1.0 + 0.10 * Unit(h), 1.0 + 0.20 * Unit(Hash(h, 1)), kTuneSpread * Unit(Hash(h, 2)) };
 }
 
 // The bare tongue's quality factor in air: a voicing estimate, inside the one
