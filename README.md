@@ -479,10 +479,13 @@ a pitch wheel should do what it says.
   bandoneon's held notes from E4 to C6, its 9th–15th harmonics gain 1.4 dB
   per dB on the fundamental on average (0.9–2.1), so a forte note is much
   brighter than a piano one; at the A5 even the 3rd–7th gain 1.2–1.7.
-  Respira's 8' cells gain 0.3 there (−0.2 to 0.8, `CompareBandoneon`); from
-  C2 to C4 the two agree (0.7, and Respira's 0.8), and over the loudest 15 dB the
-  gap is the same. None of the tongue's air drag (cut until tips up to F5
-  swing 15 % of their length at 600 Pa, a typical figure in playing), the
+  Respira's 8' cells, the loudest at 1.5 kPa, gain 0.3 there (−0.2 to 0.8,
+  `CompareBandoneon`); from C2 to C4 the two agree (0.7 both), and over the
+  loudest 15 dB the gap is the same. With the loudest at 0.7 kPa, where the
+  pitch slopes agree (above), they gain 0.8 (−0.4 to 2.3) and C2–C4 0.8: the
+  gap halves, but the A5's 3rd–7th still gain only 0.5. None of the
+  tongue's air drag (cut until tips up to F5 swing 15 % of their length at
+  600 Pa, a typical figure in playing), the
   slot's depth, the tongue's set or where its bend sits, its clearance, the
   slot air's inertia, the volume the tongue sweeps, or a second bending mode
   moves it. A laser vibrometer sees a harmonium reed's own motion gain
