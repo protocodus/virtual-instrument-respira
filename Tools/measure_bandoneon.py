@@ -24,7 +24,10 @@ attack is left out. The slopes are least squares fits against the level of
 the pitch in cents and of h_k - h_1 in dB, averaged over a note's takes.
 
 Each note has two reeds an octave apart, so only the odd harmonics (3 to 15)
-belong to the note's reed alone; the even ones mix in the octave reed.
+belong to the note's reed alone; the even ones mix in the octave reed. Read
+from the note's own reed (k = 1, 3, 5, 7), the pitch slopes average the same
+(0.38 against 0.39 cents per dB over the loudest 30 dB, 0.49 against 0.47
+over 15), though single notes move by up to 0.37.
 
 The attack's pitch: the same takes in 100 ms frames every 10 ms, the pitch
 of the note's own reed (the power-weighted mean of f_k / k over k = 1, 3, 5
