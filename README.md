@@ -445,7 +445,8 @@ as 0.5 mm and the folds' level set by ear. While the bellows move, their
 leather and cloth rub: noise growing with the speed of the bellows end (the
 air leaving the bellows over their 0.41 × 0.19 m section, so a hand pressing
 on closed keys moves nothing and rubs nothing), between 210 Hz and 2 kHz,
-its level and band voiced. **Mechanics** sets both with the keys'. The
+its level and band voiced; below 1 mm/s (an estimate) the folds stick, so
+the bellows' own slow leak rubs nothing. **Mechanics** sets both with the keys'. The
 bass strap is silent: taken up as the bellows turn, its slack meets the hand
 at a few mm/s to a few cm/s, and a bass half of some kilograms on leather
 rings near 10 Hz, far under the body's 210 Hz.

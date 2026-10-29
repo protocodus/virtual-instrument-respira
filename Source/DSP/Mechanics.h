@@ -196,8 +196,11 @@ struct Pleat {
 // their section, about 0.41 by 0.19 m). Nothing measured sets its level or
 // spectrum, so both are voiced (kRustleVoicingDb, the owner's choice): white
 // noise in N per m/s, through the body's 210 Hz high-pass and a one-pole
-// low-pass at 2 kHz, the band a soft material's rubbing fills.
-inline constexpr double kBellowsSection = 0.41 * 0.19;
+// low-pass at 2 kHz, the band a soft material's rubbing fills. Below 1 mm/s
+// (an estimate) the folds stick rather than slide: so the bellows' own leak,
+// which creeps a closed bellows at well under that, rubs nothing, and a
+// device left with its bellows pressed falls silent.
+inline constexpr double kBellowsSection = 0.41 * 0.19, kFoldsStick = 0.001;
 struct Rustle {
     std::uint32_t seed = 0x2545F491u;
     double low = 0.0, lowCoeff = 0.0;
@@ -212,9 +215,14 @@ struct Rustle {
     }
     // Force (N) at bellows end speed v (m/s).
     double Step(double v) {
+        const double sliding = Max(Abs(v) - kFoldsStick, 0.0);
+        if (sliding == 0.0 && Abs(low) < 1.0e-20) {
+            Clear();
+            return 0.0;
+        }
         seed = seed * 1664525u + 1013904223u;
         const double draw = 1.7320508075688772 * ((seed >> 8) / double(1u << 24) * 2.0 - 1.0);
-        low += lowCoeff * (body.Process(draw * Abs(v)) - low);
+        low += lowCoeff * (body.Process(draw * sliding) - low);
         return low;
     }
 };

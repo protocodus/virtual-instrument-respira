@@ -1231,7 +1231,7 @@ Two packs (listening-2026-10-29-bellows), Paris Musette under Auto at 120 bpm
 with a chord and bass held through four turns, untrimmed because level is
 judged: 21-fold-flip, A the engine without the folds, B, C and D the folds
 (play 0.5 mm) with turns about 25, 33 and 17 dB under the chord; 22-rustle,
-A without, B, C and D rubbing about 36, 44 and 28 dB under it while moving.
+A without, B, C and D rubbing about 37, 45 and 29 dB under it while moving.
 Under the standing rule the middle letters ship until the owner hears them
 (fold flips at −30 dB against the panel estimate, rustle at −7 dB against its
 own scale). Verdict pending. Whatever is chosen is a voicing: it does not
