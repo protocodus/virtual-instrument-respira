@@ -1182,3 +1182,14 @@ VU each), and the unit, audio, fuzz and perf tiers pass.
 What the choice licenses: a reed bank tuned with a played accordion's
 scatter, measured on two instruments, in place of an assumed tolerance; not
 a claim about how closely a tuner sets a new one.
+
+## 2026-10-29 — 19-bass-box and 20-tuning: B chosen by ear (owner)
+
+The owner answered the two packs left open in listening-2026-10-28, "use b
+for those": B on each. Both were already shipped under the standing rule to
+accept grounded candidates, so nothing changes; each is now also chosen by
+ear. They are the bass box letting out its depth modes, with the bass
+chambers in 5 mm sections (19-bass-box, B), and each reed tuned a standard
+deviation of 3 cents off its pitch (20-tuning, B). The by-ear choice licenses
+keeping them; the box's absorption stays fitted to two recordings, and the
+tuning scatter a measure of two played instruments, not of a new one.
