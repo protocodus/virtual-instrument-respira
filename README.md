@@ -324,7 +324,11 @@ a Hohner by Marek Kintosh): at 9 kHz, as before, Clarinet Solo's C3–A5 read
 6, 9 and 15 dB more than theirs at 2–4, 4–8 and 8–16 kHz against 1–2 kHz;
 at 1 kHz the octave bands from 500 Hz up sit within 4 dB of both on
 average (`Tools/compare_accordion_tone.py`). The presets keep their voiced
-spread, each scaled the same way (667 Hz–1.6 kHz).
+spread, each scaled the same way (667 Hz–1.6 kHz). Tango Bandoneon's
+722 Hz sits at a bandoneon library's fit: against its held notes C2–C6,
+the harmonics from 2 to 16 kHz read within 2.5 dB on average, and every
+Grille from 500 Hz to 1 kHz fits as well, within 0.3 dB
+(`Tools/compare_bandoneon_tone.py`).
 
 The bass pallets open into the bass box, the space under the bass end cover
 round the bass mechanism, which vents through the cover's holes: a
@@ -530,15 +534,18 @@ a pitch wheel should do what it says.
   its 4th harmonic too, about 7 dB under its neighbours.
 - **The treble breathes more above 4 kHz.** Between the harmonics of held
   G4 and A5 notes on Tango Bandoneon, against the harmonics at 1–2 kHz, the
-  floor sits about 15 dB above the bandoneon samples' at 4–8 kHz and
-  21–24 dB above at 8–16 kHz. The gap's breath is most of it: with the
-  breath off, the floor there sits 3–10 dB above the samples'. The breath is
-  flat up to its eddies' rate, about 18 kHz for an A5 tongue at 500 Pa,
-  where the samples' floor falls 4–10 dB per octave from 2 kHz. Measured as
-  the floor over the harmonics in each octave band from 250 Hz, A5 lies
-  2–9 dB above the samples from 0.5 to 8 kHz and D5 up to 6 dB above, while
-  G2 to C4 lie within 6 dB of them from 2 to 16 kHz and up to 17 dB under
-  them below 1 kHz. Its
+  floor sits 6–10 dB above the bandoneon samples' at 4–8 kHz and
+  10–17 dB above at 8–16 kHz. The gap's breath is all of it: with the
+  breath off, the floor there sits 2–15 dB under the samples'. The breath is
+  flat up to its eddies' rate, about 18 kHz for an A5 tongue at 500 Pa, and
+  the Grille tilts it 6 dB per octave above its corner, where the samples'
+  floor falls 4–11 dB per octave from 2 kHz. Measured as the floor over the
+  harmonics in each octave band from 250 Hz, which no filter after the reeds
+  changes, A5 lies
+  1–9 dB above the samples from 0.5 to 16 kHz, G4 up to 12 dB above at
+  4–16 kHz and D5 up to 7 dB above, while G2 to C4 lie within 7 dB of them
+  from 2 to 16 kHz and up to 14 dB under them below 1 kHz
+  (`Tools/compare_bandoneon_tone.py`). Its
   level was chosen by ear, and the floor of a sample library may have been
   cleaned, so no other spectrum is derived from them.
 - **How far a loud note's pitch falls rests on an unknown pressure.** Over
@@ -747,7 +754,10 @@ build-dsp/RenderRespira` sets held notes' octave bands at each Grille
 setting against two accordion libraries (not in this repository either),
 `python3 -I Tools/measure_musette.py --hohner <dir>` measures one's
 musette beats, and `python3 -I Tools/measure_tuning.py --melodiosa <dir>`
-how far the other's reeds sit off their pitch;
+how far the other's reeds sit off their pitch; `python3 -I
+Tools/compare_bandoneon_tone.py --bandoneon <dir> --render
+build-dsp/RenderRespira` compares Tango Bandoneon's tone and breath with the
+bandoneon's;
 `GenerateReedTuning Source/DSP/ReedTuning.h` re-tunes every reed after a
 change to the reed model. `python3 Tools/fit_bellows.py
 build-dsp/RenderRespira` re-fits the demo strokes and
