@@ -635,15 +635,16 @@ a pitch wheel should do what it says.
   measurement here says where an accordion's are voiced in it.
 - **Low notes rise into pitch.** A reed sounds flatter while its swing is
   small, and Respira's low swings grow slowly, so a low note starts flat and
-  rises. Measured as the bandoneon library's held notes are (100 ms frames;
-  the pitch where the attack first comes within 10 and 3 dB of its loudest,
-  against the take's own pitch-against-loudness line), the bandoneon's C2
-  starts 45 cents flat 10 dB down, as Respira's does, but from E2 to A3 it is
-  0–23 cents flat there and 0–9 at 3 dB down. Respira's 8' cells, the pull
-  raised to 700 Pa over 0.3–1.5 s, are 15–42 cents flat 10 dB down from E2
-  to A3 and still 6–14 at 3 dB down from E2 to D3, whatever the pull's speed,
-  as their growth sets the pace. From E4 up the bandoneon is within 7 cents
-  10 dB down and Respira 1–20, depending on how fast the pull rises.
+  rises. Measured as the bandoneon library's held notes are
+  (`CompareBandoneon 700`: 100 ms frames; the pitch where the attack first
+  comes within 10 and 3 dB of its loudest, against the note's own
+  pitch-against-loudness line), the bandoneon's C2 starts 45 cents flat
+  10 dB down, as Respira's does, but from E2 to A3 it is 3–17 cents flat
+  there and 0–8 at 3 dB down. Respira's 8' cells, the pull raised to 700 Pa
+  over 0.3–1.5 s, are 23–42 cents flat 10 dB down from E2 to A3 and still
+  10–18 at 3 dB down from E2 to D3, whatever the pull's speed, as their
+  growth sets the pace. From E4 up the bandoneon is within 4 cents 10 dB
+  down and Respira 1–26, depending on how fast the pull rises.
 - **The demos' bellows is fitted, not played.** Each stroke's travel comes
   from a target pressure through `Tools/fit_bellows.py`; a player's hand would
   be less even.
@@ -672,7 +673,8 @@ renders any MIDI file with a trace of the hand and the bellows;
 take; `CompareHarmonics [pressure]` sets the first twenty harmonics of single
 8' notes, and how far a half-open pallet bends them, against a published
 accordion measurement; `CompareBandoneon [top pressure]` sets how their pitch
-and tone follow their loudness against a bandoneon's, whose numbers
+and tone follow their loudness, and how flat their attacks start, against a
+bandoneon's, whose numbers
 `python3 Tools/measure_bandoneon.py <library folder>` measures from the
 recordings (not in this repository); `GenerateReedTuning Source/DSP/ReedTuning.h` re-tunes every reed after
 a change to the reed model. `python3 Tools/fit_bellows.py
