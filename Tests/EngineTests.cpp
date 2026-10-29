@@ -1,7 +1,7 @@
 // Engine contracts: air only from the hand's motion, the mechanism's knocks, the bellows' turn, pitch and pitch bend, rates and
 // Oversampling, routing, register switches on held keys, the 4' rank's break, half-pressed keys,
 // the air button and Assist, a hard push on a held key, the controller stream and the arm's momentum, block-partition
-// invariance and determinism, release and voice limits, the noise scaling.
+// invariance and determinism, release and voice limits, the noise scaling, and Auto's hand.
 #include "DSP/RespiraEngine.h"
 #include "DSP/RespiraPresets.h"
 
@@ -636,6 +636,152 @@ std::vector<Note> Phrase() {
     return all;
 }
 
+// Auto's hand: plays `notes` with the host at `bpm` in `numerator`/4, its
+// transport set before every 64-frame block from a song position that starts
+// at `from` quarter notes (not moving unless `playing`), the wheel at `wheel`.
+Take PlayAuto(Engine& engine, double rate, double seconds, const std::vector<Note>& notes, double bpm, int numerator,
+              bool playing, double from = 0.0, double wheel = 0.0) {
+    Take take;
+    const auto frames = static_cast<std::size_t>(seconds * rate);
+    take.left.resize(frames);
+    take.right.resize(frames);
+    engine.SetHand(wheel);
+    std::size_t next = 0;
+    for (std::size_t done = 0; done < frames; ++done) {
+        if (done % 64 == 0) {
+            Transport t;
+            t.bpm = bpm;
+            t.numerator = numerator;
+            t.playing = playing;
+            t.position = from + (playing ? bpm / 60.0 * static_cast<double>(done) / rate : 0.0);
+            t.barStart = numerator * std::floor(t.position / numerator);
+            engine.SetTransport(t);
+        }
+        while (next < notes.size() && static_cast<std::size_t>(std::llround(notes[next].seconds * rate)) <= done)
+            engine.Midi(notes[next++].bytes, 3);
+        engine.Render(&take.left[done], &take.right[done], 1);
+        if (done % 32 == 0) take.pressure.push_back(engine.Diag().pressure);
+    }
+    return take;
+}
+
+// Seconds of each change of the pressure's sign after `after`.
+std::vector<double> Turns(const Take& t, double rate, double after) {
+    std::vector<double> turns;
+    for (std::size_t i = 1; i < t.pressure.size(); ++i)
+        if (static_cast<double>(i) * 32.0 / rate > after && (t.pressure[i - 1] < 0.0) != (t.pressure[i] < 0.0))
+            turns.push_back(static_cast<double>(i) * 32.0 / rate);
+    return turns;
+}
+
+std::unique_ptr<Engine> MakeAuto(double rate, const std::function<void(Controls&)>& adjust = {}) {
+    return Make(rate, 0, [&adjust](Controls& c) {
+        c[kAuto] = 1.0;
+        if (adjust) adjust(c);
+    });
+}
+
+void AutoTurnsOnTheBars() {
+    // In 3/4 at 120 the hand pulls through one bar and pushes through the
+    // next, 6 beats a cycle, from the first bar of the song; the pressure
+    // passes zero just before each bar line and holds 400 Pa between.
+    const double rate = 48000.0;
+    auto e = MakeAuto(rate);
+    const Take t = PlayAuto(*e, rate, 6.6, { { 0.0, { kOn, 69, 100 } } }, 120.0, 3, true);
+    Expect(MeanPressure(t, rate, 0.8, 1.4) < -380.0 && MeanPressure(t, rate, 0.8, 1.4) > -420.0, "AutoTurnsOnTheBars",
+           "the first bar pulls at 400 Pa, Pa", MeanPressure(t, rate, 0.8, 1.4));
+    Expect(MeanPressure(t, rate, 2.3, 2.9) > 380.0 && MeanPressure(t, rate, 2.3, 2.9) < 420.0, "AutoTurnsOnTheBars",
+           "the second pushes, Pa", MeanPressure(t, rate, 2.3, 2.9));
+    const std::vector<double> turns = Turns(t, rate, 0.5);
+    bool onBars = turns.size() == 4;
+    double worst = 0.0;
+    for (std::size_t i = 0; i < turns.size(); ++i) {
+        const double early = 1.5 * static_cast<double>(i + 1) - turns[i];
+        worst = std::max(worst, std::fabs(early - 0.03));
+        onBars = onBars && early >= 0.0 && early < 0.08;
+    }
+    Expect(onBars, "AutoTurnsOnTheBars", "four turns, each 0-80 ms before a bar line; furthest from 30 ms, s", worst);
+}
+
+void AutoFollowsTheSong() {
+    // Started in the song's fourth bar (4/4 at 90), the hand pushes, as it
+    // would have had playback started at the top; a bar of 3/4 at 240 is
+    // 0.75 s, so two make a stroke.
+    const double rate = 48000.0;
+    auto e = MakeAuto(rate);
+    Take t = PlayAuto(*e, rate, 1.0, { { 0.0, { kOn, 69, 100 } } }, 90.0, 4, true, 12.0);
+    Expect(MeanPressure(t, rate, 0.6, 0.9) > 300.0, "AutoFollowsTheSong", "bar 4 pushes, Pa", MeanPressure(t, rate, 0.6, 0.9));
+    e = MakeAuto(rate);
+    t = PlayAuto(*e, rate, 2.2, { { 0.0, { kOn, 69, 100 } } }, 240.0, 3, true);
+    const std::vector<double> turns = Turns(t, rate, 0.5);
+    Expect(turns.size() == 1 && turns[0] > 1.42 && turns[0] < 1.5, "AutoFollowsTheSong",
+           "in 3/4 at 240 the hand turns once, before the third bar, s", turns.empty() ? 0.0 : turns[0]);
+}
+
+void AutoRestsWithTheKeys() {
+    // Without the transport the strokes run at the host's tempo from the first
+    // note. Let go, the hand stops and the bellows keep their pressure, so the
+    // next note speaks at once; after a rest of a stroke the hand starts again
+    // on a pull.
+    const double rate = 48000.0;
+    auto e = MakeAuto(rate);
+    const Take t = PlayAuto(*e, rate, 9.0, { { 0.3, { kOn, 69, 100 } }, { 1.0, { kOff, 69, 0 } }, { 1.5, { kOn, 69, 100 } },
+                                             { 1.7, { kOff, 69, 0 } }, { 6.0, { kOn, 72, 100 } } },
+                            120.0, 4, false);
+    Expect(MeanPressure(t, rate, 0.7, 0.95) < -380.0, "AutoRestsWithTheKeys", "the first note pulls, Pa", MeanPressure(t, rate, 0.7, 0.95));
+    Expect(MeanPressure(t, rate, 1.2, 1.45) < -380.0, "AutoRestsWithTheKeys", "the bellows hold their pressure at rest, Pa",
+           MeanPressure(t, rate, 1.2, 1.45));
+    Expect(Rms(t.left, rate, 1.53, 1.6) > 0.7 * Rms(t.left, rate, 0.7, 0.95), "AutoRestsWithTheKeys",
+           "the next note speaks at once, against the held one", Rms(t.left, rate, 1.53, 1.6) / Rms(t.left, rate, 0.7, 0.95));
+    Expect(MeanPressure(t, rate, 6.6, 7.4) < -380.0, "AutoRestsWithTheKeys", "after a long rest it pulls again, Pa",
+           MeanPressure(t, rate, 6.6, 7.4));
+}
+
+void AutoHoldsItsPressure() {
+    // The player gives the reeds the air they take: one pressure whatever is
+    // played and however large the bellows or Assist, four times it with the
+    // wheel at the top.
+    const double rate = 48000.0;
+    const std::vector<Note> chord { { 0.0, { kOn, 60, 100 } }, { 0.0, { kOn, 64, 100 } }, { 0.0, { kOn, 67, 100 } },
+                                    { 0.0, { kOn, 36, 100 } }, { 0.0, { kOn, 24, 100 } } };
+    double low = 1.0e9, high = 0.0;
+    for (int k = 0; k < 4; ++k) {
+        auto e = MakeAuto(rate, [k](Controls& c) {
+            if (k == 1) c[kBellows] = 0.5;
+            if (k == 2) c[kBellows] = 8.0;
+            if (k == 3) c[kAssist] = 0.0;
+        });
+        const double p = -MeanPressure(PlayAuto(*e, rate, 1.9, chord, 120.0, 4, false), rate, 0.8, 1.8);
+        low = std::min(low, p);
+        high = std::max(high, p);
+    }
+    Expect(low > 360.0 && high < 440.0, "AutoHoldsItsPressure", "a chord with Bellows 0.5-8 L and Assist 0, lowest Pa", low);
+    Expect(high < 440.0, "AutoHoldsItsPressure", "highest Pa", high);
+    auto e = MakeAuto(rate);
+    const double hard = -MeanPressure(PlayAuto(*e, rate, 1.9, { { 0.0, { kOn, 69, 100 } } }, 120.0, 4, false, 0.0, 1.0), rate, 0.8, 1.8);
+    Expect(std::fabs(hard / 1600.0 - 1.0) < 0.05, "AutoHoldsItsPressure", "the wheel at the top, Pa", hard);
+}
+
+void AutoHandsBackToTheWheel() {
+    // Auto switched off mid-stroke leaves the bellows where they are: the arm
+    // comes to rest instead of sweeping to the wheel's position (at 0).
+    const double rate = 48000.0;
+    auto e = MakeAuto(rate);
+    PlayAuto(*e, rate, 1.0, { { 0.0, { kOn, 69, 100 } } }, 120.0, 4, false);
+    const double moving = std::fabs(e->Diag().handVelocity);
+    Controls c = e->GetControls();
+    c[kAuto] = 0.0;
+    e->SetControls(c);
+    double fastest = 0.0;
+    float l = 0.0f, r = 0.0f;
+    for (int i = 0; i < static_cast<int>(0.5 * rate); ++i) {
+        e->Render(&l, &r, 1);
+        fastest = std::max(fastest, std::fabs(e->Diag().handVelocity));
+    }
+    Expect(moving > 0.01 && fastest <= moving && std::fabs(e->Diag().handVelocity) < 1.0e-3, "AutoHandsBackToTheWheel",
+           "fastest arm after Auto goes off, against before, wheel ranges/s", fastest / moving);
+}
+
 void BlockPartitionInvariance() {
     const double rate = 48000.0;
     auto e = Make(rate, 7);
@@ -947,6 +1093,11 @@ int main() {
     WidthGlides();
     CascadeVarianceScales();
     NonFiniteControls();
+    AutoTurnsOnTheBars();
+    AutoFollowsTheSong();
+    AutoRestsWithTheKeys();
+    AutoHoldsItsPressure();
+    AutoHandsBackToTheWheel();
     std::printf("%d failure(s)\n", failures);
     return failures == 0 ? 0 : 1;
 }

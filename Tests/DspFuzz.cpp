@@ -46,7 +46,18 @@ extern "C" int LLVMFuzzerTestOneInput(const std::uint8_t* data, std::size_t size
             controls = respira::kPresets[input.Pick(respira::kPresets.size())].ToControls();
             engine->SetControls(controls);
             break;
-        case 6: engine->SetMasterTune(input.Scalar() * 400.0f - 200.0f); break;
+        case 6: {
+            engine->SetMasterTune(input.Scalar() * 400.0f - 200.0f);
+            respira::Transport transport;   // any tempo, signature and position, for Auto
+            transport.bpm = input.Scalar() * 2000.0f - 500.0f;
+            transport.numerator = input.Byte() - 64;
+            transport.denominator = input.Byte() - 64;
+            transport.playing = (input.Byte() & 1) != 0;
+            transport.position = input.Scalar() * 1.0e6f - 1.0e5f;
+            transport.barStart = input.Scalar() * 1.0e6f - 1.0e5f;
+            engine->SetTransport(transport);
+            break;
+        }
         case 7: engine->Reset(); break;
         default:
             if (input.Byte() & 1) engine->Prepare(input.Rate());

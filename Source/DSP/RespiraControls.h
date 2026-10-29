@@ -26,6 +26,7 @@ enum Control : int {
     kMomentum,   // the arm's lag behind the wheel, ms: 0 the wheel moves the bellows directly
     kOversampling, // 0, 1, 2: 1x, 2x, 4x the engine's own internal rate (4x the host rate)
     kMechanics,  // the keys', pallets', buttons' and register switches' knocks, dB re the estimate (Mechanics.h)
+    kAuto,       // 0 the wheel is the hand, 1 the hand plays the bellows itself in time and the wheel presses harder
     kControlCount
 };
 
@@ -68,6 +69,7 @@ inline constexpr std::array<ControlInfo, kControlCount> kControlInfo { {
     // The default, +10 dB, was chosen by ear over the estimate and 10 dB
     // under it (Docs/decisions.md).
     { "mechanics", "Mechanics", -40.0, 20.0, 10.0, 0, Curve::kLinear, "dB" },
+    { "auto", "Auto", 0.0, 1.0, 0.0, 2, Curve::kStepped, "" },
 } };
 
 // Physical value of control `index` at normalised position n (clamped to 0..1).

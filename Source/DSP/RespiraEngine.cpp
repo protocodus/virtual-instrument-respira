@@ -27,6 +27,20 @@ constexpr double kAirValveArea = 4.9e-4;    // m^2
 constexpr double kValveEddy = 3.0e-3;       // m
 constexpr double kValveBreath = 0.0196;
 constexpr double kHandCatchUp = 25.0;       // 1/s: how fast the hand closes on the wheel position
+// Auto's hand holds 400 Pa with the wheel at rest, the pressure the demo
+// phrases' ordinary strokes are fitted to (Tools/write_preset_midi.py), and
+// four times that with the wheel at the top. Voiced, not measured.
+constexpr double kAutoPressure = 400.0;     // Pa
+constexpr double kAutoShortestStroke = 1.0; // s: shorter bars take two or more to a stroke
+// The bellows Auto's hand moves hold 6 L between closed and open, an estimate
+// for a full-size accordion; the wheel's sweep (Bellows) is only its gearing.
+constexpr double kAutoBellows = 6.0e-3;     // m^3
+constexpr double kAutoRoom = 0.05;          // how far from its end, of the whole, the bellows start a stroke
+constexpr double kAutoFastest = 4.0e-3;     // m^3/s: the most air the hand moves, opening or closing
+// Auto's player closes on the pressure they want in 0.1 s, a hand's reaction,
+// or four times the arm's lag (Momentum, ms) when that is longer, so that the
+// two cannot ring: the arm then costs the loop 28 degrees of phase.
+double Reaction(double momentum) { return Max(0.1, 4.0e-3 * momentum); }
 // The radiated sound is the pallet flow's rate of change as from a small
 // source 1 m away; 0.67 Pa there (90.5 dB SPL) is digital full scale, so the
 // notes of the demo phrases read -9 on Reason's VU meter (the louder channel's
@@ -168,12 +182,13 @@ void Engine::Compartment::FlushTiny() {
     }
 }
 
-void Engine::Hand::Tick(double dt, double momentum) {
-    if (!placed) {
-        if (!received) return;
-        wheel = position = lastTarget = target;
+void Engine::Hand::Tick(double dt, double momentum, const double* drive, double driveVelocity) {
+    if (!placed && received) {
+        wheel = lastTarget = target;
+        if (!drive) position = target;
         placed = true;
     }
+    if (!placed && !drive) return;
     if (target != lastTarget) {
         const double interval = Clamp(sinceStep, dt, 0.3);
         lastStep = target - lastTarget;
@@ -186,16 +201,17 @@ void Engine::Hand::Tick(double dt, double momentum) {
     const double next = Clamp(wheel + dt * (speed + kHandCatchUp * (target - wheel)), 0.0, 1.0);
     const double wheelVelocity = (next - wheel) / dt;
     wheel = next;
+    const double goal = drive ? *drive : wheel;
     if (momentum <= 0.0) {
-        position = wheel;
-        velocity = wheelVelocity;
+        position = goal;
+        velocity = drive ? driveVelocity : wheelVelocity;
         return;
     }
     // Semi-implicit Euler, kept well inside its stable range (w dt <= 0.5)
     // for a Momentum shorter than two samples.
     const double w = Min(1.0e3 / momentum, 0.5 / dt);
-    velocity += dt * w * (w * (wheel - position) - 2.0 * velocity);
-    position = Clamp(position + dt * velocity, 0.0, 1.0);
+    velocity += dt * w * (w * (goal - position) - 2.0 * velocity);
+    position = drive ? position + dt * velocity : Clamp(position + dt * velocity, 0.0, 1.0);
 }
 
 Engine::Engine() { Prepare(48000.0); }
@@ -214,6 +230,9 @@ void Engine::Prepare(double sampleRate) {
 void Engine::Reset() {
     for (auto& c : cells) c = Cell {};
     hand = Hand {};
+    player = Player {};
+    SetTransport(transport);
+    heldCells = 0;
     pressure = airFlow = airFlowSmoothed = demand = 0.0;
     valve = valveNoiseA = valveNoiseB = valveSound = 0.0;
     bend2 = bend2Target = 1.0;
@@ -268,6 +287,16 @@ void Engine::SetControls(const Controls& next) {
         StartKnock(kRegisterSwitch, kRegisterSwitch.travel / kOpenSeconds, 1.0, false, 72);
     }
     registerIndex = reg;
+    const bool nextAuto = controls[kAuto] >= 0.5;
+    if (autoHand && !nextAuto) {   // the wheel takes the hand where it is, without a stroke
+        if (hand.placed) hand.position = hand.wheel;
+        else hand.velocity = 0.0;
+    }
+    if (nextAuto != autoHand) {
+        player.running = false;
+        player.drive = hand.position;
+    }
+    autoHand = nextAuto;
     // The gap turbulence's force on the tongues is white per internal step; it
     // scales with the square root of the step rate so its spectrum, the noise
     // the reeds hear, stays the same at every rate and Oversampling. The flow's
@@ -295,6 +324,78 @@ void Engine::SetPitchBend(double amount) {
 void Engine::SetHand(double position) {
     hand.target = position == position ? Clamp(position, 0.0, 1.0) : hand.target;
     hand.received = true;
+}
+
+void Engine::SetTransport(const Transport& next) {
+    transport = next;
+    Transport& t = transport;
+    t.bpm = t.bpm == t.bpm ? Clamp(t.bpm, 1.0, 999.0) : 120.0;
+    t.numerator = t.numerator >= 1 && t.numerator <= 64 ? t.numerator : 4;
+    t.denominator = t.denominator >= 1 && t.denominator <= 64 ? t.denominator : 4;
+    const double bar = 4.0 * t.numerator / t.denominator;
+    double stroke = bar;
+    while (stroke * 60.0 / t.bpm < kAutoShortestStroke && stroke < 8.0 * bar) stroke *= 2.0;
+    player.stroke = stroke;
+    const double cycle = 2.0 * stroke;
+    if (t.playing && t.position == t.position && t.barStart == t.barStart && Abs(t.position) < 1.0e9 && Abs(t.barStart) < 1.0e9) {
+        // The bar's number from the song's start places it in the cycle, so
+        // every pull starts on the same bars wherever playback starts.
+        const double bars = std::floor(t.barStart / bar + 0.5), perCycle = cycle / bar;
+        player.cycle = (bars - perCycle * std::floor(bars / perCycle)) * bar + t.position - t.barStart;
+    }
+    player.cycle -= cycle * std::floor(player.cycle / cycle);
+}
+
+// Runs before the hand's tick, from the keys the last sample held.
+void Engine::StepPlayer(double dt) {
+    const double cycle = 2.0 * player.stroke;
+    if (heldCells > 0 && !player.running && !transport.playing && player.rested * transport.bpm / 60.0 >= player.stroke)
+        player.cycle = 0.0;   // a new phrase starts on a pull
+    player.cycle += transport.bpm / 60.0 * dt;
+    if (player.cycle >= cycle) player.cycle -= cycle;
+    // The arm trails a steady stroke by 2 Momentum and the pressure swings
+    // round in about a reaction time (below), so the hand turns that much
+    // early and the pressure passes zero just before the bar line.
+    double ahead = player.cycle + (2.0e-3 * controls[kMomentum] + Reaction(controls[kMomentum])) * transport.bpm / 60.0;
+    if (ahead >= cycle) ahead -= cycle;
+    const int half = ahead < player.stroke ? 0 : 1;
+    if (half != player.half) {
+        player.half = half;
+        player.turned = false;
+    }
+    if (heldCells == 0) {
+        player.running = false;
+        player.velocity = 0.0;
+        player.rested += dt;
+        return;
+    }
+    const bool pulling = (half == 0) != player.turned;
+    const double want = (pulling ? -kAutoPressure : kAutoPressure) * (1.0 + 3.0 * hand.wheel);
+    const double litres = controls[kBellows] * 1.0e-3, open = Max(1.0, kAutoBellows / litres);   // wheels
+    const double perWheel = litres * (1.0 + controls[kAssist] * (Max(demand, 1.0) - 1.0));
+    if (!player.running) {
+        // Each later stroke also swings the pressure through zero, a travel
+        // this one is spared by as much as it starts nearer its pressure: the
+        // hand starts that much in from the end, so the strokes that follow
+        // all fit the bellows.
+        const double spared = (2.0 * Abs(want) - Abs(want - pressure)) / (kBellowsStiffness * perWheel);
+        const double from = Clamp(kAutoRoom * open + spared, 0.0, 0.5 * open);
+        player.running = true;
+        player.drive = hand.position = pulling ? from : open - from;
+    }
+    player.rested = 0.0;
+    // The player feels the air the reeds take and gives it, and closes on the
+    // pressure they want in a reaction time: the air that time asks of the
+    // bellows' stiffness. The hand's air is undone through Assist and Bellows
+    // into wheel speed, and the hand never moves against its stroke.
+    const double flow = airFlow + kBellowsLeak * pressure + (want - pressure) / (kBellowsStiffness * Reaction(controls[kMomentum]));
+    const double fastest = kAutoFastest / litres;
+    player.velocity = Clamp(-flow / perWheel, pulling ? 0.0 : -fastest, pulling ? fastest : 0.0);
+    player.drive += dt * player.velocity;
+    if (player.drive >= open || player.drive <= 0.0) {   // the bellows ran out: turn now
+        player.drive = Clamp(player.drive, 0.0, open);
+        player.turned = !player.turned;
+    }
 }
 
 void Engine::SetChannelPressure(int channel, double amount) {
@@ -508,7 +609,8 @@ void Engine::Render(float* left, float* right, int frames) {
     // The valve opens and closes in the time a pallet takes.
     const double valveOpen = dt / kOpenSeconds, valveClose = dt / kCloseSeconds;
     for (int i = 0; i < frames; ++i) {
-        hand.Tick(dt, controls[kMomentum]);
+        if (autoHand) StepPlayer(dt);
+        hand.Tick(dt, controls[kMomentum], autoHand ? &player.drive : nullptr, player.velocity);
         // Assist makes the hand's stroke move as much more air as the open
         // reeds take beyond one A4 reed, so one wheel speed gives one pressure
         // whatever is played; at 0 the hand moves the bellows' own air only.
@@ -549,10 +651,11 @@ void Engine::Render(float* left, float* right, int frames) {
         const double jetStep = Max(Sqrt(2.0 * Abs(pressure) / kRho), 1.0) * dtIn;
         float tl[kMaxOversample] = {}, tr[kMaxOversample] = {}, b[kMaxOversample] = {};
         double drawn = 0.0, open = 0.0;
-        int active = 0;
+        int active = 0, held = 0;
         for (auto& c : cells) {
             if (!c.active) continue;
             ++active;
+            if (c.held) ++held;
             // Width glides like the other levels, so automating it never steps.
             c.gainL += glide * (c.gainLTarget - c.gainL);
             c.gainR += glide * (c.gainRTarget - c.gainR);
@@ -601,6 +704,7 @@ void Engine::Render(float* left, float* right, int frames) {
             }
         }
         sounding = active;
+        heldCells = held;
         demand = open;
         airFlow = drawn / oversample;
         airFlowSmoothed += 0.002 * (airFlow - airFlowSmoothed);

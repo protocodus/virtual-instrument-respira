@@ -135,6 +135,9 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
   sample libraries' reeds sit: the octave ranks beat slowly against each
   other, the musette beats a little faster or slower from note to note, and
   a note's push and pull reeds differ by a few cents.
+- **Auto** plays the bellows for you: while a key is held the hand pulls
+  for one bar and pushes for the next, in time with the host, holding an
+  ordinary playing pressure whatever is played; the wheel presses harder.
 
 ## Downloads
 
@@ -179,6 +182,38 @@ and its jet is turbulent: eddies about the pad's 3 mm lift fluctuate
 independently round the hole's edge, and the flow's fluctuation radiates as
 the reeds' flow does, through the bass box (see Radiation): the hiss of a
 working air button.
+
+### Auto
+
+With **Auto** on, a player's hand moves the bellows by itself while any key
+is held, and the wheel no longer moves them. The hand pulls through one bar
+and pushes through the next, so a pull and a push take 8 beats in 4/4 and 6
+in 3/4; when a bar lasts less than a second, two, four or eight bars make a
+stroke instead, so a fast 2/4 does not saw. While the host plays, the strokes
+turn on its bar lines, the pulls on the song's odd bars wherever playback
+starts. With the transport stopped they run at the host's tempo from the
+first note, and a phrase that starts after a rest of a stroke or more starts
+on a pull, as a player starts with the bellows closed.
+
+The hand does not move at a fixed speed: like a player it feels the air the
+reeds take and gives it, and closes on the pressure it wants in a reaction
+time of 0.1 s (four times Momentum when that is longer, so the arm and the
+reaction cannot ring). It wants 400 Pa, the pressure the demo phrases'
+ordinary strokes are fitted to and about −9 VU, whatever is played and
+whatever Bellows and Assist are set to; the wheel raises that up to four
+times, 1.6 kPa at the top, so it is an expression control from its resting
+place at 0. The hand turns early by twice Momentum plus that reaction time,
+so the pressure passes zero 5–45 ms before the bar line at the default
+Momentum and the new stroke speaks on the downbeat. Each stroke starts from
+rest; let go of every key and the hand stops, the closed pallets keeping
+the bellows at their pressure, so the next note speaks at once. A first
+stroke starts far enough in from the end of the bellows that the strokes
+after it fit; the bellows Auto moves hold 6 L, an estimate for a full-size
+accordion (the Bellows control is only the wheel's gearing), and if a
+stroke runs them out the hand turns there and finds the bars again at the
+next turn. Switched off, Auto leaves the bellows where they are: the wheel
+takes over without a stroke. Pressure, reaction time and capacity are voiced,
+not measured.
 
 ### Reed cells
 
@@ -423,6 +458,7 @@ strokes read −1.7 VU at most. Volume sets the level going into the stage.
 | Momentum | 0–200 ms | how far the arm trails the wheel; 0 follows it exactly |
 | Oversampling | 1×, 2×, 4× | the reeds' time step: 1× is four times the host rate; 2× and 4× cost about two and four times the CPU |
 | Mechanics | −40 to +20 dB | the keys', pallets', buttons' and switches' knocks, against the estimate (The mechanism); +10 dB by default, chosen by ear; at −40 dB they are all but silent |
+| Auto | off, on | the hand plays the bellows in time with the host and the wheel presses harder (Auto) |
 
 `Source/DSP/RespiraControls.h` holds these for every front end;
 `Source/DSP/RespiraPresets.h` holds the eight factory presets, one per
@@ -432,11 +468,13 @@ and push), with its peak below −3 dBFS.
 
 MIDI channel 1 is the keyboard (split as above, or all treble), channel 2 the
 bass buttons and channel 3 the chord buttons by pitch class; other channels
-play as channel 1. CC1 + CC33 are the hand, CC64 the air valve, channel
+play as channel 1. CC1 + CC33 are the hand (with Auto, how hard it presses), CC64 the air valve, channel
 pressure how far the channel's held keys rise, CC120 and CC123 release every
 key. Pitch bend retunes every sounding tongue, up to two
 semitones each way, by scaling its stiffness; no real reed bends that far, but
-a pitch wheel should do what it says.
+a pitch wheel should do what it says. A front end gives Auto the host's
+tempo, time signature, song position and bar start before each block
+(`Engine::SetTransport`); without them Auto plays at 120 in 4/4.
 
 ## Known gaps
 

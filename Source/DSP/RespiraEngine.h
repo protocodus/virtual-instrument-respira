@@ -25,6 +25,8 @@
 //              the reeds flat and quieter, as a half-pressed key does
 //   pitch bend +-2 semitones, retuning every sounding tongue
 // Other channels play as channel 1. Velocity sets how fast the pallet lifts.
+// With Auto on, the hand plays the bellows by itself while keys are held, in
+// time with the host (SetTransport), and the wheel presses it harder.
 // The register switches act on held keys too, as the slides they move do.
 // The keys, buttons, pallets and switches knock on their stops (Mechanics.h),
 // with or without air.
@@ -59,6 +61,16 @@ inline constexpr std::array<Register, 8> kRegisters { {
     { "Master", { true, true, true, true, true } },
 } };
 
+// The host's tempo and song position, for Auto. A front end sets it before a
+// block; while `playing`, the engine advances the position through the block.
+struct Transport {
+    double bpm = 120.0;
+    int numerator = 4, denominator = 4;
+    bool playing = false;
+    double position = 0.0;   // quarter notes, at the next sample
+    double barStart = 0.0;   // quarter notes, where the bar holding `position` began
+};
+
 struct Diagnostics {
     double hand = 0.0;           // 0..1
     double handVelocity = 0.0;   // wheel ranges per second
@@ -84,6 +96,7 @@ public:
     void SetMasterTune(double cents);     // applies to the next notes
     void SetPitchBend(double amount);     // -1 .. 1, kBendSemitones each way, sounding reeds too
     void SetHand(double position);        // 0 closed .. 1 open
+    void SetTransport(const Transport& transport);
     void SetChannelPressure(int channel, double amount);   // 0 keys fully down .. 1 half pressed
     void Midi(const std::uint8_t* bytes, int size);
     void AllNotesOff();
@@ -152,8 +165,29 @@ private:
         double target = 0.0, lastTarget = 0.0;
         double wheel = 0.0, speed = 0.0, lastStep = 0.0, sinceStep = 1.0;
         double position = 0.0, velocity = 0.0;   // the arm, which moves the bellows
-        void Tick(double dt, double momentum);
+        // The arm follows the wheel, or with `drive` the player's own path.
+        void Tick(double dt, double momentum, const double* drive = nullptr, double driveVelocity = 0.0);
     };
+
+    // Auto: a player's hand that moves the bellows while any key is held and
+    // rests when none is. It pulls for one stroke and pushes for the next, a
+    // stroke being one bar, or two, four or eight when a bar is shorter than
+    // kAutoShortestStroke; so in 3/4 a pull and a push take 6 beats. While the
+    // host plays, the strokes turn on its bar lines; stopped, they run at its
+    // tempo from the first note, starting again on a pull after a rest of a
+    // stroke or more. The player holds kAutoPressure, up to four times it with
+    // the wheel, whatever is played and whatever Bellows and Assist are set
+    // to, and turns early only if the bellows run out (Engine::StepPlayer).
+    struct Player {
+        bool running = false, turned = false;
+        int half = 0;                 // 0 pulling, 1 pushing, on the grid
+        double cycle = 0.0;           // quarter notes into the pull + push cycle
+        double stroke = 4.0;          // quarter notes in a stroke
+        double rested = 1.0e9;        // seconds since the hand last moved
+        double drive = 0.0, velocity = 0.0;   // the hand's path, in wheel ranges, which the arm follows
+    };
+
+    void StepPlayer(double dt);
 
     // A key or button of one channel (channel * 128 + key): its travel, 0 up
     // .. 1 down, which its pallets follow, and where it is headed.
@@ -178,6 +212,10 @@ private:
     double masterTune = 0.0;
     double bend2 = 1.0, bend2Target = 1.0, bendSmoothing = 0.0;   // tongue stiffness scale
     Hand hand;
+    Transport transport;
+    Player player;
+    bool autoHand = false;
+    int heldCells = 0;
     double pressure = 0.0, airFlow = 0.0, airFlowSmoothed = 0.0, demand = 0.0;
     bool airPedal = false;
     double valve = 0.0;   // air valve opening, 0..1
