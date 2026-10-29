@@ -799,7 +799,7 @@ closing stays smooth and a half-pressed A#2–A3 falls 8.8–9.9 cents.
   05-bend passage's bends within 0.4 cents and 0.2 dB.
 - Pack `16-release` (listening-2026-10-28): the Tango Bandoneon demo at
   Mechanics −40 dB, A before, B the film. Shipped under the owner's rule to
-  accept grounded candidates; the verdict is pending.
+  accept grounded candidates; the owner chose B by ear (29 Oct, below).
 
 ## 2026-10-29 — the breath's eddies the size of each reed's gap (engineering)
 
@@ -846,7 +846,7 @@ accept grounded candidates; the treble's excess stays a Known gap.
   the bandoneon's are 0.07–0.40, the player's hand among them.
 - Pack `17-breath` (listening-2026-10-28): held notes and the Tango
   Bandoneon demo at Mechanics −40 dB, A before, B each gap's eddies. The
-  verdict is pending.
+  owner chose B by ear (29 Oct, below).
 
 ## 2026-10-29 — the reed's own flow against the tuning jig, rechecked (engineering)
 
@@ -1061,3 +1061,15 @@ the registers within 0.68 dB of Musette, and the hardest strokes read
 What the choice licenses: a treble as dark as two recorded accordions, as a
 voicing of the output. It does not say why the model's own top octaves are
 brighter than theirs, and it measures no grille.
+
+## 2026-10-29 — 15-ringing, 16-release, 17-breath and 18-grille: B chosen by ear (owner)
+
+The owner answered the four packs still open in listening-2026-10-28 with
+"pick all candidates": B on each. All four were already shipped under the
+standing rule to accept grounded candidates, so nothing changes; each is now
+also chosen by ear. They are the pallet hole radiating into the room
+(15-ringing, B), the air film under a closing pallet (16-release, B), each
+reed's breath from eddies the size of its own gap (17-breath, B) and the
+Grille's default fitted to two sample libraries, 1 kHz with the output
+reference at 0.67 Pa (18-grille, B). The by-ear choice licenses keeping them;
+the grille's fit stays a fit to two recordings, not a measured grille.
