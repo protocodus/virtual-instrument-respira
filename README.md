@@ -109,6 +109,12 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
   through the thin film under its rim slows to rest instead of being cut off
   when the pallet shuts. A half-pressed key bends a little further (9.1 cents
   instead of 8.6 at 70 dBA).
+- Each reed breathes through eddies the size of its own gap, widest near the
+  tongue's tip, instead of one 0.3 mm size for every reed: from G2 to C4 the
+  breath between the harmonics is 6–12 dB stronger below 1 kHz and 3–6 dB
+  weaker above 8 kHz, and D5 and A5 breathe 3–8 dB more from 0.5 to 8 kHz.
+  Against a bandoneon's held notes the breath is 7 dB RMS out across seven
+  notes and six octave bands, where it was 12.
 
 ## Downloads
 
@@ -168,15 +174,19 @@ an oscillator: no air, no sound. The radiated sound is the rate of change of
 the flow out of the pallet hole, as from a small source 1 m away, with 1 Pa
 (94 dB SPL) at digital full scale.
 
-The jet through the gap is turbulent. Eddies about 0.3 mm across, each
-fluctuating by about 5 % (half the 10 % estimated, chosen by ear), form
-independently along the gap's edge (twice the tongue's length plus its
-width), so the flow fluctuates by 5 % over the square root of their number:
-a little breath around the tone, more on a big low reed's long gap than on a
-high one's. Its spectrum is the eddies': flat
-up to their rate, the jet's speed over 2π times their size (about 15 kHz at
-500 Pa), falling above it, as the air valve's does. The same random draw, white,
-is the small force that seeds the tongue.
+The jet through the gap is turbulent. Its eddies are the size of the gap
+where they form, so along the gap's edge each millimetre holds one over the
+gap there of them, each passing the jet's speed times the gap squared and
+fluctuating by about 5 % (half the 10 % estimated, chosen by ear). The gap is
+the tongue's bend, growing as the square of the distance from its root along
+both sides to the tip's opening across its width, so the flow fluctuates by
+0.05·√(∫h³)/∫h of itself, most of it from the widest part of the gap, near
+the tip: a little breath around the tone, its eddies largest and darkest on
+the big low reeds. Its spectrum is the eddies': flat up to their rate, the
+jet's speed over 2π times their size, falling above it, as the air valve's
+does; at 500 Pa about 6 kHz for a C4 tongue 1 mm open and 18 kHz for an A5
+tongue 0.3 mm open. The same random draw, white, is the small force that
+seeds the tongue.
 
 Tongue length and width follow typical accordion reed sizes scaled with
 pitch, the thickness is whatever gives the pitch, and the low reeds carry
@@ -388,7 +398,7 @@ a pitch wheel should do what it says.
   demo phrases read −9 VU, not by a measured level; no recording of a real accordion is
   part of the model or its tests.
 - **CPU.** A full-register chord over bass and chords (28 chambers) takes
-  under a third of one core in the development container at 48 kHz (0.28×
+  under a third of one core in the development container at 48 kHz (0.30×
   realtime for the Master Tutti demo, 0.02× for the single clarinet reed),
   and a chord change briefly doubles that while the released chambers close.
   The reed chambers' ducts are about a quarter of it, and the rest is close
@@ -454,15 +464,17 @@ a pitch wheel should do what it says.
   its 4th harmonic too, about 7 dB under its neighbours.
 - **The treble breathes more above 4 kHz.** Between the harmonics of held
   G4 and A5 notes on Tango Bandoneon, against the harmonics at 1–2 kHz, the
-  floor sits 12–13 dB above the bandoneon samples' at 4–8 kHz and 22–25 dB
-  above at 8–16 kHz. The gap's breath is most of it: with the breath off,
-  the floor there falls 7–15 dB, to 3–10 dB above the samples'. The breath
-  is flat up to its eddies' rate, about 15 kHz at 500 Pa, where the samples'
-  floor falls 4–10 dB per octave from 2 kHz. Its level was chosen by ear and
-  its 0.3 mm eddies are near an A5 tongue's mean opening while it passes air
-  (about 0.4 mm along its edge); the floor of a sample library may have been
-  cleaned, and the samples' G2 and A3 floors lie up to 19 dB above Respira's
-  below 4 kHz, so no other spectrum is derived from them.
+  floor sits about 15 dB above the bandoneon samples' at 4–8 kHz and
+  21–24 dB above at 8–16 kHz. The gap's breath is most of it: with the
+  breath off, the floor there sits 3–10 dB above the samples'. The breath is
+  flat up to its eddies' rate, about 18 kHz for an A5 tongue at 500 Pa,
+  where the samples' floor falls 4–10 dB per octave from 2 kHz. Measured as
+  the floor over the harmonics in each octave band from 250 Hz, A5 lies
+  2–9 dB above the samples from 0.5 to 8 kHz and D5 up to 6 dB above, while
+  G2 to C4 lie within 6 dB of them from 2 to 16 kHz and up to 17 dB under
+  them below 1 kHz. Its
+  level was chosen by ear, and the floor of a sample library may have been
+  cleaned, so no other spectrum is derived from them.
 - **How far a loud note's pitch falls rests on an unknown pressure.** Over
   the loudest 30 dB of a bandoneon's held notes its pitch rises 0.39 cents
   per dB softer on average, 0.34–0.62 from C2 to D3; Respira's 8' cells, with

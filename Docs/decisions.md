@@ -800,3 +800,47 @@ closing stays smooth and a half-pressed A#2–A3 falls 8.8–9.9 cents.
 - Pack `16-release` (listening-2026-10-28): the Tango Bandoneon demo at
   Mechanics −40 dB, A before, B the film. Shipped under the owner's rule to
   accept grounded candidates; the verdict is pending.
+
+## 2026-10-29 — the breath's eddies the size of each reed's gap (engineering)
+
+The gap jet's breath had one eddy size, 0.3 mm, for every reed: the flow
+fluctuated by 5 % over the square root of the number of eddies along the
+whole edge, and the noise was shaped to that size. Measured as the floor
+between the harmonics over the harmonics in the same octave band, which
+cancels a recording's EQ, held notes on Tango Bandoneon (Mechanics −40 dB)
+sat 10–25 dB under Miguel Lopez's bandoneon samples below 2 kHz from G2 to C4
+and up to 13 dB over them at 8–16 kHz.
+
+An eddy is the size of the gap where it forms, h. Along the edge there are
+1/h of them per metre, each passing U h² and fluctuating by the same 5 %, so
+the flow's variance is 0.0025 U² ∫h³ against a mean flow of U ∫h. With the
+gap the tongue's bend, h = tip (s/L)² along both sides and the tip's opening
+across its width, that is 0.05 √(tip (W + 2L/7)) / (W + 2L/3) of the flow,
+and the variance-weighted eddy is (W + 2L/9) / (W + 2L/7) of the tip's
+opening, about 0.83. The engine shapes the noise to the flowing reed's eddy
+at the jet's speed once a host sample. No constant was added: the 5 % is the
+earlier by-ear choice, and the rest follows from the reed's geometry.
+
+Seven held notes, G2 D3 A3 C4 G4 D5 A5, six octave bands 250 Hz–16 kHz,
+Respira minus the samples:
+
+| | 250 | 500 | 1k | 2k | 4k | 8k | RMS |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| one 0.3 mm eddy | −21.2 | −14.7 | −8.9 | −3.9 | +1.8 | +7.1 | 12.0 dB |
+| each gap's eddies | −10.0 | −6.1 | −2.8 | 0.0 | +3.5 | +4.5 | 7.1 dB |
+
+The low and middle notes gain 6–12 dB below 1 kHz and lose 3–6 dB at
+8–16 kHz; D5 and A5 gain 3–8 dB from 0.5 to 8 kHz, so A5 now lies 2–9 dB
+over the samples there. Kept for the halved error, under the owner's rule to
+accept grounded candidates; the treble's excess stays a Known gap.
+
+- The unit, audio and perf tiers and `RespiraDSPCxx17` pass; the reed tuning
+  is unchanged. The demos stay within 0.2 dB in every octave band but
+  Bassoon Low's above 8 kHz (0.4 and 1.3 dB less), Clarinet Solo's
+  125–250 Hz (0.6 dB less), Organ Bellows' 250–500 Hz (0.5 dB more) and
+  Master Tutti's 62–250 Hz (±2 dB, its chaotic low chord).
+- CPU, paired against the previous engine: −5 % (Clarinet Solo) to +9 %
+  (Master Tutti, 0.28× to 0.30× realtime).
+- Pack `17-breath` (listening-2026-10-28): held notes and the Tango
+  Bandoneon demo at Mechanics −40 dB, A before, B each gap's eddies. The
+  verdict is pending.

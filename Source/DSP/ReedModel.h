@@ -55,7 +55,8 @@ struct ReedSpec {
     double invMass = 0.0, omega2 = 0.0, damping = 0.0; // 1/m_eff, (2 pi f0)^2, omega0 / Q
     double drag = 0.0;                       // quadratic air drag on the tongue / m_eff, 1/m
     double slotInertance = 0.0;              // rho * depth / slot area, kg/m^4
-    double breath = 0.0;                     // turbulent fluctuation of the gap flow per unit noise
+    double breath = 0.0;                     // the gap flow's turbulent fluctuation per unit noise and sqrt(m) of the tip's opening
+    double eddyShare = 0.0;                  // the gap's eddies' mean size over the tip's opening
     double edge = 0.0, cube = 0.0, cube3 = 0.0;   // 2L/3 + W, L^3, 3L^2: GapArea's constants, made once
 };
 
@@ -122,13 +123,21 @@ inline ReedSpec MakeReed(double f0, double q, double setScale = 1.0) {
     r.drag = 0.5 * kRho * 8.0 * r.area / mass;
     r.slotInertance = kRho * r.plate / (r.length * r.width);
     // The jet through the gap is turbulent (a Reynolds number near 10^3 at
-    // 26 m/s through a 0.5 mm gap), so its volume flow fluctuates. Eddies the
-    // size of the gap, ~0.3 mm, are roughly independent along the 2L + W edge
-    // the jet leaves by, each with a turbulence intensity estimated at ~10 %
-    // and, by ear, half that (Docs/decisions.md): the total flow fluctuates by
-    // 0.05 / sqrt(N) of itself. The noise it is scaled by is uniform, with an
-    // RMS of 1 / sqrt(3).
-    r.breath = std::sqrt(3.0) * 0.05 / std::sqrt((2.0 * r.length + r.width) / 0.3e-3);
+    // 26 m/s through a 0.5 mm gap), so its volume flow fluctuates. Its eddies
+    // are the size of the gap where they form, h, so along the edge the jet
+    // leaves by there are 1/h of them per metre, each passing U h^2 with a
+    // turbulence intensity estimated at ~10 % and, by ear, half that
+    // (Docs/decisions.md). The gap is the tongue's bend, h = tip (s/L)^2,
+    // along both sides and the tip across its width, so the flow fluctuates by
+    // 0.05 sqrt(integral h^3) / integral h = 0.05 sqrt(tip (W + 2L/7)) /
+    // (W + 2L/3) of itself: most of it from the widest part of the gap, near
+    // the tip, whose eddies average (W + 2L/9) / (W + 2L/7) of the tip's
+    // opening (the engine shapes the noise to them). A single 0.3 mm eddy size
+    // left the low and middle reeds' breath 10-25 dB under a bandoneon's below
+    // 2 kHz, against their harmonics. The noise it is scaled by is uniform,
+    // with an RMS of 1 / sqrt(3).
+    r.breath = std::sqrt(3.0) * 0.05 * std::sqrt(r.width + 2.0 * r.length / 7.0) / (r.width + 2.0 * r.length / 3.0);
+    r.eddyShare = (r.width + 2.0 * r.length / 9.0) / (r.width + 2.0 * r.length / 7.0);
     r.edge = 2.0 * r.length / 3.0 + r.width;
     r.cube = r.length * r.length * r.length;
     r.cube3 = 3.0 * r.length * r.length;
@@ -165,7 +174,8 @@ inline double GapArea(const ReedSpec& r, double x) {
 // feels the part of dp that falls across the gap itself. Returns the volume
 // leaving the upstream side per second (gap flow plus the volume the tongue
 // pushes through the slot). tune2 scales the tongue's stiffness, so its pitch
-// moves by sqrt(tune2): the pitch wheel, which no real reed has.
+// moves by sqrt(tune2): the pitch wheel, which no real reed has. flowNoise is
+// the jet's turbulent fluctuation as a share of its flow (breath).
 inline double StepReed(const ReedSpec& r, ReedState& s, double dp, double dt, double invDt, double force,
                        double tune2 = 1.0, double flowNoise = 0.0) {
     const double area = GapArea(r, s.x);
@@ -184,7 +194,7 @@ inline double StepReed(const ReedSpec& r, ReedState& s, double dp, double dt, do
     s.x += dt * s.v;
     // The tongue only acts as a piston between the two sides while it seals the
     // slot; above or below the plate the air it pushes escapes around it.
-    return flow * (1.0 + r.breath * flowNoise) + r.area * s.v * (r.clearArea / area);
+    return flow * (1.0 + flowNoise) + r.area * s.v * (r.clearArea / area);
 }
 
 // The reed chamber as a duct in sections of at most kSectionLength: four or

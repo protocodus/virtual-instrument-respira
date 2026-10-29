@@ -88,12 +88,12 @@ constexpr double kHalfPressed = 0.38278;    // acos(1 - 2 * 0.32) / pi
 constexpr double kTurbulence = 2.0e-3;      // gap turbulence force per Pa of bellows pressure and m^2
 constexpr double kNoiseRate = 192000.0;     // internal rate the turbulence levels are set at
 // The gap jet's flow fluctuation (ReedModel.h, breath) has the spectrum of its
-// eddies, about the gap's 0.3 mm: flat up to their rate U / (2 pi l), with U
-// the jet's speed sqrt(2 p / rho), and falling above it, as the air valve's
-// does; about 15 kHz at 500 Pa. White noise per internal step would spread
-// three quarters of the estimated fluctuation above 24 kHz, where no one
-// hears it.
-constexpr double kGapEddy = 0.3e-3;         // m
+// eddies, the size of the gap near the tongue's tip as it opens and closes:
+// flat up to their rate U / (2 pi l), with U the jet's speed sqrt(2 p / rho),
+// and falling above it, as the air valve's does; at 500 Pa near 6 kHz for a
+// C4 tongue 1 mm open and 18 kHz for an A5 one 0.3 mm open. White noise per
+// internal step would spread most of the estimated fluctuation above 24 kHz,
+// where no one hears it.
 
 double DbToGain(double db) { return std::pow(10.0, db / 20.0); }
 
@@ -242,7 +242,7 @@ void Engine::SetControls(const Controls& next) {
     // The gap turbulence's force on the tongues is white per internal step; it
     // scales with the square root of the step rate so its spectrum, the noise
     // the reeds hear, stays the same at every rate and Oversampling. The flow's
-    // fluctuation, the noise they make, is shaped to its eddies (kGapEddy).
+    // fluctuation, the noise they make, is shaped to its eddies.
     noiseScale = Sqrt(internalRate / kNoiseRate);
     turbulence = kTurbulence * noiseScale;
     gainTarget = kRho / (4.0 * kPi) * kPascalToFullScale * DbToGain(controls[kVolume]);
@@ -514,13 +514,10 @@ void Engine::Render(float* left, float* right, int frames) {
         pressure = Clamp(pressure + dt * kBellowsStiffness * (handFlow - airFlow - leak), -kMaxPressure, kMaxPressure);
         bend2 += bendSmoothing * (bend2Target - bend2);
 
-        // Two one-pole stages at the eddies' rate, scaled back to the white
-        // draw's variance. Below about 1 m/s the gap flow is laminar
-        // (ReedModel.h, kLaminar), which also keeps the scale finite as the
-        // bellows pressure passes zero.
-        const double jet = Max(Sqrt(2.0 * Abs(pressure) / kRho), 1.0);
-        const double eddy = jet / kGapEddy * dtIn, ec = eddy / (1.0 + eddy);
-        const double breathScale = 1.0 / Sqrt(Max(CascadeVariance(ec), 1.0e-30));
+        // Below about 1 m/s the gap flow is laminar (ReedModel.h, kLaminar),
+        // which also keeps the eddies' rate finite as the bellows pressure
+        // passes zero.
+        const double jetStep = Max(Sqrt(2.0 * Abs(pressure) / kRho), 1.0) * dtIn;
         float tl[kMaxOversample] = {}, tr[kMaxOversample] = {}, b[kMaxOversample] = {};
         double drawn = 0.0, open = 0.0;
         int active = 0;
@@ -532,6 +529,14 @@ void Engine::Render(float* left, float* right, int frames) {
             c.gainR += glide * (c.gainRTarget - c.gainR);
             const CellSpec& spec = c.spec;
             const double travel = c.held ? c.depth : 0.0;
+            // The breath's two one-pole stages at the eddies' rate in the
+            // flowing reed's gap, scaled back to the white draw's variance; once
+            // a host sample, some 20 times a cycle of the highest reed.
+            const bool pushing = pressure >= 0.0;
+            const ReedSpec& flowing = pushing ? spec.push : spec.pull;
+            const double tip = GapArea(flowing, (pushing ? c.state.push : c.state.pull).x) / flowing.edge;
+            const double eddy = jetStep / (flowing.eddyShare * tip), ec = eddy / (1.0 + eddy);
+            const double breath = flowing.breath * Sqrt(tip / Max(CascadeVariance(ec), 1.0e-30));
             for (int k = 0; k < oversample; ++k) {
                 if (c.open != travel) {
                     c.open = c.open < travel ? Min(travel, c.open + c.openRate) : Max(travel, c.open - closeRate);
@@ -549,7 +554,7 @@ void Engine::Render(float* left, float* right, int frames) {
                 c.breathB += ec * (c.breathA - c.breathB);
                 const double pushForce = turbulence * draw * spec.push.area * Abs(pressure);
                 const double out = StepCell(spec.push, spec.pull, spec.chamber, c.vent, c.state, pressure, dtIn,
-                                            invDtIn, pushForce, -pushForce, drawn, bend2, breathScale * c.breathB);
+                                            invDtIn, pushForce, -pushForce, drawn, bend2, breath * c.breathB);
                 const float o = static_cast<float>(out);
                 if (spec.bass) b[k] += o;
                 else { tl[k] += o * c.gainL; tr[k] += o * c.gainR; }
