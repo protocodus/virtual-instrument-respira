@@ -580,7 +580,12 @@ a pitch wheel should do what it says.
   their level 0.45–0.65 s after the key, a C4 in 0.35 s. A quicker or gentler
   stroke starts them at once. A finger attack is slow too: at 70 dBA, A2–B2
   take 271–314 ms from −50 to −5 dB and A3–B3 119–136 ms, where
-  Llanos-Vázquez et al. (2014) measured 70–100 and 60–110. Lighter tip
+  Llanos-Vázquez et al. (2014) measured 70–100 and 60–110. The bandoneon
+  library's left-hand staccato notes (one take each, measured as its right
+  hand's above, and holding the same second note a semitone below) grow in
+  68–87 ms from E2 to B2 and 40–63 ms from D3 to C4, its C2 in 163 ms;
+  Tango Bandoneon an octave up, so the same two reeds sound, at 730 Pa takes
+  190–350 ms from C2 to G2 but 26–100 ms from B2 to C4. Lighter tip
   weights would start them sooner, but then a hard push holds them in their
   slots, and no measurement says how far real low reeds sit from theirs.
 - **The demos' bellows is fitted, not played.** Each stroke's travel comes
