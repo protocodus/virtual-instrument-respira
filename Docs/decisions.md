@@ -1193,3 +1193,21 @@ chambers in 5 mm sections (19-bass-box, B), and each reed tuned a standard
 deviation of 3 cents off its pitch (20-tuning, B). The by-ear choice licenses
 keeping them; the box's absorption stays fitted to two recordings, and the
 tuning scatter a measure of two played instruments, not of a new one.
+
+## 2026-10-29 — whether La Melodiosa brightens as it gets louder (engineering; measurement only)
+
+Recorded beside the known gap "A loud treble is not brighter", whose
+evidence is the bandoneon alone. La Melodiosa's held takes are not swells,
+but their level wanders 1–10 dB within a take. Read as the bandoneon's are
+(150 ms Hann frames every 50 ms, from 0.3 s after a take first comes within
+20 dB of its loudest frame to 0.3 s before it last does; per take the least
+squares slope of the mean of its 9th, 11th, 13th and 15th harmonics less
+its fundamental against the frame's level), register I's single reeds from
+D#4 to C7 gain 0.17 dB per dB at the median of the 15 takes that wander
+3 dB or more (mean −0.2, each slope scattering ±1.2, so ±0.3 for the mean).
+The bandoneon's E4–C6, over only their loudest 8 and 5 dB, gain 0.9 and 0.7
+(±0.1); over 30 dB 1.4. Register II, two octaves under, has only six such
+takes (0.6). So the one accordion recorded does not brighten over its
+playing level's small wander as the bandoneon does over the same span, at
+about two standard errors; it neither confirms the gap nor closes it, and
+nothing changes.
