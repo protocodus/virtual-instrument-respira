@@ -572,9 +572,12 @@ a pitch wheel should do what it says.
   take 410, 155, 125 and 135 ms, and at 70 dBA an A2 165 ms instead of 240,
   but then C3–C5 held through `HardPushSpeaks`' stroke bend into their slots
   before they swing and stay silent, C3–G#3 even when its second stroke is
-  a crescendo over 1.6 s; sets 0.8 or 0.6 times today's choke on it too, and
-  adding the gap's own air mass (Adachi et al.) neither starts them nor
-  keeps A#2–A3's 4th harmonic (11 dB under the measurement). Underneath both
+  a crescendo over 1.6 s; sets 0.8 or 0.6 times today's choke on it too.
+  Repairers describe the same trade: a reed set close to its plate starts
+  well at low volume but chokes on an accent, one set far needs a harder
+  push to start (accordionists.info forum, 2022). Adding the gap's own air
+  mass (Adachi et al.) neither starts them nor keeps A#2–A3's 4th harmonic
+  (11 dB under the measurement). Underneath both
   is how slowly the low swings grow (Low reeds start late).
 - **The top octave needs mezzo forte to start.** With the bellows already at
   530 Pa, an A4 comes within 3 dB of its level about 38 ms after the key, a

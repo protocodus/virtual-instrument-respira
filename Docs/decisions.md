@@ -1001,4 +1001,7 @@ Below 1.5 kPa the length rule's set takes over from A2 to C3, and from A4 up
 it already sets them, so A4 and A5 do not move (385 / 50 and 424 / 36). The
 rule is tight: a fifth less already silences held low keys under a full
 push, and even at Okada's figure a soft A2 takes six times the measured
-110 ms. The full-pressure rule stays.
+110 ms. Repairers describe the same trade on real reeds (a gap too small
+starts well soft but chokes on an accent, too large needs a harder push;
+accordionists.info forum, 2022), which corroborates the mechanism but sets
+no pressure. The full-pressure rule stays.
