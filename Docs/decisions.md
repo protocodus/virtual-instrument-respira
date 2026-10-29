@@ -844,3 +844,41 @@ accept grounded candidates; the treble's excess stays a Known gap.
 - Pack `17-breath` (listening-2026-10-28): held notes and the Tango
   Bandoneon demo at Mechanics −40 dB, A before, B each gap's eddies. The
   verdict is pending.
+
+## 2026-10-29 — the reed's own flow against the tuning jig, rechecked (engineering)
+
+Not a listening decision; a correction and a lead. Pomberger et al. (DAGA
+2021) measured seven reed blocks of a Styrian harmonica on a tuning jig: the
+jig's box feeds each chamber through its hole and the reeds sound straight
+into the room, a microphone 26 cm above, so they hear each reed's own flow
+with its chamber upstream (E3, G4 and E6, three reeds a tone, pressure not
+given; Fig. 5, the first 15 harmonics of a spectrum smoothed over 1/12
+octave). The entry for the duct (2026-10-28) recorded the reeds' own flow as
+unchanged by it and within 1–6 dB of that measurement. Rechecked through the
+paper's processing, on the draw (the pull reed sounding, as on the jig),
+mean difference from the measurement, dB:
+
+| | 2nd–5th | 6th–10th | 11th–15th |
+| --- | --- | --- | --- |
+| E3, 208 Pa | +0.3 | 0.0 | +4.4 |
+| G4, 208 Pa | +0.3 | −1.3 | +7.0 |
+| E6, 208 Pa | +1.8 | +10.7 | +13.9 |
+| E3, G4, E6 at 800 Pa | +4.9, +6.1, +6.8 | +4.6, +4.5, +14.5 | +10.1, +8.2, +26.8 |
+
+Before the duct the 11th–15th at 208 Pa sat +6.3, +1.7 and +6.0. The duct's
+standing waves reach the gap's flow: in a G4 cell at 250 Pa the chamber
+pressure at the reed swings from −300 to +800 Pa as the gap shuts each cycle
+and rings after it, and E6's reed flow is strongest at its 5th–7th
+harmonics (6.6–9.2 kHz), within 14 dB of its fundamental at 208 Pa, where
+the jig's lie 24–30 dB under it. The paper (citing
+Richter 1985, ch. 5.3) holds that reed chambers' resonances are not effective
+below the four-line octave, from C7. So the duct's resonances are probably
+stronger at the reed than a real chamber's, and through it at the pallet
+hole too, which fits all three recordings being darker than Respira above
+2 kHz; but the lumped chamber that kept them weak left A#2–A3's 15th–20th at
+the pallet hole 7 dB under the one measurement of an accordion's
+(`CompareHarmonics`), which the duct matches. The two measurements are of
+different instruments seen from opposite sides of the chamber, at unknown
+pressures, and nothing measured says what a real chamber loses; no change
+follows. The duct's wall losses, its taper and the idle reed's valve are what
+it leaves out.

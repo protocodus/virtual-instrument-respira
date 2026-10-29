@@ -216,9 +216,12 @@ within 2.3 dB on average at its loudness, though the 2nd sits 8 dB under, and
 the 15th–20th average −13.9 dB against the measured −13.4. The 2nd is low
 because, while the tongue seals its slot, the air it sweeps through arrives
 almost opposite the gap's own 2nd harmonic: at A3 the gap flow's 2nd is 7 dB
-under its fundamental, their sum's 22 dB. Heard without its chamber, a reed's gap flow
-agrees with a lab measurement of a real accordion-type reed block (Pomberger
-et al., DAGA 2021, E3, G4 and E6) within 1–6 dB over the first 15 harmonics.
+under its fundamental, their sum's 22 dB. A lab measurement of real
+accordion-type reed blocks on a tuning jig hears each reed's own flow, its
+chamber upstream (Pomberger et al., DAGA 2021: E3, G4 and E6, 26 cm away, at
+a pressure not given). Through the paper's processing, Respira's reed flow at
+208 Pa agrees with it within 2 dB over the 2nd–5th harmonics, but not above
+the 10th (Known gaps, "The top octaves").
 Every push and pull tongue differs a little
 from its neighbours (set ±10 %, loss ±20 %, tuning ±0.8 cents, fixed per
 instrument). A reed sounds below its natural frequency under load, so
@@ -448,7 +451,16 @@ a pitch wheel should do what it says.
   irregular shape and the tongue inside it, and puts both tongues' tips at
   its closed end: the measurement favours that (at the pallet hole the
   15th–20th fell 16 dB under it), but no drawing of a reed block was found to
-  confirm it (`Docs/decisions.md`). Below the 15th the agreement
+  confirm it (`Docs/decisions.md`). On the reed's side the duct's standing
+  waves reach the gap's flow, which the tuning jig of Pomberger et al. (DAGA
+  2021) hears straight: at 208 Pa the reed flow's 11th–15th harmonics sit
+  4 dB (E3), 7 dB (G4) and 14 dB (E6) above the measured reed blocks', and
+  E6's 6th–10th 11 dB, where before the duct they sat 6, 2 and 6 dB
+  above; at 800 Pa 10, 8 and 27 dB. Real chambers' resonances barely reach
+  their reeds below the top octave (Richter 1985, cited there), so the
+  duct's may be too strong, which would brighten the pallet hole too; but
+  weakening them would take the A#2–A3 measurement's 15th–20th away again.
+  Below the 15th the agreement
   rests on the reed plates' thickness, an estimate chosen by ear
   (`Docs/decisions.md`): with plates two thirds as thick, each A#2–A3 tongue
   swung 0.7–2.1 mm out past the far face of its plate at that loudness, where
