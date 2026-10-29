@@ -980,3 +980,25 @@ speak with the pallet opened at 2.5 kPa, if 14–19 dB quieter there than at
 stay at −74 dBFS: the pressure reaches 1.25 kPa, which now holds the heavier
 low tongues in their slots, before they swing. The full-pressure rule ties
 the set to the weights, and the weights stay.
+
+## 2026-10-29 — sets sized for less than the arm's full pressure, not kept (engineering)
+
+Not a listening decision; recorded so it is not tried again unexamined. The
+set rule keeps each tongue short of its slot at 2.5 kPa, the arm's full
+pressure; Okada's measured C4 (set 0.3 mm, 0.24 mm/kPa) would reach its slot
+from about 1.1 kPa. Sized for less, with the tuning table regenerated
+(Bassoon on `HardPushSpeaks`' stroke, and on the same stroke four times as
+slow, both to 2.5 kPa; ms from −50 to −5 dB at 55 / 70 dBA as above):
+
+| sized for | silent on the stroke | four times as slow | A2 | C3 | A3 |
+| --- | --- | --- | --- | --- | --- |
+| 2.5 kPa (shipping) | none | none | 958 / 240 | 921 / 189 | 964 / 102 |
+| 2.0 kPa | C3–D4 | C3–G3 | 778 / 182 | 707 / 146 | 540 / 74 |
+| 1.5 kPa | C3–G4 | C3–A#3 | 638 / 160 | 513 / 127 | 286 / 58 |
+| 1.1 kPa | C3–A4 | C3–A#3 | 638 / 160 | 509 / 127 | 202 / 55 |
+
+Below 1.5 kPa the length rule's set takes over from A2 to C3, and from A4 up
+it already sets them, so A4 and A5 do not move (385 / 50 and 424 / 36). The
+rule is tight: a fifth less already silences held low keys under a full
+push, and even at Okada's figure a soft A2 takes six times the measured
+110 ms. The full-pressure rule stays.
