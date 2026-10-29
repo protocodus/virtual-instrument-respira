@@ -545,9 +545,13 @@ a pitch wheel should do what it says.
   1–9 dB above the samples from 0.5 to 16 kHz, G4 up to 12 dB above at
   4–16 kHz and D5 up to 7 dB above, while G2 to C4 lie within 7 dB of them
   from 2 to 16 kHz and up to 14 dB under them below 1 kHz
-  (`Tools/compare_bandoneon_tone.py`). Its
-  level was chosen by ear, and the floor of a sample library may have been
-  cleaned, so no other spectrum is derived from them.
+  (`Tools/compare_bandoneon_tone.py`). Two accordion libraries disagree:
+  Clarinet Solo's floor over its harmonics sits 3–6 dB under La Melodiosa's
+  single reeds' from 0.5 to 16 kHz, and 5–7 dB over the Hohner's at
+  4–16 kHz, the median over their notes (`Tools/compare_accordion_tone.py`).
+  Its level was chosen by ear, the floor of a sample library may have been
+  cleaned, and the three recordings span more than the gap, so no other
+  spectrum is derived from them.
 - **How far a loud note's pitch falls rests on an unknown pressure.** Over
   the loudest 30 dB of a bandoneon's held notes its pitch rises 0.39 cents
   per dB softer on average, 0.34–0.62 from C2 to D3; Respira's 8' cells, with
@@ -752,6 +756,7 @@ recordings (not in this repository); `python3 -I
 Tools/compare_accordion_tone.py --melodiosa <dir> --hohner <dir> --render
 build-dsp/RenderRespira` sets held notes' octave bands at each Grille
 setting against two accordion libraries (not in this repository either),
+and compares the breath between their harmonics,
 `python3 -I Tools/measure_musette.py --hohner <dir>` measures one's
 musette beats, and `python3 -I Tools/measure_tuning.py --melodiosa <dir>`
 how far the other's reeds sit off their pitch; `python3 -I
