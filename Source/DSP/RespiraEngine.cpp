@@ -130,9 +130,10 @@ constexpr double kNoiseRate = 192000.0;     // internal rate the turbulence leve
 double DbToGain(double db) { return std::pow(10.0, db / 20.0); }
 
 // The bellows' folds' levels against their estimate (Mechanics.h, Pleat and
-// Rustle), voiced by ear.
-const double kFoldVoicing = DbToGain(-30.0);
-const double kRustleVoicing = DbToGain(-7.0);
+// Rustle), voiced by ear. Literal gains, not DbToGain: the Rack toolchain
+// refuses any global it has to initialise at run time.
+constexpr double kFoldVoicing = 0.031622776601683794;   // -30 dB
+constexpr double kRustleVoicing = 0.44668359215096315;  // -7 dB
 
 // Rank of the bass side a group sounds: channel 2 bass buttons, channel 3 chords.
 enum Group { kTreble, kBassButtons, kChordButtons };
