@@ -946,3 +946,31 @@ fail the stroke too, so there is no lower set that keeps it, and adding the
 gap's own air mass (0.5 √(S/π), Adachi et al.) to the 0.7 sets neither starts
 them nor keeps the 4th harmonic (10.8 dB under the measurement). The set
 stays; the gap is in the README (Known gaps, "Soft notes speak late").
+
+## 2026-10-29 — half the low reeds' tip weights, not kept (engineering)
+
+Not a listening decision; recorded so it is not tried again unexamined.
+Measured the same way as Okada's set above, the 8' cells' swings grow by
+about 1 dB a period from A2 to A5 at 70 dBA, so the low ones speak late,
+where the measured accordion's attacks take about as long at every pitch.
+The tip weights set that pace. MakeReed weights a tongue until 1 kPa bends it
+at most an eighth of its slot's depth, which leaves A2's tip six times as
+heavy as the bare tongue's, C3's 4.3 and A3's 1.6. Lighter, its drag per
+unit mass rises with its drive, so it sounds about as loud at the same
+pressure, only sooner: without the weight, at the shipping set, an A2 takes
+15 ms from −50 to −5 dB at 70 dBA and 74 ms at 55 dBA (240 and 958 with it;
+measured 80 and 110), and starts from 9 Pa instead of 16, further below the
+one accordion reed measured (Known gaps). But that tongue bends 2.2 mm under
+1 kPa, so 0.4 kPa holds it in its slot.
+
+With the weights halved (a quarter of the slot's depth at 1 kPa) and the set
+raised by the rule that keeps the arm's full pressure out of the slot, every
+low reed is slower, ms from −50 to −5 dB:
+
+| | A2 | C3 | E3 | A3 | C4 |
+| --- | --- | --- | --- | --- | --- |
+| shipping, 55 / 70 dBA | 958 / 240 | 921 / 189 | 911 / 140 | 964 / 102 | 904 / 82 |
+| weights halved, 55 / 70 dBA | 1188 / 441 | 1192 / 352 | 1220 / 276 | 1112 / 142 | 918 / 85 |
+
+The higher set costs more than the lighter tip gains, and the full-pressure
+rule ties the two together. The weights stay.
