@@ -626,8 +626,9 @@ a pitch wheel should do what it says.
   (measured 80 and 110), but then 0.4 kPa holds it in its slot. Keeping the
   arm's full pressure out of the slot ties the set to the same lightness:
   with half the weight and the set raised to match, an A2 takes 440 ms at
-  70 dBA and a C3 350, against 240 and 190. No measurement here says how
-  real low reeds escape that bind.
+  70 dBA and a C3 350, against 240 and 190; at today's set it takes 87 ms,
+  but then Bassoon's held keys from C3 to D4 stay silent through a hard
+  push. No measurement here says how real low reeds escape that bind.
 - **The demos' bellows is fitted, not played.** Each stroke's travel comes
   from a target pressure through `Tools/fit_bellows.py`; a player's hand would
   be less even.

@@ -972,5 +972,11 @@ low reed is slower, ms from −50 to −5 dB:
 | shipping, 55 / 70 dBA | 958 / 240 | 921 / 189 | 911 / 140 | 964 / 102 | 904 / 82 |
 | weights halved, 55 / 70 dBA | 1188 / 441 | 1192 / 352 | 1220 / 276 | 1112 / 142 | 918 / 85 |
 
-The higher set costs more than the lighter tip gains, and the full-pressure
-rule ties the two together. The weights stay.
+The higher set costs more than the lighter tip gains. Halved at the shipping
+set instead (the set still sized for the eighth), an 8' A2 takes 87 ms at
+70 dBA and 584 at 55 dBA, a C3 70 and 492, an E3 52 and 422, and they still
+speak with the pallet opened at 2.5 kPa, if 14–19 dB quieter there than at
+1.8 kPa. But on `HardPushSpeaks`' stroke Bassoon's held keys from C3 to D4
+stay at −74 dBFS: the pressure reaches 1.25 kPa, which now holds the heavier
+low tongues in their slots, before they swing. The full-pressure rule ties
+the set to the weights, and the weights stay.
