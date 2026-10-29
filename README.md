@@ -471,8 +471,12 @@ a pitch wheel should do what it says.
   one filmed in its plate spends more of each period inside the slot as the
   flow grows (Nussbaumer and Agarwal, ICA 2016). Respira's still pass their
   plates from about 500 Pa: they swing about a tenth of their length, where a
-  free-reed tongue commonly swings 15 % (Cottingham, Physics Today, 2011),
-  and no measured plate thickness was found. The measured accordion dips at
+  free-reed tongue commonly swings 15 % (Cottingham, Physics Today, 2011).
+  The one plate measured is thicker: 3.1 mm under a 27 mm B4 tongue
+  (Babanis, NTUA diploma thesis, 2014, by caliper), where Respira's is
+  2.4 mm. Scaled to it, A#2–A3's 2nd harmonic falls 12 dB under the
+  measurement (8 dB now) and a half-pressed key falls silent, so one reed is
+  not enough to re-pin them. The measured accordion dips at
   its 4th harmonic too, about 7 dB under its neighbours.
 - **The treble breathes more above 4 kHz.** Between the harmonics of held
   G4 and A5 notes on Tango Bandoneon, against the harmonics at 1–2 kHz, the
@@ -543,6 +547,20 @@ a pitch wheel should do what it says.
   already full does not start from A#2 to D3 at that pressure: the set that
   keeps hard pushes speaking leaks enough air at rest to hold the half-open
   chamber below the reed's starting pressure.
+- **Reeds start more easily than the one accordion reed measured.** From
+  rest at a steady draw, Respira's 8' reeds start at 16–38 Pa from A2 to C6
+  (84 Pa at A6, 131 at C7), and a D#5 stops again at 18 Pa. A Hohner Verdi I
+  reed at 622 Hz, on a wind chest drawing through an artificial reed
+  chamber, started at 83–103 Pa and stopped at 77–90 whatever the chamber's
+  Helmholtz frequency from 610 to 1400 Hz (Cottingham, ICA 2016, Fig. 3), and
+  a reed organ's 268 Hz reed started at 50–150 Pa with its chamber tuned away
+  from it (Cottingham, ICA 2019, Fig. 8). With the flow reversed the same
+  plate's other reed needed 0.9–1.6 kPa, which no accordion needs in playing,
+  so the rig is not an accordion's cell, and the neck it drew through is not
+  given. Half or a quarter of the tongue's Q starts the D#5 at 31 or 50 Pa,
+  which the impulse-tested Q of 200–400 (above) does not allow, and a set
+  half as high again at 31. So soft playing sounds from a lighter bellows
+  than an accordion's may need; the gap is not traced.
 - **The top octave needs mezzo forte to start.** With the bellows already at
   530 Pa, an A4 comes within 3 dB of its level about 38 ms after the key, a
   C6 about 36 ms and a C7 about 72 ms. Against the one measurement with key

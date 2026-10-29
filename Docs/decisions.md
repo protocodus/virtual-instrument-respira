@@ -886,3 +886,28 @@ pressures, and nothing measured says what a real chamber loses; no change
 follows. The treble's breath passes the same resonances and sits over the
 bandoneon's at 4–16 kHz (README, Known gaps), which fits the same reading. The duct's wall losses, its taper and the idle reed's valve are what
 it leaves out.
+
+## 2026-10-29 — the one measured reed plate, not kept (engineering)
+
+Not a listening decision; recorded so it is not tried again unexamined.
+Babanis (NTUA diploma thesis, 2014, Figs. 8.3–8.5) drew an existing
+accordion reed, a B4 sounding 504 Hz: the tongue scanned (27 mm long, 3.5 to
+2.4 mm wide, 0.52 to 0.10 mm thick) and its plate measured by caliper,
+3.1 mm thick under a slot 3.6 to 2.5 mm wide. Respira's plate under a 27 mm
+tongue is 2.4 mm, an estimate chosen by ear (2026-10-28). With both terms of
+the plate's thickness scaled by 1.29 so that this one is 3.1 mm (2.6–4.5 mm
+across the reeds) and the tuning table regenerated, against Elejalde-García
+et al. (2021) at 70 dBA (`CompareHarmonics`), dB re the fundamental:
+
+| | 2nd | 2nd–4th | 5th–8th | 9th–14th | 15th–20th | half-pressed, cents and dB |
+| --- | --- | --- | --- | --- | --- | --- |
+| measured | −3.1 | −5.7 | −4.4 | −11.3 | −13.4 | −16.1, −11.1 |
+| shipping, 175 Pa | −11.5 | −8.5 | −5.9 | −11.0 | −13.9 | −9.1, −12.5 |
+| plates 1.29×, 170 Pa | −14.9 | −9.8 | −6.2 | −11.2 | −14.0 | −16.0, silent |
+
+The half-pressed A#2–A3 at the pallet opening full channel pressure holds
+falls silent, and the 2nd harmonic moves further from the measurement. At
+about 70 dBA an A2 then takes 264 ms from −50 to −5 dB (253 now) and an A3
+128 (114). One plate of one instrument, in another register, does not
+outweigh that; the estimate stays, and the comment beside it and the README
+cite the measurement.

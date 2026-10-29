@@ -82,11 +82,15 @@ inline ReedSpec MakeReed(double f0, double q, double setScale = 1.0) {
     ReedSpec r;
     r.length = std::fmin(0.075, std::fmax(0.008, 0.026 * std::pow(440.0 / f0, 0.45)));
     r.width = std::fmin(0.0045, std::fmax(0.0016, 0.0024 * std::pow(440.0 / f0, 0.15)));
-    // The reed plate's thickness, the slot's depth: no measured value was
-    // found, and it varies between instruments. 2.0-3.5 mm was chosen by ear
-    // over two thirds of it (Docs/decisions.md). At 70 dBA it keeps A#2-A3
-    // inside their slots, which puts their 4th harmonic on the one published
-    // measurement (Elejalde-Garcia et al. 2021; Tools/CompareHarmonics).
+    // The reed plate's thickness, the slot's depth: it varies between
+    // instruments. 2.0-3.5 mm was chosen by ear over two thirds of it
+    // (Docs/decisions.md). At 70 dBA it keeps A#2-A3 inside their slots,
+    // which puts their 4th harmonic on the one published measurement
+    // (Elejalde-Garcia et al. 2021; Tools/CompareHarmonics). The one plate
+    // measured, under a 27 mm B4 tongue, is 3.1 mm (Babanis, NTUA diploma
+    // thesis, 2014, Fig. 8.5; caliper), where this gives 2.4; scaled to it,
+    // A#2-A3's 2nd harmonic fell 12 dB under that measurement and a
+    // half-pressed key fell silent.
     r.plate = 0.0018 + 0.0225 * r.length;
     r.rest = -(0.0001 + 0.010 * r.length) * setScale;
     r.clearArea = (2.0 * r.length + r.width) * kClearance;
