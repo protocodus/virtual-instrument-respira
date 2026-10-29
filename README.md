@@ -70,10 +70,11 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
   top octave holds a steady level.
 - The treble is much darker: the Grille's default falls from 9 kHz to 1 kHz,
   fitted to two accordion sample libraries' held notes, which Respira
-  out-shone by 6–15 dB above 2 kHz. The presets' grilles fall in proportion
-  and the range now reaches 500 Hz, so the old brightness is still a turn
-  away. Ordinary playing still reads about −9 VU; the bass side and the keys,
-  which do not pass the grille, sit about 2.5 dB higher against the treble.
+  out-shone by 6–15 dB above 2 kHz (chosen by ear). The presets' grilles fall
+  in proportion and the range now reaches 500 Hz, so the old brightness is
+  still a turn away. Ordinary playing still reads about −9 VU; the bass side
+  and the keys, which do not pass the grille, sit about 2.5 dB higher against
+  the treble.
 - A key held while the bellows is pushed hard to the arm's full pressure no
   longer stays silent: many notes from C3 to G#4 could, until the pressure
   eased. Each tongue is now set far enough above its plate to stay short of
@@ -110,17 +111,25 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 - Each pallet hole radiates into the room as a hole in a board does, its air
   meeting the room's resistance as well as its own mass: the reed chambers'
   resonances ring at Q 26–48 instead of 70–370, and the demos are 0.6–1.5 dB
-  softer at 4–8 kHz and up to 2.4 dB above.
+  softer at 4–8 kHz and up to 2.4 dB above (chosen by ear).
 - A key let go no longer clicks: as a pallet's pad lands, the air leaving
   through the thin film under its rim slows to rest instead of being cut off
-  when the pallet shuts. A half-pressed key bends a little further (9.1 cents
-  instead of 8.6 at 70 dBA).
+  when the pallet shuts (chosen by ear). A half-pressed key bends a little
+  further (9.1 cents instead of 8.6 at 70 dBA).
 - Each reed breathes through eddies the size of its own gap, widest near the
   tongue's tip, instead of one 0.3 mm size for every reed: from G2 to C4 the
   breath between the harmonics is 6–12 dB stronger below 1 kHz and 3–6 dB
   weaker above 8 kHz, and D5 and A5 breathe 3–8 dB more from 0.5 to 8 kHz.
   Against a bandoneon's held notes the breath is 7 dB RMS out across seven
-  notes and six octave bands, where it was 12.
+  notes and six octave bands, where it was 12 (chosen by ear).
+- The bass side is brighter: above 2 kHz the bass box lets out its own depth
+  modes, as a layer of air under the cover does, instead of falling 12 dB an
+  octave as one lumped resonator, and the bass reeds' chambers are simulated
+  as finely as the treble's. Against two sample libraries' bass buttons the
+  bass side read 11–44 dB too dark from 2 to 16 kHz; now it sits within
+  2.3 dB of both but for the Hohner's top octave. The demos with bass gain
+  1–16 dB from 4 to 16 kHz; the air button's hiss and the bass side's knocks
+  brighten with it.
 
 ## Downloads
 
@@ -210,8 +219,7 @@ ear: at mezzo forte the low tongues swing inside them. Each chamber is a
 channel as long as its reed, closed under the tongue's tip and open at the
 root end to the pallet hole, simulated as a duct in sections of at most 5 mm
 (halving them moves the harmonics by under 1 dB below 8 kHz and 2.5 dB
-above), 10 mm on the bass side, whose bass box hides the difference (every
-demo within 0.1 dB in every octave band); the gap's air enters, and its
+above); the gap's air enters, and its
 pressure acts on the tongue, along the slot where the gap opens. The pallet
 hole's outer end radiates: its air mass works in parallel with the radiation
 resistance ρc/A, as a piston in a baffle does (Beranek), so the chambers'
@@ -318,8 +326,20 @@ depth/ρc², so f = c/2π·√(open/(depth·l′)), loaded by radiation (ρc) an
 cloth's flow resistance. Typical values (40 mm deep, 10 % open, 6 mm holes in
 3 mm wood, cloth of 30 rayl) give 960 Hz at Q 1.3, a 3 dB rise before the
 roll-off; their plausible spread is 0.55–2.0 kHz. The box is shallow enough
-there for a lumped model, which holds within 2 dB up to 2 kHz. The air valve
-opens into the bass box as well, so its hiss leaves the same way.
+there for a lumped model, which holds within 2 dB up to 2 kHz. Above that it
+is a layer of air ringing at its depth modes, from c/2·depth (4.3 kHz), where
+the lumped resonator alone falls 12 dB an octave, darker even than a box that
+absorbs every reflection. Averaged over the box's irregular depth (30–50 mm)
+the modes pass what reaches them, less the fraction a of its energy the box
+absorbs on each round trip: a leak flat up to 2c·open/(l′√a) and falling
+6 dB an octave above, which joins the resonator through two high-passes at
+2 kHz (within 2.6 dB of the exact layer in every octave band from 1 to
+16 kHz). a, 4 % (6.7 kHz), is fitted to two sample libraries' bass buttons
+(La Melodiosa and the Hohner): from 2 to 16 kHz against 0.5–1 kHz the bass
+side sits within 2.3 dB of both but for the Hohner's top octave (7 dB),
+where the lumped resonator alone read 11–44 dB under them
+(`Tools/compare_accordion_tone.py`). The air valve opens into the bass box as
+well, so its hiss leaves the same way.
 
 ### The mechanism
 
@@ -414,12 +434,12 @@ a pitch wheel should do what it says.
   first front end.
 - **Voiced, not measured.** Reed dimensions, chambers, pallets, the bellows
   stiffness, the reeds' loss and the turbulence levels are typical values or
-  estimates scaled with pitch, and the full-scale reference is set so the
-  demo phrases read −9 VU, not by a measured level. The Grille's default is
-  fitted to two sample libraries' held notes, but no recording of a real
-  accordion is part of the model or its tests.
+  estimates scaled with pitch, and the full-scale reference is set so the demo
+  phrases read −9 VU, not by a measured level. The Grille's default and the
+  bass box's absorption are fitted to two sample libraries, but no recording
+  of a real accordion is part of the model or its tests.
 - **CPU.** A full-register chord over bass and chords (28 chambers) takes
-  under a third of one core in the development container at 48 kHz (0.30×
+  about a third of one core in the development container at 48 kHz (0.35×
   realtime for the Master Tutti demo, 0.02× for the single clarinet reed),
   and a chord change briefly doubles that while the released chambers close.
   The reed chambers' ducts are about a quarter of it, and the rest is close
@@ -432,24 +452,24 @@ a pitch wheel should do what it says.
   about 10–15 % but take 3–21 dB off 8–16 kHz, a cut made by the grid, not
   the physics.
 - **The mechanism's level and brightness.** No measurement of how loud an
-  accordion's mechanism is against its reeds was found, so Mechanics is in
-  dB against an estimate: the key's own radiation, while the force really
-  reaches the air through the keyboard and the body, which are not modelled.
-  The felt laws are a piano's, and the masses and travels estimates. Against
-  the one measured spectrum (Niewczas 2019, Fig. 50, about 10 dB under its
-  peak at 3–4 kHz) the treble knocks are 13–19 dB darker there and the bass
-  side's darker still through the bass box: no metal part, spring or panel
-  rings here. Pallets and keys stop on felt and never rattle against
-  each other, and the bellows' folds, straps and the player make no sound.
+  accordion's mechanism is against its reeds was found, so Mechanics is in dB
+  against an estimate: the key's own radiation, while the force really reaches
+  the air through the keyboard and the body, which are not modelled. The felt
+  laws are a piano's, and the masses and travels estimates. Against the one
+  measured spectrum (Niewczas 2019, Fig. 50, about 10 dB under its peak at 3–4
+  kHz) the treble knocks are 13–19 dB darker there and the bass side's about 4
+  dB darker again through the bass box: no metal part, spring or panel rings
+  here. Pallets and keys stop on felt and never rattle against each other, and
+  the bellows' folds, straps and the player make no sound.
 - **Chord buttons are pitch classes**, not Stradella's fixed major, minor,
   seventh and diminished rows, and there are no bass register switches.
 - **One turbulence seed.** Two engines given the same input play identical
   noise.
-- **The bass box above 2.5 kHz.** Its lumped resonator falls 12 dB per
-  octave there. As a layer of air under the cover the box rings at its depth
-  resonances instead, and what it really loses depends on the felt, leather
-  and wood inside it, which are not modelled; the bass side's top octaves
-  are probably too dark.
+- **The bass box's absorption is fitted.** What the box loses on each round
+  trip of its depth modes, 4 % of the energy, is fitted to two sample
+  libraries, which fit 4–6 % about equally; bare wood absorbs 1–3 % at
+  2–4 kHz, and the felt and leather inside are not modelled. Its depth is
+  averaged, so no single mode of a real box's shape rings.
 - **The top octaves.** The one published harmonic measurement found
   (Elejalde-García, Macho-Stadler and Llanos-Vázquez 2021, a concert
   accordion's 8' reeds from A#2 to A3 played mezzo forte, about 70 dBA at

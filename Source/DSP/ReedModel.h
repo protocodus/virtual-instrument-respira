@@ -204,11 +204,11 @@ inline double StepReed(const ReedSpec& r, ReedState& s, double dp, double dt, do
 // The reed chamber as a duct in sections of at most kSectionLength: four or
 // more to a wavelength at 16 kHz. Half that length moves the harmonics by under
 // 1 dB below 8 kHz and 2.5 dB above (Tools/CompareHarmonics, the demos). The
-// bass side is heard through the bass box, which takes off what longer sections
-// change: at kBassSectionLength every demo stays within 0.1 dB of 5 mm in every
-// octave band, for 5-11 % less work; at 15 mm Master Tutti's lowest octave moves
-// 0.6 dB.
-constexpr double kSectionLength = 0.005, kBassSectionLength = 0.010;
+// bass side once took 10 mm while its bass box took off what they change;
+// since the box passes its depth modes (RespiraEngine.cpp), 10 mm moves the
+// demos' 8-16 kHz octave by 0.7-6.3 dB against 5 mm, to save under 2 % of
+// their work.
+constexpr double kSectionLength = 0.005;
 constexpr int kMaxSections = 16;   // the longest chamber, 75 mm, in 5 mm sections
 
 struct ChamberSpec {
@@ -266,7 +266,7 @@ inline ChamberSpec MakeChamber(const ReedSpec& r, double f0, bool bassBox, doubl
     // f_H >= minResonance. The duct's first resonance sits 10-15 % above it.
     for (int i = 0; i < 40 && kRhoC2 / (inertance() * L * width * depth) < w * w; ++i) depth *= 0.9;
     const double area = width * depth;
-    const int n = static_cast<int>(Clamp(std::floor(L / Max(bassBox ? kBassSectionLength : kSectionLength, 343.0 / stepRate)), 1.0, kMaxSections));
+    const int n = static_cast<int>(Clamp(std::floor(L / Max(kSectionLength, 343.0 / stepRate)), 1.0, kMaxSections));
     const double dx = L / n;
     c.sections = n;
     c.sectionStiffness = kRhoC2 / (area * dx);

@@ -114,20 +114,28 @@ private:
 
     // A shallow compartment the pallets open into, radiating through a
     // perforated cover: a Helmholtz resonator per unit of cover area, so a
-    // second-order low-pass (bilinear, prewarped), in transposed direct form II.
+    // second-order low-pass, and beside it the leak of its depth modes, a
+    // one-pole low-pass and a second-order high-pass (Engine::Compartment::Set).
+    // Each is bilinear and prewarped, in transposed direct form II.
     struct Compartment {
-        double b0 = 1.0, b1 = 0.0, b2 = 0.0, a1 = 0.0, a2 = 0.0, z1 = 0.0, z2 = 0.0;
+        struct Section {
+            double b0 = 1.0, b1 = 0.0, b2 = 0.0, a1 = 0.0, a2 = 0.0, z1 = 0.0, z2 = 0.0;
+            double Process(double x) {
+                const double y = b0 * x + z1;
+                z1 = b1 * x - a1 * y + z2;
+                z2 = b2 * x - a2 * y;
+                return y;
+            }
+        };
+        Section box, leak, modes;
         // depth m, open fraction of the cover, effective hole length m
-        // (thickness plus end corrections), cloth behind it in rayl
-        void Set(double depth, double open, double neck, double rayl, double rate);
-        void Clear() { z1 = z2 = 0.0; }
+        // (thickness plus end corrections), cloth behind it in rayl, the
+        // fraction of the sound's energy the box absorbs on a round trip, and
+        // where in Hz the depth modes take over from the lumped resonator
+        void Set(double depth, double open, double neck, double rayl, double absorbed, double modesHz, double rate);
+        void Clear() { box.z1 = box.z2 = leak.z1 = leak.z2 = modes.z1 = modes.z2 = 0.0; }
         void FlushTiny();
-        double Process(double x) {
-            const double y = b0 * x + z1;
-            z1 = b1 * x - a1 * y + z2;
-            z2 = b2 * x - a2 * y;
-            return y;
-        }
+        double Process(double x) { return box.Process(x) + modes.Process(leak.Process(x)); }
     };
 
     // The hand on the bellows, from a stepwise controller stream. The wheel's

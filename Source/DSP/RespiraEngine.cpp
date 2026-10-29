@@ -66,15 +66,31 @@ constexpr protocodus::CompressorSettings kBellowsGuard { -18.0, 6.0, 5.0, 0.02, 
 // kHz. Lumped, the box must be shallow against the wavelength: at resonance k
 // depth = sqrt(open depth / l') = 0.70. As a plane-wave layer, the flow out
 // over the flow in is 1 / (cos kd - k (l' / open) sin kd + j (1 + cloth / rho
-// c) sin kd); the lumped box is within 2 dB of it up to 2 kHz. Above about 2.5
-// kHz the layer rings at its depth resonances, which the box's irregular
-// depth and the absorption inside it damp by amounts not known here, and the
-// lumped box overstates the loss (README, Known gaps). The treble
+// c) sin kd); the lumped box is within 2 dB of it up to 2 kHz. Above that the
+// layer rings at its depth modes, from c / 2 depth (4.3 kHz), where the lumped
+// box alone fell 12 dB an octave: 9, 17 and 23 dB under even a box that
+// absorbs every reflection at 2-4, 4-8 and 8-16 kHz. Over the box's irregular
+// depth (30-50 mm) the modes average out to a leak: the holes pass |t|^2 =
+// (2 rho c / w m)^2 of what reaches them and the rest goes round again, less
+// the fraction a of its energy the box absorbs on each round trip, so the leak
+// is |t|^2 / (a + |t|^2), flat up to w = 2 c open / (l' sqrt a) and 6 dB an
+// octave down above. Joined to the lumped box through two high-passes at 2 kHz, the sum's
+// octave bands from 1 to 16 kHz come within 2.6 dB (RMS 1.6) of the exact
+// layer's averaged over 30-50 mm, for a from 2 to 10 %. Two sample libraries'
+// bass buttons (La Melodiosa by Petri Pohjanmies, CC BY; a Hohner by Marek
+// Kintosh, Pianobook) fit a = 4-6 % best: at 4 % Respira's octave bands from
+// 2 to 16 kHz against 0.5-1 kHz sit within 2.3 dB of both, but for the
+// Hohner's 8-16 kHz (7 dB), and 0.2 dB over them on average, where the lumped
+// box read 11-44 dB under them (Tools/compare_accordion_tone.py,
+// Docs/decisions.md). Bare wood absorbs 1-3 % at
+// 2-4 kHz (larch, J. Wood Sci. 2017, doi:10.1007/s10086-017-1662-z); the felt
+// and leather of the mechanism would add to it. The treble
 // compartment under the grille is no resonator: 35 mm deep under a grille 30 %
 // open with 3.6 mm slots, its lumped resonance would fall at k depth = 1.7,
 // and as a layer, averaged over its plausible depths (25-45 mm), it passes the
 // reeds within 3 dB up to 16 kHz.
 constexpr double kBassBoxDepth = 0.04, kBassBoxOpen = 0.10, kBassHoleLength = 0.0081, kClothRayl = 30.0;
+constexpr double kBassBoxAbsorbed = 0.04, kBassBoxModes = 2000.0;
 constexpr double kOpenSeconds = 0.012, kOpenVelocity = 0.009;  // pallet lift: 12 ms soft .. 3 ms hard
 constexpr double kCloseSeconds = 0.008;
 constexpr double kQuietSeconds = 0.02;      // a closed chamber is let go after this
@@ -126,19 +142,30 @@ void TreblePan(int tableKey, double width, float& left, float& right) {
 // (depth l')). The cover is large against the wavelength there, so radiation
 // loads it with rho c, and the cloth behind it adds its flow resistance:
 // Q = sqrt(mass / compliance) / (rho c + cloth).
-void Engine::Compartment::Set(double depth, double open, double neck, double rayl, double rate) {
+void Engine::Compartment::Set(double depth, double open, double neck, double rayl, double absorbed, double modesHz, double rate) {
     const double mass = kRho * neck / open, compliance = depth / kRhoC2;
     const double hz = 1.0 / (2.0 * kPi * Sqrt(mass * compliance)), q = Sqrt(mass / compliance) / (Sqrt(kRho * kRhoC2) + rayl);
-    const double k = std::tan(kPi * Min(hz, 0.45 * rate) / rate), norm = 1.0 / (1.0 + k / q + k * k);
-    b0 = b2 = k * k * norm;
-    b1 = 2.0 * b0;
-    a1 = 2.0 * (k * k - 1.0) * norm;
-    a2 = (1.0 - k / q + k * k) * norm;
+    double k = std::tan(kPi * Min(hz, 0.45 * rate) / rate), norm = 1.0 / (1.0 + k / q + k * k);
+    box.b0 = box.b2 = k * k * norm;
+    box.b1 = 2.0 * box.b0;
+    box.a1 = 2.0 * (k * k - 1.0) * norm;
+    box.a2 = (1.0 - k / q + k * k) * norm;
+    const double leakHz = Sqrt(kRhoC2 / kRho) * open / (kPi * neck * Sqrt(absorbed));
+    k = std::tan(kPi * Min(leakHz, 0.45 * rate) / rate);
+    leak.b0 = leak.b1 = k / (1.0 + k);
+    leak.a1 = (k - 1.0) / (k + 1.0);
+    k = std::tan(kPi * Min(modesHz, 0.45 * rate) / rate), norm = 1.0 / ((1.0 + k) * (1.0 + k));
+    modes.b0 = modes.b2 = norm;
+    modes.b1 = -2.0 * norm;
+    modes.a1 = 2.0 * (k * k - 1.0) * norm;
+    modes.a2 = (1.0 - k) * (1.0 - k) * norm;
 }
 
 void Engine::Compartment::FlushTiny() {
-    if (Abs(z1) < 1.0e-20) z1 = 0.0;
-    if (Abs(z2) < 1.0e-20) z2 = 0.0;
+    for (Section* s : { &box, &leak, &modes }) {
+        if (Abs(s->z1) < 1.0e-20) s->z1 = 0.0;
+        if (Abs(s->z2) < 1.0e-20) s->z2 = 0.0;
+    }
 }
 
 void Engine::Hand::Tick(double dt, double momentum) {
@@ -175,7 +202,7 @@ Engine::Engine() { Prepare(48000.0); }
 
 void Engine::Prepare(double sampleRate) {
     rate = sampleRate > 1000.0 && sampleRate < 1.0e6 ? sampleRate : 48000.0;
-    bassBox.Set(kBassBoxDepth, kBassBoxOpen, kBassHoleLength, kClothRayl, rate);
+    bassBox.Set(kBassBoxDepth, kBassBoxOpen, kBassHoleLength, kClothRayl, kBassBoxAbsorbed, kBassBoxModes, rate);
     for (BodyHighPass* body : { &mechanicsL, &mechanicsR, &mechanicsBass }) body->Set(rate);
     smoothing = 1.0 - std::exp(-1.0 / (0.02 * rate));
     bendSmoothing = 1.0 - std::exp(-1.0 / (0.005 * rate));

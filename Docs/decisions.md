@@ -1073,3 +1073,70 @@ reed's breath from eddies the size of its own gap (17-breath, B) and the
 Grille's default fitted to two sample libraries, 1 kHz with the output
 reference at 0.67 Pa (18-grille, B). The by-ear choice licenses keeping them;
 the grille's fit stays a fit to two recordings, not a measured grille.
+
+## 2026-10-29 — the bass box lets out its depth modes, fitted to two sample libraries (owner asked; engineering)
+
+Not a listening decision: adopted under the owner's standing direction to
+calibrate against the recordings provided and to take well-grounded
+candidates, with A (before) and B (after) rendered for the owner to hear
+(pack `19-bass-box`, listening-2026-10-28).
+
+The libraries of the Grille's entry above also hold bass buttons: La
+Melodiosa's with both bass registers (a 16' and an 8' reed, as Respira's
+buttons), and the Hohner's, two reeds an octave apart. Against them, each
+button held as the treble notes were (`Tools/compare_accordion_tone.py`,
+octave bands against 0.5–1 kHz, where the bass box is a lumped resonator),
+Respira's bass side read 11, 28 and 44 dB under La Melodiosa's at 2–4, 4–8
+and 8–16 kHz and 14, 28 and 35 dB under the Hohner's. The known gap "The
+bass box above 2.5 kHz" said its top octaves were probably too dark; both
+libraries say by how much.
+
+The lumped resonator holds within 2 dB of the box as a plane-wave layer up
+to 2 kHz. Above it the layer rings at its depth modes, and the resonator's
+12 dB an octave fell 9, 17 and 23 dB under even a box that absorbs every
+reflection, the cover's holes alone. Averaged over the box's irregular depth
+(30–50 mm, the spread its comment gives), the modes pass what reaches them
+less the fraction a of the energy the box absorbs on each round trip: the
+holes pass |t|² of what reaches them and the rest goes round again, so the
+leak is |t|²/(a + |t|²), flat up to 2c·open/(l′√a) and falling 6 dB an octave
+above. A lossless box passes everything above about 4 kHz, the anechoic one
+falls from 1.35 kHz. The leak joins the resonator through two high-passes at
+2 kHz, where the sum's octave bands from 1 to 16 kHz come within 2.6 dB
+(RMS 1.6) of the exact layer averaged over 30–50 mm, for a from 2 to 10 %.
+
+The box no longer hides what the bass reeds' 10 mm duct sections cut: against
+5 mm they took 0.7–6.3 dB off the demos' 8–16 kHz octave, so the bass side
+now takes the treble's 5 mm, at under 2 % more work on the demos, and the
+tuning table is regenerated (the bass reeds' corrections move by under half
+a cent).
+
+a was fitted on bass buttons rendered without the box and filtered offline
+as the engine filters (within 0.1 dB of the engine at 1 %). Respira minus
+each library, the mean over pitch classes, 1–2, 2–4, 4–8 and 8–16 kHz
+against 0.5–1 kHz, dB, with the 2–16 kHz mean and RMS over both:
+
+| Bass box | La Melodiosa | Hohner | Mean | RMS |
+| --- | --- | --- | --- | --- |
+| Lumped, 10 mm sections (before) | −1.3, −11.2, −28.5, −44.0 | −1.1, −13.8, −27.7, −35.2 | −26.7 | 29.1 |
+| a = 1 % | −1.9, +1.0, +0.3, +2.3 | −1.6, −1.4, +0.9, +11.2 | +2.4 | 4.8 |
+| a = 2 % | −2.1, +0.6, −0.5, +0.4 | −1.8, −1.8, +0.1, +9.3 | +1.4 | 3.9 |
+| a = 4 % (shipping) | −2.2, 0.0, −1.8, −2.0 | −1.9, −2.4, −1.1, +7.0 | 0.0 | 3.2 |
+| a = 6 % | −2.4, −0.5, −2.7, −3.5 | −2.0, −2.9, −2.0, +5.5 | −1.0 | 3.2 |
+| a = 10 % | −2.5, −1.4, −4.1, −5.5 | −2.2, −3.8, −3.4, +3.5 | −2.4 | 3.8 |
+
+The tool's own run of the shipping engine (100 ms frames, where the fit used
+200 ms) reads La Melodiosa −1.7, +0.3, −1.4, −1.6 and the Hohner −1.6, −2.3,
+−1.0, +7.1. The two libraries part most at 8–16 kHz, 9 dB, and 4 % is where
+they pull equally; bare wood absorbs 1–3 % at 2–4 kHz (larch, J. Wood Sci.
+2017), and the felt and leather inside the box are not modelled.
+
+The demos keep their level (−9.08 VU at the median against −9.07; p10 −14.5,
+p90 −6.1) and their octaves below 2 kHz within 1.2 dB; those with bass gain
+1–16 dB from 4 to 16 kHz, Bassoon Low the most. The air valve's hiss and the
+bass mechanism's knocks pass the box too and brighten with it. The unit,
+audio and perf tiers pass.
+
+What the choice licenses: a bass side as bright as two recorded accordions',
+through a box whose depth modes are modelled and whose absorption is fitted,
+not measured.
+
