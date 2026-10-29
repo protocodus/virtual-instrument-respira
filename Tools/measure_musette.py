@@ -16,7 +16,9 @@ by a parabola through the log magnitudes, are the two reeds, and their
 spacing is the beat. (The 2nd-6th harmonics give the same rate over their
 number within 0.05 Hz on most notes.) A least squares line through log beat
 against log pitch gives the exponent and the beat at A4, with a 90 %
-interval from 2000 bootstrap resamplings of the notes.
+interval from 2000 bootstrap resamplings of the notes. The detune in cents
+about that line, over n - 2 degrees of freedom, is how far the pair's
+tuning scatters, and over sqrt 2 each reed's (ReedBank.h, Variation).
 """
 import argparse
 from pathlib import Path
@@ -67,6 +69,9 @@ def main():
     print(f"beat ~ f^{p:.2f} (90 % {np.percentile(boot, 5):.2f}..{np.percentile(boot, 95):.2f}), "
           f"{np.exp(a):.2f} Hz ({1200 * np.log2(1 + np.exp(a) / 440):.1f} cents) at A4, "
           f"notes scattering {100 * np.std(y - (a + p * x)):.0f} % about the line")
+    detune = 1200 * np.log2(1 + b / f) - 1200 * np.log2(1 + np.exp(a + p * x) / f)
+    spread = np.sqrt(np.sum(detune ** 2) / (len(detune) - 2))
+    print(f"the two reeds' detune scatters {spread:.2f} cents about the line, {spread / np.sqrt(2):.2f} each")
 
 
 if __name__ == "__main__":
