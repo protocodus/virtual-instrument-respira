@@ -269,13 +269,14 @@ void Engine::Reset() {
     // panel's mass and play differ a little from its neighbours' (+-20 %,
     // fixed per instrument), so a turn's panels land one after another.
     for (int i = 0; i < kPleats; ++i) {
-        Pleat& p = pleats[static_cast<std::size_t>(i)];
+        Pleat& p = folds.pleats[static_cast<std::size_t>(i)];
         p = Pleat {};
         const std::uint32_t h = Hash(3u, static_cast<std::uint32_t>(i));
         p.area = kPleatDepth * ((i / (kPleats / 4)) % 2 == 0 ? kPleatLongWall : kPleatShortWall);
         p.mass = kPleatSurfaceMass * p.area * (1.0 + 0.2 * Unit(h));
         p.play = kPleatPlay * (1.0 + 0.2 * Unit(Hash(h, 1)));
     }
+    folds.Rest();
     rustle = Rustle {};
     rustle.Set(rate);
     rustleForce = 0.0;
@@ -776,8 +777,7 @@ void Engine::Render(float* left, float* right, int frames) {
         }
         // The folds sit between the halves and radiate straight to the air, not
         // through the body, as panels of their own size (kPleatToFlow).
-        double flips = 0.0;
-        for (auto& p : pleats) flips += p.Step(pressure, dt);
+        const double flips = folds.Step(pressure, dt);
         // The folds move as far as air leaves the bellows; the rest of the hand's
         // stroke only presses on the air.
         const double rubbing = rustle.Step((airFlow + leak) / kBellowsSection);

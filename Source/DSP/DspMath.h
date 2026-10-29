@@ -5,6 +5,7 @@
 // software routine there). The builtins are the same IEEE operations in line.
 
 #include <cmath>
+#include <cstdint>
 
 namespace respira {
 
@@ -16,6 +17,17 @@ inline float Abs(float x) { return __builtin_fabsf(x); }
 inline double Sqrt(double x) { return std::sqrt(x); }
 inline double Abs(double x) { return std::fabs(x); }
 inline float Abs(float x) { return std::fabs(x); }
+#endif
+
+// The index of a word's lowest set bit (the word is not zero).
+#if defined(__GNUC__) || defined(__clang__)
+inline int LowestBit(std::uint64_t bits) { return __builtin_ctzll(bits); }
+#else
+inline int LowestBit(std::uint64_t bits) {
+    int i = 0;
+    while (!(bits & 1)) { bits >>= 1; ++i; }
+    return i;
+}
 #endif
 
 inline double Min(double a, double b) { return a < b ? a : b; }

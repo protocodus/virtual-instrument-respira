@@ -10,6 +10,7 @@
 
 #include "DspMath.h"
 
+#include <array>
 #include <cmath>
 #include <cstdint>
 
@@ -188,6 +189,75 @@ struct Pleat {
         if (at > play) return kRestCloth.Force(at - play, speed);
         if (at < -play) return -kRestCloth.Force(-play - at, -speed);
         return 0.0;
+    }
+};
+
+// All the panels. A resting panel only waits for the pressure to turn
+// against the side it rests on, so the resting ones are kept in sets by that
+// side, and only the moving ones and those the pressure turns against are
+// stepped: in a phrase a few panels move at a time. A resting panel's contact
+// (the load it bears) is brought up to date only when it is stepped, from the
+// pressure of the sample before, so every panel moves to the bit as stepping
+// all of them every sample moved it.
+struct Folds {
+    static constexpr int kWords = (kPleats + 63) / 64;
+    std::array<Pleat, kPleats> pleats {};
+    std::uint64_t moving[kWords] {}, out[kWords] {}, in[kWords] {};   // resting outwards, inwards
+    std::uint64_t fresh[kWords] {};   // came to rest last sample, still holding the hinge's force
+    double last = 0.0;                // the pressure the sample before
+
+    // The panels as set up, all resting in the middle of their play.
+    void Rest() {
+        for (int w = 0; w < kWords; ++w) moving[w] = out[w] = in[w] = fresh[w] = 0;
+        last = 0.0;
+    }
+
+    // The change in all the hinges' force over one host sample, N, as the sum
+    // of Pleat::Step over the panels in order.
+    double Step(double p, double dt) {
+        // Under 1e-200 Pa a resting panel's load times its place could round
+        // to zero, which Pleat::Step reads as resting; every one is asked then.
+        const bool tiny = p != 0.0 && Abs(p) < 1.0e-200;
+        // The panels to step, in order: listed first, so that stepping them
+        // is one plain loop.
+        std::uint8_t list[kPleats];
+        int count = 0;
+        for (int w = 0; w < kWords; ++w) {
+            const int size = kPleats - 64 * w < 64 ? kPleats - 64 * w : 64;
+            const std::uint64_t all = size == 64 ? ~std::uint64_t(0) : (std::uint64_t(1) << size) - 1;
+            const std::uint64_t resting = all & ~moving[w];
+            const std::uint64_t against = p == 0.0 ? 0 : tiny ? resting : resting & ~(p > 0.0 ? out[w] : in[w]);
+            for (std::uint64_t step = moving[w] | against; step != 0; step &= step - 1)
+                list[count++] = static_cast<std::uint8_t>(64 * w + LowestBit(step));
+        }
+        double flips = 0.0;
+        for (int i = 0; i < count; ++i) {
+            // A copy, which the compiler keeps in registers through the step.
+            Pleat pleat = pleats[list[i]];
+            const int w = list[i] / 64;
+            const std::uint64_t bit = std::uint64_t(1) << (list[i] % 64);
+            if (!pleat.moving && !(fresh[w] & bit)) pleat.contact = last * pleat.area;
+            flips += pleat.Step(p, dt);
+            pleats[list[i]] = pleat;
+        }
+        for (int w = 0; w < kWords; ++w) fresh[w] = 0;
+        for (int i = 0; i < count; ++i) {
+            const Pleat& pleat = pleats[list[i]];
+            const int w = list[i] / 64;
+            const std::uint64_t bit = std::uint64_t(1) << (list[i] % 64);
+            const bool was = moving[w] & bit;
+            out[w] &= ~bit;
+            in[w] &= ~bit;
+            moving[w] &= ~bit;
+            if (pleat.moving) moving[w] |= bit;
+            else {
+                if (pleat.x > 0.0) out[w] |= bit;
+                else if (pleat.x < 0.0) in[w] |= bit;
+                if (was) fresh[w] |= bit;
+            }
+        }
+        last = p;
+        return flips;
     }
 };
 

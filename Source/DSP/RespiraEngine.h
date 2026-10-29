@@ -242,7 +242,7 @@ private:
     std::array<std::uint16_t, 3 * 128> movingKeys {};   // the keys whose travel is changing
     int movingCount = 0;
     std::array<Knock, 32> knocks {};
-    std::array<Pleat, kPleats> pleats {};
+    Folds folds;
     Rustle rustle;
     double rustleForce = 0.0;
     BodyHighPass mechanicsL, mechanicsR, mechanicsBass;
