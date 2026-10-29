@@ -841,6 +841,9 @@ accept grounded candidates; the treble's excess stays a Known gap.
   Master Tutti's 62–250 Hz (±2 dB, its chaotic low chord).
 - CPU, paired against the previous engine: −5 % (Clarinet Solo) to +9 %
   (Master Tutti, 0.28× to 0.30× realtime).
+- The held notes' pitch jitter between 23 ms frames (with a 150 ms trend
+  removed) about doubles, from 0.01–0.02 to 0.02–0.05 cents (A3 0.13 both);
+  the bandoneon's are 0.07–0.40, the player's hand among them.
 - Pack `17-breath` (listening-2026-10-28): held notes and the Tango
   Bandoneon demo at Mechanics −40 dB, A before, B each gap's eddies. The
   verdict is pending.
@@ -880,5 +883,6 @@ the pallet hole 7 dB under the one measurement of an accordion's
 (`CompareHarmonics`), which the duct matches. The two measurements are of
 different instruments seen from opposite sides of the chamber, at unknown
 pressures, and nothing measured says what a real chamber loses; no change
-follows. The duct's wall losses, its taper and the idle reed's valve are what
+follows. The treble's breath passes the same resonances and sits over the
+bandoneon's at 4–16 kHz (README, Known gaps), which fits the same reading. The duct's wall losses, its taper and the idle reed's valve are what
 it leaves out.
