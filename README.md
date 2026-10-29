@@ -616,22 +616,23 @@ a pitch wheel should do what it says.
   their level 0.45–0.65 s after the key, a C4 in 0.35 s. A quicker or gentler
   stroke starts them at once. A finger attack is slow too: at 70 dBA, A2–B2
   take 206–240 ms from −50 to −5 dB and A3–B3 90–102 ms, where
-  Llanos-Vázquez et al. (2014) measured 70–100 and 60–110. Their swings grow
-  by about 1 dB a period from A2 to A5, where the measured attacks take about
-  as long at every pitch. The bandoneon
+  Llanos-Vázquez et al. (2014) measured 70–100 and 60–110. The bandoneon
   library's left-hand staccato notes (one take each, measured as its right
   hand's above, and holding the same second note a semitone below) grow in
   68–87 ms from E2 to B2 and 40–63 ms from D3 to C4, its C2 in 163 ms;
   Tango Bandoneon an octave up, so the same two reeds sound, at 730 Pa takes
-  190–350 ms from C2 to G2 but 26–100 ms from B2 to C4. The tip weights
-  set that pace: an A2's tip weighs six times the bare tongue's, and without
+  190–350 ms from C2 to G2 but 26–100 ms from B2 to C4. Respira's swings
+  grow by about 1 dB a period from A2 to A5, where the measured attacks take
+  about as long at every pitch, and the tip weights set that pace: an A2's
+  tip weighs six times the bare tongue's, and without
   the weight, at the same set, it takes 15 ms at 70 dBA and 74 ms at 55 dBA
   (measured 80 and 110), but then 0.4 kPa holds it in its slot. Keeping the
   arm's full pressure out of the slot ties the set to the same lightness:
   with half the weight and the set raised to match, an A2 takes 440 ms at
   70 dBA and a C3 350, against 240 and 190; at today's set it takes 87 ms,
   but then Bassoon's held keys from C3 to D4 stay silent through a hard
-  push. No measurement here says how real low reeds escape that bind.
+  push. Real reeds face the same bind (Soft notes speak late); no
+  measurement here says where an accordion's are voiced in it.
 - **The demos' bellows is fitted, not played.** Each stroke's travel comes
   from a target pressure through `Tools/fit_bellows.py`; a player's hand would
   be less even.
