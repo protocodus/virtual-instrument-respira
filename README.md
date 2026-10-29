@@ -633,6 +633,17 @@ a pitch wheel should do what it says.
   but then Bassoon's held keys from C3 to D4 stay silent through a hard
   push. Real reeds face the same bind (Soft notes speak late); no
   measurement here says where an accordion's are voiced in it.
+- **Low notes rise into pitch.** A reed sounds flatter while its swing is
+  small, and Respira's low swings grow slowly, so a low note starts flat and
+  rises. Measured as the bandoneon library's held notes are (100 ms frames;
+  the pitch where the attack first comes within 10 and 3 dB of its loudest,
+  against the take's own pitch-against-loudness line), the bandoneon's C2
+  starts 45 cents flat 10 dB down, as Respira's does, but from E2 to A3 it is
+  0–23 cents flat there and 0–9 at 3 dB down. Respira's 8' cells, the pull
+  raised to 700 Pa over 0.3–1.5 s, are 15–42 cents flat 10 dB down from E2
+  to A3 and still 6–14 at 3 dB down from E2 to D3, whatever the pull's speed,
+  as their growth sets the pace. From E4 up the bandoneon is within 7 cents
+  10 dB down and Respira 1–20, depending on how fast the pull rises.
 - **The demos' bellows is fitted, not played.** Each stroke's travel comes
   from a target pressure through `Tools/fit_bellows.py`; a player's hand would
   be less even.
