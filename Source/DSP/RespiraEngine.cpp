@@ -28,13 +28,15 @@ constexpr double kValveEddy = 3.0e-3;       // m
 constexpr double kValveBreath = 0.0196;
 constexpr double kHandCatchUp = 25.0;       // 1/s: how fast the hand closes on the wheel position
 // The radiated sound is the pallet flow's rate of change as from a small
-// source 1 m away; 1 Pa there (94 dB SPL) is digital full scale, so the notes
-// of the demo phrases read -9 on Reason's VU meter (the louder channel's RMS
-// over 300 ms, +12 dB) at their median (Tests/EngineTests.cpp, TypicalLevel). A bass, a chord and a triad at the arm's full pressure are
+// source 1 m away; 0.67 Pa there (90.5 dB SPL) is digital full scale, so the
+// notes of the demo phrases read -9 on Reason's VU meter (the louder channel's
+// RMS over 300 ms, +12 dB) at their median (Tests/EngineTests.cpp,
+// TypicalLevel). It was 1 Pa until the Grille's default fell from 9 kHz to
+// 1 kHz, which took 2.5 dB off them. A bass, a chord and a triad at the arm's full pressure are
 // some 23 dB louder; the output stage below keeps them out of the red. The
 // factory presets set their Volume so each sits within 1 dB of Init on a
 // moderate stroke (PresetsSitTogether).
-constexpr double kPascalToFullScale = 1.0;
+constexpr double kPascalToFullScale = 1.5;
 // Each register's trim on the treble side, so switching one does not jump the
 // level: on Init's controls and the reference stroke (Tests/EngineTests.cpp,
 // PresetsSitTogether), a C3, a C4-E4-G4 triad, a G4, a C5 and a C6 average the

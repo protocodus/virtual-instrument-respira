@@ -1005,3 +1005,59 @@ push, and even at Okada's figure a soft A2 takes six times the measured
 starts well soft but chokes on an accent, too large needs a harder push;
 accordionists.info forum, 2022), which corroborates the mechanism but sets
 no pressure. The full-pressure rule stays.
+
+## 2026-10-29 — the Grille fitted to two accordion sample libraries (owner asked; engineering)
+
+Not a listening decision: adopted under the owner's standing direction to
+calibrate against the recordings provided and to take well-grounded
+candidates, with A (before) and B (after) rendered for the owner to hear
+(pack `18-grille`, listening-2026-10-28).
+
+The owner supplied two more accordion sample libraries: La Melodiosa by
+Petri Pohjanmies (2026, CC BY), two treble ranks two octaves apart, each
+note held in two takes, and an old Hohner by Marek Kintosh (Pianobook,
+2024), two reeds a note, pitch-corrected and normalized. Neither is in this
+repository. `Tools/compare_accordion_tone.py` holds the protocol: held
+notes' octave bands against 1–2 kHz, Respira's Clarinet Solo (one 8' reed,
+about 150–420 Pa) from C3 to A5 against every library note there. Respira
+minus each library, the mean over notes, dB:
+
+| Grille | La Melodiosa 0.5–1, 2–4, 4–8, 8–16 kHz | Hohner, the same | RMS |
+| --- | --- | --- | --- |
+| 9 kHz (before) | −6.5, +5.6, +12.2, +15.2 | −2.9, +6.4, +6.5, +14.7 | 9.8 |
+| 2 kHz | −5.3, +3.4, +6.2, +6.5 | −1.5, +4.4, +0.3, +6.0 | 4.7 |
+| 1 kHz (shipping) | −3.6, +2.0, +3.7, +3.7 | +0.3, +3.1, −2.1, +3.3 | 2.9 |
+| 500 Hz | −1.9, +1.2, +2.6, +2.5 | +2.0, +2.4, −3.2, +2.2 | 2.3 |
+
+The excess is in the harmonics, not the breath: harmonic peaks alone give
+the same 6, 12 and 16 dB against La Melodiosa. It agrees with the
+bandoneon's 6, 7 and 15 dB and with the polka and Hussong recordings (README,
+Known gaps), and with the reed blocks on Pomberger's tuning jig, which hear
+Respira's own reed flow 4–14 dB too bright at its 11th–15th harmonics. It
+disagrees with the one published measurement up to its 20th harmonic
+(`CompareHarmonics`), which the cell matches; La Melodiosa's A#2–A3 sit
+7 dB further under it at the 15th–20th against the 5th–8th.
+
+No mechanism was found that grounds the difference: earlier entries rule
+out the grille compartment as a resonator, the chambers' ringing and their
+wall losses as too small, and each reed change tried moved other
+measurements away. So the Grille, already a voiced one-pole on the treble
+side, carries it. Its default falls from 9 kHz to 1 kHz: below 1 kHz the RMS
+gains under 0.6 dB down to 500 Hz while the Hohner's 0.5–1 and 4–8 kHz
+bands move away, so 1 kHz is where the two libraries pull equally. The
+presets keep their voiced spread, each scaled by the same ninth (667 Hz–
+1.6 kHz), and the range becomes 500 Hz–16 kHz. Through it, A#2–A3's
+15th–20th harmonics sit 6 dB further under their 5th–8th than the
+measurement's.
+
+The treble lost 2.5 dB in the demo phrases, so the output reference rises
+3.5 dB (full scale 0.67 Pa, 90.5 dB SPL, from 1 Pa) and the phrases read
+−9.1 VU at their median (−8.9 before; p10 −14.5, p90 −6.1). The bass side
+and the mechanism do not pass the grille, so they sit about 2.5 dB higher
+against the treble than before. The presets stay within 0.43 dB of Init,
+the registers within 0.68 dB of Musette, and the hardest strokes read
+−1.7 VU at most, peaking at −1.5 dBFS.
+
+What the choice licenses: a treble as dark as two recorded accordions, as a
+voicing of the output. It does not say why the model's own top octaves are
+brighter than theirs, and it measures no grille.

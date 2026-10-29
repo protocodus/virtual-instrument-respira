@@ -45,7 +45,14 @@ inline constexpr std::array<ControlInfo, kControlCount> kControlInfo { {
     { "musette", "Musette", 0.0, 40.0, 22.0, 0, Curve::kLinear, "cents" },
     { "bellows", "Bellows", 0.5, 8.0, 2.0, 0, Curve::kLog, "L" },
     { "assist", "Assist", 0.0, 1.0, 0.5, 0, Curve::kLinear, "" },
-    { "grille", "Grille", 2000.0, 16000.0, 9000.0, 0, Curve::kLog, "Hz" },
+    // A one-pole at the treble side's output, voiced, not a model of a grille.
+    // The default is fitted to two sample libraries' held single notes (La
+    // Melodiosa by Petri Pohjanmies, CC BY; a Hohner by Marek Kintosh,
+    // Pianobook): at 9 kHz Clarinet Solo's C3-A5 read 6, 9 and 15 dB more than
+    // theirs at 2-4, 4-8 and 8-16 kHz against 1-2 kHz; at 1 kHz the octave
+    // bands from 500 Hz up sit within 4 dB of both on average (RMS 3.0 dB
+    // against 9.8; Docs/decisions.md).
+    { "grille", "Grille", 500.0, 16000.0, 1000.0, 0, Curve::kLog, "Hz" },
     { "width", "Width", 0.0, 1.0, 0.6, 0, Curve::kLinear, "" },
     { "bass", "Bass", -24.0, 6.0, 0.0, 0, Curve::kLinear, "dB" },
     { "volume", "Volume", -36.0, 6.0, 0.0, 0, Curve::kLinear, "dB" },

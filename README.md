@@ -68,6 +68,12 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 - From D6 up, Oboe and Master no longer double the 8' with the broken-back
   4' in unison, which beat slowly and could almost cancel a held note; the
   top octave holds a steady level.
+- The treble is much darker: the Grille's default falls from 9 kHz to 1 kHz,
+  fitted to two accordion sample libraries' held notes, which Respira
+  out-shone by 6–15 dB above 2 kHz. The presets' grilles fall in proportion
+  and the range now reaches 500 Hz, so the old brightness is still a turn
+  away. Ordinary playing still reads about −9 VU; the bass side and the keys,
+  which do not pass the grille, sit about 2.5 dB higher against the treble.
 - A key held while the bellows is pushed hard to the arm's full pressure no
   longer stays silent: many notes from C3 to G#4 could, until the pressure
   eased. Each tongue is now set far enough above its plate to stay short of
@@ -171,8 +177,9 @@ the pressure across a closing gap rises while the tongue moves into the slot;
 the force leads the displacement and the tongue self-oscillates (Fletcher
 1979; Ricot, Caussé and Misdariis 2005; Millot and Baumann 2007). Nothing is
 an oscillator: no air, no sound. The radiated sound is the rate of change of
-the flow out of the pallet hole, as from a small source 1 m away, with 1 Pa
-(94 dB SPL) at digital full scale.
+the flow out of the pallet hole, as from a small source 1 m away, with
+0.67 Pa (90.5 dB SPL) at digital full scale, where ordinary playing reads
+about −9 on Reason's VU meter.
 
 The jet through the gap is turbulent. Its eddies are the size of the gap
 where they form, so along the gap's edge each millimetre holds one over the
@@ -291,7 +298,14 @@ slots in 1 mm sheet would put its resonance where the compartment's depth is
 over a quarter of a wavelength, outside what a lumped model describes, and as
 a layer of air between the pallet board and the grille, averaged over those
 depths, it passes the reeds within 3 dB up to 16 kHz. The treble reeds sound
-straight out; **Grille** sets the treble side's brightness.
+straight out; **Grille** sets the treble side's brightness, a one-pole
+low-pass, voiced rather than modelled. Its default, 1 kHz, is fitted to two
+sample libraries' held notes (La Melodiosa by Petri Pohjanmies, CC BY, and
+a Hohner by Marek Kintosh): at 9 kHz, as before, Clarinet Solo's C3–A5 read
+6, 9 and 15 dB more than theirs at 2–4, 4–8 and 8–16 kHz against 1–2 kHz;
+at 1 kHz the octave bands from 500 Hz up sit within 4 dB of both on
+average (`Tools/compare_accordion_tone.py`). The presets keep their voiced
+spread, each scaled the same way (667 Hz–1.6 kHz).
 
 The bass pallets open into the bass box, the space under the bass end cover
 round the bass mechanism, which vents through the cover's holes: a
@@ -355,7 +369,7 @@ ear); it takes hold at once and lets go over 300 ms, slower than a musette's
 beating.
 Its peak limiter looks 2 ms ahead (96 samples at 48 kHz, the engine's
 latency) and holds what gets past at −1.5 dBFS with no gain step. The hardest
-strokes read −2.1 VU at most. Volume sets the level going into the stage.
+strokes read −1.7 VU at most. Volume sets the level going into the stage.
 
 ### Controls, presets and MIDI
 
@@ -365,7 +379,7 @@ strokes read −2.1 VU at most. Volume sets the level going into the stage.
 | Musette | 0–40 cents | tremolo detune at A4 |
 | Bellows | 0.5–8 L | air one sweep of the wheel moves |
 | Assist | 0–1 | how far the hand's air follows the open reeds |
-| Grille | 2–16 kHz | brightness of the treble grille |
+| Grille | 500 Hz–16 kHz | brightness of the treble side |
 | Width | 0–1 | treble keys across the right, bass side to the left |
 | Bass | −24 to +6 dB | bass and chord side level |
 | Volume | −36 to +6 dB | level into the output stage |
@@ -398,8 +412,9 @@ a pitch wheel should do what it says.
 - **Voiced, not measured.** Reed dimensions, chambers, pallets, the bellows
   stiffness, the reeds' loss and the turbulence levels are typical values or
   estimates scaled with pitch, and the full-scale reference is set so the
-  demo phrases read −9 VU, not by a measured level; no recording of a real accordion is
-  part of the model or its tests.
+  demo phrases read −9 VU, not by a measured level. The Grille's default is
+  fitted to two sample libraries' held notes, but no recording of a real
+  accordion is part of the model or its tests.
 - **CPU.** A full-register chord over bass and chords (28 chambers) takes
   under a third of one core in the development container at 48 kHz (0.30×
   realtime for the Master Tutti demo, 0.02× for the single clarinet reed),
@@ -436,15 +451,19 @@ a pitch wheel should do what it says.
   (Elejalde-García, Macho-Stadler and Llanos-Vázquez 2021, a concert
   accordion's 8' reeds from A#2 to A3 played mezzo forte, about 70 dBA at
   50 cm) reaches only the 20th harmonic, 4.4 kHz, and the reed chamber's duct
-  matches it there. Above it the evidence is weak. Against the bandoneon
-  samples' held notes (G2–A5 on Tango Bandoneon, harmonics per octave against
-  1–2 kHz) Respira is brighter by 6 dB on average at 2–4 kHz, 7 dB at
-  4–8 kHz and 15 dB at 8–16 kHz; against 500 Hz–1 kHz the demos read 3–14 dB more than
+  matches it there. Every recording is darker above 2 kHz. With the Grille
+  at 9 kHz, as it was, Respira's held notes read 6, 9 and 15 dB more than
+  two accordion sample libraries' (La Melodiosa and a Hohner) at 2–4, 4–8
+  and 8–16 kHz against 1–2 kHz, and 6, 7 and 15 dB more than a bandoneon's;
+  against 500 Hz–1 kHz the demos read 3–14 dB more than
   a polka recording at 2–4 kHz and 11–20 dB more above 4 kHz (Bassoon Low,
-  through the bass box, 4 dB), and more again than a Hussong recording. The
-  two recordings differ from each other by 10–15 dB up there, a bandoneon is
-  not an accordion, and none of their microphones, distances or rooms is
-  known. The chambers' ringing is not the cause: radiation at the pallet
+  through the bass box, 4 dB), and more again than a Hussong recording.
+  None of their microphones, distances or rooms is known, but they agree.
+  The Grille's default now takes that difference off at the output
+  (Radiation): a voiced low-pass, not a mechanism, so the reeds and chambers
+  themselves are as bright as before. Through it, A#2–A3's 15th–20th
+  harmonics sit 6 dB further under their 5th–8th than the measurement's;
+  La Melodiosa's same notes sit 7 dB further under. The chambers' ringing is not the cause: radiation at the pallet
   hole took their resonances from Q 70–370 to 26–48, and the demos above
   4 kHz by only 0.6–2.4 dB. The duct leaves out its wall losses (they would
   take another 2–4 dB off its resonances' peaks), the chamber's
@@ -679,7 +698,10 @@ accordion measurement; `CompareBandoneon [top pressure]` sets how their pitch
 and tone follow their loudness, and how flat their attacks start, against a
 bandoneon's, whose numbers
 `python3 Tools/measure_bandoneon.py <library folder>` measures from the
-recordings (not in this repository); `GenerateReedTuning Source/DSP/ReedTuning.h` re-tunes every reed after
+recordings (not in this repository); `python3 -I
+Tools/compare_accordion_tone.py --melodiosa <dir> --hohner <dir> --render
+build-dsp/RenderRespira` sets held notes' octave bands at each Grille
+setting against two accordion libraries (not in this repository either); `GenerateReedTuning Source/DSP/ReedTuning.h` re-tunes every reed after
 a change to the reed model. `python3 Tools/fit_bellows.py
 build-dsp/RenderRespira` re-fits the demo strokes and
 `python3 Tools/write_preset_midi.py` writes the demo MIDI.
