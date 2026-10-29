@@ -283,7 +283,10 @@ Master is 1.9 dB louder than Musette and a single rank 3.5–3.9 dB softer, as
 on a real accordion, but a switch here changes the colour, not the level.
 **Musette** sets the M+ detune at A4 in cents; the beat
 rises with pitch as f^0.7, as tuners set tremolo reeds, and M− sits the same
-interval below.
+interval below. A Hohner's two-reed musette (Marek Kintosh's samples, C4–C6)
+beats as f^0.51 (0.25–0.75 at 90 %, its notes scattering 28 % about the
+line), 4.6 Hz or 18 cents at A4, between Violin Folk's 14 cents and Init's
+22 (`Tools/measure_musette.py`).
 
 A bass button sounds two reeds, a 16' (E1–D♯2) and an 8' (E2–D♯3); a chord
 button sounds one pitch class on an 8' (F♯3–F4) and a 4' (F♯4–F5), so any
@@ -701,7 +704,9 @@ bandoneon's, whose numbers
 recordings (not in this repository); `python3 -I
 Tools/compare_accordion_tone.py --melodiosa <dir> --hohner <dir> --render
 build-dsp/RenderRespira` sets held notes' octave bands at each Grille
-setting against two accordion libraries (not in this repository either); `GenerateReedTuning Source/DSP/ReedTuning.h` re-tunes every reed after
+setting against two accordion libraries (not in this repository either),
+and `python3 -I Tools/measure_musette.py --hohner <dir>` measures one's
+musette beats; `GenerateReedTuning Source/DSP/ReedTuning.h` re-tunes every reed after
 a change to the reed model. `python3 Tools/fit_bellows.py
 build-dsp/RenderRespira` re-fits the demo strokes and
 `python3 Tools/write_preset_midi.py` writes the demo MIDI.
