@@ -1165,6 +1165,13 @@ tuned, and a take's pressure moves its reeds' pitches by a cent or two, which
 the takes' spread bounds. A standard deviation of 3 cents a reed (uniform,
 ±5.2) stands for all three.
 
+What La Melodiosa's two takes of a note (ba, va) are is not stated. They sit
+0–6.5 cents apart (2.4 standard deviation), not following their level
+(−0.13 cents per dB, r = −0.06), and in register I va is 2.6 cents sharper
+on average. If they are the two bellows directions, a note's push and pull
+reeds agree more closely than two reeds drawn independently with this
+scatter (4.2 apart), as Respira's are; that is left as it is.
+
 So the octave ranks beat slowly against each other in Bandoneon, Organ,
 Master and the bass buttons, the musette's beat scatters 20 % about its law
 with Init's detune (the Hohner's 28 %; it was 3 %), and a note's push and pull
