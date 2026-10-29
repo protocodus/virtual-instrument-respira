@@ -542,10 +542,14 @@ a pitch wheel should do what it says.
   before a note is heard is unchecked, but how fast it grows once heard can be
   read from the bandoneon library's staccato notes (one take each; 2 ms RMS,
   from −20 to −3 dB of the take's peak): 28–42 ms from C4 to D5, 48–53 ms at
-  A5 and C6. Tango Bandoneon played an octave up, so that the same two reeds
-  sound, grows in 12–30 ms with the bellows at 730 Pa (18–20 ms from F5 to
-  C6) and 7–11 ms at 1.8 kPa, faster than the bandoneon at either, though the
-  pressure its staccato notes were played at is not known.
+  A5 and C6. Each of those takes also holds a second note about a semitone
+  below, as loud as the first at its loudest and gone sooner, so these are
+  the two notes' rise together; in the held takes the slopes above come
+  from it lies 44–56 dB down, at their floor. Tango Bandoneon played an
+  octave up, so that the same two reeds sound, grows in 12–30 ms with the
+  bellows at 730 Pa (18–20 ms from F5 to C6) and 7–11 ms at 1.8 kPa, faster
+  than the bandoneon at either, though the pressure its staccato notes were
+  played at is not known.
 - **Low reeds start late.** When the bellows reaches the arm's full pressure
   before a low reed swings, the tongue sits near the slot's mouth and its
   swing grows slowly: on Bassoon with the wheel swept in 1.5 s, C3–F#3 reach
