@@ -41,6 +41,10 @@ constexpr double kClearance = 0.03e-3;
 // Laminar term of the gap pressure drop, so the flow law stays smooth near zero
 // flow: it equals the Bernoulli term at about 1 m/s.
 constexpr double kLaminar = 0.6;
+constexpr double kMu = 1.8e-5;   // air's viscosity, Pa s
+// How far a pallet's pad covers the board round its hole: an estimate, as no
+// measurement was found. 1-6 mm moves a half-pressed A#2-A3 within a cent.
+constexpr double kPadOverlap = 0.003;
 
 struct ReedSpec {
     double length = 0.026, width = 0.0024;   // tongue, m
@@ -197,6 +201,7 @@ struct ChamberSpec {
     double ventArea = 0.0;           // this chamber's share of the open pallet hole, m^2
     double palletInertance = 0.0;    // air mass of the open pallet hole, kg/m^4
     double endInertance = 0.0;       // the part of it that is the outer end's air mass, kg/m^4
+    double padFilm = 0.0;            // the air film under the pad's rim, Pa s/m^3 at an opening of 1
     double channelInertance = 0.0;   // air mass from the last section's middle to the hole, kg/m^4
     int sections = 1;
     double sectionStiffness = 0.0;   // rho c^2 / a section's volume, Pa per m^3
@@ -239,6 +244,8 @@ inline ChamberSpec MakeChamber(const ReedSpec& r, double f0, bool bassBox, doubl
     c.ventArea = 6.0e-5 * std::sqrt(L / 0.026) * (bassBox ? 1.7 : 1.0);
     c.palletInertance = path * kRho * (0.006 + 1.7 * std::sqrt(c.ventArea / kPi)) / c.ventArea;
     c.endInertance = kRho * 0.85 * std::sqrt(c.ventArea / kPi) / c.ventArea;
+    const double rim = 2.0 * std::sqrt(kPi * c.ventArea);
+    c.padFilm = 12.0 * kMu * kPadOverlap * rim * rim / (c.ventArea * c.ventArea * c.ventArea);
     const auto inertance = [&] { return c.palletInertance + path * kRho * 0.6 * L / (width * depth); };
     const double minResonance = 1.4 * f0, w = 2.0 * kPi * minResonance;
     // f_H = 1 / (2 pi sqrt(M V / (rho c^2))), lumped: shrink the depth until
@@ -280,6 +287,14 @@ struct CellState {
 // rising as f^2 under the mass well below ka = 1, and rho c / A above. Without
 // it the chambers' standing waves rang at Q 70-370 (A3, E4 and A5 under a
 // swept flow); with it at 26-48.
+//
+// A pad lifted h opens a ring round the hole's rim (as a circle, like its end
+// corrections), rim h = open A, and the air leaves through the film between
+// the pad and the board: plane Poiseuille flow, 12 mu kPadOverlap / (rim h^3).
+// It takes over from the orifice below about a tenth of the opening, so the
+// flow comes to rest smoothly as the pad lands. Without it the hole's air
+// mass, over the closing opening, kept the flow going until the pallet shut
+// and cut it in one step: a click at every key release.
 struct Vent {
     double inertia = 0.0, a = 0.0, b = 0.0, b2 = 0.0;
     double end = 0.0, endStep = 0.0;   // the outer end's load per step, and dt over its air mass
@@ -294,7 +309,7 @@ inline Vent MakeVent(const ChamberSpec& c, double open, double invDt) {
     v.endStep = open / (c.endInertance * invDt);
     v.end = 1.0 / (v.endStep + area / (kRhoC2 / 343.0));
     v.a = 0.5 * kRho / (kCd * kCd * area * area);
-    v.b = kLaminar / area + v.inertia + v.end;
+    v.b = kLaminar / area + c.padFilm / (open * open * open) + v.inertia + v.end;
     v.b2 = v.b * v.b;
     v.open = true;
     return v;

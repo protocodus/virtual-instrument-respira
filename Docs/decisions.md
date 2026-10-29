@@ -768,3 +768,35 @@ Probed offline with the tuning regenerated:
 The plates' thickness, the sets and the tip weights were all voiced on the
 orifice law, so the channel law would need them voiced again against those
 measurements, which is a direction for the owner, not a candidate.
+
+## 2026-10-29 — the air film under a closing pallet (engineering)
+
+A scan of the demos for clicks with the mechanism all but silent (Mechanics
+−40 dB) found one at the end of every short chord. The hole's air mass,
+divided by the closing opening, kept the flow going (it fell only as the
+square root of the opening) until the pallet shut, and then the vent cut it
+in one step. On a sounding A4 at 500 Pa the radiated source jumped from 2.8 %
+of its RMS to zero; on the Tango Bandoneon demo's first chord, whose reeds
+had barely started, it was a click, 8–20 kHz, 40 dB above the 100 ms
+around it.
+Under the default Mechanics the pad's knock covers it.
+
+As the pad lands, the last tenths of a millimetre are a film of air between
+pad and board: plane Poiseuille flow, 12 μ w / (P h³), with P the hole's rim
+as a circle (as its end corrections take it), h from the opening (P h = open
+A) and w the pad's overlap round the hole, 3 mm, an estimate. It takes over
+from the orifice below about a tenth of the opening and brings the flow to
+rest smoothly: the last step's radiated source is 10⁻¹³ of what it was. Its
+one constant beyond air's viscosity is the overlap; from 1 to 6 mm the
+closing stays smooth and a half-pressed A#2–A3 falls 8.8–9.9 cents.
+
+- `CompareHarmonics`: harmonics within 0.1 dB; half-pressed, 9.1 cents and
+  12.5 dB (8.6 and 12.2), against the measured 16.1 and 11.1.
+- `HalfPressedKeys`: the C4 falls 5.115 Hz per kPa half-pressed (5.109), so
+  the half-pressed opening stands on Okada's slope.
+- The reed tuning moves 0.16 cents at most; the demos stay within 0.1 dB in
+  every octave band but Bright Oboe's 8–16 kHz (0.5 dB more), and the
+  05-bend passage's bends within 0.4 cents and 0.2 dB.
+- Pack `16-release` (listening-2026-10-28): the Tango Bandoneon demo at
+  Mechanics −40 dB, A before, B the film. Shipped under the owner's rule to
+  accept grounded candidates; the verdict is pending.

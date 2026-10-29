@@ -105,6 +105,10 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
   meeting the room's resistance as well as its own mass: the reed chambers'
   resonances ring at Q 26–48 instead of 70–370, and the demos are 0.6–1.5 dB
   softer at 4–8 kHz and up to 2.4 dB above.
+- A key let go no longer clicks: as a pallet's pad lands, the air leaving
+  through the thin film under its rim slows to rest instead of being cut off
+  when the pallet shuts. A half-pressed key bends a little further (9.1 cents
+  instead of 8.6 at 70 dBA).
 
 ## Downloads
 
@@ -228,14 +232,16 @@ decimated by two half-band allpass stages; Oversampling at 2× or 4× runs them
 at eight or sixteen times the host rate through three or four stages, with
 the gap turbulence scaled so its spectrum stays the same at every host rate
 and Oversampling. The pallet lifts in 12 ms for a soft key and 3 ms for a hard
-one, along a raised cosine, so velocity sets the attack, and closes in 8 ms.
+one, along a raised cosine, so velocity sets the attack, and closes in 8 ms;
+in the last tenths of a millimetre the air leaves through the film under the
+pad's rim, a viscous gap that brings it to rest as the pad lands.
 Channel pressure lets a held key rise part way: at full pressure its travel
 rests at 0.38, a pallet opening of 0.32, where the model's C4 falls the
 5.1 Hz per kPa of bellows pressure measured with the pallet lifted 1 mm
 (Adachi et al., Forum Acusticum 2026); fully open it falls 2.3 Hz/kPa
 against the measured 2.5. At the 70 dBA of a published bend measurement, a
-half-pressed A#2–A3 at a steady bellows pressure falls 8.6 cents and loses
-12 dB, where a player's fell 16 cents and lost 11 with the finger alone
+half-pressed A#2–A3 at a steady bellows pressure falls 9.1 cents and loses
+12.5 dB, where a player's fell 16 cents and lost 11 with the finger alone
 (Known gaps).
 Up to 72 chambers sound at once; a new one takes
 the oldest released chamber first.
@@ -496,8 +502,8 @@ a pitch wheel should do what it says.
   paper a player bent A#2–A3 by closing the pallet part way at a steady
   bellows pressure: 16 cents flat on average and 11 dB quieter (the mean
   over the first twenty harmonics). Respira's 8' cells at that loudness, with
-  the pallet opened 0.32 as full channel pressure holds it, fall 8.6 cents
-  and 12 dB (`CompareHarmonics`). The player found no bend possible from C6
+  the pallet opened 0.32 as full channel pressure holds it, fall 9.1 cents
+  and 12.5 dB (`CompareHarmonics`). The player found no bend possible from C6
   up, on tongues with no valves; Respira's all have valves, and a single cell
   from E5 to G6 bends 12–23 cents at 200 Pa and 22–28 at 400.
   At a steady wheel, Assist counts a held key in full however far channel
