@@ -911,3 +911,38 @@ about 70 dBA an A2 then takes 264 ms from −50 to −5 dB (253 now) and an A3
 128 (114). One plate of one instrument, in another register, does not
 outweigh that; the estimate stays, and the comment beside it and the README
 cite the measurement.
+
+## 2026-10-29 — Okada's measured set, not kept (engineering)
+
+Not a listening decision; recorded so it is not tried again unexamined. At
+the measured accordion's piano (about 55 dBA at 50 cm) its finger attacks
+took 60–140 ms from −50 to −5 dB of the fundamental (Llanos-Vázquez et al.
+2014, Table I, pulled). Respira's 8' cells, one at a time with the pallet
+opened over 6 ms at a steady pull, at the same loudness and at 70 dBA, ms:
+
+| | A2 | A3 | A4 | A5 |
+| --- | --- | --- | --- | --- |
+| measured, piano / mezzo forte | 110 / 80 | 90 / 110 | 90 / 60 | 60 / 50 |
+| shipping, 55 / 70 dBA | 958 / 240 | 964 / 102 | 385 / 50 | 424 / 36 |
+| every set × 0.375, 55 / 70 dBA | 408 / 164 | 155 / 62 | 125 / 52 | 135 / 35 |
+
+× 0.375 puts the C4's set at Okada's measured 0.3 mm (Adachi et al., Forum
+Acusticum 2026, Table 1). Near its starting pressure a reed set high swings
+far before its gap shuts each cycle, so it is already loud there and grows
+slowly; set lower, the same loudness lies further above the start. A lower
+quality factor does nothing of the kind (half or a quarter of it: within
+10 % at 70 dBA, slower at 55 dBA).
+
+The set is high for `HardPushSpeaks`. With the sets from MakeReed's length
+rule × 0.7 (0.3 mm at C4) and neither full-pressure rule, the tuning table
+regenerated: on its stroke every held key from C3 to C5 stays silent
+(−75 dBFS) on Bassoon Low; with the stroke's second half stretched to a
+crescendo over 1.6 s, C3–G#3 still do. Each bends into its slot before it
+swings. Brought to a steady pull with the key already held they all speak,
+sooner than now (C3 in 865 ms at 50 Pa, 445 at 170 and 215 at 600, against
+1575, 585 and 225), and `CompareHarmonics` moves little (2nd–4th −8.0 dB,
+half-pressed −9.7 cents and −12.1 dB). The shipping sets scaled by 0.8 or 0.6
+fail the stroke too, so there is no lower set that keeps it, and adding the
+gap's own air mass (0.5 √(S/π), Adachi et al.) to the 0.7 sets neither starts
+them nor keeps the 4th harmonic (10.8 dB under the measurement). The set
+stays; the gap is in the README (Known gaps, "Soft notes speak late").

@@ -561,6 +561,22 @@ a pitch wheel should do what it says.
   which the impulse-tested Q of 200–400 (above) does not allow, and a set
   half as high again at 31. So soft playing sounds from a lighter bellows
   than an accordion's may need; the gap is not traced.
+- **Soft notes speak late.** At the measured accordion's piano (about
+  55 dBA at 50 cm), its finger attacks took 60–140 ms from −50 to −5 dB of
+  the fundamental from A2 to B6 (Llanos-Vázquez et al. 2014). Respira's 8'
+  cells at that loudness take about 960 ms at A2 and A3, 385 at A4 and 425 at
+  A5, so a soft staccato note can end before it has spoken. Its reeds sit
+  2.7 times as high above their plates as Okada's measured C4 (0.8 mm
+  against 0.3, above), so that a key held while the bellows is slammed to
+  the arm's full pressure still speaks. With every set scaled to Okada's they
+  take 410, 155, 125 and 135 ms, and at 70 dBA an A2 165 ms instead of 240,
+  but then C3–C5 held through `HardPushSpeaks`' stroke bend into their slots
+  before they swing and stay silent, C3–G#3 even when its second stroke is
+  a crescendo over 1.6 s; sets 0.8 or 0.6 times today's choke on it too, and
+  adding the gap's own air mass (Adachi et al.) neither starts them nor
+  keeps A#2–A3's 4th harmonic (11 dB under the measurement). Underneath both
+  is how slowly the C3–G#3 swings grow even at 600 Pa (160–225 ms to
+  within 3 dB of their level), which no measured quantity here explains.
 - **The top octave needs mezzo forte to start.** With the bellows already at
   530 Pa, an A4 comes within 3 dB of its level about 38 ms after the key, a
   C6 about 36 ms and a C7 about 72 ms. Against the one measurement with key
