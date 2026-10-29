@@ -690,6 +690,18 @@ a pitch wheel should do what it says.
   start 21–35 cents flat there and 7–18 at 3 dB down, but held low keys then
   go silent under a full push (Soft notes speak late). From C4 up the
   bandoneon's single takes scatter by up to 37 cents, so they say little.
+  A key pressed while the bellows already draws differs: La Melodiosa's
+  single 16' reeds (two takes a note, the same frames against each take's
+  pitch from 1 s on) are still 7–22 cents flat on D#2–C3 when their level
+  first comes within 1 dB of where it stays, and take 0.1–0.8 s more to come
+  within 3 cents; from D#3 up, and on its bass reeds D3–B3, at most 0.12 s.
+  Respira's 8' cells, the pallet opened under a steady 0.3–1.2 kPa pull, are
+  2–7 cents flat there and within 3 cents at most 0.1 s later: their pitch
+  settles with their swing, the recordings' after their level. The
+  oscillating-plate drag law (The top octave needs mezzo forte to start)
+  lengthens that by at most 0.12 s, and nothing found here says what holds
+  a real low reed flat at full level. Neither measure depends on where the
+  library trimmed its takes' starts.
 - **The demos' bellows is fitted, not played.** Each stroke's travel comes
   from a target pressure through `Tools/fit_bellows.py`; a player's hand would
   be less even.
