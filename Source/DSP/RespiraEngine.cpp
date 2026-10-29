@@ -675,50 +675,74 @@ void Engine::Render(float* left, float* right, int frames) {
         float tl[kMaxOversample] = {}, tr[kMaxOversample] = {}, b[kMaxOversample] = {};
         double drawn = 0.0, open = 0.0;
         int active = 0, held = 0;
+        // One cell's steps are a serial chain of divisions and square roots,
+        // so the cells take each internal step together, where the processor
+        // can overlap them. Each cell's turbulence draws and its share of the
+        // bellows' air are taken in the order of one cell's steps after
+        // another, so the sound is the same to the bit.
+        Cell* live[kMaxCells];
+        double ec[kMaxCells], breath[kMaxCells], travel[kMaxCells];
+        double draws[kMaxCells * kMaxOversample], taken[kMaxCells * kMaxOversample];
         for (auto& c : cells) {
             if (!c.active) continue;
-            ++active;
+            const int j = active++;
+            live[j] = &c;
             if (c.held) ++held;
             // Width glides like the other levels, so automating it never steps.
             c.gainL += glide * (c.gainLTarget - c.gainL);
             c.gainR += glide * (c.gainRTarget - c.gainR);
             const CellSpec& spec = c.spec;
-            const double travel = c.held ? c.depth : 0.0;
+            travel[j] = c.held ? c.depth : 0.0;
             // The breath's two one-pole stages at the eddies' rate in the
             // flowing reed's gap, scaled back to the white draw's variance; once
             // a host sample, some 20 times a cycle of the highest reed.
             const bool pushing = pressure >= 0.0;
             const ReedSpec& flowing = pushing ? spec.push : spec.pull;
             const double tip = GapArea(flowing, (pushing ? c.state.push : c.state.pull).x) / flowing.edge;
-            const double eddy = jetStep / (flowing.eddyShare * tip), ec = eddy / (1.0 + eddy);
-            const double breath = flowing.breath * Sqrt(tip / Max(CascadeVariance(ec), 1.0e-30));
+            const double eddy = jetStep / (flowing.eddyShare * tip);
+            ec[j] = eddy / (1.0 + eddy);
+            breath[j] = flowing.breath * Sqrt(tip / Max(CascadeVariance(ec[j]), 1.0e-30));
+            // Turbulence in the gap: a small random force that also seeds the
+            // reeds, and the fluctuation of the jet's flow.
             for (int k = 0; k < oversample; ++k) {
-                if (c.open != travel) {
-                    c.open = c.open < travel ? Min(travel, c.open + c.openRate) : Max(travel, c.open - closeRate);
+                noise = noise * 1664525u + 1013904223u;
+                draws[j * oversample + k] = Unit(noise);
+            }
+        }
+        for (int k = 0; k < oversample; ++k) {
+            for (int j = 0; j < active; ++j) {
+                Cell& c = *live[j];
+                const CellSpec& spec = c.spec;
+                if (c.open != travel[j]) {
+                    c.open = c.open < travel[j] ? Min(travel[j], c.open + c.openRate) : Max(travel[j], c.open - closeRate);
                     // The pallet lifts off and settles smoothly: the hole area
                     // follows a raised cosine of the key travel, so the jet
                     // starts and stops without a step in the radiated flow.
                     c.lift = c.open >= 1.0 ? 1.0 : c.open <= 0.0 ? 0.0 : 0.5 - 0.5 * std::cos(kPi * c.open);
                     c.vent = MakeVent(spec.chamber, c.lift, invDtIn);
                 }
-                // Turbulence in the gap: a small random force that also seeds the
-                // reeds, and the fluctuation of the jet's flow.
-                noise = noise * 1664525u + 1013904223u;
-                const double draw = Unit(noise);
-                c.breathA += ec * (draw - c.breathA);
-                c.breathB += ec * (c.breathA - c.breathB);
+                const double draw = draws[j * oversample + k];
+                c.breathA += ec[j] * (draw - c.breathA);
+                c.breathB += ec[j] * (c.breathA - c.breathB);
                 const double pushForce = turbulence * draw * spec.push.area * Abs(pressure);
+                double& share = taken[j * oversample + k];
+                share = 0.0;
                 const double out = StepCell(spec.push, spec.pull, spec.chamber, c.vent, c.state, pressure, dtIn,
-                                            invDtIn, pushForce, -pushForce, drawn, bend2, breath * c.breathB);
+                                            invDtIn, pushForce, -pushForce, share, bend2, breath[j] * c.breathB);
                 const float o = static_cast<float>(out);
                 if (spec.bass) b[k] += o;
                 else { tl[k] += o * c.gainL; tr[k] += o * c.gainR; }
             }
+        }
+        for (int j = 0; j < active; ++j) {
+            Cell& c = *live[j];
+            const CellSpec& spec = c.spec;
+            for (int k = 0; k < oversample; ++k) drawn += taken[j * oversample + k];
             // Assist counts a held key in full once its pallet is down, however
             // far channel pressure holds it: a half-open pallet passes 0.3-0.9
             // of the open air, not its share of the opening, and counting the
             // opening took the hand's air away, so half-pressed low notes died.
-            c.settled = c.settled || (c.held && c.open == travel);
+            c.settled = c.settled || (c.held && c.open == travel[j]);
             const double full = c.depth >= 1.0 ? 1.0 : 0.5 - 0.5 * std::cos(kPi * c.depth);
             open += (c.held && c.settled ? 1.0 : Min(1.0, c.lift / full)) * spec.airWeight;
             if (!c.held && c.open <= 0.0) {
