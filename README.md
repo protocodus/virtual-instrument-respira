@@ -636,15 +636,18 @@ a pitch wheel should do what it says.
 - **Low notes rise into pitch.** A reed sounds flatter while its swing is
   small, and Respira's low swings grow slowly, so a low note starts flat and
   rises. Measured as the bandoneon library's held notes are
-  (`CompareBandoneon 700`: 100 ms frames; the pitch where the attack first
-  comes within 10 and 3 dB of its loudest, against the note's own
-  pitch-against-loudness line), the bandoneon's C2 starts 45 cents flat
-  10 dB down, as Respira's does, but from E2 to A3 it is 3–17 cents flat
-  there and 0–8 at 3 dB down. Respira's 8' cells, the pull raised to 700 Pa
-  over 0.3–1.5 s, are 23–42 cents flat 10 dB down from E2 to A3 and still
-  10–18 at 3 dB down from E2 to D3, whatever the pull's speed, as their
-  growth sets the pace. From E4 up the bandoneon is within 4 cents 10 dB
-  down and Respira 1–26, depending on how fast the pull rises.
+  (`CompareBandoneon 700`: 100 ms frames; the pitch of the note's own reed
+  where the attack first comes within 10 and 3 dB of its loudest, against
+  the note's own pitch-against-loudness line), the bandoneon's E2–B2 start
+  23–31 cents flat 10 dB down and 9–11 at 3 dB down, and Respira's 8' cells,
+  the pull raised to 700 Pa over 0.3–1.5 s, 32–42 and 15–18. From D3 to A3
+  the bandoneon is within 11 cents 10 dB down and 2 at 3 dB down, where
+  Respira is 22–42 and 1–19, less the slower the pull; its C2 starts flatter
+  than Respira's (58 cents against 44–48). Most of the E2–B2 gap 10 dB down
+  is the set: sized for 1.5 kPa in place of the arm's full 2.5, the cells
+  start 21–35 cents flat there and 7–18 at 3 dB down, but held low keys then
+  go silent under a full push (Soft notes speak late). From C4 up the
+  bandoneon's single takes scatter by up to 37 cents, so they say little.
 - **The demos' bellows is fitted, not played.** Each stroke's travel comes
   from a target pressure through `Tools/fit_bellows.py`; a player's hand would
   be less even.

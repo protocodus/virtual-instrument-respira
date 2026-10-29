@@ -27,11 +27,14 @@ Each note has two reeds an octave apart, so only the odd harmonics (3 to 15)
 belong to the note's reed alone; the even ones mix in the octave reed.
 
 The attack's pitch: the same takes in 100 ms frames every 10 ms, the pitch
-against the level fitted as above over the loudest 30 dB, and the frames where
-the attack first comes within 10 and 3 dB of the take's loudest set against
-that line, in cents (negative is flat), averaged over a note's takes. A reed
-sounds flatter while its swing is small; the player's bellows sets how fast
-the attack rises, which the recordings do not give.
+of the note's own reed (the power-weighted mean of f_k / k over k = 1, 3, 5
+and 7) against the level fitted as above over the loudest 30 dB, and the
+frames where the attack first comes within 10 and 3 dB of the take's loudest
+set against that line, in cents (negative is flat), averaged over a note's
+takes. The octave reed speaks sooner, so the pitch from k = 1..8 read the
+low attacks 10-25 cents less flat. A reed sounds flatter while its swing is
+small; the player's bellows sets how fast the attack rises, which the
+recordings do not give.
 """
 from pathlib import Path
 import re
@@ -47,6 +50,7 @@ SHARP_CENTS = 12.0
 HARMONICS = 16
 ODD = (3, 5, 7, 9, 11, 13, 15)
 ONSET = (-10, -3)
+OWN = np.array([1, 3, 5, 7])
 
 # The library's WAVs carry chunks scipy does not read; the audio is unaffected.
 warnings.filterwarnings("ignore", category=wavfile.WavFileWarning)
@@ -94,7 +98,10 @@ def frames(path, key, width_s=0.15, hop_s=0.05):
         levels, freqs = harmonics(frame, rate, f0)
         power = 10 ** (levels[:8] / 10)
         pitch = np.nansum(freqs[:8] / ks * power) / np.nansum(power)
-        out.append((start / rate, 20 * np.log10(rms), 1200 * np.log2(pitch / 440.0), levels))
+        power = 10 ** (levels[OWN - 1] / 10)
+        own = np.nansum(freqs[OWN - 1] / OWN * power) / np.nansum(power)
+        out.append((start / rate, 20 * np.log10(rms), 1200 * np.log2(pitch / 440.0), levels,
+                    1200 * np.log2(own / 440.0)))
     return out
 
 
@@ -119,7 +126,7 @@ def onset(path, key):
     rows = frames(path, key, 0.1, 0.01)
     t = np.array([r[0] for r in rows])
     level = np.array([r[1] for r in rows])
-    cents = np.array([r[2] for r in rows])
+    cents = np.array([r[4] for r in rows])
     peak = level.max()
     begin = t[np.argmax(level > peak - 20)] + 0.3
     use = (t >= begin) & (level > peak - 30)
