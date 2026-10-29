@@ -285,6 +285,9 @@ void Engine::SetControls(const Controls& next) {
     if (reg != registerIndex) {
         SwitchRegister(registerIndex, reg);
         StartKnock(kRegisterSwitch, kRegisterSwitch.travel / kOpenSeconds, 1.0, false, 72);
+        // The switch it pushes off springs back up onto its stop, in the time
+        // a pallet's spring takes.
+        StartKnock(kRegisterSwitch, kRegisterSwitch.travel / kCloseSeconds, 1.0, false, 72 + 2 * (registerIndex - reg));
     }
     registerIndex = reg;
     const bool nextAuto = controls[kAuto] >= 0.5;

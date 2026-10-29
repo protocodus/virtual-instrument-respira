@@ -138,6 +138,8 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 - **Auto** plays the bellows for you: while a key is held the hand pulls
   for one bar and pushes for the next, in time with the host, holding an
   ordinary playing pressure whatever is played; the wheel presses harder.
+- Changing register knocks twice: the switch pressed down, and the one it
+  pushes off springing back up.
 
 ## Downloads
 
@@ -404,7 +406,8 @@ be the key front's dip) lands when its spring has closed it, 8 ms after the
 key is let go, at 0.6 m/s whatever the finger did. Bass and chord buttons
 (15 g, 3 mm) land like keys and their pallets like the treble's; a register
 switch (30 g, 5 mm) knocks as it is pressed, at the speed of the softest key
-stroke, the time its slides take; the air button lands like a bass button and
+stroke, the time its slides take, and the switch it pushes off springs back up
+onto its stop in the time a pallet's spring takes; the air button lands like a bass button and
 its pad like a bass pallet. A key let go before it lands, or held half
 down, does not knock until its pallet seats; one pressed again before its
 pallet seats does not knock on the way up. Each key's knock differs a little
@@ -510,7 +513,17 @@ tempo, time signature, song position and bar start before each block
   kHz) the treble knocks are 13–19 dB darker there and the bass side's about 4
   dB darker again through the bass box: no metal part, spring or panel rings
   here. Pallets and keys stop on felt and never rattle against each other, and
-  the bellows' folds, straps and the player make no sound.
+  the bellows' folds, straps and the player make no sound. That is not
+  measured either way. The bass strap's slack, taken up as the bellows turn,
+  meets the hand at the bellows end's speed, a few mm/s to a few cm/s for a
+  bellows about 0.08 m² in section: a bass half of some kilograms on leather
+  then rings near 10 Hz, far under the body's 210 Hz, so it would not be
+  heard. The folds' panels flip from bulging out to drawn in as the pressure
+  changes sign; landing on their hinges through a free play of 0.25–1 mm
+  (an estimate) they read as loud as the chord at every turn, while elastic
+  hinges with no play pass the turn silently. No recording or measurement
+  says which, so the folds stay silent, and the rustle of their leather and
+  cloth rubbing, whose level nothing sets, is not modelled.
 - **Chord buttons are pitch classes**, not Stradella's fixed major, minor,
   seventh and diminished rows, and there are no bass register switches.
 - **One turbulence seed.** Two engines given the same input play identical
