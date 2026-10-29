@@ -11,6 +11,7 @@
 #include "DspMath.h"
 
 #include <cmath>
+#include <cstdint>
 
 namespace respira {
 
@@ -116,6 +117,105 @@ struct Knock {
         force = felt->Force(x, v);
         if (x <= 0.0 || (v <= 0.0 && force <= 0.0)) active = false;
         return force - before;
+    }
+};
+
+// The bellows' folds. Each fold's walls are card panels in cloth, hinged at
+// the fold's edges by cloth and leather with a little play: pressing, the air
+// bows every panel out until its hinges draw taut; drawing, it sucks them in.
+// When the bellows turn and the pressure changes sign, every panel crosses
+// that play and lands on its hinges the other way: the rustle of a reversal,
+// harder the faster the pressure turns. Between turns they rest on their
+// hinges and are silent. A full-size bellows of 18 folds, 4 walls and two
+// panels a fold in each wall holds 144 panels, 35 mm deep (the fold's depth)
+// and 410 or 190 mm long (the long and short walls); card and cloth weigh
+// about 1 kg/m^2; the play is taken as 0.5 mm at a panel's middle. All of
+// these are estimates from typical sizes, not measurements, and the play sets
+// how hard they land: from none (silent) to 1 mm they span a turn as quiet as
+// nothing to one as loud as the chord. So the folds' level is voiced by ear
+// (kFoldVoicingDb, the owner's choice), not derived. The hinge stands on the
+// back rail cloth's law, as a pallet's leather does.
+inline constexpr int kPleats = 144;
+inline constexpr double kPleatDepth = 0.035, kPleatLongWall = 0.41, kPleatShortWall = 0.19;
+inline constexpr double kPleatSurfaceMass = 1.0, kPleatPlay = 0.0005;
+// A panel radiates as a key does (kForceToFlow), a strip of its own size
+// driven by the force on it: pi (w/2)^2 L / m with m = rho_s w L, the same for
+// every panel whatever its length, against the key's.
+inline constexpr double kPleatToFlow = 3.14159265358979 * kPleatDepth / 4.0
+                                       / (kPleatSurfaceMass * 343.0 * 1.7320508075688772);
+
+struct Pleat {
+    double x = 0.0, v = 0.0, contact = 0.0;   // from the middle of its play, m; the hinge's force, N
+    double mass = 0.0, area = 0.0, play = kPleatPlay;
+    bool moving = false;
+
+    // The change in the hinges' force over one host sample, N, under bellows
+    // pressure p (Pa, positive pressing: outwards). A panel that has come to
+    // rest on its hinge sleeps there, the hinge bearing the load as it eases,
+    // until the pressure pulls the panel the other way; it then leaves from
+    // the compression that load held.
+    double Step(double p, double dt) {
+        const double load = p * area;
+        if (!moving) {
+            if (x == 0.0 ? load == 0.0 : load * x >= 0.0) {
+                contact = load;   // held still, so radiating nothing
+                return 0.0;
+            }
+            if (x != 0.0) x = (x > 0.0 ? 1.0 : -1.0) * (play + Compression(Abs(contact)));
+            moving = true;
+        }
+        const double before = contact, h = dt / Knock::kSteps;
+        for (int i = 0; i < Knock::kSteps; ++i) {
+            v += (load - Hinge(x, v)) / mass * h;
+            x += v * h;
+        }
+        contact = Hinge(x, v);
+        if (Abs(x) > play && Abs(v) < 1.0e-4 && Abs(contact - load) < 0.02 * Abs(load)) {
+            moving = false;
+            v = 0.0;
+        }
+        return contact - before;
+    }
+    // The hinge's compression under a still force: Newton's method on the
+    // cloth's cubic, which rises everywhere (3 a c^2 + 2 b c + c' > 0).
+    static double Compression(double force) {
+        const Felt& f = kRestCloth;
+        double c = 0.0;
+        for (int i = 0; i < 12; ++i) c -= (((f.a * c + f.b) * c + f.c) * c - force) / ((3.0 * f.a * c + 2.0 * f.b) * c + f.c);
+        return Max(c, 0.0);
+    }
+    double Hinge(double at, double speed) const {
+        if (at > play) return kRestCloth.Force(at - play, speed);
+        if (at < -play) return -kRestCloth.Force(-play - at, -speed);
+        return 0.0;
+    }
+};
+
+// The folds' leather and cloth rub as the bellows move: friction noise, its
+// force growing with the bellows end's speed (the air leaving the bellows over
+// their section, about 0.41 by 0.19 m). Nothing measured sets its level or
+// spectrum, so both are voiced (kRustleVoicingDb, the owner's choice): white
+// noise in N per m/s, through the body's 210 Hz high-pass and a one-pole
+// low-pass at 2 kHz, the band a soft material's rubbing fills.
+inline constexpr double kBellowsSection = 0.41 * 0.19;
+struct Rustle {
+    std::uint32_t seed = 0x2545F491u;
+    double low = 0.0, lowCoeff = 0.0;
+    BodyHighPass body;
+    void Set(double rate) {
+        lowCoeff = 1.0 - std::exp(-2.0 * 3.14159265358979 * 2000.0 / rate);
+        body.Set(rate);
+    }
+    void Clear() {
+        low = 0.0;
+        body.Clear();
+    }
+    // Force (N) at bellows end speed v (m/s).
+    double Step(double v) {
+        seed = seed * 1664525u + 1013904223u;
+        const double draw = 1.7320508075688772 * ((seed >> 8) / double(1u << 24) * 2.0 - 1.0);
+        low += lowCoeff * (body.Process(draw * Abs(v)) - low);
+        return low;
     }
 };
 

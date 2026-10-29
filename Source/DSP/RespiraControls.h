@@ -25,7 +25,7 @@ enum Control : int {
     kAir,        // air button: vents the bellows so the hand moves without sound
     kMomentum,   // the arm's lag behind the wheel, ms: 0 the wheel moves the bellows directly
     kOversampling, // 0, 1, 2: 1x, 2x, 4x the engine's own internal rate (4x the host rate)
-    kMechanics,  // the keys', pallets', buttons' and register switches' knocks, dB re the estimate (Mechanics.h)
+    kMechanics,  // the keys', pallets', buttons' and register switches' knocks and the bellows' folds, dB re the estimate (Mechanics.h)
     kAuto,       // 0 the wheel is the hand, 1 the hand plays the bellows itself in time and the wheel presses harder
     kControlCount
 };

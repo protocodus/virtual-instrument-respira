@@ -140,6 +140,8 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
   ordinary playing pressure whatever is played; the wheel presses harder.
 - Changing register knocks twice: the switch pressed down, and the one it
   pushes off springing back up.
+- The bellows sound: their folds flip with a soft rustle as the bellows turn
+  and their leather rubs while they move, at levels chosen by ear.
 
 ## Downloads
 
@@ -429,6 +431,25 @@ heard in quiet passages and between notes, as real mechanisms are. By ear
 the mechanism was chosen 10 dB above that estimate, so Mechanics defaults to
 +10 dB in Init and every factory preset.
 
+The bellows' folds sound too, and their levels are voiced by ear, not
+derived. Each fold's walls are card panels hinged in cloth and leather; the
+pressure bows them out on a push and draws them in on a pull, so when the
+bellows turn each of the 144 panels of a full-size bellows (18 folds, 35 mm
+deep, on walls 410 and 190 mm long, about 1 kg/m²) crosses its hinges' play
+and lands the other way, one after another as their masses and play differ:
+a rustle at every turn, harder the faster the pressure turns, and silent
+between turns. The panels radiate as the keys do, strips of their own size.
+How hard they land rests on the play, which nothing measures: from none to
+1 mm a turn goes from silent to as loud as the chord, so the play is taken
+as 0.5 mm and the folds' level set by ear. While the bellows move, their
+leather and cloth rub: noise growing with the speed of the bellows end (the
+air leaving the bellows over their 0.41 × 0.19 m section, so a hand pressing
+on closed keys moves nothing and rubs nothing), between 210 Hz and 2 kHz,
+its level and band voiced. **Mechanics** sets both with the keys'. The
+bass strap is silent: taken up as the bellows turn, its slack meets the hand
+at a few mm/s to a few cm/s, and a bass half of some kilograms on leather
+rings near 10 Hz, far under the body's 210 Hz.
+
 ### The output stage
 
 On Reason's VU meter (the louder channel's RMS over 300 ms, +12 dB) the demo
@@ -460,7 +481,7 @@ strokes read −1.7 VU at most. Volume sets the level going into the stage.
 | Air | off, on | the air valve |
 | Momentum | 0–200 ms | how far the arm trails the wheel; 0 follows it exactly |
 | Oversampling | 1×, 2×, 4× | the reeds' time step: 1× is four times the host rate; 2× and 4× cost about two and four times the CPU |
-| Mechanics | −40 to +20 dB | the keys', pallets', buttons' and switches' knocks, against the estimate (The mechanism); +10 dB by default, chosen by ear; at −40 dB they are all but silent |
+| Mechanics | −40 to +20 dB | the keys', pallets', buttons' and switches' knocks and the bellows' folds, against the estimate (The mechanism); +10 dB by default, chosen by ear; at −40 dB they are all but silent |
 | Auto | off, on | the hand plays the bellows in time with the host and the wheel presses harder (Auto) |
 
 `Source/DSP/RespiraControls.h` holds these for every front end;
@@ -513,17 +534,10 @@ tempo, time signature, song position and bar start before each block
   kHz) the treble knocks are 13–19 dB darker there and the bass side's about 4
   dB darker again through the bass box: no metal part, spring or panel rings
   here. Pallets and keys stop on felt and never rattle against each other, and
-  the bellows' folds, straps and the player make no sound. That is not
-  measured either way. The bass strap's slack, taken up as the bellows turn,
-  meets the hand at the bellows end's speed, a few mm/s to a few cm/s for a
-  bellows about 0.08 m² in section: a bass half of some kilograms on leather
-  then rings near 10 Hz, far under the body's 210 Hz, so it would not be
-  heard. The folds' panels flip from bulging out to drawn in as the pressure
-  changes sign; landing on their hinges through a free play of 0.25–1 mm
-  (an estimate) they read as loud as the chord at every turn, while elastic
-  hinges with no play pass the turn silently. No recording or measurement
-  says which, so the folds stay silent, and the rustle of their leather and
-  cloth rubbing, whose level nothing sets, is not modelled.
+  the bellows' folds' flip at a turn and their rustle while moving are
+  voiced by ear: no recording or measurement sets their level, and the
+  folds' play, which decides how hard they land, is an estimate. The player
+  makes no sound.
 - **Chord buttons are pitch classes**, not Stradella's fixed major, minor,
   seventh and diminished rows, and there are no bass register switches.
 - **One turbulence seed.** Two engines given the same input play identical

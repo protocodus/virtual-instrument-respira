@@ -129,6 +129,11 @@ constexpr double kNoiseRate = 192000.0;     // internal rate the turbulence leve
 
 double DbToGain(double db) { return std::pow(10.0, db / 20.0); }
 
+// The bellows' folds' levels against their estimate (Mechanics.h, Pleat and
+// Rustle), voiced by ear.
+const double kFoldVoicing = DbToGain(-30.0);
+const double kRustleVoicing = DbToGain(-7.0);
+
 // Rank of the bass side a group sounds: channel 2 bass buttons, channel 3 chords.
 enum Group { kTreble, kBassButtons, kChordButtons };
 
@@ -220,6 +225,7 @@ void Engine::Prepare(double sampleRate) {
     rate = sampleRate > 1000.0 && sampleRate < 1.0e6 ? sampleRate : 48000.0;
     bassBox.Set(kBassBoxDepth, kBassBoxOpen, kBassHoleLength, kClothRayl, kBassBoxAbsorbed, kBassBoxModes, rate);
     for (BodyHighPass* body : { &mechanicsL, &mechanicsR, &mechanicsBass }) body->Set(rate);
+    rustle.Set(rate);
     smoothing = 1.0 - std::exp(-1.0 / (0.02 * rate));
     bendSmoothing = 1.0 - std::exp(-1.0 / (0.005 * rate));
     output.Prepare(rate, kBellowsGuard);
@@ -258,6 +264,20 @@ void Engine::Reset() {
     keys.fill(Key {});
     movingCount = 0;
     knocks.fill(Knock {});
+    // A quarter of the panels in each wall, two long and two short; each
+    // panel's mass and play differ a little from its neighbours' (+-20 %,
+    // fixed per instrument), so a turn's panels land one after another.
+    for (int i = 0; i < kPleats; ++i) {
+        Pleat& p = pleats[static_cast<std::size_t>(i)];
+        p = Pleat {};
+        const std::uint32_t h = Hash(3u, static_cast<std::uint32_t>(i));
+        p.area = kPleatDepth * ((i / (kPleats / 4)) % 2 == 0 ? kPleatLongWall : kPleatShortWall);
+        p.mass = kPleatSurfaceMass * p.area * (1.0 + 0.2 * Unit(h));
+        p.play = kPleatPlay * (1.0 + 0.2 * Unit(Hash(h, 1)));
+    }
+    rustle = Rustle {};
+    rustle.Set(rate);
+    rustleForce = 0.0;
     for (BodyHighPass* body : { &mechanicsL, &mechanicsR, &mechanicsBass }) body->Clear();
     mechanicsGain = mechanicsGainTarget;
     diag = Diagnostics {};
@@ -729,12 +749,22 @@ void Engine::Render(float* left, float* right, int frames) {
                 knockR += change * k.panR;
             }
         }
+        // The folds sit between the halves and radiate straight to the air, not
+        // through the body, as panels of their own size (kPleatToFlow).
+        double flips = 0.0;
+        for (auto& p : pleats) flips += p.Step(pressure, dt);
+        // The folds move as far as air leaves the bellows; the rest of the hand's
+        // stroke only presses on the air.
+        const double rubbing = rustle.Step((airFlow + leak) / kBellowsSection);
+        const double folds = (kFoldVoicing * flips + kRustleVoicing * (rubbing - rustleForce)) * rate
+                             * (kPleatToFlow / kForceToFlow) * 0.7071067811865476;
+        rustleForce = rubbing;
         mechanicsGain += smoothing * (mechanicsGainTarget - mechanicsGain);
         // The air valve and the bass mechanism sit in the bass box too: their
         // sound leaves through the bass end cover's holes with the bass reeds'.
         const double bass = bassBox.Process(bassSide.Process(b, stages) + hiss + mechanicsGain * mechanicsBass.Process(knockBass)) * bassGain;
-        const double l = gain * (grilleL * trebleGain + mechanicsGain * mechanicsL.Process(knockL) + bass * bassPanL);
-        const double r = gain * (grilleR * trebleGain + mechanicsGain * mechanicsR.Process(knockR) + bass * bassPanR);
+        const double l = gain * (grilleL * trebleGain + mechanicsGain * (mechanicsL.Process(knockL) + folds) + bass * bassPanL);
+        const double r = gain * (grilleR * trebleGain + mechanicsGain * (mechanicsR.Process(knockR) + folds) + bass * bassPanR);
         std::array<float, 2> frame { { static_cast<float>(l), static_cast<float>(r) } };
         output.Process(frame);
         left[i] = frame[0];

@@ -28,8 +28,9 @@
 // With Auto on, the hand plays the bellows by itself while keys are held, in
 // time with the host (SetTransport), and the wheel presses it harder.
 // The register switches act on held keys too, as the slides they move do.
-// The keys, buttons, pallets and switches knock on their stops (Mechanics.h),
-// with or without air.
+// The keys, buttons, pallets and switches knock on their stops, and the
+// bellows' folds flip as the bellows turn and rustle as they move
+// (Mechanics.h).
 //
 // JUCE-free, C++17, no allocation, locks or exceptions after construction.
 
@@ -241,6 +242,9 @@ private:
     std::array<std::uint16_t, 3 * 128> movingKeys {};   // the keys whose travel is changing
     int movingCount = 0;
     std::array<Knock, 32> knocks {};
+    std::array<Pleat, kPleats> pleats {};
+    Rustle rustle;
+    double rustleForce = 0.0;
     BodyHighPass mechanicsL, mechanicsR, mechanicsBass;
     double mechanicsGain = 0.0, mechanicsGainTarget = 0.0;
     Diagnostics diag;

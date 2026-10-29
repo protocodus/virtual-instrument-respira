@@ -1211,3 +1211,28 @@ takes (0.6). So the one accordion recorded does not brighten over its
 playing level's small wander as the bandoneon does over the same span, at
 about two standard errors; it neither confirms the gap nor closes it, and
 nothing changes.
+
+## 2026-10-29 — the bellows' folds sound, voiced by ear (owner)
+
+The owner asked for every real mechanical noise: key press and release, the
+body moving, pulling and pushing. Key press and release, the buttons, pallets,
+air button and register switch already knocked; the switch a new one pushes
+off now knocks too as it springs back. For the bellows, physics settles one
+thing: the bass strap's slack, taken up at a turn at a few mm/s to cm/s,
+rings a bass half of some kilograms near 10 Hz, under the body's 210 Hz, so
+it stays silent. Two things it does not settle. The folds' card panels flip
+across their hinges' play as the pressure turns, and the unmeasured play
+alone takes a turn from silent (none) to as loud as the chord (1 mm); the
+leather and cloth rub while the bellows move, at a level nothing measured
+sets. Offered a recording of a real accordion to calibrate from, voicing by
+ear, or leaving the bellows silent, the owner chose voicing by ear.
+
+Two packs (listening-2026-10-29-bellows), Paris Musette under Auto at 120 bpm
+with a chord and bass held through four turns, untrimmed because level is
+judged: 21-fold-flip, A the engine without the folds, B, C and D the folds
+(play 0.5 mm) with turns about 25, 33 and 17 dB under the chord; 22-rustle,
+A without, B, C and D rubbing about 36, 44 and 28 dB under it while moving.
+Under the standing rule the middle letters ship until the owner hears them
+(fold flips at −30 dB against the panel estimate, rustle at −7 dB against its
+own scale). Verdict pending. Whatever is chosen is a voicing: it does not
+measure the folds, and a recording of a real bellows would replace it.

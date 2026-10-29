@@ -15,6 +15,7 @@
 #include "DSP/RespiraPresets.h"
 #include "ParameterMatrix.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <memory>
@@ -99,7 +100,12 @@ public:
     }
 
 private:
+    // The hand rests once the keys are up (the harness lets go at 0.8 s), as a
+    // player's does: still moving, it would turn a closed bellows and the
+    // folds would flip (Mechanics.h), so no silence would be due. The reeds'
+    // silence under a moving hand is Respira.Engine's ReleaseAndAllNotesOff.
     static double Hand(double seconds) {
+        seconds = std::min(seconds, 0.8);
         const double phase = seconds - std::floor(seconds);   // one stroke each way per second
         return 0.5 + 0.6 * (phase < 0.5 ? phase : 1.0 - phase) - 0.15;
     }

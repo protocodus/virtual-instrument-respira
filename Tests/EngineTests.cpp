@@ -221,9 +221,11 @@ void TurnWithoutClick() {
     // reed stops and its partner starts. A click there would stand out in the
     // top octaves, read here as the second difference (rising 12 dB per
     // octave) in 2 ms frames: within 50 ms of the zero crossing they stay
-    // below their highest while the note sounds.
+    // below their highest while the note sounds. The bellows' folds flip at
+    // the turn too (Mechanics.h), a sound of their own, so the mechanism is
+    // all but silenced to hear the reeds' handover alone.
     const double rate = 48000.0;
-    auto e = Make(rate, 0);
+    auto e = Make(rate, 0, [](Controls& c) { c[kMechanics] = kControlInfo[kMechanics].min; });
     const Take t = Play(*e, rate, 3.0, { { 0.0, { kOn, 69, 100 } } }, PullThenPush);
     std::size_t cross = 0;
     for (std::size_t i = static_cast<std::size_t>(2.0 * rate / 32); i < t.pressure.size() && cross == 0; ++i)
@@ -762,6 +764,33 @@ void AutoHoldsItsPressure() {
     Expect(std::fabs(hard / 1600.0 - 1.0) < 0.05, "AutoHoldsItsPressure", "the wheel at the top, Pa", hard);
 }
 
+// The mechanism's own part of a take: the same take with the mechanism all
+// but silenced, subtracted (the reeds do not hear the mechanism).
+std::vector<float> MechanismOf(int preset, double seconds, const std::vector<Note>& notes,
+                               const std::function<double(double)>& hand) {
+    const double rate = 48000.0;
+    auto loud = Make(rate, preset), quiet = Make(rate, preset, [](Controls& c) { c[kMechanics] = kControlInfo[kMechanics].min; });
+    Take a = Play(*loud, rate, seconds, notes, hand), b = Play(*quiet, rate, seconds, notes, hand);
+    for (std::size_t i = 0; i < a.left.size(); ++i) a.left[i] -= b.left[i];
+    return a.left;
+}
+
+void FoldsSoundWithTheBellows() {
+    // The folds flip as the pressure turns and rustle while air leaves the
+    // bellows; with the hand still they fall silent with the reeds.
+    const double rate = 48000.0;
+    const std::vector<Note> note { { 0.0, { kOn, 69, 100 } } };
+    const auto turning = MechanismOf(0, 3.0, note, PullThenPush);
+    double turn = 0.0;
+    for (double at = 1.9; at < 2.6; at += 0.05) turn = std::max(turn, Rms(turning, rate, at, at + 0.05));
+    const double steady = Rms(turning, rate, 1.0, 1.8);
+    Expect(Db(steady) > -120.0, "FoldsSoundWithTheBellows", "rustle while the bellows draw, dBFS RMS", Db(steady));
+    Expect(Db(turn) - Db(steady) > 6.0, "FoldsSoundWithTheBellows", "loudest 50 ms of the turn against the stroke, dB", Db(turn) - Db(steady));
+    const auto stopping = MechanismOf(3, 3.5, note, [](double s) { return s < 1.5 ? 0.3 + 0.2 * s : 0.6; });
+    const double moving = Rms(stopping, rate, 0.8, 1.4), still = Rms(stopping, rate, 3.0, 3.5);
+    Expect(Db(moving) - Db(still) > 30.0, "FoldsSoundWithTheBellows", "level drop once the hand stops, dB", Db(moving) - Db(still));
+}
+
 void AutoHandsBackToTheWheel() {
     // Auto switched off mid-stroke leaves the bellows where they are: the arm
     // comes to rest instead of sweeping to the wheel's position (at 0).
@@ -807,8 +836,11 @@ void DeterministicAfterReset() {
 }
 
 void ReleaseAndAllNotesOff() {
+    // The hand keeps moving after the notes stop, and the bellows' folds
+    // rustle with the air that still leaks out (Mechanics.h); the mechanism is
+    // all but silenced so the reeds' and chambers' silence is what is read.
     const double rate = 48000.0;
-    auto e = Make(rate, 3);
+    auto e = Make(rate, 3, [](Controls& c) { c[kMechanics] = kControlInfo[kMechanics].min; });
     const Take t = Play(*e, rate, 2.0, { { 0.0, { kOn, 69, 100 } }, { 0.0, { kOn, 33, 100 } }, { 1.0, { kOff, 69, 0 } },
                                          { 1.0, { kCc, 123, 0 } } }, PullThenPush);
     const double after = Rms(t.left, rate, 1.1, 2.0);
@@ -1098,6 +1130,7 @@ int main() {
     AutoRestsWithTheKeys();
     AutoHoldsItsPressure();
     AutoHandsBackToTheWheel();
+    FoldsSoundWithTheBellows();
     std::printf("%d failure(s)\n", failures);
     return failures == 0 ? 0 : 1;
 }
