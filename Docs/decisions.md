@@ -1167,7 +1167,7 @@ the takes' spread bounds. A standard deviation of 3 cents a reed (uniform,
 
 What La Melodiosa's two takes of a note (ba, va) are is not stated. They sit
 0–6.5 cents apart (2.4 standard deviation), not following their level
-(−0.13 cents per dB, r = −0.06), and in register I va is 2.6 cents sharper
+(−0.13 cents per dB, r = −0.06), and in register I va is 3.0 cents sharper
 on average. If they are the two bellows directions, a note's push and pull
 reeds agree more closely than two reeds drawn independently with this
 scatter (4.2 apart), as Respira's are; that is left as it is.
