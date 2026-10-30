@@ -633,7 +633,8 @@ tempo, time signature, song position and bar start before each block
   makes no sound.
 - **The room is voiced.** Init is dry; the factory presets play in the room
   at 70 %, for the owner's "great and expensive". Its first reflections come
-  from an estimated room's geometry, not a measured one.
+  from an estimated room's geometry, not a measured one, and are heard
+  through the pair at Width's default 90° whatever Width is set to.
   Room adds a late diffuse field only, with no early reflections from a
   floor or walls; its decay and its treble loss are chosen by ear, and its
   level at Room 1 is set by one measure, the channels' correlation against
