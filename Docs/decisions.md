@@ -1232,9 +1232,9 @@ with a chord and bass held through four turns, untrimmed because level is
 judged: 21-fold-flip, A the engine without the folds, B, C and D the folds
 (play 0.5 mm) with turns about 25, 33 and 17 dB under the chord; 22-rustle,
 A without, B, C and D rubbing about 37, 45 and 29 dB under it while moving.
-Under the standing rule the middle letters ship until the owner hears them
+Under the standing rule the middle letters shipped until the owner heard them
 (fold flips at −30 dB against the panel estimate, rustle at −7 dB against its
-own scale). Verdict pending. Whatever is chosen is a voicing: it does not
+own scale). Verdict: C on each (below). Whatever is chosen is a voicing: it does not
 measure the folds, and a recording of a real bellows would replace it.
 
 ## 2026-10-30 — the musette's beat law from the measured Hohner (owner asked; engineering)
@@ -1264,3 +1264,13 @@ The owner answered pack `23-musette` (listening-2026-10-30): "use B". B, the
 beat rising as f^0.51, was already shipping, so nothing changes; it is now
 also chosen by ear. The choice licenses keeping the measured Hohner's
 exponent, not a claim that tuners set it so.
+
+## 2026-10-30 — 21-fold-flip and 22-rustle: C chosen by ear (owner)
+
+The owner answered the two bellows packs with "lets go with C": C on each,
+read as both packs. The folds' flip ships at −38 dB against the panel
+estimate (a turn's loudest 50 ms about 33 dB under the chord), and their
+rustle at −15 dB against its own scale (about 45 dB under the chord while
+the bellows move), the quietest letter in each pack. The choice sets
+voicings; it measures neither the folds' play nor their rubbing, and a
+recording of a real bellows would replace both.

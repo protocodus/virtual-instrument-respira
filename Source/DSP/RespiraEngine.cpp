@@ -132,8 +132,8 @@ double DbToGain(double db) { return std::pow(10.0, db / 20.0); }
 // The bellows' folds' levels against their estimate (Mechanics.h, Pleat and
 // Rustle), voiced by ear. Literal gains, not DbToGain: the Rack toolchain
 // refuses any global it has to initialise at run time.
-constexpr double kFoldVoicing = 0.031622776601683794;   // -30 dB
-constexpr double kRustleVoicing = 0.44668359215096315;  // -7 dB
+constexpr double kFoldVoicing = 0.012589254117941675;   // -38 dB
+constexpr double kRustleVoicing = 0.1778279410038923;   // -15 dB
 
 // Rank of the bass side a group sounds: channel 2 bass buttons, channel 3 chords.
 enum Group { kTreble, kBassButtons, kChordButtons };
