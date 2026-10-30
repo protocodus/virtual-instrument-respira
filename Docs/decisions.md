@@ -1255,5 +1255,12 @@ Under the owner's standing rule the candidate ships until the owner hears
 it: B (ReedBank.h, `RankNote`). The tuning table does not depend on the law
 (`Respira.ReedTuning` passes unchanged). With each reed's own tuning, the
 pull reeds' beats from C4 to C6 fit f^0.54 and scatter 22 % about it (f^0.72
-and 20 % before). Verdict pending. What the choice licenses: the exponent of one measured
+and 20 % before). What the choice licenses: the exponent of one measured
 instrument, not a claim that tuners set it so.
+
+## 2026-10-30 — 23-musette: B chosen by ear (owner)
+
+The owner answered pack `23-musette` (listening-2026-10-30): "use B". B, the
+beat rising as f^0.51, was already shipping, so nothing changes; it is now
+also chosen by ear. The choice licenses keeping the measured Hohner's
+exponent, not a claim that tuners set it so.
