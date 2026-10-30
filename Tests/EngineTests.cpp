@@ -62,6 +62,9 @@ std::unique_ptr<Engine> Make(double rate, int preset, const std::function<void(C
     auto engine = std::make_unique<Engine>();
     engine->Prepare(rate);
     Controls controls = kPresets[static_cast<std::size_t>(preset)].ToControls();
+    // The presets play in a room; these tests hear the instrument itself, so
+    // they take it dry unless they raise Room (RoomDecorrelatesAndRings).
+    controls[kRoom] = 0.0;
     if (adjust) adjust(controls);
     engine->SetControls(controls);
     engine->Reset();

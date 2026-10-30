@@ -160,8 +160,9 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
   **Width** turns the pair's axes apart.
 - **Room**, off by default, adds a room around the microphones: a 1 s
   diffuse field each microphone hears on its own, so at Room 1 the two
-  channels correlate as little as the five solo recordings' do. Presets and
-  demos stay dry.
+  channels correlate as little as the five solo recordings' do. Init stays
+  dry; the eight factory presets play at Room 70 %, where the channels
+  correlate 0.49 on Paris Musette, at the dry end of the recordings.
 
 ## Downloads
 
@@ -442,7 +443,8 @@ align at zero lag, and in every band from 60 Hz to 12 kHz they differ by
 each key by pitch put Paris Musette's bass band 10 dB to the left. The
 positions are a full-size instrument's, estimated.
 
-**Room**, off by default, puts a room around the pair: the late, diffuse
+**Room**, off on Init and at 70 % on every factory preset, puts a room
+around the pair: the late, diffuse
 field of a voiced room with a 1 s decay at low frequencies and half that at
 the top, from an eight-line feedback delay network (`Source/DSP/Room.h`)
 behind four allpass diffusers, so it is dense from its first milliseconds.
@@ -625,7 +627,8 @@ tempo, time signature, song position and bar start before each block
   push valves' slaps, are voiced by ear: no recording or measurement sets their level, and the
   folds' play, which decides how hard they land, is an estimate. The player
   makes no sound.
-- **The room is voiced.** The output is dry by default, as the owner asked.
+- **The room is voiced.** Init is dry; the factory presets play in the room
+  at 70 %, for the owner's "great and expensive".
   Room adds a late diffuse field only, with no early reflections from a
   floor or walls; its decay and its treble loss are chosen by ear, and its
   level at Room 1 is set by one measure, the channels' correlation against

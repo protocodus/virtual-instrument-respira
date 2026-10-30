@@ -1455,3 +1455,19 @@ decay and the channels' correlation are unchanged (Paris Musette at Room 1:
 0.38, the recordings' median). Pack 29-room-onset sets the two side by side
 on Bright Oboe's staccato; pack 28-room was re-rendered with the diffusers.
 Room stays off by default.
+
+## 2026-10-30 — the presets play in the room (owner's direction; by ear pending)
+
+The owner asked for Respira to sound "great and expensive". A dry, close
+coincident pair hears the accordion as no listener does; every one of the
+owner's five solo recordings has a room. The factory presets now set Room to
+0.7: the channels correlate 0.49 on Paris Musette, inside the recordings'
+0.20–0.51 at their dry end, so the instrument stays close and clear. Init
+and the Room control's default stay dry, so a dry sound is one knob away.
+The presets still sit within 0.25 dB of Init on the reference stroke and
+the hardest strokes stay under the ceiling. The engine tests take the
+presets dry (the room has its own test), since they measure the instrument.
+
+Listening pack 30-preset-room: A the dry presets, B Room 0.7 (−0.78 dB RMS
+trim), on Paris Musette then Master Tutti. B ships unless the owner prefers
+A; the owner was asked on a decision card.

@@ -71,7 +71,7 @@ inline constexpr std::array<ControlInfo, kControlCount> kControlInfo { {
     // under it (Docs/decisions.md).
     { "mechanics", "Mechanics", -40.0, 20.0, 10.0, 0, Curve::kLinear, "dB" },
     { "auto", "Auto", 0.0, 1.0, 0.0, 2, Curve::kStepped, "" },
-    // Off by default: the owner chose a dry instrument (Docs/decisions.md).
+    // Off on Init; the factory presets play at 0.7 (Docs/decisions.md).
     { "room", "Room", 0.0, 1.0, 0.0, 0, Curve::kLinear, "" },
 } };
 
