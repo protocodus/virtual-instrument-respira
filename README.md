@@ -158,6 +158,10 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
   each key by pitch: the treble and the bass side are each heard from one
   place, the bass side about 2 dB to the left where it was 8–10 dB, and
   **Width** turns the pair's axes apart.
+- **Room**, off by default, adds a room around the microphones: a 1 s
+  diffuse field each microphone hears on its own, so at Room 1 the two
+  channels correlate as little as the five solo recordings' do. Presets and
+  demos stay dry.
 
 ## Downloads
 
@@ -436,8 +440,19 @@ middle. Five solo accordion recordings were made this way: their channels
 align at zero lag, and in every band from 60 Hz to 12 kHz they differ by
 0.1–2.2 dB; the demos with bass now differ by up to 2.1 dB, where panning
 each key by pitch put Paris Musette's bass band 10 dB to the left. The
-positions are a full-size instrument's, estimated, and the microphones hear
-no room (see Known gaps).
+positions are a full-size instrument's, estimated.
+
+**Room**, off by default, puts a room around the pair: the late, diffuse
+field of a voiced room with a 1 s decay at low frequencies and half that at
+the top, from an eight-line feedback delay network (`Source/DSP/Room.h`).
+Each microphone hears four of the lines, so the field reaches the two
+decorrelated, as a room's does, while the instrument itself reaches both at
+once. In the five solo recordings the two channels' phase-transform
+cross-correlation of 170 ms frames peaks at only 0.20–0.51 at zero lag
+(median 0.38); the dry demos read 0.97–0.99, and Paris Musette at Room 1
+reads 0.37. The decay was chosen by ear from three (0.5, 1 and 2 s); the
+recordings' own rooms are not measured, since their notes rarely stop clean
+enough to read a decay.
 
 ### The mechanism
 
@@ -553,6 +568,7 @@ strokes read −1.7 VU at most. Volume sets the level going into the stage.
 | Oversampling | 1×, 2×, 4× | the reeds' time step: 1× is four times the host rate; 2× and 4× cost about two and four times the CPU |
 | Mechanics | −40 to +20 dB | the keys', pallets', buttons' and switches' knocks, the bellows' folds and the push valves' slaps, against the estimate (The mechanism); +10 dB by default, chosen by ear; at −40 dB they are all but silent |
 | Auto | off, on | the hand plays the bellows in time with the host and the wheel presses harder (Auto) |
+| Room | 0–1 | the room around the microphones: 0 dry (the default), 1 as decorrelated as the solo recordings (The microphones) |
 
 `Source/DSP/RespiraControls.h` holds these for every front end;
 `Source/DSP/RespiraPresets.h` holds the eight factory presets, one per
@@ -608,11 +624,11 @@ tempo, time signature, song position and bar start before each block
   push valves' slaps, are voiced by ear: no recording or measurement sets their level, and the
   folds' play, which decides how hard they land, is an estimate. The player
   makes no sound.
-- **No room.** The output is dry, as the owner asked: the microphones hear
-  the instrument alone. In five solo recordings, made with coincident pairs,
-  the two channels' phase-transform cross-correlation of 170 ms frames peaks
-  at only 0.2–0.5 at zero lag, decorrelated by the room; Respira's peaks at
-  0.97–0.99.
+- **The room is voiced.** The output is dry by default, as the owner asked.
+  Room adds a late diffuse field only, with no early reflections from a
+  floor or walls; its decay and its treble loss are chosen by ear, and its
+  level at Room 1 is set by one measure, the channels' correlation against
+  the solo recordings' (The microphones), on one demo.
 - **Chord buttons are pitch classes**, not Stradella's fixed major, minor,
   seventh and diminished rows, and there are no bass register switches.
 - **One turbulence seed.** Two engines given the same input play identical

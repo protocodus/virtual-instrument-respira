@@ -1412,3 +1412,34 @@ and 50 under it, the loudest 50 ms each). Under the standing rule the middle
 letter, C, ships until the owner hears it, as with the folds. Verdict
 pending. What it licenses: a voicing of a real mechanism, not a measured
 level; a recording of a valve would replace it.
+
+## 2026-10-30 — Room, optional and off by default (owner's recordings; by ear pending)
+
+The microphones heard no room, as the owner chose. Against the owner's five
+solo recordings that left one measured gap: their two channels'
+phase-transform cross-correlation (170 ms frames, the median peak at zero
+lag) reads 0.20–0.51, median 0.38, where Respira's dry demos read 0.97–0.99.
+A coincident pair cannot decorrelate a source by itself; only a room's
+diffuse field, which reaches each microphone from every side, can. So the
+room is added as a control, **Room**, at 0 by default: presets, demos and
+the dry sound the owner chose are unchanged, bit for bit.
+
+The room is an eight-line feedback delay network with a Householder matrix
+and Jot's absorptive one-pole in each line, each microphone hearing four
+lines. Its level at Room 1 is set by the measure above: Paris Musette at
+0.35–0.37. The recordings' own decay could not be read: their notes rarely
+stop clean enough (two endings in one recording read 0.3 s, one in another
+3.9 s), so the decay is a choice between defensible rooms, not a fit.
+
+Listening pack 28-room (Paris Musette demo; whole-file RMS matched to A):
+
+- A — the shipping engine, dry.
+- B — Room 1, 0.5 s decay, level 1.6 (trim −1.76 dB).
+- C — Room 1, 1.0 s decay, level 0.8 (trim −1.71 dB).
+- D — Room 1, 2.0 s decay, level 0.55 (trim −2.02 dB).
+
+C ships, as the middle of the three, until the owner chooses by ear. The
+treble decays in half the low-frequency time at Nyquist in all three, a
+voiced share. What it licenses: an optional diffuse room whose amount is
+tied to the recordings' decorrelation; not early reflections, not a
+measured room.

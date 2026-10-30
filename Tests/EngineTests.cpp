@@ -1108,6 +1108,47 @@ void ValveSlapsFollowTheTurn() {
     Expect(std::fabs(FlapTurnSpeed(128000.0) / v - 2.0) < 1.0e-9, "ValveSlapsFollowTheTurn", "eight times as quick, ratio", FlapTurnSpeed(128000.0) / v);
 }
 
+void RoomDecorrelatesAndRings() {
+    // Off, the microphones hear only the instrument, the same sound in both
+    // channels but for level; at Room 1 the room's field, which each
+    // microphone hears from its own four lines, takes most of that likeness
+    // away and rings on after the key, and the room alone decays 60 dB in
+    // its 1 s.
+    const double rate = 48000.0;
+    const auto take = [rate](double room) {
+        auto e = Make(rate, 3, [room](Controls& c) { c[kRoom] = room; c[kMechanics] = -40.0; });
+        return Play(*e, rate, 2.0, { { 0.0, { kOn, 69, 100 } }, { 1.0, { kOff, 69, 0 } } }, PullThenPush);
+    };
+    const auto likeness = [rate](const Take& t) {
+        double lr = 0.0, ll = 0.0, rr = 0.0;
+        for (std::size_t i = static_cast<std::size_t>(0.5 * rate); i < static_cast<std::size_t>(1.0 * rate); ++i) {
+            lr += t.left[i] * t.right[i];
+            ll += t.left[i] * t.left[i];
+            rr += t.right[i] * t.right[i];
+        }
+        return lr / std::sqrt(ll * rr);
+    };
+    const Take dry = take(0.0), wet = take(1.0);
+    Expect(likeness(dry) > 0.99, "RoomDecorrelatesAndRings", "dry, the channels' correlation", likeness(dry));
+    Expect(likeness(wet) < 0.9, "RoomDecorrelatesAndRings", "Room 1, the channels' correlation", likeness(wet));
+    const double tail = Db(Rms(wet.left, rate, 1.3, 1.5)) - Db(Rms(dry.left, rate, 1.3, 1.5));
+    Expect(tail > 20.0, "RoomDecorrelatesAndRings", "Room 1 against dry 0.3 s after the key, dB", tail);
+
+    Room room;
+    room.Set(1.0, 0.5, rate);
+    room.Clear();
+    std::vector<float> out(static_cast<std::size_t>(2.0 * rate));
+    for (std::size_t i = 0; i < out.size(); ++i) {
+        double l, r;
+        // A low tone, so the decay read is the room's low-frequency one.
+        const double tone = i < static_cast<std::size_t>(0.5 * rate) ? std::sin(2.0 * kPi * 200.0 * i / rate) : 0.0;
+        room.Process(tone, tone, l, r);
+        out[i] = static_cast<float>(l);
+    }
+    const double perSecond = (Db(Rms(out, rate, 0.7, 0.8)) - Db(Rms(out, rate, 1.2, 1.3))) / 0.5;
+    Expect(std::fabs(perSecond - 60.0) < 6.0, "RoomDecorrelatesAndRings", "the room's decay at 200 Hz, dB/s", perSecond);
+}
+
 void CascadeVarianceScales() {
     // The breath and the valve hiss divide their two-stage noise by the square
     // root of CascadeVariance, so it has to match the cascade on the engine's
@@ -1183,6 +1224,7 @@ int main() {
     WidthGlides();
     MicrophonesHearTwoPlaces();
     ValveSlapsFollowTheTurn();
+    RoomDecorrelatesAndRings();
     CascadeVarianceScales();
     NonFiniteControls();
     AutoTurnsOnTheBars();

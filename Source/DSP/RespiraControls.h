@@ -27,6 +27,7 @@ enum Control : int {
     kOversampling, // 0, 1, 2: 1x, 2x, 4x the engine's own internal rate (4x the host rate)
     kMechanics,  // the keys', pallets', buttons' and register switches' knocks, the bellows' folds and the push valves, dB re the estimate (Mechanics.h)
     kAuto,       // 0 the wheel is the hand, 1 the hand plays the bellows itself in time and the wheel presses harder
+    kRoom,       // the room the microphones hear around the instrument: 0 none (dry) .. 1 as much as the owner's recordings' rooms (Room.h)
     kControlCount
 };
 
@@ -70,6 +71,8 @@ inline constexpr std::array<ControlInfo, kControlCount> kControlInfo { {
     // under it (Docs/decisions.md).
     { "mechanics", "Mechanics", -40.0, 20.0, 10.0, 0, Curve::kLinear, "dB" },
     { "auto", "Auto", 0.0, 1.0, 0.0, 2, Curve::kStepped, "" },
+    // Off by default: the owner chose a dry instrument (Docs/decisions.md).
+    { "room", "Room", 0.0, 1.0, 0.0, 0, Curve::kLinear, "" },
 } };
 
 // Physical value of control `index` at normalised position n (clamped to 0..1).

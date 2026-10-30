@@ -37,6 +37,7 @@
 #include "Decimator.h"
 #include "Mechanics.h"
 #include "OutputStage.h"
+#include "Room.h"
 #include "ReedBank.h"
 #include "RespiraControls.h"
 
@@ -243,6 +244,8 @@ private:
     double gain = 0.0, gainTarget = 0.0, bassGain = 0.0, bassGainTarget = 0.0, smoothing = 0.0;
     double trebleGain = 1.0, trebleGainTarget = 1.0;   // the register's trim
     protocodus::OutputStage<2> output;
+    Room room;
+    double roomGain = 0.0, roomGainTarget = 0.0;
     // The microphones' gains for each side (MicPair, RespiraEngine.cpp).
     float treblePanL = 0.0f, treblePanR = 0.0f, treblePanLTarget = 0.0f, treblePanRTarget = 0.0f;
     float bassPanL = 0.0f, bassPanR = 0.0f, bassPanLTarget = 0.0f, bassPanRTarget = 0.0f;
