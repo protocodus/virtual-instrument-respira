@@ -5,7 +5,11 @@
 // delay network (Jot and Chaigne, AES 90, 1991) with a Householder matrix: the
 // two microphones each hear four of the lines, so the field reaching them is
 // decorrelated as a real room's is, where the instrument's own sound reaches
-// both microphones at once. It is a voiced room, not a model of any one room.
+// both microphones at once. Four Schroeder allpasses spread the sound before it
+// enters the lines, so the field is dense from its start: fed straight in, an
+// impulse came back as a dozen separate echoes in the first 50 ms, which a
+// staccato note flutters through. It is a voiced room, not a model of any one
+// room.
 
 #include "DspMath.h"
 
@@ -20,6 +24,10 @@ public:
     // modes they make do not pile up on one frequency.
     static constexpr std::array<double, 8> kLineSeconds { { 0.02971, 0.03713, 0.04111, 0.04373, 0.05333, 0.05927, 0.06709, 0.07369 } };
     static constexpr int kMaxLine = 16384;   // 74 ms at 192 kHz, plus room to spare
+    // The diffusers' delays, mutually prime at 48 kHz, and their gain.
+    static constexpr std::array<double, 4> kDiffuserSeconds { { 0.00153, 0.00271, 0.00419, 0.00587 } };
+    static constexpr int kMaxDiffuser = 2048;   // 5.9 ms at 192 kHz, plus room to spare
+    static constexpr double kDiffuserGain = 0.7;
 
     // `rt60` is the time the field takes to fall 60 dB at low frequencies;
     // it falls steadily faster towards the top, `trebleShare` of it at
@@ -35,6 +43,8 @@ public:
             line.pole = (low - high) / (low + high);
             line.gain = low * (1.0 - line.pole);
         }
+        for (std::size_t i = 0; i < diffusers.size(); ++i)
+            diffusers[i].length = static_cast<int>(Min(kDiffuserSeconds[i] * rate, static_cast<double>(kMaxDiffuser - 1)));
     }
 
     void Clear() {
@@ -42,6 +52,10 @@ public:
             line.buffer.fill(0.0f);
             line.write = 0;
             line.low = 0.0;
+        }
+        for (Diffuser& d : diffusers) {
+            d.buffer.fill(0.0f);
+            d.write = 0;
         }
     }
 
@@ -58,7 +72,17 @@ public:
             out[i] = line.low;
             sum += out[i];
         }
-        const double input = 0.5 * (left + right), feedback = 0.25 * sum;   // 2/N
+        double input = 0.5 * (left + right);
+        for (Diffuser& d : diffusers) {
+            int read = d.write - d.length;
+            if (read < 0) read += kMaxDiffuser;
+            const double delayed = d.buffer[static_cast<std::size_t>(read)];
+            const double v = input + kDiffuserGain * delayed;
+            d.buffer[static_cast<std::size_t>(d.write)] = static_cast<float>(v);
+            if (++d.write == kMaxDiffuser) d.write = 0;
+            input = delayed - kDiffuserGain * v;
+        }
+        const double feedback = 0.25 * sum;   // 2/N
         roomLeft = roomRight = 0.0;
         for (std::size_t i = 0; i < lines.size(); ++i) {
             Line& line = lines[i];
@@ -81,6 +105,11 @@ private:
         double gain = 0.0, pole = 0.0, low = 0.0;
     };
     std::array<Line, 8> lines {};
+    struct Diffuser {
+        std::array<float, kMaxDiffuser> buffer {};
+        int length = 1, write = 0;
+    };
+    std::array<Diffuser, 4> diffusers {};
 };
 
 } // namespace respira

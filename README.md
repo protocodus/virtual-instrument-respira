@@ -444,13 +444,14 @@ positions are a full-size instrument's, estimated.
 
 **Room**, off by default, puts a room around the pair: the late, diffuse
 field of a voiced room with a 1 s decay at low frequencies and half that at
-the top, from an eight-line feedback delay network (`Source/DSP/Room.h`).
+the top, from an eight-line feedback delay network (`Source/DSP/Room.h`)
+behind four allpass diffusers, so it is dense from its first milliseconds.
 Each microphone hears four of the lines, so the field reaches the two
 decorrelated, as a room's does, while the instrument itself reaches both at
 once. In the five solo recordings the two channels' phase-transform
 cross-correlation of 170 ms frames peaks at only 0.20–0.51 at zero lag
 (median 0.38); the dry demos read 0.97–0.99, and Paris Musette at Room 1
-reads 0.37. The decay was chosen by ear from three (0.5, 1 and 2 s); the
+reads 0.38. The decay was chosen by ear from three (0.5, 1 and 2 s); the
 recordings' own rooms are not measured, since their notes rarely stop clean
 enough to read a decay.
 

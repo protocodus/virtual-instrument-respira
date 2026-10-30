@@ -143,7 +143,7 @@ constexpr double kRustleVoicing = 0.1778279410038923;   // -15 dB
 // (0.5, 1 and 2 s, listening pack 28, Docs/decisions.md). Its level at Room 1
 // brings the two channels' phase-transform cross-correlation of the Paris
 // Musette demo (170 ms frames, the median peak at zero lag) from 0.99 to
-// 0.37, where the owner's five solo recordings read 0.20-0.51, median 0.38.
+// 0.38, where the owner's five solo recordings read 0.20-0.51, median 0.38.
 constexpr double kRoomSeconds = 1.0, kRoomTrebleShare = 0.5, kRoomLevel = 0.8;
 constexpr double kValveVoicing = 0.031622776601683794;   // -30 dB: the push valves' slaps (kFlapDensity), against their estimate
 

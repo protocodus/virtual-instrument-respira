@@ -1443,3 +1443,15 @@ treble decays in half the low-frequency time at Nyquist in all three, a
 voiced share. What it licenses: an optional diffuse room whose amount is
 tied to the recordings' decorrelation; not early reflections, not a
 measured room.
+
+## 2026-10-30 — the room's onset, diffused (engineering)
+
+Fed straight into its eight lines, the room returned an impulse as about a
+dozen separate echoes in its first 50 ms (13 nonzero samples of 2400) and
+only 131 samples in the next 50 ms, so a staccato note fluttered through it.
+Four Schroeder allpasses (1.5–5.9 ms, gain 0.7) now spread the sound before
+the lines: 586 samples in the first 50 ms and every sample from 50 ms on. The
+decay and the channels' correlation are unchanged (Paris Musette at Room 1:
+0.38, the recordings' median). Pack 29-room-onset sets the two side by side
+on Bright Oboe's staccato; pack 28-room was re-rendered with the diffusers.
+Room stays off by default.

@@ -1147,6 +1147,18 @@ void RoomDecorrelatesAndRings() {
     }
     const double perSecond = (Db(Rms(out, rate, 0.7, 0.8)) - Db(Rms(out, rate, 1.2, 1.3))) / 0.5;
     Expect(std::fabs(perSecond - 60.0) < 6.0, "RoomDecorrelatesAndRings", "the room's decay at 200 Hz, dB/s", perSecond);
+
+    // Diffused from its start: an impulse fills every sample from 50 ms on
+    // (fed straight into the lines it came back as about a dozen echoes in the
+    // first 50 ms and 131 samples in the next).
+    room.Clear();
+    int filled = 0;
+    for (int i = 0; i < static_cast<int>(0.1 * rate); ++i) {
+        double l, r;
+        room.Process(i == 0 ? 1.0 : 0.0, i == 0 ? 1.0 : 0.0, l, r);
+        if (i >= static_cast<int>(0.05 * rate) && std::fabs(l) > 1.0e-6) ++filled;
+    }
+    Expect(filled == static_cast<int>(0.05 * rate), "RoomDecorrelatesAndRings", "samples heard 50-100 ms after an impulse", filled);
 }
 
 void CascadeVarianceScales() {
