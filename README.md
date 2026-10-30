@@ -142,6 +142,9 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
   pushes off springing back up.
 - The bellows sound: their folds flip with a soft rustle as the bellows turn
   and their leather rubs while they move, at levels chosen by ear.
+- The musette's beat rises with pitch as a measured Hohner's does (f^0.51,
+  where it was f^0.7): at Init's 22 cents a C3 triad beats about a quarter
+  faster and a C6 a sixth slower, A4 unchanged.
 
 ## Downloads
 
@@ -335,13 +338,15 @@ stroke and the ones it shuts fall silent. Each register's treble side is
 trimmed so all eight average one level on a C3, a C4 triad and a C6: untrimmed,
 Master is 1.9 dB louder than Musette and a single rank 3.5–3.9 dB softer, as
 on a real accordion, but a switch here changes the colour, not the level.
-**Musette** sets the M+ detune at A4 in cents; the beat
-rises with pitch as f^0.7, as tuners set tremolo reeds, and M− sits the same
-interval below. A Hohner's two-reed musette (Marek Kintosh's samples, C4–C6)
-beats as f^0.51 (0.25–0.75 at 90 %, its notes scattering 28 % about the
-line), 4.6 Hz or 18 cents at A4, between Violin Folk's 14 cents and Init's
-22 (`Tools/measure_musette.py`); with each reed's own tuning (above),
-Respira's beats scatter 20 % about their law.
+**Musette** sets the M+ detune at A4 in cents, and M− sits the same
+interval below. The beat rises with pitch as f^0.51, as a Hohner's two-reed
+musette beats (Marek Kintosh's samples, C4–C6: 0.25–0.75 at 90 %, its notes
+scattering 28 % about the line), 4.6 Hz or 18 cents at A4, between Violin
+Folk's 14 cents and Init's 22 (`Tools/measure_musette.py`). So a low chord
+beats faster and a high note slower than a fixed number of cents would
+have them: against A4, a C3 beats 0.54 times as fast and a C6 1.56 times.
+With each reed's own tuning (above), Respira's beats scatter 22–25 % about
+their law from C4 to C6.
 
 A bass button sounds two reeds, a 16' (E1–D♯2) and an 8' (E2–D♯3); a chord
 button sounds one pitch class on an 8' (F♯3–F4) and a 4' (F♯4–F5), so any

@@ -49,12 +49,15 @@ inline double RankNote(int rank, int key, double musetteCents) {
     case kRankMMinus:
     case kRankMPlus: {
         // Tremolo reeds are tuned to a beat rate that rises with pitch, as tuners
-        // do, rather than to fixed cents: musetteCents at A4, beat ~ f^0.7. A
-        // Hohner's two-reed musette beats as f^0.51 (0.25-0.75 at 90 %), 18
-        // cents at A4 (Tools/measure_musette.py).
+        // do, rather than to fixed cents: musetteCents at A4, beat ~ f^0.51, as
+        // a Hohner's two-reed musette beats from C4 to C6 (0.25-0.75 at 90 %,
+        // 18 cents at A4; Tools/measure_musette.py). It was f^0.7, a 1959
+        // Hohner's 1.7 beats a second at F3 and 7 at F6 (0.68, as a tuner
+        // reported it on accordionists.info); chosen over it as measured
+        // (Docs/decisions.md).
         const double f = NoteHz(key);
         const double beat440 = 440.0 * (std::pow(2.0, musetteCents / 1200.0) - 1.0);
-        const double beat = beat440 * std::pow(f / 440.0, 0.7);
+        const double beat = beat440 * std::pow(f / 440.0, 0.51);
         const double cents = 1200.0 * std::log2(1.0 + beat / f);
         return key + (rank == kRankMPlus ? cents : -cents) / 100.0;
     }

@@ -346,14 +346,14 @@ void PitchBend() {
 void MusetteBeat() {
     // Independent math: M+ sits c cents above M at A4, a beat of
     // 440 (2^(c/1200) - 1) Hz, and M- the same interval below; the beat grows
-    // as f^0.7 above A4.
+    // as f^0.51 above A4 (ReedBank.h, RankNote).
     const double c = 22.0, beatA4 = 440.0 * (std::pow(2.0, c / 1200.0) - 1.0);
     const double up = NoteHz(RankNote(kRankMPlus, 69, c)) - 440.0, down = 440.0 - NoteHz(RankNote(kRankMMinus, 69, c));
     Expect(std::fabs(up - beatA4) < 1.0e-9, "MusetteBeat", "M+ beats against M at A4, Hz", up);
     Expect(std::fabs(down - 440.0 * (1.0 - std::pow(2.0, -c / 1200.0))) < 1.0e-9, "MusetteBeat",
            "M- sits the same interval below, Hz", down);
     const double up81 = NoteHz(RankNote(kRankMPlus, 81, c)) - 880.0;
-    Expect(std::fabs(up81 - beatA4 * std::pow(2.0, 0.7)) < 1.0e-9, "MusetteBeat", "an octave up the beat is 2^0.7 faster, Hz", up81);
+    Expect(std::fabs(up81 - beatA4 * std::pow(2.0, 0.51)) < 1.0e-9, "MusetteBeat", "an octave up the beat is 2^0.51 faster, Hz", up81);
 }
 
 void SplitKeyboardRouting() {

@@ -1236,3 +1236,24 @@ Under the standing rule the middle letters ship until the owner hears them
 (fold flips at −30 dB against the panel estimate, rustle at −7 dB against its
 own scale). Verdict pending. Whatever is chosen is a voicing: it does not
 measure the folds, and a recording of a real bellows would replace it.
+
+## 2026-10-30 — the musette's beat law from the measured Hohner (owner asked; engineering)
+
+The owner asked for another round of audible realism. The tremolo reeds were
+tuned so their beat rose as f^0.7, "as tuners do", from Musette's detune at
+A4. Two played instruments give the exponent: a Hohner's two-reed musette,
+measured from Marek Kintosh's samples (C4–C6), beats as f^0.51 (0.25–0.75 at
+90 %; `Tools/measure_musette.py`), and a 1959 Hohner a tuner reported on
+accordionists.info beat 1.7 times a second at F3 and 7 at F6, f^0.68. Each
+is defensible, so this is a choice by ear. Pack `23-musette`
+(listening-2026-10-30): Paris Musette under Auto at 400 Pa, a C3 triad, a C4
+triad, a C6 and a C5–C6 chord, two seconds each; A f^0.7, B f^0.51, B
+trimmed −0.09 dB to A's whole-file RMS. Against A4, which does not move, B's
+C3 beats 1.26 times as fast as A's and its C6 0.85 times.
+
+Under the owner's standing rule the candidate ships until the owner hears
+it: B (ReedBank.h, `RankNote`). The tuning table does not depend on the law
+(`Respira.ReedTuning` passes unchanged). With each reed's own tuning, the
+pull reeds' beats from C4 to C6 fit f^0.54 and scatter 22 % about it (f^0.72
+and 20 % before). Verdict pending. What the choice licenses: the exponent of one measured
+instrument, not a claim that tuners set it so.
