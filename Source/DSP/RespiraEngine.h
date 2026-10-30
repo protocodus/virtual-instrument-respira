@@ -186,6 +186,9 @@ private:
         double stroke = 4.0;          // quarter notes in a stroke
         double rested = 1.0e9;        // seconds since the hand last moved
         double drive = 0.0, velocity = 0.0;   // the hand's path, in wheel ranges, which the arm follows
+        bool pulled = false;          // the way the hand moved last sample
+        bool swinging = false;        // turning: the hand goes as fast as it can
+        double hold = 0.0;            // the air the player expects the reeds to take, m^3/s
     };
 
     void StepPlayer(double dt);

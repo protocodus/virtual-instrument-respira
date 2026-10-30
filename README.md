@@ -145,6 +145,10 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 - The musette's beat rises with pitch as a measured Hohner's does (f^0.51,
   where it was f^0.7): at Init's 22 cents a C3 triad beats about a quarter
   faster and a C6 a sixth slower, A4 unchanged.
+- Auto turns the bellows as a player plans a turn: the hand goes as fast as
+  it can until the pressure its arm will bring is the new one, so a held
+  chord falls more than 10 dB for 5–15 ms at a turn, where it fell for
+  125–190 ms and twice as deep.
 
 ## Downloads
 
@@ -204,14 +208,20 @@ on a pull, as a player starts with the bellows closed.
 
 The hand does not move at a fixed speed: like a player it feels the air the
 reeds take and gives it, and closes on the pressure it wants in a reaction
-time of 0.1 s (four times Momentum when that is longer, so the arm and the
-reaction cannot ring). It wants 400 Pa, the pressure the demo phrases'
+time of 0.1 s (four times Momentum when that is longer). It feels its own
+arm too, so it closes on the pressure the arm will bring once it catches
+up, and the arm's trail of twice Momentum is part of that time rather than a
+lag inside the loop. It wants 400 Pa, the pressure the demo phrases'
 ordinary strokes are fitted to and about −9 VU, whatever is played and
 whatever Bellows and Assist are set to; the wheel raises that up to four
 times, 1.6 kPa at the top, so it is an expression control from its resting
-place at 0. The hand turns early by twice Momentum plus that reaction time,
-so the pressure passes zero 5–45 ms before the bar line at the default
-Momentum and the new stroke speaks on the downbeat. Each stroke starts from
+place at 0. A turn is planned rather than reacted to: expecting the reeds to
+take the air they took, the other way, the hand moves as fast as it goes
+(4 L/s of its own air, more with Assist) until the pressure its arm will
+bring is the new one, so a held chord falls more than 10 dB below its level
+for only 5–15 ms. The hand turns early by twice Momentum plus the time that
+swing to zero takes it, so the pressure passes zero 5–25 ms before the bar
+line at the default Momentum and the new stroke speaks on the downbeat. Each stroke starts from
 rest; let go of every key and the hand stops, the closed pallets keeping
 the bellows at their pressure, so the next note speaks at once. A first
 stroke starts far enough in from the end of the bellows that the strokes

@@ -38,8 +38,9 @@ constexpr double kAutoBellows = 6.0e-3;     // m^3
 constexpr double kAutoRoom = 0.05;          // how far from its end, of the whole, the bellows start a stroke
 constexpr double kAutoFastest = 4.0e-3;     // m^3/s: the most air the hand moves, opening or closing
 // Auto's player closes on the pressure they want in 0.1 s, a hand's reaction,
-// or four times the arm's lag (Momentum, ms) when that is longer, so that the
-// two cannot ring: the arm then costs the loop 28 degrees of phase.
+// or four times the arm's lag (Momentum, ms) when that is longer. The arm's
+// trail of twice its lag is part of that time, so the player's own part, what
+// is left, is never shorter than the trail.
 double Reaction(double momentum) { return Max(0.1, 4.0e-3 * momentum); }
 // The radiated sound is the pallet flow's rate of change as from a small
 // source 1 m away; 0.67 Pa there (90.5 dB SPL) is digital full scale, so the
@@ -378,10 +379,17 @@ void Engine::StepPlayer(double dt) {
         player.cycle = 0.0;   // a new phrase starts on a pull
     player.cycle += transport.bpm / 60.0 * dt;
     if (player.cycle >= cycle) player.cycle -= cycle;
-    // The arm trails a steady stroke by 2 Momentum and the pressure swings
-    // round in about a reaction time (below), so the hand turns that much
-    // early and the pressure passes zero just before the bar line.
-    double ahead = player.cycle + (2.0e-3 * controls[kMomentum] + Reaction(controls[kMomentum])) * transport.bpm / 60.0;
+    const double litres = controls[kBellows] * 1.0e-3, open = Max(1.0, kAutoBellows / litres);   // wheels
+    const double perWheel = litres * (1.0 + controls[kAssist] * (Max(demand, 1.0) - 1.0));
+    const double fastest = kAutoFastest / litres;
+    // The arm trails a steady stroke by 2 Momentum, and a turn (below) takes
+    // the hand at its fastest the time the air of the swing to zero asks of
+    // it, with the air the arm's own reversal costs (twice its trail of the
+    // air the reeds take), so the hand turns that much early and the pressure
+    // passes zero just before the bar line.
+    const double momentum = controls[kMomentum], size = kAutoPressure * (1.0 + 3.0 * hand.wheel);
+    const double swing = size / kBellowsStiffness + 4.0e-3 * momentum * Abs(player.hold);   // m^3
+    double ahead = player.cycle + (2.0e-3 * momentum + swing / (perWheel * fastest)) * transport.bpm / 60.0;
     if (ahead >= cycle) ahead -= cycle;
     const int half = ahead < player.stroke ? 0 : 1;
     if (half != player.half) {
@@ -395,9 +403,7 @@ void Engine::StepPlayer(double dt) {
         return;
     }
     const bool pulling = (half == 0) != player.turned;
-    const double want = (pulling ? -kAutoPressure : kAutoPressure) * (1.0 + 3.0 * hand.wheel);
-    const double litres = controls[kBellows] * 1.0e-3, open = Max(1.0, kAutoBellows / litres);   // wheels
-    const double perWheel = litres * (1.0 + controls[kAssist] * (Max(demand, 1.0) - 1.0));
+    const double want = pulling ? -size : size;
     if (!player.running) {
         // Each later stroke also swings the pressure through zero, a travel
         // this one is spared by as much as it starts nearer its pressure: the
@@ -407,15 +413,38 @@ void Engine::StepPlayer(double dt) {
         const double from = Clamp(kAutoRoom * open + spared, 0.0, 0.5 * open);
         player.running = true;
         player.drive = hand.position = pulling ? from : open - from;
+        player.pulled = pulling;
+        player.swinging = false;
     }
     player.rested = 0.0;
-    // The player feels the air the reeds take and gives it, and closes on the
-    // pressure they want in a reaction time: the air that time asks of the
-    // bellows' stiffness. The hand's air is undone through Assist and Bellows
-    // into wheel speed, and the hand never moves against its stroke.
-    const double flow = airFlow + kBellowsLeak * pressure + (want - pressure) / (kBellowsStiffness * Reaction(controls[kMomentum]));
-    const double fastest = kAutoFastest / litres;
-    player.velocity = Clamp(-flow / perWheel, pulling ? 0.0 : -fastest, pulling ? fastest : 0.0);
+    // The player feels the air the reeds take and gives it, and expects it at
+    // the rate the arm can follow, which also keeps the reeds' own ripple out
+    // of what they expect.
+    const double air = airFlow + kBellowsLeak * pressure;
+    const double arm = momentum > 0.0 ? Min(1.0e3 / momentum, 0.5 / dt) : 0.0;   // as Hand::Tick
+    player.hold = arm > 0.0 ? player.hold + Min(1.0, dt * arm) * (air - player.hold) : air;
+    // A turn is planned: the player expects the reeds to take the air they
+    // took, the other way, and moves the hand as fast as it goes until the
+    // pressure the arm will bring is the new one; then they play on.
+    if (pulling != player.pulled) {
+        player.pulled = pulling;
+        player.hold = -player.hold;
+        player.swinging = true;
+    }
+    // The pressure once the arm has caught up with the hand: it trails a
+    // steady stroke by 2 / arm, so the air it owes beyond that is still to
+    // come. The player feels their own arm and closes on this, so its lag
+    // stays out of their loop.
+    const double coming = pressure - kBellowsStiffness * (perWheel * (player.drive - hand.position) + (arm > 0.0 ? 2.0 * player.hold / arm : 0.0));
+    // They close on the pressure they want in their part of a reaction time
+    // (above): the air that time asks of the bellows' stiffness. The hand's
+    // air is undone through Assist and Bellows into wheel speed, and the hand
+    // never moves against its stroke.
+    const double closing = player.swinging ? dt : Reaction(momentum) - 2.0e-3 * momentum;
+    const double flow = air + (want - coming) / (kBellowsStiffness * closing);
+    const double wanted = -flow / perWheel;
+    player.velocity = Clamp(wanted, pulling ? 0.0 : -fastest, pulling ? fastest : 0.0);
+    if (player.velocity == wanted) player.swinging = false;
     player.drive += dt * player.velocity;
     if (player.drive >= open || player.drive <= 0.0) {   // the bellows ran out: turn now
         player.drive = Clamp(player.drive, 0.0, open);

@@ -1274,3 +1274,44 @@ rustle at −15 dB against its own scale (about 45 dB under the chord while
 the bellows move), the quietest letter in each pack. The choice sets
 voicings; it measures neither the folds' play nor their rubbing, and a
 recording of a real bellows would replace both.
+
+## 2026-10-30 — Auto's planned turn (owner's recordings; engineering)
+
+The owner shared five solo accordion recordings to compare against. Their
+tone balance and attacks already sit with Respira's, and their clicks
+bracket the Mechanics default; their bellows turns did not. Where a player
+holds notes through a turn, the sound dips for 100 ms or less (read off the
+envelopes, not measured to a protocol). Auto's hand held a chord more than
+10 dB down for 125–190 ms and as much as 24 dB down, because it turned by
+reacting: it closed on the new pressure in its 0.1 s reaction with the arm's
+lag inside that loop, so the pressure took about 0.3 s to swing round. A
+fast pressure swing alone (Momentum 0 and a 30 ms reaction, a probe) left
+the dip at the −10 dB line, so the reeds restart fast enough and the swing
+was the cause.
+
+The candidate plans the turn from the engine's own parts, with no new
+constant. The player feels their own arm: they close on the pressure the arm
+will bring once it catches up (the hand's lead over the arm, less the trail a
+steady stroke at the air they expect would have), in what is left of their
+reaction after the arm's trail of twice Momentum, so the low-frequency
+response keeps its 0.1 s. At a turn they expect the reeds to take the air
+they took, the other way, and move the hand as fast as it goes
+(kAutoFastest, through Assist and Bellows) until that pressure is the new
+one. They expect the air at the arm's rate, which keeps the reeds' ripple out
+of the prediction. The hand turns early by twice Momentum plus the time that
+swing to zero, the arm's reversal included, takes at its fastest.
+
+Measured, default controls, Paris Musette: a held triad or a bass, chord and
+triad now falls more than 10 dB for 5–15 ms (125–190 ms), deepest −11 to
+−14 dB (−21 to −24); the pressure passes zero 5–25 ms before the bar line
+(10 ms before to 15 ms after); the first stroke from rest reaches −380 Pa as
+before, slightly sooner. At Momentum 100 and 200 the old loop held 240 and
+under 20 Pa and the new one 320 and 190 Pa: the arm out of the loop helps
+there too, though neither holds 400. With Assist 0 the hand's 4 L/s against
+a triad's 1.5 L/s keeps a 75 ms dip (130 ms).
+
+Pack `24-turn` (listening-2026-10-30): Paris Musette under Auto at 120 bpm,
+C bass, chord and triad held through three turns; A the old loop, B the
+planned turn, B trimmed −0.33 dB to A's whole-file RMS. Under the standing
+rule B ships until the owner hears it. Verdict pending. What it licenses: a
+turn as fast as the hand's limits allow, not a measured turn time.
