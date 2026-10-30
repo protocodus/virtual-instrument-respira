@@ -789,6 +789,14 @@ void FoldsSoundWithTheBellows() {
     const auto stopping = MechanismOf(3, 3.5, note, [](double s) { return s < 1.5 ? 0.3 + 0.2 * s : 0.6; });
     const double moving = Rms(stopping, rate, 0.8, 1.4), still = Rms(stopping, rate, 3.0, 3.5);
     Expect(Db(moving) - Db(still) > 30.0, "FoldsSoundWithTheBellows", "level drop once the hand stops, dB", Db(moving) - Db(still));
+    // Vented to almost no pressure, the panels settle within their play and
+    // the device falls silent (they once drifted there for ever).
+    auto e = Make(rate, 0);
+    const Take vented = Play(*e, rate, 10.0, { { 0.0, { kOn, 60, 100 } }, { 0.0, { kOn, 64, 100 } }, { 3.0, { kOff, 60, 0 } },
+                                               { 3.0, { kOff, 64, 0 } }, { 4.5, { kCc, 64, 127 } }, { 4.8, { kCc, 64, 0 } } },
+                             [](double s) { return 0.3 + 0.2 * std::sin(3.0 * std::min(s, 3.0)); });
+    Expect(Rms(vented.left, rate, 6.0, 10.0) == 0.0, "FoldsSoundWithTheBellows", "after the air button, dBFS RMS",
+           Db(Rms(vented.left, rate, 6.0, 10.0)));
 }
 
 void AutoHandsBackToTheWheel() {

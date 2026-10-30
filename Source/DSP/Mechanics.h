@@ -139,6 +139,7 @@ struct Knock {
 inline constexpr int kPleats = 144;
 inline constexpr double kPleatDepth = 0.035, kPleatLongWall = 0.41, kPleatShortWall = 0.19;
 inline constexpr double kPleatSurfaceMass = 1.0, kPleatPlay = 0.0005;
+inline constexpr double kPleatHold = 1.0;   // Pa: the cloth's friction within the play, an estimate
 // A panel radiates as a key does (kForceToFlow), a strip of its own size
 // driven by the force on it: pi (w/2)^2 L / m with m = rho_s w L, the same for
 // every panel whatever its length, against the key's.
@@ -154,24 +155,30 @@ struct Pleat {
     // pressure p (Pa, positive pressing: outwards). A panel that has come to
     // rest on its hinge sleeps there, the hinge bearing the load as it eases,
     // until the pressure pulls the panel the other way; it then leaves from
-    // the compression that load held.
+    // the compression that load held. Within its play the cloth's friction
+    // slows it and holds it still until the pressure on it passes
+    // kPleatHold, so with the bellows vented the panels settle where they are.
     double Step(double p, double dt) {
-        const double load = p * area;
+        const double load = p * area, hold = kPleatHold * area;
         if (!moving) {
-            if (x == 0.0 ? load == 0.0 : load * x >= 0.0) {
-                contact = load;   // held still, so radiating nothing
+            const bool loose = Abs(x) <= play;
+            if (loose ? Abs(load) <= hold : load * x >= 0.0) {
+                contact = loose ? 0.0 : load;   // held still, so radiating nothing
                 return 0.0;
             }
-            if (x != 0.0) x = (x > 0.0 ? 1.0 : -1.0) * (play + Compression(Abs(contact)));
+            if (loose) contact = 0.0;
+            else x = (x > 0.0 ? 1.0 : -1.0) * (play + Compression(Abs(contact)));
             moving = true;
         }
-        const double before = contact, h = dt / Knock::kSteps;
+        const double before = contact, h = dt / Knock::kSteps, slow = hold / mass * h;
         for (int i = 0; i < Knock::kSteps; ++i) {
             v += (load - Hinge(x, v)) / mass * h;
+            if (Abs(x) <= play) v = Abs(v) <= slow ? 0.0 : v - (v > 0.0 ? slow : -slow);
             x += v * h;
         }
         contact = Hinge(x, v);
-        if (Abs(x) > play && Abs(v) < 1.0e-4 && Abs(contact - load) < 0.02 * Abs(load)) {
+        const bool loose = Abs(x) <= play;
+        if (Abs(v) < 1.0e-4 && (loose ? Abs(load) <= hold : Abs(contact - load) < 0.02 * Abs(load))) {
             moving = false;
             v = 0.0;
         }
@@ -226,7 +233,9 @@ struct Folds {
             const int size = kPleats - 64 * w < 64 ? kPleats - 64 * w : 64;
             const std::uint64_t all = size == 64 ? ~std::uint64_t(0) : (std::uint64_t(1) << size) - 1;
             const std::uint64_t resting = all & ~moving[w];
-            const std::uint64_t against = p == 0.0 ? 0 : tiny ? resting : resting & ~(p > 0.0 ? out[w] : in[w]);
+            // Those within their play (in neither set) move only above kPleatHold.
+            const std::uint64_t held = Abs(p) > kPleatHold ? all : out[w] | in[w];
+            const std::uint64_t against = p == 0.0 ? 0 : tiny ? resting : resting & ~(p > 0.0 ? out[w] : in[w]) & held;
             for (std::uint64_t step = moving[w] | against; step != 0; step &= step - 1)
                 list[count++] = static_cast<std::uint8_t>(64 * w + LowestBit(step));
         }
@@ -251,8 +260,10 @@ struct Folds {
             moving[w] &= ~bit;
             if (pleat.moving) moving[w] |= bit;
             else {
-                if (pleat.x > 0.0) out[w] |= bit;
-                else if (pleat.x < 0.0) in[w] |= bit;
+                // One resting within its play is in neither set: any
+                // pressure may move it, and Pleat::Step holds it below kPleatHold.
+                if (pleat.x > pleat.play) out[w] |= bit;
+                else if (pleat.x < -pleat.play) in[w] |= bit;
                 if (was) fresh[w] |= bit;
             }
         }
