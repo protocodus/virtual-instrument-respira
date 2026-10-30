@@ -684,59 +684,82 @@ std::unique_ptr<Engine> MakeAuto(double rate, const std::function<void(Controls&
 }
 
 void AutoTurnsOnTheBars() {
-    // In 3/4 at 120 the hand pulls through one bar and pushes through the
-    // next, 6 beats a cycle, from the first bar of the song; the pressure
-    // passes zero just before each bar line and holds 400 Pa between.
+    // In 3/4 at 240 (0.75 s a bar) the hand pulls through four bars and
+    // pushes through the next four, 24 beats a cycle, from the first bar of
+    // the song; one note leaves the bellows air to spare, so the pressure
+    // passes zero just before every fourth bar line and holds 400 Pa between.
     const double rate = 48000.0;
     auto e = MakeAuto(rate);
-    const Take t = PlayAuto(*e, rate, 6.6, { { 0.0, { kOn, 69, 100 } } }, 120.0, 3, true);
-    Expect(MeanPressure(t, rate, 0.8, 1.4) < -380.0 && MeanPressure(t, rate, 0.8, 1.4) > -420.0, "AutoTurnsOnTheBars",
-           "the first bar pulls at 400 Pa, Pa", MeanPressure(t, rate, 0.8, 1.4));
-    Expect(MeanPressure(t, rate, 2.3, 2.9) > 380.0 && MeanPressure(t, rate, 2.3, 2.9) < 420.0, "AutoTurnsOnTheBars",
-           "the second pushes, Pa", MeanPressure(t, rate, 2.3, 2.9));
+    const Take t = PlayAuto(*e, rate, 9.6, { { 0.0, { kOn, 69, 100 } } }, 240.0, 3, true);
+    Expect(MeanPressure(t, rate, 0.8, 2.6) < -380.0 && MeanPressure(t, rate, 0.8, 2.6) > -420.0, "AutoTurnsOnTheBars",
+           "the first four bars pull at 400 Pa, Pa", MeanPressure(t, rate, 0.8, 2.6));
+    Expect(MeanPressure(t, rate, 3.4, 5.6) > 380.0 && MeanPressure(t, rate, 3.4, 5.6) < 420.0, "AutoTurnsOnTheBars",
+           "the next four push, Pa", MeanPressure(t, rate, 3.4, 5.6));
     const std::vector<double> turns = Turns(t, rate, 0.5);
-    bool onBars = turns.size() == 4;
+    bool onBars = turns.size() == 3;
     double worst = 0.0;
     for (std::size_t i = 0; i < turns.size(); ++i) {
-        const double early = 1.5 * static_cast<double>(i + 1) - turns[i];
+        const double early = 3.0 * static_cast<double>(i + 1) - turns[i];
         worst = std::max(worst, std::fabs(early - 0.03));
         onBars = onBars && early >= 0.0 && early < 0.08;
     }
-    Expect(onBars, "AutoTurnsOnTheBars", "four turns, each 0-80 ms before a bar line; furthest from 30 ms, s", worst);
+    Expect(onBars, "AutoTurnsOnTheBars", "three turns, each 0-80 ms before a fourth bar line; furthest from 30 ms, s", worst);
 }
 
 void AutoFollowsTheSong() {
-    // Started in the song's fourth bar (4/4 at 90), the hand pushes, as it
-    // would have had playback started at the top; a bar of 3/4 at 240 is
-    // 0.75 s, so two make a stroke.
+    // Started in the song's fifth bar (4/4 at 90), the hand pushes, as it
+    // would have had playback started at the top; started in the third bar
+    // of 3/4 at 240 (0.75 s a bar), it pulls on to the fifth.
     const double rate = 48000.0;
     auto e = MakeAuto(rate);
-    Take t = PlayAuto(*e, rate, 1.0, { { 0.0, { kOn, 69, 100 } } }, 90.0, 4, true, 12.0);
-    Expect(MeanPressure(t, rate, 0.6, 0.9) > 300.0, "AutoFollowsTheSong", "bar 4 pushes, Pa", MeanPressure(t, rate, 0.6, 0.9));
+    Take t = PlayAuto(*e, rate, 1.0, { { 0.0, { kOn, 69, 100 } } }, 90.0, 4, true, 16.0);
+    Expect(MeanPressure(t, rate, 0.6, 0.9) > 300.0, "AutoFollowsTheSong", "bar 5 pushes, Pa", MeanPressure(t, rate, 0.6, 0.9));
     e = MakeAuto(rate);
-    t = PlayAuto(*e, rate, 2.2, { { 0.0, { kOn, 69, 100 } } }, 240.0, 3, true);
+    t = PlayAuto(*e, rate, 2.2, { { 0.0, { kOn, 69, 100 } } }, 240.0, 3, true, 6.0);
     const std::vector<double> turns = Turns(t, rate, 0.5);
     Expect(turns.size() == 1 && turns[0] > 1.42 && turns[0] < 1.5, "AutoFollowsTheSong",
-           "in 3/4 at 240 the hand turns once, before the third bar, s", turns.empty() ? 0.0 : turns[0]);
+           "from bar 3 of 3/4 at 240 the hand turns once, before bar 5, s", turns.empty() ? 0.0 : turns[0]);
 }
 
 void AutoRestsWithTheKeys() {
     // Without the transport the strokes run at the host's tempo from the first
     // note. Let go, the hand stops and the bellows keep their pressure, so the
-    // next note speaks at once; after a rest of a stroke the hand starts again
-    // on a pull.
+    // next note speaks at once; after a rest of a stroke (8 s at 120 in 4/4,
+    // so the cycle alone would push at 10 s) the hand starts again on a pull.
     const double rate = 48000.0;
     auto e = MakeAuto(rate);
-    const Take t = PlayAuto(*e, rate, 9.0, { { 0.3, { kOn, 69, 100 } }, { 1.0, { kOff, 69, 0 } }, { 1.5, { kOn, 69, 100 } },
-                                             { 1.7, { kOff, 69, 0 } }, { 6.0, { kOn, 72, 100 } } },
+    const Take t = PlayAuto(*e, rate, 11.4, { { 0.3, { kOn, 69, 100 } }, { 1.0, { kOff, 69, 0 } }, { 1.5, { kOn, 69, 100 } },
+                                              { 1.7, { kOff, 69, 0 } }, { 10.0, { kOn, 72, 100 } } },
                             120.0, 4, false);
     Expect(MeanPressure(t, rate, 0.7, 0.95) < -380.0, "AutoRestsWithTheKeys", "the first note pulls, Pa", MeanPressure(t, rate, 0.7, 0.95));
     Expect(MeanPressure(t, rate, 1.2, 1.45) < -380.0, "AutoRestsWithTheKeys", "the bellows hold their pressure at rest, Pa",
            MeanPressure(t, rate, 1.2, 1.45));
     Expect(Rms(t.left, rate, 1.53, 1.6) > 0.7 * Rms(t.left, rate, 0.7, 0.95), "AutoRestsWithTheKeys",
            "the next note speaks at once, against the held one", Rms(t.left, rate, 1.53, 1.6) / Rms(t.left, rate, 0.7, 0.95));
-    Expect(MeanPressure(t, rate, 6.6, 7.4) < -380.0, "AutoRestsWithTheKeys", "after a long rest it pulls again, Pa",
-           MeanPressure(t, rate, 6.6, 7.4));
+    Expect(MeanPressure(t, rate, 10.6, 11.4) < -380.0, "AutoRestsWithTheKeys", "after a long rest it pulls again, Pa",
+           MeanPressure(t, rate, 10.6, 11.4));
+}
+
+void AutoTurnsWhenTheAirRunsShort() {
+    // A bass, a chord and a triad with Assist 0 take some 3 L/s, so the 6 L
+    // bellows last about a bar of 4/4 at 120: the hand turns at the bar lines
+    // where the air would run short, well before four bars, never between
+    // them.
+    const double rate = 48000.0;
+    auto e = MakeAuto(rate, [](Controls& c) { c[kAssist] = 0.0; });
+    const std::vector<Note> chord { { 0.0, { kOn, 60, 100 } }, { 0.0, { kOn, 64, 100 } }, { 0.0, { kOn, 67, 100 } },
+                                    { 0.0, { kOn, 36, 100 } }, { 0.0, { kOn, 24, 100 } } };
+    const Take t = PlayAuto(*e, rate, 8.6, chord, 120.0, 4, true);
+    const std::vector<double> turns = Turns(t, rate, 0.5);
+    bool onBars = turns.size() >= 3;
+    double worst = 0.0;
+    for (const double turn : turns) {
+        const double early = 2.0 * std::ceil(turn / 2.0) - turn;
+        worst = std::max(worst, early);
+        onBars = onBars && early < 0.08;
+    }
+    Expect(onBars, "AutoTurnsWhenTheAirRunsShort", "three turns or more in four bars, each 0-80 ms before a bar line; earliest, s",
+           worst);
 }
 
 void AutoHoldsItsPressure() {
@@ -1137,6 +1160,7 @@ int main() {
     AutoFollowsTheSong();
     AutoRestsWithTheKeys();
     AutoHoldsItsPressure();
+    AutoTurnsWhenTheAirRunsShort();
     AutoHandsBackToTheWheel();
     FoldsSoundWithTheBellows();
     std::printf("%d failure(s)\n", failures);

@@ -1315,3 +1315,35 @@ C bass, chord and triad held through three turns; A the old loop, B the
 planned turn, B trimmed −0.33 dB to A's whole-file RMS. Under the standing
 rule B ships until the owner hears it. Verdict pending. What it licenses: a
 turn as fast as the hand's limits allow, not a measured turn time.
+
+## 2026-10-30 — Auto's four-bar strokes (owner's recordings; engineering)
+
+Listening to the same recordings, the owner noted that the players turn the
+bellows less often than Auto: a stroke carries across several bars. Auto
+turned every bar (two, four or eight when a bar was under a second), so at
+120 in 4/4 every 2 s. Accordion teaching gives four bars on a full-size
+instrument and two on a small one or for a smaller player (accordionlife.com,
+"Top 3 Mistakes Accordionists Make With The Bellows"; on accordionists.info
+players advise two bars open and two closed rather than a turn every bar),
+changing at phrase points, and sooner where dense or sustained playing
+takes more air. The bars a stroke spans in the recordings were not measured:
+their busy playing hides the turns from a level-dip detector.
+
+The candidate: four bars a stroke (kAutoBars), the eight-bar cycle counted
+from the song's first bar as before, and at each bar line, timed as the
+turns are, the player turns early if the bellows (Auto's estimated 6 L) will
+not last the next bar at the air they expect the reeds to take. The bellows
+running out mid-bar stays as the last resort. At 120 in 4/4, Paris Musette
+at 400 Pa: one note or a triad turns every four bars; a bass, chord and
+triad (3 L/s) every four with Assist at 0.5 and every bar with Assist at 0,
+always 0–80 ms before a bar line (`AutoTurnsWhenTheAirRunsShort`). With the
+reeds' own air the turn's timing now also counts the air they take, which
+helps the swing to zero; the pressure passes zero 5–25 ms before the bar
+line at the default Momentum.
+
+Pack `25-strokes` (listening-2026-10-30): six bars of an original musette
+tune in 4/4 at 120 with bass and chords under Auto; A one-bar strokes (turns
+at 2, 4, 6, 8, 10, 12 s), B four-bar strokes (one turn, at 8 s), B trimmed
+−0.03 dB to A's whole-file RMS. Under the standing rule B ships until the
+owner hears it. Verdict pending. What it licenses: the taught stroke length
+and a turn where the air runs short, not a measured phrase length.

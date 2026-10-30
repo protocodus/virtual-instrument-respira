@@ -31,7 +31,11 @@ constexpr double kHandCatchUp = 25.0;       // 1/s: how fast the hand closes on 
 // phrases' ordinary strokes are fitted to (Tools/write_preset_midi.py), and
 // four times that with the wheel at the top. Voiced, not measured.
 constexpr double kAutoPressure = 400.0;     // Pa
-constexpr double kAutoShortestStroke = 1.0; // s: shorter bars take two or more to a stroke
+// A stroke is four bars, as accordionists are taught to change the bellows
+// on a full-size instrument (every two on a small one: accordionlife.com,
+// "Top 3 Mistakes Accordionists Make With The Bellows"), unless the air runs
+// short first (StepPlayer).
+constexpr double kAutoBars = 4.0;
 // The bellows Auto's hand moves hold 6 L between closed and open, an estimate
 // for a full-size accordion; the wheel's sweep (Bellows) is only its gearing.
 constexpr double kAutoBellows = 6.0e-3;     // m^3
@@ -359,10 +363,9 @@ void Engine::SetTransport(const Transport& next) {
     t.numerator = t.numerator >= 1 && t.numerator <= 64 ? t.numerator : 4;
     t.denominator = t.denominator >= 1 && t.denominator <= 64 ? t.denominator : 4;
     const double bar = 4.0 * t.numerator / t.denominator;
-    double stroke = bar;
-    while (stroke * 60.0 / t.bpm < kAutoShortestStroke && stroke < 8.0 * bar) stroke *= 2.0;
-    player.stroke = stroke;
-    const double cycle = 2.0 * stroke;
+    player.bar = bar;
+    player.stroke = kAutoBars * bar;
+    const double cycle = 2.0 * player.stroke;
     if (t.playing && t.position == t.position && t.barStart == t.barStart && Abs(t.position) < 1.0e9 && Abs(t.barStart) < 1.0e9) {
         // The bar's number from the song's start places it in the cycle, so
         // every pull starts on the same bars wherever playback starts.
@@ -383,13 +386,13 @@ void Engine::StepPlayer(double dt) {
     const double perWheel = litres * (1.0 + controls[kAssist] * (Max(demand, 1.0) - 1.0));
     const double fastest = kAutoFastest / litres;
     // The arm trails a steady stroke by 2 Momentum, and a turn (below) takes
-    // the hand at its fastest the time the air of the swing to zero asks of
-    // it, with the air the arm's own reversal costs (twice its trail of the
-    // air the reeds take), so the hand turns that much early and the pressure
-    // passes zero just before the bar line.
+    // the hand at its fastest, helped by the air the reeds take, the time the
+    // air of the swing to zero asks, with the air the arm's own reversal costs
+    // (twice its trail of the air the reeds take), so the hand turns that much
+    // early and the pressure passes zero just before the bar line.
     const double momentum = controls[kMomentum], size = kAutoPressure * (1.0 + 3.0 * hand.wheel);
     const double swing = size / kBellowsStiffness + 4.0e-3 * momentum * Abs(player.hold);   // m^3
-    double ahead = player.cycle + (2.0e-3 * momentum + swing / (perWheel * fastest)) * transport.bpm / 60.0;
+    double ahead = player.cycle + (2.0e-3 * momentum + swing / (perWheel * fastest + Abs(player.hold))) * transport.bpm / 60.0;
     if (ahead >= cycle) ahead -= cycle;
     const int half = ahead < player.stroke ? 0 : 1;
     if (half != player.half) {
@@ -401,6 +404,15 @@ void Engine::StepPlayer(double dt) {
         player.velocity = 0.0;
         player.rested += dt;
         return;
+    }
+    // At each bar line the player turns early if the bellows will not last
+    // the next bar at the air the reeds take, as players change at a bar line
+    // when the air runs short rather than in the middle of one.
+    const double barLine = std::floor(ahead / player.bar);
+    if (barLine != player.barLine) {
+        player.barLine = barLine;
+        const double left = (half == 0) != player.turned ? open - player.drive : player.drive;
+        if (player.running && left * perWheel < Abs(player.hold) * player.bar * 60.0 / transport.bpm) player.turned = !player.turned;
     }
     const bool pulling = (half == 0) != player.turned;
     const double want = pulling ? -size : size;

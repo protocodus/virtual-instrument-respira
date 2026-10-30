@@ -183,7 +183,9 @@ private:
         bool running = false, turned = false;
         int half = 0;                 // 0 pulling, 1 pushing, on the grid
         double cycle = 0.0;           // quarter notes into the pull + push cycle
-        double stroke = 4.0;          // quarter notes in a stroke
+        double stroke = 16.0;         // quarter notes in a stroke
+        double bar = 4.0;             // quarter notes in a bar
+        double barLine = 0.0;         // the bar line the hand's next turn is timed for
         double rested = 1.0e9;        // seconds since the hand last moved
         double drive = 0.0, velocity = 0.0;   // the hand's path, in wheel ranges, which the arm follows
         bool pulled = false;          // the way the hand moved last sample

@@ -136,8 +136,9 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
   other, the musette beats a little faster or slower from note to note, and
   a note's push and pull reeds differ by a few cents.
 - **Auto** plays the bellows for you: while a key is held the hand pulls
-  for one bar and pushes for the next, in time with the host, holding an
-  ordinary playing pressure whatever is played; the wheel presses harder.
+  for four bars and pushes for the next four (turning sooner, on a bar line,
+  when the air runs short), in time with the host, holding an ordinary
+  playing pressure whatever is played; the wheel presses harder.
 - Changing register knocks twice: the switch pressed down, and the one it
   pushes off springing back up.
 - The bellows sound: their folds flip with a soft rustle as the bellows turn
@@ -197,40 +198,44 @@ working air button.
 ### Auto
 
 With **Auto** on, a player's hand moves the bellows by itself while any key
-is held, and the wheel no longer moves them. The hand pulls through one bar
-and pushes through the next, so a pull and a push take 8 beats in 4/4 and 6
-in 3/4; when a bar lasts less than a second, two, four or eight bars make a
-stroke instead, so a fast 2/4 does not saw. While the host plays, the strokes
-turn on its bar lines, the pulls on the song's odd bars wherever playback
-starts. With the transport stopped they run at the host's tempo from the
-first note, and a phrase that starts after a rest of a stroke or more starts
-on a pull, as a player starts with the bellows closed.
+is held, and the wheel no longer moves them. The hand pulls through four
+bars and pushes through the next four, as accordionists are taught to change
+the bellows on a full-size instrument, so a pull and a push take 32 beats in
+4/4 and 24 in 3/4. At each bar line the player turns early if the bellows
+will not last the next bar at the air the reeds take, as players change at a
+bar line when the air runs short: at 120 in 4/4 a melody line turns every
+four bars, while a bass, chord and triad with Assist at 0 (some 3 L/s) turns
+every bar. While the host plays, the strokes turn on its bar lines, and the
+four-bar strokes count from the song's first bar wherever playback starts.
+With the transport stopped they run at the host's tempo from the first note,
+and a phrase that starts after a rest of a stroke or more starts on a pull,
+as a player starts with the bellows closed.
 
 The hand does not move at a fixed speed: like a player it feels the air the
 reeds take and gives it, and closes on the pressure it wants in a reaction
 time of 0.1 s (four times Momentum when that is longer). It feels its own
-arm too, so it closes on the pressure the arm will bring once it catches
-up, and the arm's trail of twice Momentum is part of that time rather than a
-lag inside the loop. It wants 400 Pa, the pressure the demo phrases'
-ordinary strokes are fitted to and about −9 VU, whatever is played and
-whatever Bellows and Assist are set to; the wheel raises that up to four
-times, 1.6 kPa at the top, so it is an expression control from its resting
-place at 0. A turn is planned rather than reacted to: expecting the reeds to
-take the air they took, the other way, the hand moves as fast as it goes
-(4 L/s of its own air, more with Assist) until the pressure its arm will
-bring is the new one, so a held chord falls more than 10 dB below its level
-for only 5–15 ms. The hand turns early by twice Momentum plus the time that
-swing to zero takes it, so the pressure passes zero 5–25 ms before the bar
-line at the default Momentum and the new stroke speaks on the downbeat. Each stroke starts from
-rest; let go of every key and the hand stops, the closed pallets keeping
-the bellows at their pressure, so the next note speaks at once. A first
-stroke starts far enough in from the end of the bellows that the strokes
-after it fit; the bellows Auto moves hold 6 L, an estimate for a full-size
-accordion (the Bellows control is only the wheel's gearing), and if a
-stroke runs them out the hand turns there and finds the bars again at the
-next turn. Switched off, Auto leaves the bellows where they are: the wheel
-takes over without a stroke. Pressure, reaction time and capacity are voiced,
-not measured.
+arm too, so it closes on the pressure the arm will bring once it catches up,
+and the arm's trail of twice Momentum is part of that time rather than a lag
+inside the loop. It wants 400 Pa, the pressure the demo phrases' ordinary
+strokes are fitted to and about −9 VU, whatever is played and whatever
+Bellows and Assist are set to; the wheel raises that up to four times, 1.6
+kPa at the top, so it is an expression control from its resting place at 0.
+A turn is planned rather than reacted to: expecting the reeds to take the
+air they took, the other way, the hand moves as fast as it goes (4 L/s of
+its own air, more with Assist) until the pressure its arm will bring is the
+new one, so a held chord falls more than 10 dB below its level for only 5–15
+ms. The hand turns early by twice Momentum plus the time that swing to zero
+takes it, so the pressure passes zero 5–25 ms before the bar line at the
+default Momentum and the new stroke speaks on the downbeat. Each stroke
+starts from rest; let go of every key and the hand stops, the closed pallets
+keeping the bellows at their pressure, so the next note speaks at once. A
+first stroke starts far enough in from the end of the bellows that the
+strokes after it fit; the bellows Auto moves hold 6 L, an estimate for a
+full-size accordion (the Bellows control is only the wheel's gearing), and
+if a stroke still runs them out the hand turns there and finds the bars
+again at the next turn. Switched off, Auto leaves the bellows where they
+are: the wheel takes over without a stroke. Pressure, reaction time and
+capacity are voiced, not measured.
 
 ### Reed cells
 
