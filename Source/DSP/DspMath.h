@@ -9,8 +9,21 @@
 
 namespace respira {
 
+// Where math errno is on (clang's default on Linux), clang still calls libm
+// for __builtin_sqrt, to set errno on a negative argument; the elementwise
+// builtin is the bare instruction, as no Sqrt here is ever given one.
+#if defined(__clang__) && defined(__has_builtin)
+#if __has_builtin(__builtin_elementwise_sqrt)
+#define RESPIRA_ELEMENTWISE_SQRT 1
+#endif
+#endif
+
 #if defined(__GNUC__) || defined(__clang__)
+#if defined(RESPIRA_ELEMENTWISE_SQRT)
+inline double Sqrt(double x) { return __builtin_elementwise_sqrt(x); }
+#else
 inline double Sqrt(double x) { return __builtin_sqrt(x); }
+#endif
 inline double Abs(double x) { return __builtin_fabs(x); }
 inline float Abs(float x) { return __builtin_fabsf(x); }
 #else
