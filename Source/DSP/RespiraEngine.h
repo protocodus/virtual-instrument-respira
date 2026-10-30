@@ -122,6 +122,8 @@ private:
         CellSpec spec;
         Vent vent;               // the pallet hole's flow law at `lift`
         CellState state;
+        bool valveOpen = false;  // the push reed's valve is lifted (Mechanics.h, kFlapDensity)
+        double valveMass = 0.0;
         double breathA = 0.0, breathB = 0.0;   // the gap turbulence, shaped to its eddies
     };
 
@@ -207,6 +209,7 @@ private:
     void SwitchRegister(int from, int to);
     void MoveKey(int source);
     void StartKnock(const Stop& stop, double speed, double massScale, bool bass);
+    void StartSlap(double mass, double speed, bool bass);
     void StepKeys();
 
     Controls controls;
@@ -247,6 +250,8 @@ private:
     std::array<std::uint16_t, 3 * 128> movingKeys {};   // the keys whose travel is changing
     int movingCount = 0;
     std::array<Knock, 32> knocks {};
+    std::array<Knock, 48> slaps {};   // the push valves'
+
     Folds folds;
     Rustle rustle;
     double rustleForce = 0.0;

@@ -1099,6 +1099,15 @@ void MicrophonesHearTwoPlaces() {
     Expect(std::fabs(mono) < 0.01, "MicrophonesHearTwoPlaces", "one microphone, dB", mono);
 }
 
+void ValveSlapsFollowTheTurn() {
+    // A push valve driven shut by the reversing drop lands at
+    // R t^2 / (2 sigma), t = (6 sigma d / R)^(1/3): 0.74 m/s at a turn of
+    // 16 kPa/s, and twice as fast for a turn eight times as quick.
+    const double v = FlapTurnSpeed(16000.0);
+    Expect(std::fabs(v - 0.740) < 0.005, "ValveSlapsFollowTheTurn", "landing speed at 16 kPa/s, m/s", v);
+    Expect(std::fabs(FlapTurnSpeed(128000.0) / v - 2.0) < 1.0e-9, "ValveSlapsFollowTheTurn", "eight times as quick, ratio", FlapTurnSpeed(128000.0) / v);
+}
+
 void CascadeVarianceScales() {
     // The breath and the valve hiss divide their two-stage noise by the square
     // root of CascadeVariance, so it has to match the cascade on the engine's
@@ -1173,6 +1182,7 @@ int main() {
     LoudestCase();
     WidthGlides();
     MicrophonesHearTwoPlaces();
+    ValveSlapsFollowTheTurn();
     CascadeVarianceScales();
     NonFiniteControls();
     AutoTurnsOnTheBars();

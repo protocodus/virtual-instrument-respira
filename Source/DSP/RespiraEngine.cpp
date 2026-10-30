@@ -139,6 +139,7 @@ double DbToGain(double db) { return std::pow(10.0, db / 20.0); }
 // refuses any global it has to initialise at run time.
 constexpr double kFoldVoicing = 0.012589254117941675;   // -38 dB
 constexpr double kRustleVoicing = 0.1778279410038923;   // -15 dB
+constexpr double kValveVoicing = 0.031622776601683794;   // -30 dB: the push valves' slaps (kFlapDensity), against their estimate
 
 // Rank of the bass side a group sounds: channel 2 bass buttons, channel 3 chords.
 enum Group { kTreble, kBassButtons, kChordButtons };
@@ -287,6 +288,7 @@ void Engine::Reset() {
     keys.fill(Key {});
     movingCount = 0;
     knocks.fill(Knock {});
+    slaps.fill(Knock {});
     // A quarter of the panels in each wall, two long and two short; each
     // panel's mass and play differ a little from its neighbours' (+-20 %,
     // fixed per instrument), so a turn's panels land one after another.
@@ -509,6 +511,17 @@ void Engine::StartKnock(const Stop& stop, double speed, double massScale, bool b
     }
 }
 
+// A push valve landing on its plate; when every slap is still sounding, a
+// new one is dropped.
+void Engine::StartSlap(double mass, double speed, bool bass) {
+    for (auto& k : slaps) {
+        if (k.active) continue;
+        k.Start(Stop { mass, kFlapLift, &kRestCloth }, speed, 1.0);
+        k.bass = bass;
+        return;
+    }
+}
+
 // The keys move as their pallets do (Render): down at the stroke's speed,
 // up in the time the spring takes. A key knocks on its felt when it reaches
 // the bottom and its pallet on its seat when it is back up; a key that turns
@@ -576,6 +589,8 @@ void Engine::StartCell(int rank, int key, int source, int velocity) {
         for (double& p : cell->state.p) p = pressure;
         cell->open = cell->lift = 0.0;
         cell->vent = Vent {};
+        cell->valveOpen = false;
+        cell->valveMass = kFlapDensity * FlapArea(cell->spec.push.length, cell->spec.push.width);
         cell->reed = reed;
         cell->rank = rank;
     }
@@ -714,6 +729,7 @@ void Engine::Render(float* left, float* right, int frames) {
             valveSound = valveNoiseA = valveNoiseB = 0.0;
         }
         const double leak = kBellowsLeak * pressure + vented;
+        const double pressureWas = pressure;
         pressure = Clamp(pressure + dt * kBellowsStiffness * (handFlow - airFlow - leak), -kMaxPressure, kMaxPressure);
         bend2 += bendSmoothing * (bend2Target - bend2);
 
@@ -783,6 +799,14 @@ void Engine::Render(float* left, float* right, int frames) {
             Cell& c = *live[j];
             const CellSpec& spec = c.spec;
             for (int k = 0; k < oversample; ++k) drawn += taken[j * oversample + k];
+            // The push valve lifts with the push air, and slaps shut when the
+            // bellows turn or, as the pallet shuts, the chamber fills.
+            const double drop = pressure * c.lift;
+            if (!c.valveOpen) c.valveOpen = drop > kFlapHold;
+            else if (drop < -kFlapHold || (c.lift < 1.0 && drop < kFlapHold)) {
+                c.valveOpen = false;
+                StartSlap(c.valveMass, drop < -kFlapHold ? FlapTurnSpeed((pressureWas - pressure) / dt) : kFlapCurlSpeed, spec.bass);
+            }
             // Assist counts a held key in full once its pallet is down, however
             // far channel pressure holds it: a half-open pallet passes 0.3-0.9
             // of the open air, not its share of the opening, and counting the
@@ -801,7 +825,15 @@ void Engine::Render(float* left, float* right, int frames) {
         airFlow = drawn / oversample;
         airFlowSmoothed += 0.002 * (airFlow - airFlowSmoothed);
 
-        grille += grilleCoeff * (trebleSide.Process(t, stages) - grille);
+        mechanicsGain += smoothing * (mechanicsGainTarget - mechanicsGain);
+        double valveTreble = 0.0, valveBass = 0.0;
+        for (auto& k : slaps) {
+            if (!k.active) continue;
+            k.Step(dt);
+            (k.bass ? valveBass : valveTreble) += k.force / kFlapDensity;
+        }
+        const double valves = mechanicsGain * (kValveVoicing / kForceToFlow);
+        grille += grilleCoeff * (trebleSide.Process(t, stages) + valves * valveTreble - grille);
         gain += smoothing * (gainTarget - gain);
         bassGain += smoothing * (bassGainTarget - bassGain);
         trebleGain += smoothing * (trebleGainTarget - trebleGain);
@@ -825,10 +857,10 @@ void Engine::Render(float* left, float* right, int frames) {
         const double folds = (kFoldVoicing * flips + kRustleVoicing * (rubbing - rustleForce)) * rate
                              * (kPleatToFlow / kForceToFlow) * 0.7071067811865476;
         rustleForce = rubbing;
-        mechanicsGain += smoothing * (mechanicsGainTarget - mechanicsGain);
         // The air valve and the bass mechanism sit in the bass box too: their
         // sound leaves through the bass end cover's holes with the bass reeds'.
-        const double bass = bassBox.Process(bassSide.Process(b, stages) + hiss + mechanicsGain * mechanicsBass.Process(knockBass)) * bassGain;
+        const double bass = bassBox.Process(bassSide.Process(b, stages) + hiss + valves * valveBass
+                                            + mechanicsGain * mechanicsBass.Process(knockBass)) * bassGain;
         const double treble = grille * trebleGain + mechanicsGain * mechanicsTreble.Process(knockTreble);
         const double l = gain * (treble * treblePanL + mechanicsGain * folds + bass * bassPanL);
         const double r = gain * (treble * treblePanR + mechanicsGain * folds + bass * bassPanR);

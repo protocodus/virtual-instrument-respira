@@ -150,6 +150,9 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
   it can until the pressure its arm will bring is the new one, so a held
   chord falls more than 10 dB for 5–15 ms at a turn, where it fell for
   125–190 ms and twice as deep.
+- The push reeds' valves slap shut on their plates as the bellows turn from
+  push to pull and as a pushed key is let go, harder for a faster turn and
+  heavier on the low reeds, at a level voiced very low.
 - The stereo output is a coincident pair of microphones 1 m in front of the
   player, as five solo accordion recordings were made, in place of panning
   each key by pitch: the treble and the bass side are each heard from one
@@ -495,6 +498,28 @@ bass strap is silent: taken up as the bellows turn, its slack meets the hand
 at a few mm/s to a few cm/s, and a bass half of some kilograms on leather
 rings near 10 Hz, far under the body's 210 Hz.
 
+The push reeds' valves slap. Each reed has a leather or plastic flap over
+its slot on the far side of the plate, so it passes air one way; the push
+reed's sits in the chamber, the pull reed's in the bellows. Repairers hear
+the valves slap shut as the bellows turn and as a note ends, loudest on the
+low reeds. Here each open chamber's push valve (0.4 kg/m², covering the
+slot with 3 mm to spare, so 0.08 g at C4 and 0.2 g on the longest bass
+reeds), lifted 1.5 mm by the push air, lands on the plate on the pallet's
+leather law: as the bellows turn from push to pull, driven shut by the
+reversing pressure, at (R t² / 2σ) with t = (6σd / R)^⅓ for a pressure
+turning at R (0.74 m/s at 16 kPa/s, slower for a slow turn); as a pushed
+key is let go, by its own curl as the chamber fills, at its lift times its
+natural frequency (0.24 m/s). Landing it stops the chamber air it moves, a
+source of its area times its speed, so it radiates through the pallet hole
+and the grille, or the bass box, as the reeds do. Turning from pull to push
+the slaps are in the bellows and are not heard. The flutter the reeds'
+pulses shake into an open valve is left out, so their tone stays as it was
+fitted. The valves are estimates from typical sizes, so their level is
+voiced: 30 dB under that estimate, a push-to-pull turn's slaps about 38 dB
+under the chord and a released note's 40 dB under the note (the loudest
+50 ms each, Paris Musette), the middle of three levels; **Mechanics** sets
+them with the rest.
+
 ### The output stage
 
 On Reason's VU meter (the louder channel's RMS over 300 ms, +12 dB) the demo
@@ -526,7 +551,7 @@ strokes read −1.7 VU at most. Volume sets the level going into the stage.
 | Air | off, on | the air valve |
 | Momentum | 0–200 ms | how far the arm trails the wheel; 0 follows it exactly |
 | Oversampling | 1×, 2×, 4× | the reeds' time step: 1× is four times the host rate; 2× and 4× cost about two and four times the CPU |
-| Mechanics | −40 to +20 dB | the keys', pallets', buttons' and switches' knocks and the bellows' folds, against the estimate (The mechanism); +10 dB by default, chosen by ear; at −40 dB they are all but silent |
+| Mechanics | −40 to +20 dB | the keys', pallets', buttons' and switches' knocks, the bellows' folds and the push valves' slaps, against the estimate (The mechanism); +10 dB by default, chosen by ear; at −40 dB they are all but silent |
 | Auto | off, on | the hand plays the bellows in time with the host and the wheel presses harder (Auto) |
 
 `Source/DSP/RespiraControls.h` holds these for every front end;
@@ -579,8 +604,8 @@ tempo, time signature, song position and bar start before each block
   kHz) the treble knocks are 13–19 dB darker there and the bass side's about 4
   dB darker again through the bass box: no metal part, spring or panel rings
   here. Pallets and keys stop on felt and never rattle against each other, and
-  the bellows' folds' flip at a turn and their rustle while moving are
-  voiced by ear: no recording or measurement sets their level, and the
+  the bellows' folds' flip at a turn and their rustle while moving, and the
+  push valves' slaps, are voiced by ear: no recording or measurement sets their level, and the
   folds' play, which decides how hard they land, is an estimate. The player
   makes no sound.
 - **No room.** The output is dry, as the owner asked: the microphones hear

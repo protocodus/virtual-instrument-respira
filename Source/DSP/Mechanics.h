@@ -120,6 +120,42 @@ struct Knock {
     }
 };
 
+// A push reed's valve: the leather or plastic flap over its slot on the
+// chamber's side of the plate, which the push air lifts and which shuts the
+// slot to the pull. Repairers hear it slap shut as the bellows turn and as a
+// note ends, loudest on the low reeds (accordionists.info, "low reed valve
+// noise", 2009). The flap, of surface density kFlapDensity, covers the slot
+// with kFlapMargin to spare round the tongue, and lands on the plate on
+// leather (the back rail cloth's law, as a pallet's). Moving, it displaces
+// the chamber's air, a source of A v, so landing it radiates A dv/dt = F /
+// kFlapDensity through the pallet hole, as the reeds do. As the bellows turn,
+// the drop across it reverses at R Pa/s and, starting from rest at its lift
+// d, drives it shut in t = (6 kFlapDensity d / R)^(1/3), landing at
+// R t^2 / (2 kFlapDensity): harder the faster the bellows turn. As a pushed
+// note ends, its own curl shuts it as the chamber fills, at d times its
+// natural frequency, its curl lifting it d at kFlapOpenPa. The pull reed's
+// valve is on the bellows' side and is not heard. The flutter the reeds'
+// pulses shake into an open valve is left out, so their tone stays as it was
+// fitted. All of these are estimates from typical valves, not measurements,
+// so the slaps' level is voiced (kValveVoicing), under Mechanics with the
+// rest of the mechanism.
+inline constexpr double kFlapDensity = 0.4;     // kg/m^2: 0.4 mm of leather or 0.3 mm of plastic
+inline constexpr double kFlapMargin = 0.003;    // m, across and along the slot
+inline constexpr double kFlapLift = 0.0015;     // m, at the flap's middle
+inline constexpr double kFlapOpenPa = 15.0;     // the drop that lifts it that far
+// The drop past which the valve counts as lifted or reversed, Pa: the
+// bellows' ripple and a still hand's drift do not move it.
+inline constexpr double kFlapHold = 2.0;
+
+inline double FlapArea(double length, double width) { return (length + kFlapMargin) * (width + kFlapMargin); }
+// Landing speed at a turn whose drop reverses at `rate` Pa/s, m/s.
+inline double FlapTurnSpeed(double rate) {
+    const double t = std::cbrt(6.0 * kFlapDensity * kFlapLift / Max(rate, 1.0));
+    return rate * t * t / (2.0 * kFlapDensity);
+}
+// Landing speed as its curl shuts it: lift times sqrt(stiffness / mass).
+inline constexpr double kFlapCurlSpeed = kFlapLift * 158.11388300841895;   // sqrt(kFlapOpenPa / (kFlapLift kFlapDensity))
+
 // The bellows' folds. Each fold's walls are card panels in cloth, hinged at
 // the fold's edges by cloth and leather with a little play: pressing, the air
 // bows every panel out until its hinges draw taut; drawing, it sucks them in.

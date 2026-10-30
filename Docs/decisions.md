@@ -1378,3 +1378,37 @@ What it licenses: a coincident pair as the recordings were made, at
 estimated positions, not a measured instrument's radiation; the
 recordings' rooms, which decorrelate their channels, stay out (a dry
 output, the owner's choice).
+
+## 2026-10-30 — the push valves slap (owner asked for every real mechanical noise; engineering)
+
+The owner asked for every real mechanical noise (2026-10-29); one was left:
+the reeds' valves. Each reed's slot has a leather or plastic flap on the far
+side of the plate, the push reed's in the chamber, the pull reed's in the
+bellows, and repairers hear the valves slap shut as the bellows turn and as
+a note ends, loudest on the low reeds (accordionists.info, "low reed valve
+noise", 2009). Respira's valves were ideal: flow one way, no flap.
+
+The candidate keeps them ideal for the air and adds the slap: each open
+chamber's push valve, 0.4 kg/m² over its slot with 3 mm to spare and lifted
+1.5 mm by the push air, lands on the plate on the pallet's leather law
+(Mechanics.h). At a push-to-pull turn the reversing pressure drives it shut
+from rest, landing at R t²/2σ, t = (6σd/R)^⅓ (0.74 m/s at 16 kPa/s); as a
+pushed key is let go its curl shuts it as the chamber fills, at its lift
+times its natural frequency (15 Pa lifting it 1.5 mm: 0.24 m/s). Landing, it
+stops the chamber air it moves, so it radiates A dv/dt through the pallet
+hole and grille, or the bass box. A first version drove a flap with the
+chamber's own pressure and radiated all its motion: the reeds' pulses shook
+it at their pitch, 22 dB under the chord, a change to the fitted tone that
+nothing here measures, so the flutter is left out. Every valve size is an
+estimate, so the level is voiced.
+
+Pack `27-valves` (listening-2026-10-30), untrimmed because level is judged:
+Paris Musette, a bass, chord and C4 triad held through four wheel strokes
+(one push-to-pull turn, the chord let go on a push), then eight short pushed
+notes from C3 down to G2;
+A without the slaps, B, C and D at −20, −30 and −40 dB against the estimate
+(a turn's slaps 28, 38 and 48 dB under the chord, a released note's 30, 40
+and 50 under it, the loudest 50 ms each). Under the standing rule the middle
+letter, C, ships until the owner hears it, as with the folds. Verdict
+pending. What it licenses: a voicing of a real mechanism, not a measured
+level; a recording of a valve would replace it.
