@@ -1471,3 +1471,19 @@ presets dry (the room has its own test), since they measure the instrument.
 Listening pack 30-preset-room: A the dry presets, B Room 0.7 (−0.78 dB RMS
 trim), on Paris Musette then Master Tutti. The owner chose the presets with a
 room on the decision card (2026-10-30), so B ships.
+
+## 2026-10-30 — the room's first reflections (engineering; candidate ships)
+
+The room was a late field only: nothing reached the microphones from it for
+the first 30 ms, where a real room's floor, ceiling and walls answer within
+4–12 ms. Its first reflections now come from image sources in an estimated
+living room (2.6 m high, walls 2 m left, 2.5 m right and 1 m behind the
+player; the bellows 1.0 m up, the microphones 1 m in front at 1.2 m): the
+floor at 4.1 ms (−8 dB), the wall behind the player at 5.8 ms, the ceiling
+at 6.2 ms and the side walls at 9.0 and 11.9 ms, each through the XY pair's
+cardioids from its own direction, their sum softened above 4 kHz (voiced).
+They scale with Room like the late field. The channels' correlation is
+unchanged (0.49 on Paris Musette at the presets' 70 %), the level within
+0.03 dB. Pack 31-reflections: A without, B with (+0.01 dB trim); B ships
+unless the owner prefers A. The engine's Room was also never flushed of
+denormals when the instrument fell silent; it is now.

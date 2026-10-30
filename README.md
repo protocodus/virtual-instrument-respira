@@ -448,6 +448,10 @@ around the pair: the late, diffuse
 field of a voiced room with a 1 s decay at low frequencies and half that at
 the top, from an eight-line feedback delay network (`Source/DSP/Room.h`)
 behind four allpass diffusers, so it is dense from its first milliseconds.
+Before it come the first reflections of an ordinary room, by image sources
+(floor, ceiling, the wall behind the player and the side walls of a 2.6 m
+high living room, estimated), each heard by the pair from its own direction:
+the floor's arrives 4.1 ms after the instrument, 8 dB under it at Room 1.
 Each microphone hears four of the lines, so the field reaches the two
 decorrelated, as a room's does, while the instrument itself reaches both at
 once. In the five solo recordings the two channels' phase-transform
@@ -628,7 +632,8 @@ tempo, time signature, song position and bar start before each block
   folds' play, which decides how hard they land, is an estimate. The player
   makes no sound.
 - **The room is voiced.** Init is dry; the factory presets play in the room
-  at 70 %, for the owner's "great and expensive".
+  at 70 %, for the owner's "great and expensive". Its first reflections come
+  from an estimated room's geometry, not a measured one.
   Room adds a late diffuse field only, with no early reflections from a
   floor or walls; its decay and its treble loss are chosen by ear, and its
   level at Room 1 is set by one measure, the channels' correlation against

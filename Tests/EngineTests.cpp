@@ -1162,6 +1162,17 @@ void RoomDecorrelatesAndRings() {
         if (i >= static_cast<int>(0.05 * rate) && std::fabs(l) > 1.0e-6) ++filled;
     }
     Expect(filled == static_cast<int>(0.05 * rate), "RoomDecorrelatesAndRings", "samples heard 50-100 ms after an impulse", filled);
+
+    // The floor's reflection comes first, 4.07 ms after the sound (Room.h):
+    // nothing reaches the microphones from the room before it.
+    room.Clear();
+    int first = -1;
+    for (int i = 0; i < static_cast<int>(0.01 * rate) && first < 0; ++i) {
+        double l, r;
+        room.Process(i == 0 ? 1.0 : 0.0, i == 0 ? 1.0 : 0.0, l, r);
+        if (std::fabs(l) > 1.0e-6) first = i;
+    }
+    Expect(first == static_cast<int>(0.00407 * rate), "RoomDecorrelatesAndRings", "the first reflection, samples after the sound", first);
 }
 
 void CascadeVarianceScales() {

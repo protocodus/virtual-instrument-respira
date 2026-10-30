@@ -895,6 +895,7 @@ void Engine::Render(float* left, float* right, int frames) {
         bassSide.FlushTiny();
         bassBox.FlushTiny();
         for (BodyHighPass* body : { &mechanicsTreble, &mechanicsBass }) body->FlushTiny();
+        room.FlushTiny();
         if (Abs(grille) < 1.0e-20) grille = 0.0;
     }
     diag.hand = hand.position;
