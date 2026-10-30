@@ -122,7 +122,6 @@ private:
         CellSpec spec;
         Vent vent;               // the pallet hole's flow law at `lift`
         CellState state;
-        float gainL = 0.0f, gainR = 0.0f, gainLTarget = 0.0f, gainRTarget = 0.0f;   // pan
         double breathA = 0.0, breathB = 0.0;   // the gap turbulence, shaped to its eddies
     };
 
@@ -206,9 +205,8 @@ private:
     void NoteOff(int channel, int key);
     void StartCell(int rank, int key, int source, int velocity);
     void SwitchRegister(int from, int to);
-    void UpdatePan(Cell& cell) const;
     void MoveKey(int source);
-    void StartKnock(const Stop& stop, double speed, double massScale, bool bass, int tableKey);
+    void StartKnock(const Stop& stop, double speed, double massScale, bool bass);
     void StepKeys();
 
     Controls controls;
@@ -235,13 +233,15 @@ private:
     std::uint32_t noise = 1u;
     int sounding = 0;
     std::array<Cell, kMaxCells> cells {};
-    Decimator trebleLeft, trebleRight, bassSide;
+    Decimator trebleSide, bassSide;
     Compartment bassBox;   // under the bass end cover
     double grilleCoeff = 0.0;
-    double grilleL = 0.0, grilleR = 0.0;
+    double grille = 0.0;
     double gain = 0.0, gainTarget = 0.0, bassGain = 0.0, bassGainTarget = 0.0, smoothing = 0.0;
     double trebleGain = 1.0, trebleGainTarget = 1.0;   // the register's trim
     protocodus::OutputStage<2> output;
+    // The microphones' gains for each side (MicPair, RespiraEngine.cpp).
+    float treblePanL = 0.0f, treblePanR = 0.0f, treblePanLTarget = 0.0f, treblePanRTarget = 0.0f;
     float bassPanL = 0.0f, bassPanR = 0.0f, bassPanLTarget = 0.0f, bassPanRTarget = 0.0f;
     std::array<Key, 3 * 128> keys {};
     std::array<std::uint16_t, 3 * 128> movingKeys {};   // the keys whose travel is changing
@@ -250,7 +250,7 @@ private:
     Folds folds;
     Rustle rustle;
     double rustleForce = 0.0;
-    BodyHighPass mechanicsL, mechanicsR, mechanicsBass;
+    BodyHighPass mechanicsTreble, mechanicsBass;
     double mechanicsGain = 0.0, mechanicsGainTarget = 0.0;
     Diagnostics diag;
 };

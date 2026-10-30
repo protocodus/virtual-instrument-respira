@@ -150,6 +150,11 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
   it can until the pressure its arm will bring is the new one, so a held
   chord falls more than 10 dB for 5–15 ms at a turn, where it fell for
   125–190 ms and twice as deep.
+- The stereo output is a coincident pair of microphones 1 m in front of the
+  player, as five solo accordion recordings were made, in place of panning
+  each key by pitch: the treble and the bass side are each heard from one
+  place, the bass side about 2 dB to the left where it was 8–10 dB, and
+  **Width** turns the pair's axes apart.
 
 ## Downloads
 
@@ -412,6 +417,25 @@ where the lumped resonator alone read 11–44 dB under them
 (`Tools/compare_accordion_tone.py`). The air valve opens into the bass box as
 well, so its hiss leaves the same way.
 
+### The microphones
+
+The output is what a coincident pair of cardioid microphones (XY) hears from
+1 m in front of the player, in the player's view, the treble on the right.
+The treble keyboard stands upright, so its pallet holes and the grille over
+them are one place across the pair, 0.20 m right of the bellows' middle; the
+bass end cover is the other end, 0.25 m left. A coincident pair hears them
+by level alone: each side reaches each microphone as 1 + cos of its angle
+off that microphone's axis, at the side's own power. **Width** turns the
+axes apart, from one microphone (0) through the usual XY pair's 90° (0.6,
+the default: the treble 1.4 dB to the right, the bass side 1.8 dB to the
+left) to 150° (1: 2.6 and 3.3 dB). The folds sit between the two, in the
+middle. Five solo accordion recordings were made this way: their channels
+align at zero lag, and in every band from 60 Hz to 12 kHz they differ by
+0.1–2.2 dB; the demos with bass now differ by up to 2.1 dB, where panning
+each key by pitch put Paris Musette's bass band 10 dB to the left. The
+positions are a full-size instrument's, estimated, and the microphones hear
+no room (see Known gaps).
+
 ### The mechanism
 
 The keys, buttons, pallets, register switches and air button knock on their
@@ -495,7 +519,7 @@ strokes read −1.7 VU at most. Volume sets the level going into the stage.
 | Bellows | 0.5–8 L | air one sweep of the wheel moves |
 | Assist | 0–1 | how far the hand's air follows the open reeds |
 | Grille | 500 Hz–16 kHz | brightness of the treble side |
-| Width | 0–1 | treble keys across the right, bass side to the left |
+| Width | 0–1 | the microphones' XY pair: one microphone at 0, 90° apart at 0.6, 150° at 1 (The microphones) |
 | Bass | −24 to +6 dB | bass and chord side level |
 | Volume | −36 to +6 dB | level into the output stage |
 | Keyboard | split, full | split: C1–B1 bass buttons, C2–B2 chord buttons, C3 up treble |
@@ -559,6 +583,11 @@ tempo, time signature, song position and bar start before each block
   voiced by ear: no recording or measurement sets their level, and the
   folds' play, which decides how hard they land, is an estimate. The player
   makes no sound.
+- **No room.** The output is dry, as the owner asked: the microphones hear
+  the instrument alone. In five solo recordings, made with coincident pairs,
+  the two channels' phase-transform cross-correlation of 170 ms frames peaks
+  at only 0.2–0.5 at zero lag, decorrelated by the room; Respira's peaks at
+  0.97–0.99.
 - **Chord buttons are pitch classes**, not Stradella's fixed major, minor,
   seventh and diminished rows, and there are no bass register switches.
 - **One turbulence seed.** Two engines given the same input play identical

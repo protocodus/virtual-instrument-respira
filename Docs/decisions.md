@@ -1347,3 +1347,34 @@ at 2, 4, 6, 8, 10, 12 s), B four-bar strokes (one turn, at 8 s), B trimmed
 −0.03 dB to A's whole-file RMS. Under the standing rule B ships until the
 owner hears it. Verdict pending. What it licenses: the taught stroke length
 and a turn where the air runs short, not a measured phrase length.
+
+## 2026-10-30 — the microphones: a coincident pair (owner's recordings; engineering)
+
+The owner asked for another round on sound, authenticity, microphones and
+behaviour, calibrated against the recordings provided. The five solo
+accordion recordings' tone balance and attacks already sit with Respira's
+(above); their stereo image did not. Each treble key was panned by its pitch
+across the right and the bass side to the left, so Paris Musette's demo read
+10 dB louder in the left channel at 60–250 Hz and every key was its own
+place. In the recordings the channels align at zero lag (the phase-transform
+cross-correlation of 170 ms frames peaks at 0 ms in four, 0.04 ms in the
+fifth) and differ by 0.1–2.2 dB in every band from 60 Hz to 12 kHz:
+coincident pairs, hearing the instrument by level. Nor does a real treble
+keyboard spread by pitch across a pair in front of it: it stands upright.
+
+The candidate is that pair: two cardioids at 1 m, 90° apart at the default
+Width, the treble grille 0.20 m right of the bellows' middle and the bass end
+cover 0.25 m left (a full-size instrument's halves, estimated), each side at
+its own power, so a centred source keeps its old level. The demos with bass
+now differ by 0.1–2.1 dB per band. The treble is summed before its
+decimator, one where it had two. Width keeps its id and its default; its
+range now runs from one microphone to 150°, where the bass side sits 3.3 dB
+to the left, so the old hard spread is gone.
+
+Pack `26-mics` (listening-2026-10-30): the Paris Musette demo, A the pitch
+panning, B the pair, B trimmed −0.44 dB to A's whole-file RMS. Under the
+owner's standing rule B ships until the owner hears it. Verdict pending.
+What it licenses: a coincident pair as the recordings were made, at
+estimated positions, not a measured instrument's radiation; the
+recordings' rooms, which decorrelate their channels, stay out (a dry
+output, the owner's choice).

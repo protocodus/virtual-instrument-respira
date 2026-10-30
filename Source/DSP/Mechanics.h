@@ -96,7 +96,6 @@ struct BodyHighPass {
 struct Knock {
     static constexpr int kSteps = 4;
     bool active = false, bass = false;
-    float panL = 0.0f, panR = 0.0f;
     double x = 0.0, v = 0.0, mass = 1.0, force = 0.0;
     const Felt* felt = &kKeyFelt;
 

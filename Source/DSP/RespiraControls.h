@@ -18,7 +18,7 @@ enum Control : int {
     kBellows,    // air one full sweep of the wheel moves, litres
     kAssist,     // 0 strict air .. 1 the hand moves as much air as the open reeds need
     kGrille,     // treble grille: brightness of the treble side, Hz
-    kWidth,      // stereo spread: treble keys across the right, bass side to the left
+    kWidth,      // the microphones' XY pair: 0 one microphone .. 1 150 degrees apart; treble right, bass left
     kBass,       // bass and chord side level, dB
     kVolume,     // output level, dB
     kKeyboard,   // 0 split (bass and chord octaves below C3), 1 treble on every key

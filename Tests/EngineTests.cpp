@@ -1081,6 +1081,24 @@ void WidthGlides() {
     Expect(first - settled < -15.0, "WidthGlides", "its first ms against its settled change, dB", first - settled);
 }
 
+void MicrophonesHearTwoPlaces() {
+    // A coincident pair hears each side of the instrument from one place, by
+    // level: at the default Width a low and a high treble key sit the same
+    // 1.4 dB to the right, the bass side 1.8 dB to the left, and at Width 0
+    // one microphone hears both channels alike.
+    const double rate = 48000.0;
+    const auto side = [rate](int key, double width) {
+        auto e = Make(rate, 0, [width](Controls& c) { c[kWidth] = width; c[kMechanics] = -40.0; });
+        const Take t = Play(*e, rate, 1.5, { { 0.0, { kOn, static_cast<std::uint8_t>(key), 100 } } }, PullThenPush);
+        return Db(Rms(t.right, rate, 0.5, 1.5)) - Db(Rms(t.left, rate, 0.5, 1.5));
+    };
+    const double low = side(48, 0.6), high = side(84, 0.6), bass = side(24, 0.6), mono = side(24, 0.0);
+    Expect(std::fabs(low - 1.42) < 0.05, "MicrophonesHearTwoPlaces", "a C3 on the right, dB", low);
+    Expect(std::fabs(high - low) < 0.01, "MicrophonesHearTwoPlaces", "a C6 against the C3, dB", high - low);
+    Expect(std::fabs(bass + 1.77) < 0.05, "MicrophonesHearTwoPlaces", "the bass side on the left, dB", bass);
+    Expect(std::fabs(mono) < 0.01, "MicrophonesHearTwoPlaces", "one microphone, dB", mono);
+}
+
 void CascadeVarianceScales() {
     // The breath and the valve hiss divide their two-stage noise by the square
     // root of CascadeVariance, so it has to match the cascade on the engine's
@@ -1154,6 +1172,7 @@ int main() {
     HardPushSpeaks();
     LoudestCase();
     WidthGlides();
+    MicrophonesHearTwoPlaces();
     CascadeVarianceScales();
     NonFiniteControls();
     AutoTurnsOnTheBars();
