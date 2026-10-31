@@ -31,6 +31,10 @@ constexpr double kHandCatchUp = 25.0;       // 1/s: how fast the hand closes on 
 // phrases' ordinary strokes are fitted to (Tools/write_preset_midi.py), and
 // four times that with the wheel at the top. Voiced, not measured.
 constexpr double kAutoPressure = 400.0;     // Pa
+// An otherwise undefined controller sets who moves the bellows on the engine's
+// own MIDI: below 64 the wheel, from 64 Auto's hand. The demo phrases send it
+// at their start, since they play the bellows on the wheel.
+constexpr int kHandModeCc = 85;
 // A stroke is four bars, as accordionists are taught to change the bellows
 // on a full-size instrument (every two on a small one: accordionlife.com,
 // "Top 3 Mistakes Accordionists Make With The Bellows"), unless the air runs
@@ -143,8 +147,8 @@ constexpr double kRustleVoicing = 0.1778279410038923;   // -15 dB
 // (0.5, 1 and 2 s, listening pack 28, Docs/decisions.md). Its level at Room 1
 // brings the two channels' phase-transform cross-correlation of the Paris
 // Musette demo (170 ms frames, the median peak at zero lag) from 0.99 to
-// 0.38, where the owner's five solo recordings read 0.20-0.51, median 0.38.
-constexpr double kRoomSeconds = 1.0, kRoomTrebleShare = 0.5, kRoomLevel = 0.8;
+// 0.37, where the owner's five solo recordings read 0.20-0.51, median 0.38.
+constexpr double kRoomSeconds = 1.0, kRoomTrebleShare = 0.5, kRoomLevel = 1.15;
 constexpr double kValveVoicing = 0.031622776601683794;   // -30 dB: the push valves' slaps (kFlapDensity), against their estimate
 
 // Rank of the bass side a group sounds: channel 2 bass buttons, channel 3 chords.
@@ -689,6 +693,11 @@ void Engine::Midi(const std::uint8_t* bytes, int size) {
         else if (d1 == 33) { lsb = d2; fineWheel = true; }
         else if (d1 == 64) airPedal = d2 >= 64;
         else if (d1 == 120 || d1 == 123) AllNotesOff();
+        else if (d1 == kHandModeCc) {   // who moves the bellows, as the Auto control
+            Controls next = controls;
+            next[kAuto] = d2 >= 64 ? 1.0 : 0.0;
+            SetControls(next);
+        }
         if (d1 == 1 || d1 == 33) SetHand(fineWheel ? (msb * 128 + lsb) / 16383.0 : msb / 127.0);
     } else if (type == 0xD0) {
         SetChannelPressure(ch, d1 / 127.0);

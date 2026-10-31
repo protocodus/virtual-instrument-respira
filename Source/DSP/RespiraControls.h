@@ -26,7 +26,7 @@ enum Control : int {
     kMomentum,   // the arm's lag behind the wheel, ms: 0 the wheel moves the bellows directly
     kOversampling, // 0, 1, 2: 1x, 2x, 4x the engine's own internal rate (4x the host rate)
     kMechanics,  // the keys', pallets', buttons' and register switches' knocks, the bellows' folds and the push valves, dB re the estimate (Mechanics.h)
-    kAuto,       // 0 the wheel is the hand, 1 the hand plays the bellows itself in time and the wheel presses harder
+    kAuto,       // 0 the wheel is the hand, 1 (the default) the hand plays the bellows itself in time and the wheel presses harder
     kRoom,       // the room the microphones hear around the instrument: 0 none (dry) .. 1 as much as the owner's recordings' rooms (Room.h)
     kControlCount
 };
@@ -70,7 +70,9 @@ inline constexpr std::array<ControlInfo, kControlCount> kControlInfo { {
     // The default, +10 dB, was chosen by ear over the estimate and 10 dB
     // under it (Docs/decisions.md).
     { "mechanics", "Mechanics", -40.0, 20.0, 10.0, 0, Curve::kLinear, "dB" },
-    { "auto", "Auto", 0.0, 1.0, 0.0, 2, Curve::kStepped, "" },
+    // On by default, the owner's "just play": the hand keeps the bellows
+    // supplied whatever is played, and the player never thinks about them.
+    { "auto", "Auto", 0.0, 1.0, 1.0, 2, Curve::kStepped, "" },
     // Off on Init; the factory presets play at 0.7 (Docs/decisions.md).
     { "room", "Room", 0.0, 1.0, 0.0, 0, Curve::kLinear, "" },
 } };

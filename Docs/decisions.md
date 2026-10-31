@@ -1487,3 +1487,25 @@ unchanged (0.49 on Paris Musette at the presets' 70 %), the level within
 0.03 dB. Pack 31-reflections: A without, B with (+0.01 dB trim); B ships
 unless the owner prefers A. The engine's Room was also never flushed of
 denormals when the instrument fell silent; it is now.
+
+## 2026-10-31 — Auto by default, and a room that does not ring (owner)
+
+The owner asked for Auto to be the default on Init and every factory
+preset, as a simple "just play" mode that keeps the accordion supplied with
+air, and for the room's echo to be high quality. Auto already kept the
+bellows supplied while keys are held and rests them at pressure when they are
+let go; it is now on by default. The demo phrases play the bellows on the
+wheel, so they send a new controller first, CC85 at 0, which hands the
+bellows to the wheel on the engine's own MIDI; every demo renders bit for bit
+as before. The engine tests that drive the wheel switch Auto off themselves.
+
+The room's late field was eight fixed delay lines, a mode every 2.5 Hz,
+which can ring metallic on a sustained chord. It is now sixteen lines
+(23–83 ms, prime lengths at 48 kHz, a mode every 0.8 Hz), each drifting by
+0.125 ms at its own rate between 0.13 and 0.97 Hz (under a cent of pitch on
+a tail), read with linear interpolation; no libm call runs per sample. Its
+level is re-set so the presets' channels correlate as before (Paris Musette
+0.49, the eight demos 0.43–0.55 against the recordings' 0.20–0.51). It costs
+about 1 % of one core more than none in the development container. Pack
+32-room-quality: A eight fixed lines, B sixteen drifting (−0.25 dB trim); B
+ships, the candidate winning by the project's rule.

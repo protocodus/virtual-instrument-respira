@@ -65,6 +65,8 @@ std::unique_ptr<Engine> Make(double rate, int preset, const std::function<void(C
     // The presets play in a room; these tests hear the instrument itself, so
     // they take it dry unless they raise Room (RoomDecorrelatesAndRings).
     controls[kRoom] = 0.0;
+    // And they move the bellows on the wheel, where the presets play on Auto.
+    controls[kAuto] = 0.0;
     if (adjust) adjust(controls);
     engine->SetControls(controls);
     engine->Reset();
@@ -413,7 +415,7 @@ void TopOctaveSteady() {
     const double rate = 48000.0;
     double worst = 0.0;
     for (int key : { 88, 96 }) {
-        auto e = Make(rate, 0, [](Controls& c) { c = Controls {}; c[kRegister] = 6; });
+        auto e = Make(rate, 0, [](Controls& c) { c = Controls {}; c[kRegister] = 6; c[kAuto] = 0.0; });
         const Take t = Play(*e, rate, 1.8, { { 0.0, { kOn, static_cast<std::uint8_t>(key), 100 } } },
                             [](double s) { return 0.3 + 0.12 * s; });
         std::vector<double> db;
@@ -907,7 +909,8 @@ void PresetsSitTogether() {
     };
     std::vector<Note> notes;
     for (int k : { 24, 36, 60, 64, 67 }) notes.push_back({ 0.0, { kOn, static_cast<std::uint8_t>(k), 100 } });
-    const auto level = [&](const Controls& controls, double& peak) {
+    const auto level = [&](Controls controls, double& peak) {
+        controls[kAuto] = 0.0;   // the reference stroke is the wheel's; the bank plays on Auto
         Engine e;
         e.Prepare(rate);
         e.SetControls(controls);
@@ -944,7 +947,7 @@ void RegistersSitTogether() {
     std::array<double, 8> level {};
     for (int reg = 0; reg < 8; ++reg) {
         for (const auto& keys : gestures) {
-            auto e = Make(rate, 0, [reg](Controls& c) { c = Controls {}; c[kRegister] = reg; });
+            auto e = Make(rate, 0, [reg](Controls& c) { c = Controls {}; c[kRegister] = reg; c[kAuto] = 0.0; });
             std::vector<Note> notes;
             for (int k : keys) notes.push_back({ 0.0, { kOn, static_cast<std::uint8_t>(k), 100 } });
             const Take t = Play(*e, rate, 4.0, notes, stroke);
@@ -978,7 +981,8 @@ void TypicalLevel() {
     const std::vector<std::vector<int>> gestures { { 48 }, { 60, 64, 67 }, { 84 }, { 24, 36, 60, 64, 67 } };
     std::vector<double> levels;
     for (const auto& keys : gestures) {
-        auto e = Make(rate, 0, [](Controls& c) { c = Controls {}; });
+        // Init on the wheel: the gestures are wheel strokes, and Init plays on Auto.
+        auto e = Make(rate, 0, [](Controls& c) { c = Controls {}; c[kAuto] = 0.0; });
         std::vector<Note> notes;
         for (int k : keys) notes.push_back({ 0.0, { kOn, static_cast<std::uint8_t>(k), 100 } });
         levels.push_back(Vu(Play(*e, rate, 4.0, notes, stroke), rate));
@@ -1003,7 +1007,8 @@ void HardStrokesFit() {
     const auto rock = [](double t) { const double p = std::fmod(t, 1.0); return p < 0.5 ? 2.0 * p : 2.0 - 2.0 * p; };
     double worstPeak = 0.0, worstVu = -100.0, leastPressure = 1.0e9;
     for (int preset = -1; preset < static_cast<int>(kPresets.size()); ++preset) {
-        const Controls controls = preset < 0 ? Controls {} : kPresets[static_cast<std::size_t>(preset)].ToControls();
+        Controls controls = preset < 0 ? Controls {} : kPresets[static_cast<std::size_t>(preset)].ToControls();
+        controls[kAuto] = 0.0;   // the strokes are the wheel's; every preset plays on Auto
         for (const auto& hand : { std::function<double(double)>(sweep), std::function<double(double)>(rock) }) {
             Engine e;
             e.Prepare(rate);

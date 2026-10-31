@@ -158,6 +158,11 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
   each key by pitch: the treble and the bass side are each heard from one
   place, the bass side about 2 dB to the left where it was 8–10 dB, and
   **Width** turns the pair's axes apart.
+- **Auto** is on by default, on Init and every factory preset: just play,
+  and the hand keeps the bellows supplied. CC85 below 64 hands the bellows
+  to the wheel, as the demo phrases do first, so they sound as before.
+- The room's late field has sixteen slowly drifting delay lines in place of
+  eight fixed ones, so it no longer rings metallic on a held chord.
 - **Room**, off by default, adds a room around the microphones: a 1 s
   diffuse field each microphone hears on its own, so at Room 1 the two
   channels correlate as little as the five solo recordings' do. Init stays
@@ -210,8 +215,9 @@ working air button.
 
 ### Auto
 
-With **Auto** on, a player's hand moves the bellows by itself while any key
-is held, and the wheel no longer moves them. The hand pulls through four
+**Auto** is on by default, on Init and on every factory preset: just play,
+and a player's hand keeps the bellows supplied while any key is held; the
+wheel no longer moves them. Switch it off to play the bellows on the wheel. The hand pulls through four
 bars and pushes through the next four, as accordionists are taught to change
 the bellows on a full-size instrument, so a pull and a push take 32 beats in
 4/4 and 24 in 3/4. At each bar line the player turns early if the bellows
@@ -446,8 +452,11 @@ positions are a full-size instrument's, estimated.
 **Room**, off on Init and at 70 % on every factory preset, puts a room
 around the pair: the late, diffuse
 field of a voiced room with a 1 s decay at low frequencies and half that at
-the top, from an eight-line feedback delay network (`Source/DSP/Room.h`)
+the top, from a sixteen-line feedback delay network (`Source/DSP/Room.h`)
 behind four allpass diffusers, so it is dense from its first milliseconds.
+Its modes lie 0.8 Hz apart and each line's length drifts slowly by 0.125 ms,
+so a held chord's tail never rings metallic; it costs about 1 % of one core
+in the development container.
 Before it come the first reflections of an ordinary room, by image sources
 (floor, ceiling, the wall behind the player and the side walls of a 2.6 m
 high living room, estimated), each heard by the pair from its own direction:
@@ -574,7 +583,7 @@ strokes read −1.7 VU at most. Volume sets the level going into the stage.
 | Momentum | 0–200 ms | how far the arm trails the wheel; 0 follows it exactly |
 | Oversampling | 1×, 2×, 4× | the reeds' time step: 1× is four times the host rate; 2× and 4× cost about two and four times the CPU |
 | Mechanics | −40 to +20 dB | the keys', pallets', buttons' and switches' knocks, the bellows' folds and the push valves' slaps, against the estimate (The mechanism); +10 dB by default, chosen by ear; at −40 dB they are all but silent |
-| Auto | off, on | the hand plays the bellows in time with the host and the wheel presses harder (Auto) |
+| Auto | off, on | on by default: the hand plays the bellows in time with the host and the wheel presses harder (Auto) |
 | Room | 0–1 | the room around the microphones: 0 dry (the default), 1 as decorrelated as the solo recordings (The microphones) |
 
 `Source/DSP/RespiraControls.h` holds these for every front end;
@@ -585,7 +594,8 @@ and push), with its peak below −3 dBFS.
 
 MIDI channel 1 is the keyboard (split as above, or all treble), channel 2 the
 bass buttons and channel 3 the chord buttons by pitch class; other channels
-play as channel 1. CC1 + CC33 are the hand (with Auto, how hard it presses), CC64 the air valve, channel
+play as channel 1. CC1 + CC33 are the hand (with Auto, how hard it presses), CC85 who moves it
+(below 64 the wheel, from 64 Auto; the demo phrases send 0 first), CC64 the air valve, channel
 pressure how far the channel's held keys rise, CC120 and CC123 release every
 key. Pitch bend retunes every sounding tongue, up to two
 semitones each way, by scaling its stiffness; no real reed bends that far, but

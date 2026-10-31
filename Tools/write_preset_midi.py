@@ -20,7 +20,8 @@ the bass buttons, C2..B2 the chord buttons, C3 and up the treble. Its last
 event falls 5.5-9.5 s in, so with the renderer's 2.5 s tail every demo is
 8-12 s long (G3c).
 
-The bellows is the mod wheel (CC1 + CC33, 14 bits, every 5 ms): each phrase
+The bellows is the mod wheel (CC1 + CC33, 14 bits, every 5 ms), with CC 85 at
+0 first to take the bellows from Auto, Respira's default: each phrase
 has a list of strokes, each with the bellows pressure a player would be after.
 How far the hand travels in each stroke is frozen in TRAVELS, which
 Tools/fit_bellows.py finds by playing the phrase through the engine; this
@@ -189,7 +190,9 @@ class Phrase:
         at, start, end = self.bellows.path(self.bpm, travels)
         ticks_per_second = PPQ * self.bpm / 60.0
         step = round(WHEEL_STEP * ticks_per_second)
-        events = list(self.events)
+        # The phrase plays the bellows on the wheel: CC 85 below 64 hands them
+        # to it, since a freshly loaded Respira starts on Auto.
+        events = [(0, -1, bytes([0xB0, 85, 0]))] + list(self.events)
         last = None
         for tick in range(round(start * ticks_per_second), round(end * ticks_per_second) + 1, step):
             value = round(min(1.0, max(0.0, at(tick / ticks_per_second))) * 16383)

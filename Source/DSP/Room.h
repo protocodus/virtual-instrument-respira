@@ -1,14 +1,17 @@
 #pragma once
 
-// The room around the microphones, optional and off by default: Respira is dry
-// unless Room is raised. A late diffuse field only, from an eight-line feedback
-// delay network (Jot and Chaigne, AES 90, 1991) with a Householder matrix: the
-// two microphones each hear four of the lines, so the field reaching them is
+// The room around the microphones: Init is dry and the factory presets play in
+// it. Its late diffuse field comes from a sixteen-line feedback delay network
+// (Jot and Chaigne, AES 90, 1991) with a Householder matrix: the two
+// microphones each hear eight of the lines, so the field reaching them is
 // decorrelated as a real room's is, where the instrument's own sound reaches
 // both microphones at once. Four Schroeder allpasses spread the sound before it
 // enters the lines, so the field is dense from its start: fed straight in, an
 // impulse came back as a dozen separate echoes in the first 50 ms, which a
-// staccato note flutters through. Before the late field come the first
+// staccato note flutters through. Each line's length drifts by an eighth of a
+// millisecond, slowly and at its own rate, so the field's modes never stand
+// still: a fixed network rings metallic on a held chord, its modes 2.5 Hz
+// apart beating against the reeds. Before the late field come the first
 // reflections of an ordinary room, each from its own direction, so the pair
 // hears them by level as it hears the instrument. It is a voiced room, not a
 // model of any one room.
@@ -22,10 +25,17 @@ namespace respira {
 
 class Room {
 public:
-    // Line lengths spread over 30-75 ms, mutually prime at 48 kHz, so the
-    // modes they make do not pile up on one frequency.
-    static constexpr std::array<double, 8> kLineSeconds { { 0.02971, 0.03713, 0.04111, 0.04373, 0.05333, 0.05927, 0.06709, 0.07369 } };
-    static constexpr int kMaxLine = 16384;   // 74 ms at 192 kHz, plus room to spare
+    // Line lengths spread geometrically over 23-83 ms, each a prime number of
+    // samples at 48 kHz, so the modes they make do not pile up on one
+    // frequency: 1.27 s of delay in all, a mode every 0.8 Hz.
+    static constexpr int kLines = 16;
+    static constexpr std::array<double, kLines> kLineSeconds { {
+        0.023396, 0.025354, 0.027646, 0.030146, 0.032729, 0.035604, 0.038771, 0.042229,
+        0.045896, 0.049854, 0.054354, 0.059021, 0.064229, 0.069979, 0.076229, 0.083104 } };
+    static constexpr int kMaxLine = 16384;   // 83 ms at 192 kHz, plus the drift
+    // The drift: 0.125 ms each way, at rates from 0.13 to 0.97 Hz spread over
+    // the lines; a held note's tail moves by under a cent.
+    static constexpr double kDriftSeconds = 0.000125, kSlowestDrift = 0.13, kFastestDrift = 0.97;
     // The diffusers' delays, mutually prime at 48 kHz, and their gain.
     static constexpr std::array<double, 4> kDiffuserSeconds { { 0.00153, 0.00271, 0.00419, 0.00587 } };
     static constexpr int kMaxDiffuser = 2048;   // 5.9 ms at 192 kHz, plus room to spare
@@ -62,10 +72,17 @@ public:
     // absorptive one-pole in each line: its gain is each line's decay at DC
     // and at Nyquist).
     void Set(double rt60, double trebleShare, double rate) {
+        drift = kDriftSeconds * rate;
         for (std::size_t i = 0; i < lines.size(); ++i) {
             Line& line = lines[i];
-            line.length = static_cast<int>(Min(kLineSeconds[i] * rate, static_cast<double>(kMaxLine - 1)));
+            line.length = Min(kLineSeconds[i] * rate, static_cast<double>(kMaxLine) - drift - 2.0);
             const double seconds = line.length / rate;
+            // The lines' drift rates interleave across their lengths, so
+            // neighbours do not move together.
+            const double share = static_cast<double>((i * 7u) % lines.size()) / (lines.size() - 1);
+            const double step = 6.283185307179586 * (kSlowestDrift + share * (kFastestDrift - kSlowestDrift)) / rate;
+            line.turnCos = std::cos(step);
+            line.turnSin = std::sin(step);
             const double low = std::pow(10.0, -3.0 * seconds / rt60), high = std::pow(10.0, -3.0 * seconds / (rt60 * trebleShare));
             line.pole = (low - high) / (low + high);
             line.gain = low * (1.0 - line.pole);
@@ -86,10 +103,14 @@ public:
     }
 
     void Clear() {
-        for (Line& line : lines) {
+        for (std::size_t i = 0; i < lines.size(); ++i) {
+            Line& line = lines[i];
             line.buffer.fill(0.0f);
             line.write = 0;
             line.low = 0.0;
+            // Each line starts its drift at its own phase.
+            line.cos = std::cos(2.399963229728653 * i);   // the golden angle apart
+            line.sin = std::sin(2.399963229728653 * i);
         }
         for (Diffuser& d : diffusers) {
             d.buffer.fill(0.0f);
@@ -103,13 +124,23 @@ public:
     // Takes the two microphones' direct sound and returns what the room adds
     // to each.
     void Process(double left, double right, double& roomLeft, double& roomRight) {
-        std::array<double, 8> out {};
+        std::array<double, kLines> out {};
         double sum = 0.0;
         for (std::size_t i = 0; i < lines.size(); ++i) {
             Line& line = lines[i];
-            int read = line.write - line.length;
-            if (read < 0) read += kMaxLine;
-            line.low = line.gain * line.buffer[static_cast<std::size_t>(read)] + line.pole * line.low;
+            // The drift's phasor turns by one step; its length is kept at 1 by
+            // a first-order correction, so no libm call runs per sample.
+            const double c = line.cos * line.turnCos - line.sin * line.turnSin;
+            const double s = line.sin * line.turnCos + line.cos * line.turnSin;
+            const double norm = 1.5 - 0.5 * (c * c + s * s);
+            line.cos = c * norm;
+            line.sin = s * norm;
+            double read = line.write - line.length - drift * line.sin;
+            if (read < 0.0) read += kMaxLine;
+            const int at = static_cast<int>(read), next = at + 1 == kMaxLine ? 0 : at + 1;
+            const double frac = read - at;
+            const double delayed = line.buffer[static_cast<std::size_t>(at)] + frac * (line.buffer[static_cast<std::size_t>(next)] - line.buffer[static_cast<std::size_t>(at)]);
+            line.low = line.gain * delayed + line.pole * line.low;
             out[i] = line.low;
             sum += out[i];
         }
@@ -135,7 +166,11 @@ public:
             if (++d.write == kMaxDiffuser) d.write = 0;
             input = delayed - kDiffuserGain * v;
         }
-        const double feedback = 0.25 * sum;   // 2/N
+        const double feedback = 2.0 / kLines * sum;
+        // Sixteen lines each fed the sound and each microphone hearing eight
+        // put twice the energy of the eight-line network into each channel
+        // twice over; the input and outputs each take 1/sqrt(2) of it back.
+        input *= 0.7071067811865476;
         roomLeft = earlyL;
         roomRight = earlyR;
         for (std::size_t i = 0; i < lines.size(); ++i) {
@@ -143,7 +178,7 @@ public:
             const double sign = (i & 2u) ? -1.0 : 1.0;
             line.buffer[static_cast<std::size_t>(line.write)] = static_cast<float>(out[i] - feedback + sign * input);
             if (++line.write == kMaxLine) line.write = 0;
-            ((i & 1u) ? roomRight : roomLeft) += sign * out[i];
+            ((i & 1u) ? roomRight : roomLeft) += 0.7071067811865476 * sign * out[i];
         }
     }
 
@@ -157,10 +192,13 @@ public:
 private:
     struct Line {
         std::array<float, kMaxLine> buffer {};
-        int length = 1, write = 0;
+        double length = 1.0;
+        int write = 0;
         double gain = 0.0, pole = 0.0, low = 0.0;
+        double cos = 1.0, sin = 0.0, turnCos = 1.0, turnSin = 0.0;
     };
-    std::array<Line, 8> lines {};
+    std::array<Line, kLines> lines {};
+    double drift = 0.0;
     struct Diffuser {
         std::array<float, kMaxDiffuser> buffer {};
         int length = 1, write = 0;
