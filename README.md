@@ -181,6 +181,11 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
   does, to the bit: a new instance no longer glides its gains, the room's
   above all, up from silence over its first notes, nor knocks the register
   switch of the patch it was loaded with.
+- The room is a small hall with a hundred people in it, dark and warm:
+  1.0 s at 125 Hz falling to 0.56 s at 4 kHz, its reflections and late
+  field softened from 2-3 kHz up. Init and every factory preset play it at
+  Room 5 %, a touch of air with the instrument still close, where the
+  presets played at 70 % and Init dry. Init plays the Clarinet register.
 
 ## Downloads
 
@@ -477,30 +482,31 @@ align at zero lag, and in every band from 60 Hz to 12 kHz they differ by
 each key by pitch put Paris Musette's bass band 10 dB to the left. The
 positions are a full-size instrument's, estimated.
 
-**Room**, off on Init and at 70 % on every factory preset, puts a room
-around the pair: the late, diffuse field of a living room with twenty
+**Room**, at 5 % on Init and on every factory preset, puts a room
+around the pair: the late, diffuse field of a small hall with a hundred
 people in it, from a sixteen-line feedback delay network (`Source/DSP/Room.h`)
 behind four allpass diffusers, so it is dense from its first milliseconds.
 Its modes lie 0.8 Hz apart and each line's length drifts slowly by 0.125 ms,
 so a held chord's tail never rings metallic; it costs about 1 % of one core
-in the development container. Its decay is Sabine's for the estimated room
-(58.5 m³) with each person adding the absorption measured per person in an
-occupied hall (Chagok et al.), 0.29 m² at 125 Hz rising to 0.73 m² at
-4 kHz: 0.51 s at low frequencies and a third of that at the top, where the
-empty room's was 1 s and half that.
-Before it come the first reflections of an ordinary room, by image sources
-(floor, ceiling, the wall behind the player and the side walls of a 2.6 m
-high living room, estimated), each heard by the pair from its own direction:
-the floor's arrives 4.1 ms after the instrument, 8 dB under it at Room 1.
+in the development container. Its decay is Sabine's for the estimated hall
+(12 × 9 × 4 m, 432 m³) with each person adding the absorption measured per
+person in an occupied hall (Chagok et al.), 0.29 m² at 125 Hz rising to
+0.73 m² at 4 kHz, and the air its own: 1.03 s at 125 Hz falling to 0.56 s at
+4 kHz, fitted as 0.83 s at low frequencies and a quarter of that at the top.
+Before it come the first reflections of that hall, by image sources (the
+stage, the wall behind the player, the ceiling and the side walls), each
+heard by the pair from its own direction: the stage's arrives 4.1 ms after
+the instrument, 8 dB under it at Room 1, the side walls' at 23 ms. The
+reflections are softened above 2 kHz and the late field above 3 kHz,
+voiced, for the owner's "quite dark".
 Each microphone hears four of the lines, so the field reaches the two
 decorrelated, as a room's does, while the instrument itself reaches both at
 once. In the five solo recordings the two channels' phase-transform
 cross-correlation of 170 ms frames peaks at only 0.20–0.51 at zero lag
-(median 0.38); the dry demos read 0.97–0.99, at the presets' 70 % 0.48–0.53,
-and at Room 1 0.38–0.42. The shorter tail needs 2.8 times the empty room's
-level for that. The crowd was chosen by ear from none, ten and twenty
-people; the recordings' own rooms are not measured, since their notes rarely
-stop clean enough to read a decay.
+(median 0.38); the dry demos read 0.97–0.99, and Room's level is set so
+Paris Musette reads 0.49 at 70 %, as every room before the hall did. The
+hundred people are the owner's; the recordings' own rooms are not measured,
+since their notes rarely stop clean enough to read a decay.
 
 ### The mechanism
 
@@ -616,7 +622,7 @@ strokes read −1.7 VU at most. Volume sets the level going into the stage.
 | Oversampling | 1×, 2×, 4× | the reeds' time step: 1× is four times the host rate; 2× and 4× cost about two and four times the CPU |
 | Mechanics | −40 to +20 dB | the keys', pallets', buttons' and switches' knocks, the bellows' folds and the push valves' slaps, against the estimate (The mechanism); +10 dB by default, chosen by ear; at −40 dB they are all but silent |
 | Auto | off, on | on by default: the hand plays the bellows in time with the host and the wheel presses harder (Auto) |
-| Room | 0–1 | the room around the microphones: 0 dry (the default), 1 as decorrelated as the solo recordings (The microphones) |
+| Room | 0–1 | the hall around the microphones: 0 dry, 5 % by default, 1 as decorrelated as the solo recordings (The microphones) |
 
 `Source/DSP/RespiraControls.h` holds these for every front end;
 `Source/DSP/RespiraPresets.h` holds the eight factory presets, one per
@@ -673,17 +679,15 @@ tempo, time signature, song position and bar start before each block
   push valves' slaps, are voiced by ear: no recording or measurement sets their level, and the
   folds' play, which decides how hard they land, is an estimate. The player
   makes no sound.
-- **The room is voiced.** Init is dry; the factory presets play in the room
-  at 70 %, for the owner's "great and expensive". Its first reflections come
-  from an estimated room's geometry, not a measured one, and are heard
-  through the pair at Width's default 90° whatever Width is set to. Its
-  decay is Sabine's for that estimated room and a crowd chosen by ear, with
-  people's absorption from one study of an occupied hall, fitted by a
-  one-pole to within 19 % per octave; its level at Room 1 is set by one
-  measure, the channels' correlation against the solo recordings' (The
-  microphones), on one demo. At that level the hardest strokes read
-  −0.6 VU on Reason's meter, out of the red but with half the headroom the
-  empty room left; the owner kept the width over the margin.
+- **The room is voiced.** Init and the factory presets play it at 5 %, the
+  owner's ceiling. Its first reflections come from an estimated hall's
+  geometry, not a measured one, and are heard through the pair at Width's
+  default 90° whatever Width is set to. Its decay is Sabine's for that
+  estimated hall and the owner's hundred people, with people's absorption
+  from one study of an occupied hall, fitted by a one-pole to within 21 %
+  per octave (its bass short); its darkness above 2-3 kHz is voiced; its
+  level at Room 1 is set by one measure, the channels' correlation against
+  the solo recordings' (The microphones), on one demo.
 - **Chord buttons are pitch classes**, not Stradella's fixed major, minor,
   seventh and diminished rows, and there are no bass register switches.
 - **One turbulence seed.** Two engines given the same input play identical

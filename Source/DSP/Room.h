@@ -1,7 +1,7 @@
 #pragma once
 
-// The room around the microphones: Init is dry and the factory presets play in
-// it. Its late diffuse field comes from a sixteen-line feedback delay network
+// The room around the microphones: Init and the factory presets play in it at
+// 5 %, a touch of air around the instrument (RespiraControls.h). Its late diffuse field comes from a sixteen-line feedback delay network
 // (Jot and Chaigne, AES 90, 1991) with a Householder matrix: the two
 // microphones each hear eight of the lines, so the field reaching them is
 // decorrelated as a real room's is, where the instrument's own sound reaches
@@ -12,7 +12,7 @@
 // millisecond, slowly and at its own rate, so the field's modes never stand
 // still: a fixed network rings metallic on a held chord, its modes 2.5 Hz
 // apart beating against the reeds. Before the late field come the first
-// reflections of an ordinary room, each from its own direction, so the pair
+// reflections of a small hall, each from its own direction, so the pair
 // hears them by level as it hears the instrument. It is a voiced room, not a
 // model of any one room.
 
@@ -41,43 +41,46 @@ public:
     static constexpr int kMaxDiffuser = 2048;   // 5.9 ms at 192 kHz, plus room to spare
     static constexpr double kDiffuserGain = 0.7;
 
-    // The first reflections, by image sources: the player seated with the
-    // bellows 1.0 m above the floor, the microphones 1 m in front at 1.2 m, in
-    // a room 2.6 m high with the walls 2 m to the left, 2.5 m to the right and
-    // 1 m behind the player (an estimate of a living room or small studio, not
-    // a measured one). Each: delay after the direct sound (path difference
-    // over 343 m/s), level against it (1/r, times the surface's reflection,
-    // 0.9 for a wooden floor and 0.8 for plaster) and azimuth in the player's
-    // view (positive to the right). The wall behind the microphones reaches
-    // them from behind, where a cardioid hears almost nothing, so it is left
-    // out. A wooden floor's reflection, -8 dB at 4 ms, combs the sound by at
-    // most +3/-4 dB below 4 kHz, as it does a real recording made in such a
-    // room.
+    // The first reflections, by image sources: the player seated on a wooden
+    // stage with the bellows 1.0 m above it, the microphones 1 m in front at
+    // 1.2 m, in a small hall 12 x 9 m and 4 m high, the player 2 m from the
+    // wall behind and midway between the side walls (an estimate of a room
+    // that seats a hundred, not a measured one). Each: delay after the direct
+    // sound (path difference over 343 m/s), level against it (1/r, times the
+    // surface's reflection, 0.9 for the wooden stage and 0.8 for plaster) and
+    // azimuth in the player's view (positive to the right). The wall behind
+    // the microphones reaches them from behind, where a cardioid hears almost
+    // nothing, so it is left out. The stage's reflection, -8 dB at 4 ms, combs
+    // the sound by at most +3/-4 dB below 4 kHz, as it does a real recording.
     struct Reflection { double seconds, level, azimuth; };
     static constexpr std::array<Reflection, 5> kReflections { {
-        { 0.00407, 0.42 * 0.9, 0.0 },      // floor: 2.42 m against 1.02 m
-        { 0.00578, 0.34 * 0.8, 0.0 },      // the wall behind the player: 3.0 m
-        { 0.00624, 0.32 * 0.8, 0.0 },      // ceiling: 3.16 m
-        { 0.00904, 0.25 * 0.8, -1.33 },    // left wall: 4.12 m, 76 degrees left
-        { 0.01190, 0.20 * 0.8, 1.37 },     // right wall: 5.10 m, 79 degrees right
+        { 0.00407, 0.42 * 0.9, 0.0 },      // stage: 2.42 m against 1.02 m
+        { 0.01162, 0.204 * 0.8, 0.0 },     // the wall behind the player: 5.00 m
+        { 0.01419, 0.173 * 0.8, 0.0 },     // ceiling: 5.89 m
+        { 0.02343, 0.113 * 0.8, -1.46 },   // left wall: 9.06 m, 84 degrees left
+        { 0.02343, 0.113 * 0.8, 1.46 },    // right wall: the same, to the right
     } };
-    static constexpr int kMaxEarly = 4096;      // 21 ms at 192 kHz
-    // Furnishings and the walls' own absorption take the treble off each
-    // reflection: a one-pole at 4 kHz on their sum, voiced.
-    static constexpr double kEarlyCorner = 4000.0;
+    static constexpr int kMaxEarly = 8192;      // 42 ms at 192 kHz
+    // The audience's clothes and the walls' own absorption take the treble
+    // off each reflection: a one-pole at 2 kHz on their sum, voiced dark
+    // (owner, 2026-10-31: "quite dark").
+    static constexpr double kEarlyCorner = 2000.0;
+    // The same darkness on what enters the late field: a one-pole at 3 kHz
+    // before the diffusers, voiced, so the hall's tail is warm from its
+    // start rather than only darkening as it decays.
+    static constexpr double kLateCorner = 3000.0;
 
-    // The room is full of people (owner, 2026-10-31: "less empty and more
-    // crowded with people"). Empty, its 1 s decay made the estimated room
-    // above (4.5 x 5 m, 2.6 m high, 58.5 m3; the 5 m is an estimate too) a
-    // bare one by Sabine: 9.4 m2 of absorption, a mean coefficient of 0.10.
-    // Twenty people stand in it (0.9 per m2, packed), each adding the average
-    // absorption per person Chagok et al. (University of Jos) measured in an
-    // occupied hall: 0.29, 0.43, 0.51, 0.68, 0.71 and 0.73 m2 at 125 Hz to
-    // 4 kHz. Sabine then gives 0.62, 0.52, 0.48, 0.41, 0.40 and 0.38 s; the
-    // one-pole's two settings below fit those bands best in log time, within
-    // 19 % (its bass a little short, its mids a little long). The crowd was
-    // offered by ear against none and ten (listening pack 35, Docs/decisions.md).
-    static constexpr double kDecaySeconds = 0.511, kTrebleShare = 0.323;
+    // A hundred people sit in it (owner, 2026-10-31: "as if in a room with
+    // 100 people"). The hall above, 432 m3 with 384 m2 of surface, is taken
+    // as bare plaster and wood at a mean coefficient of 0.10 (as the living
+    // room before it was), and each listener adds the average absorption per
+    // person Chagok et al. (University of Jos) measured in an occupied hall:
+    // 0.29, 0.43, 0.51, 0.68, 0.71 and 0.73 m2 at 125 Hz to 4 kHz. The air
+    // takes 4mV more (ISO 9613-1 at 20 C and 50 % RH: 1.1, 3.9 and 11.8 m2 at
+    // 1, 2 and 4 kHz). Sabine then gives 1.03, 0.85, 0.77, 0.64, 0.61 and
+    // 0.56 s; the one-pole's two settings below fit those bands best in log
+    // time, within 21 % (its bass short, its 1-2 kHz long).
+    static constexpr double kDecaySeconds = 0.825, kTrebleShare = 0.250;
 
     // `rt60` is the time the field takes to fall 60 dB at low frequencies;
     // it falls steadily faster towards the top, `trebleShare` of it at
@@ -113,6 +116,7 @@ public:
             early[i].right = r.level * (1.0 + std::cos(r.azimuth - axis)) / centre;
         }
         earlyPole = std::exp(-6.283185307179586 * Min(kEarlyCorner, 0.45 * rate) / rate);
+        latePole = std::exp(-6.283185307179586 * Min(kLateCorner, 0.45 * rate) / rate);
     }
 
     void Clear() {
@@ -132,6 +136,7 @@ public:
         earlyBuffer.fill(0.0f);
         earlyWrite = 0;
         earlyL = earlyR = 0.0;
+        late = 0.0;
     }
 
     // Takes the two microphones' direct sound and returns what the room adds
@@ -170,6 +175,8 @@ public:
         if (++earlyWrite == kMaxEarly) earlyWrite = 0;
         earlyL = reflectedL + earlyPole * (earlyL - reflectedL);
         earlyR = reflectedR + earlyPole * (earlyR - reflectedR);
+        late = input + latePole * (late - input);
+        input = late;
         for (Diffuser& d : diffusers) {
             int read = d.write - d.length;
             if (read < 0) read += kMaxDiffuser;
@@ -200,6 +207,7 @@ public:
             if (Abs(line.low) < 1.0e-20) line.low = 0.0;
         if (Abs(earlyL) < 1.0e-20) earlyL = 0.0;
         if (Abs(earlyR) < 1.0e-20) earlyR = 0.0;
+        if (Abs(late) < 1.0e-20) late = 0.0;
     }
 
 private:
@@ -225,6 +233,7 @@ private:
     std::array<float, kMaxEarly> earlyBuffer {};
     int earlyWrite = 0;
     double earlyPole = 0.0, earlyL = 0.0, earlyR = 0.0;
+    double latePole = 0.0, late = 0.0;
 };
 
 } // namespace respira

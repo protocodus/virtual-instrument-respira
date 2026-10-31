@@ -1606,3 +1606,33 @@ the red. The presets' Volume came down 0.5–0.7 dB each so they sit within
 What it licenses: a room whose decay follows one measured per-person
 absorption in an estimated room, the crowd's size chosen by ear; not a
 measured room, and not crowd noise.
+
+## 2026-10-31 — Room at 5 %, a dark hall with a hundred people, Init on Clarinet (owner; B by the project's rule)
+
+The owner asked that every preset play with Room at 5 % or less and that 5 %
+be the default, that the room be "quite dark, and as if in a room with 100
+people", and that Init use the Clarinet register. Init and the eight
+presets now set Room to 5 % and Register's default is Clarinet. The presets'
+Volume gets back the 0.4 dB the 70 % room had taken (they sit 0.15-0.54 dB
+under Init on the reference stroke), and `HardStrokesFit` has its 1 VU of
+headroom back (the hardest strokes read −1.86 VU).
+
+The room is now a small hall, 12 × 9 × 4 m (432 m³, estimated), bare at a
+mean coefficient of 0.10, with a hundred people each adding Chagok et al.'s
+per-person absorption and the air ISO 9613-1's (20 °C, 50 % RH). Sabine
+gives 1.03, 0.85, 0.77, 0.64, 0.61 and 0.56 s at 125 Hz to 4 kHz; the
+one-pole's best fit in log time is 0.825 s and a quarter of it at the top,
+within 21 %. Its first reflections come from the hall's geometry by image
+sources (stage 4.07 ms, the wall behind the player 11.6, ceiling 14.2, side
+walls 23.4 ms). "Quite dark" is voiced, not derived: the reflections are
+softened by a one-pole at 2 kHz where it was 4 kHz, and the late field is
+fed through one at 3 kHz. Room's level comes down from 3.25 to 2.32 so Paris
+Musette at 70 % keeps the width it had (the same plain zero-lag correlation,
+0.29).
+
+Listening pack 2026-10-31-dark-hall (Paris Musette at Room 100 %; whole-file
+RMS matched to A, B −0.06 dB): A the twenty-person living room, B the hall.
+B ships by the project's rule that the candidate wins unless the owner says
+otherwise. What it licenses: a hall whose decay follows measured per-person
+and air absorption in an estimated geometry, its darkness above 2-3 kHz
+chosen by the owner's word; not a measured room.

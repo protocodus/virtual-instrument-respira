@@ -1069,11 +1069,10 @@ void HardStrokesFit() {
     // of its range per second, and the whole wheel rocked every half second.
     // Both drive the bellows to the arm's full pressure, some 23 dB above
     // ordinary playing; on every preset the output stage keeps the meter out
-    // of the red and the peaks at its -1.5 dBFS ceiling. The meter kept 1 VU
-    // of headroom until the room filled with people (Room.h): its shorter
-    // tail needs a louder field for the recordings' width, which fills the
-    // compressor's release between strokes, and the owner kept the width
-    // over that margin (2026-10-31), so half a VU stays.
+    // of the red and the peaks at its -1.5 dBFS ceiling, with 1 VU of
+    // headroom. (Half a VU while the presets played at Room 70 %, whose
+    // field filled the compressor's release between strokes; at 5 % the
+    // full margin is back.)
     const double rate = 48000.0;
     std::vector<Note> notes;
     for (int k : { 24, 36, 60, 64, 67 }) notes.push_back({ 0.0, { kOn, static_cast<std::uint8_t>(k), 127 } });
@@ -1097,7 +1096,7 @@ void HardStrokesFit() {
         }
     }
     Expect(leastPressure >= 2499.0, "HardStrokesFit", "every stroke reaches the arm's full pressure, Pa", leastPressure);
-    Expect(worstVu < -0.5, "HardStrokesFit", "loudest on Reason's VU meter, VU", worstVu);
+    Expect(worstVu < -1.0, "HardStrokesFit", "loudest on Reason's VU meter, VU", worstVu);
     Expect(Db(worstPeak) < -1.4, "HardStrokesFit", "loudest peak, dBFS", Db(worstPeak));
 }
 
@@ -1243,7 +1242,7 @@ void RoomDecorrelatesAndRings() {
     }
     Expect(filled == static_cast<int>(0.05 * rate), "RoomDecorrelatesAndRings", "samples heard 50-100 ms after an impulse", filled);
 
-    // The floor's reflection comes first, 4.07 ms after the sound (Room.h):
+    // The stage's reflection comes first, 4.07 ms after the sound (Room.h):
     // nothing reaches the microphones from the room before it.
     room.Clear();
     int first = -1;

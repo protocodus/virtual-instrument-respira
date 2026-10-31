@@ -43,7 +43,7 @@ struct ControlInfo {
 };
 
 inline constexpr std::array<ControlInfo, kControlCount> kControlInfo { {
-    { "register", "Register", 0.0, 7.0, 3.0, 8, Curve::kStepped, "" },
+    { "register", "Register", 0.0, 7.0, 0.0, 8, Curve::kStepped, "" },
     { "musette", "Musette", 0.0, 40.0, 22.0, 0, Curve::kLinear, "cents" },
     { "bellows", "Bellows", 0.5, 8.0, 2.0, 0, Curve::kLog, "L" },
     { "assist", "Assist", 0.0, 1.0, 0.5, 0, Curve::kLinear, "" },
@@ -73,8 +73,9 @@ inline constexpr std::array<ControlInfo, kControlCount> kControlInfo { {
     // On by default, the owner's "just play": the hand keeps the bellows
     // supplied whatever is played, and the player never thinks about them.
     { "auto", "Auto", 0.0, 1.0, 1.0, 2, Curve::kStepped, "" },
-    // Off on Init; the factory presets play at 0.7 (Docs/decisions.md).
-    { "room", "Room", 0.0, 1.0, 0.0, 0, Curve::kLinear, "" },
+    // Init and every factory preset play at 5 %, the owner's ceiling for them
+    // (2026-10-31): a touch of the hall, the instrument still close.
+    { "room", "Room", 0.0, 1.0, 0.05, 0, Curve::kLinear, "" },
 } };
 
 // Physical value of control `index` at normalised position n (clamped to 0..1).
