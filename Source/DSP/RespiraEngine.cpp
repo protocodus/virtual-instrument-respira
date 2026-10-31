@@ -153,12 +153,13 @@ double DbToGain(double db) { return std::pow(10.0, db / 20.0); }
 // refuses any global it has to initialise at run time.
 constexpr double kFoldVoicing = 0.012589254117941675;   // -38 dB
 constexpr double kRustleVoicing = 0.1778279410038923;   // -15 dB
-// The room (Room.h): a 1 s decay, the middle of three rooms offered by ear
-// (0.5, 1 and 2 s, listening pack 28, Docs/decisions.md). Its level at Room 1
-// brings the two channels' phase-transform cross-correlation of the Paris
-// Musette demo (170 ms frames, the median peak at zero lag) from 0.99 to
-// 0.37, where the owner's five solo recordings read 0.20-0.51, median 0.38.
-constexpr double kRoomSeconds = 1.0, kRoomTrebleShare = 0.5, kRoomLevel = 1.15;
+// The room (Room.h), full of people. Its level brings the two channels'
+// phase-transform cross-correlation of the Paris Musette demo at the presets'
+// Room 70 % (170 ms frames, the median peak at zero lag) from 0.99 dry to
+// 0.49, as the empty room's did, where the owner's five solo recordings read
+// 0.20-0.51, median 0.38. Its shorter tail needs 2.8 times the empty room's
+// level for that; at the empty room's level the channels read 0.79.
+constexpr double kRoomLevel = 3.25;
 constexpr double kValveVoicing = 0.031622776601683794;   // -30 dB: the push valves' slaps (kFlapDensity), against their estimate
 
 // Rank of the bass side a group sounds: channel 2 bass buttons, channel 3 chords.
@@ -278,7 +279,7 @@ void Engine::Prepare(double sampleRate) {
     wanderStep = 1.0 - std::exp(-6.283185307179586 * kHandWanderHz / rate);
     wanderScale = kHandWander / std::sqrt(CascadeVariance(wanderStep));
     output.Prepare(rate, kBellowsGuard);
-    room.Set(kRoomSeconds, kRoomTrebleShare, rate);
+    room.Set(Room::kDecaySeconds, Room::kTrebleShare, rate);
     SetControls(controls);
     Reset();
 }

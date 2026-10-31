@@ -1069,7 +1069,11 @@ void HardStrokesFit() {
     // of its range per second, and the whole wheel rocked every half second.
     // Both drive the bellows to the arm's full pressure, some 23 dB above
     // ordinary playing; on every preset the output stage keeps the meter out
-    // of the red and the peaks at its -1.5 dBFS ceiling.
+    // of the red and the peaks at its -1.5 dBFS ceiling. The meter kept 1 VU
+    // of headroom until the room filled with people (Room.h): its shorter
+    // tail needs a louder field for the recordings' width, which fills the
+    // compressor's release between strokes, and the owner kept the width
+    // over that margin (2026-10-31), so half a VU stays.
     const double rate = 48000.0;
     std::vector<Note> notes;
     for (int k : { 24, 36, 60, 64, 67 }) notes.push_back({ 0.0, { kOn, static_cast<std::uint8_t>(k), 127 } });
@@ -1093,7 +1097,7 @@ void HardStrokesFit() {
         }
     }
     Expect(leastPressure >= 2499.0, "HardStrokesFit", "every stroke reaches the arm's full pressure, Pa", leastPressure);
-    Expect(worstVu < -1.0, "HardStrokesFit", "loudest on Reason's VU meter, VU", worstVu);
+    Expect(worstVu < -0.5, "HardStrokesFit", "loudest on Reason's VU meter, VU", worstVu);
     Expect(Db(worstPeak) < -1.4, "HardStrokesFit", "loudest peak, dBFS", Db(worstPeak));
 }
 
@@ -1191,7 +1195,7 @@ void RoomDecorrelatesAndRings() {
     // channels but for level; at Room 1 the room's field, which each
     // microphone hears from its own four lines, takes most of that likeness
     // away and rings on after the key, and the room alone decays 60 dB in
-    // its 1 s.
+    // its decay time at low frequencies (Room.h).
     const double rate = 48000.0;
     const auto take = [rate](double room) {
         auto e = Make(rate, 3, [room](Controls& c) { c[kRoom] = room; c[kMechanics] = -40.0; });
@@ -1213,7 +1217,7 @@ void RoomDecorrelatesAndRings() {
     Expect(tail > 20.0, "RoomDecorrelatesAndRings", "Room 1 against dry 0.3 s after the key, dB", tail);
 
     Room room;
-    room.Set(1.0, 0.5, rate);
+    room.Set(Room::kDecaySeconds, Room::kTrebleShare, rate);
     room.Clear();
     std::vector<float> out(static_cast<std::size_t>(2.0 * rate));
     for (std::size_t i = 0; i < out.size(); ++i) {
@@ -1224,7 +1228,8 @@ void RoomDecorrelatesAndRings() {
         out[i] = static_cast<float>(l);
     }
     const double perSecond = (Db(Rms(out, rate, 0.7, 0.8)) - Db(Rms(out, rate, 1.2, 1.3))) / 0.5;
-    Expect(std::fabs(perSecond - 60.0) < 6.0, "RoomDecorrelatesAndRings", "the room's decay at 200 Hz, dB/s", perSecond);
+    const double expected = 60.0 / Room::kDecaySeconds;
+    Expect(std::fabs(perSecond / expected - 1.0) < 0.1, "RoomDecorrelatesAndRings", "the room's decay at 200 Hz, dB/s", perSecond);
 
     // Diffused from its start: an impulse fills every sample from 50 ms on
     // (fed straight into the lines it came back as about a dozen echoes in the

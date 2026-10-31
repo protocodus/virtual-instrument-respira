@@ -166,11 +166,12 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 - Auto's hand is a person's: the pressure it wants wanders a little and
   each stroke takes its own level, so a held chord breathes rather than
   sitting dead level.
-- **Room**, off by default, adds a room around the microphones: a 1 s
-  diffuse field each microphone hears on its own, so at Room 1 the two
-  channels correlate as little as the five solo recordings' do. Init stays
-  dry; the eight factory presets play at Room 70 %, where the channels
-  correlate 0.49 on Paris Musette, at the dry end of the recordings.
+- **Room**, off by default, adds a room around the microphones: a living
+  room full of people, its 0.5 s diffuse field heard by each microphone on
+  its own, so at Room 1 the two channels correlate as little as the five
+  solo recordings' do. Init stays dry; the eight factory presets play at
+  Room 70 %, where the channels correlate 0.49 on Paris Musette, at the dry
+  end of the recordings.
 - Auto plays the same at any Momentum: the player leads their own arm, so
   a heavy arm softens the turns but no longer starves the reeds. At Momentum
   200 ms a held triad reached 360 Pa in 4.2 s and held 349; it now takes
@@ -477,13 +478,16 @@ each key by pitch put Paris Musette's bass band 10 dB to the left. The
 positions are a full-size instrument's, estimated.
 
 **Room**, off on Init and at 70 % on every factory preset, puts a room
-around the pair: the late, diffuse
-field of a voiced room with a 1 s decay at low frequencies and half that at
-the top, from a sixteen-line feedback delay network (`Source/DSP/Room.h`)
+around the pair: the late, diffuse field of a living room with twenty
+people in it, from a sixteen-line feedback delay network (`Source/DSP/Room.h`)
 behind four allpass diffusers, so it is dense from its first milliseconds.
 Its modes lie 0.8 Hz apart and each line's length drifts slowly by 0.125 ms,
 so a held chord's tail never rings metallic; it costs about 1 % of one core
-in the development container.
+in the development container. Its decay is Sabine's for the estimated room
+(58.5 m³) with each person adding the absorption measured per person in an
+occupied hall (Chagok et al.), 0.29 m² at 125 Hz rising to 0.73 m² at
+4 kHz: 0.51 s at low frequencies and a third of that at the top, where the
+empty room's was 1 s and half that.
 Before it come the first reflections of an ordinary room, by image sources
 (floor, ceiling, the wall behind the player and the side walls of a 2.6 m
 high living room, estimated), each heard by the pair from its own direction:
@@ -492,10 +496,11 @@ Each microphone hears four of the lines, so the field reaches the two
 decorrelated, as a room's does, while the instrument itself reaches both at
 once. In the five solo recordings the two channels' phase-transform
 cross-correlation of 170 ms frames peaks at only 0.20–0.51 at zero lag
-(median 0.38); the dry demos read 0.97–0.99, and at Room 1 the eight demos
-read 0.34–0.42. The decay was chosen by ear from three (0.5, 1 and 2 s); the
-recordings' own rooms are not measured, since their notes rarely stop clean
-enough to read a decay.
+(median 0.38); the dry demos read 0.97–0.99, at the presets' 70 % 0.48–0.53,
+and at Room 1 0.38–0.42. The shorter tail needs 2.8 times the empty room's
+level for that. The crowd was chosen by ear from none, ten and twenty
+people; the recordings' own rooms are not measured, since their notes rarely
+stop clean enough to read a decay.
 
 ### The mechanism
 
@@ -671,11 +676,14 @@ tempo, time signature, song position and bar start before each block
 - **The room is voiced.** Init is dry; the factory presets play in the room
   at 70 %, for the owner's "great and expensive". Its first reflections come
   from an estimated room's geometry, not a measured one, and are heard
-  through the pair at Width's default 90° whatever Width is set to.
-  Room adds a late diffuse field only, with no early reflections from a
-  floor or walls; its decay and its treble loss are chosen by ear, and its
-  level at Room 1 is set by one measure, the channels' correlation against
-  the solo recordings' (The microphones), on one demo.
+  through the pair at Width's default 90° whatever Width is set to. Its
+  decay is Sabine's for that estimated room and a crowd chosen by ear, with
+  people's absorption from one study of an occupied hall, fitted by a
+  one-pole to within 19 % per octave; its level at Room 1 is set by one
+  measure, the channels' correlation against the solo recordings' (The
+  microphones), on one demo. At that level the hardest strokes read
+  −0.6 VU on Reason's meter, out of the red but with half the headroom the
+  empty room left; the owner kept the width over the margin.
 - **Chord buttons are pitch classes**, not Stradella's fixed major, minor,
   seventh and diminished rows, and there are no bass register switches.
 - **One turbulence seed.** Two engines given the same input play identical

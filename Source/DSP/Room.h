@@ -66,6 +66,19 @@ public:
     // reflection: a one-pole at 4 kHz on their sum, voiced.
     static constexpr double kEarlyCorner = 4000.0;
 
+    // The room is full of people (owner, 2026-10-31: "less empty and more
+    // crowded with people"). Empty, its 1 s decay made the estimated room
+    // above (4.5 x 5 m, 2.6 m high, 58.5 m3; the 5 m is an estimate too) a
+    // bare one by Sabine: 9.4 m2 of absorption, a mean coefficient of 0.10.
+    // Twenty people stand in it (0.9 per m2, packed), each adding the average
+    // absorption per person Chagok et al. (University of Jos) measured in an
+    // occupied hall: 0.29, 0.43, 0.51, 0.68, 0.71 and 0.73 m2 at 125 Hz to
+    // 4 kHz. Sabine then gives 0.62, 0.52, 0.48, 0.41, 0.40 and 0.38 s; the
+    // one-pole's two settings below fit those bands best in log time, within
+    // 19 % (its bass a little short, its mids a little long). The crowd was
+    // offered by ear against none and ten (listening pack 35, Docs/decisions.md).
+    static constexpr double kDecaySeconds = 0.511, kTrebleShare = 0.323;
+
     // `rt60` is the time the field takes to fall 60 dB at low frequencies;
     // it falls steadily faster towards the top, `trebleShare` of it at
     // Nyquist, as a room's walls and air absorb more of the treble (Jot's

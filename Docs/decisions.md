@@ -1563,3 +1563,46 @@ a perfectly even hand; it now allows the stroke level's full range on top.
 start on the same stroke level, so it now holds it to four times the chord's
 own pressure within 5 %.
 
+
+## 2026-10-31 — a room full of people (owner; by ear pending between B and C)
+
+The owner asked for the room to sound "less empty and more crowded with
+people", read as an occupied room rather than crowd noise. By Sabine's
+formula the shipping room, a 1 s decay in the estimated living room of the
+first reflections (4.5 × 5 × 2.6 m, 58.5 m³; the 5 m is also an estimate),
+was an empty one: 9.4 m² of absorption, a mean coefficient of 0.10. People
+were added with the average absorption per person Chagok et al. (University
+of Jos) measured in an occupied hall: 0.29, 0.43, 0.51, 0.68, 0.71 and
+0.73 m² at 125 Hz to 4 kHz. The room's two settings, its decay at low
+frequencies and the share left at the top, are fitted to the occupied
+room's six octave bands in log time, within 19 %. Each candidate's level was
+re-set so the channels correlate as every room's has (Paris Musette 0.49 at
+the presets' Room 70 %).
+
+Listening pack 35-crowded-room (Paris Musette, Organ Bellows and Bright
+Oboe through their presets; whole-file RMS matched to A):
+
+- A — the shipping room, empty: 1.0 s, half at the top.
+- B — ten people (0.45 per m²): 0.67 s, 0.35 at the top; level ×1.9
+  (trim −0.34 dB).
+- C — twenty people (0.9 per m², packed): 0.51 s, 0.32 at the top; level
+  ×2.8 (trim −0.56 dB).
+
+A fourth, C's people at the level Sabine leaves the field, was not offered:
+its channels correlate 0.79–0.83, outside the recordings' 0.20–0.51.
+
+C ships, the one that answers "more crowded", by the project's rule that the
+candidate wins unless the owner says otherwise; B is the alternative if the
+owner hears it as better. Both cost the meter's margin: the louder, shorter
+field fills the compressor's release between the hardest strokes, which read
+−0.61 VU (C) and −0.81 VU (B) where the empty room read −1.28 against the
+`HardStrokesFit` limit of −1 VU, and lowering the presets' Volume barely
+moves it (2.5 dB off read −0.88). Keeping the margin would have needed C's
+level cut to 2.0, where the channels correlate 0.64, narrower than any
+recording. The owner chose the width (decision card, 2026-10-31), so
+`HardStrokesFit` now holds the hardest strokes under −0.5 VU, still out of
+the red. The presets' Volume came down 0.5–0.7 dB each so they sit within
+1 dB of Init on the reference stroke again (0.59–0.97 dB above it).
+What it licenses: a room whose decay follows one measured per-person
+absorption in an estimated room, the crowd's size chosen by ear; not a
+measured room, and not crowd noise.
