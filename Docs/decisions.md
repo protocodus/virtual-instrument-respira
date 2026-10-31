@@ -1509,3 +1509,33 @@ level is re-set so the presets' channels correlate as before (Paris Musette
 about 1 % of one core more than none in the development container. Pack
 32-room-quality: A eight fixed lines, B sixteen drifting (−0.25 dB trim); B
 ships, the candidate winning by the project's rule.
+
+## 2026-10-31 — Auto leads its own arm (owner; engineering)
+
+The owner asked for Auto's Momentum to sound realistic while letting the
+player play without minding push and pull. Measured on a held triad at 120
+bpm, Auto at Momentum 50, 100 and 200 ms took 0.49, 1.4 and 4.2 s to reach
+360 Pa, and at 200 held 349 Pa; its turns fell below −10 dB for 65–165 ms,
+as deep as −29 dB. The player waited for their arm: its trail of twice
+Momentum sat in the loop, and the reaction stretched to four times Momentum
+to keep that loop stable.
+
+The candidate has no new constant. The player leads their arm by the trail
+a critically damped arm keeps behind a steady stroke (2 T), so the arm
+follows the stroke they mean exactly and lags only while the stroke
+changes; the reaction stays 0.1 s at every Momentum, and the turn is planned
+one time constant early, where the led arm's lag behind a change of speed is
+largest. From Momentum 0 to 200 ms a held triad now reaches 360 Pa in
+0.21–0.52 s and holds 402–405 Pa, and a turn falls below −10 dB for 0–110 ms
+(deepest −6 to −23 dB), passing zero 0–125 ms before the bar line
+(`AutoLeadsTheArm`). The default Momentum changes little: the chord from rest
+speaks in 0.21 s where it took 0.30, and the turn passes zero 15 ms early as
+before. The wheel's arm is unchanged: there the arm is the player's own.
+
+Pack 34-heavy-arm (listening-2026-10-31): Clarinet Solo under Auto, a chord
+from rest, a scale, then a triad held through a turn, at Momentum 25 ms
+(`default/`) and 150 ms (`heavy/`); A the old loop, B the led arm, B trimmed
+to A's whole-file RMS (−0.02 and −1.73 dB). Under the standing rule B ships
+until the owner hears it. Verdict pending. What it licenses: a player who
+compensates for their own arm, not a measured arm or reaction time.
+

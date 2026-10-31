@@ -46,10 +46,9 @@ constexpr double kAutoBellows = 6.0e-3;     // m^3
 constexpr double kAutoRoom = 0.05;          // how far from its end, of the whole, the bellows start a stroke
 constexpr double kAutoFastest = 4.0e-3;     // m^3/s: the most air the hand moves, opening or closing
 // Auto's player closes on the pressure they want in 0.1 s, a hand's reaction,
-// or four times the arm's lag (Momentum, ms) when that is longer. The arm's
-// trail of twice its lag is part of that time, so the player's own part, what
-// is left, is never shorter than the trail.
-double Reaction(double momentum) { return Max(0.1, 4.0e-3 * momentum); }
+// whatever their arm's Momentum: they lead the arm (Hand::Tick), so its lag
+// is not in their loop.
+constexpr double kReaction = 0.1;
 // The radiated sound is the pallet flow's rate of change as from a small
 // source 1 m away; 0.67 Pa there (90.5 dB SPL) is digital full scale, so the
 // notes of the demo phrases read -9 on Reason's VU meter (the louder channel's
@@ -239,7 +238,12 @@ void Engine::Hand::Tick(double dt, double momentum, const double* drive, double 
     const double next = Clamp(wheel + dt * (speed + kHandCatchUp * (target - wheel)), 0.0, 1.0);
     const double wheelVelocity = (next - wheel) / dt;
     wheel = next;
-    const double goal = drive ? *drive : wheel;
+    // Auto's player leads their own arm by the trail it would keep behind a
+    // steady stroke (2 / w for this critically damped arm), so it follows the
+    // stroke they mean and its mass shows only where the stroke changes, at a
+    // turn. The wheel's arm keeps its trail: there the arm is the player's.
+    const double w = momentum > 0.0 ? Min(1.0e3 / momentum, 0.5 / dt) : 0.0;
+    const double goal = drive ? *drive + (w > 0.0 ? 2.0 / w * driveVelocity : 0.0) : wheel;
     if (momentum <= 0.0) {
         position = goal;
         velocity = drive ? driveVelocity : wheelVelocity;
@@ -247,7 +251,6 @@ void Engine::Hand::Tick(double dt, double momentum, const double* drive, double 
     }
     // Semi-implicit Euler, kept well inside its stable range (w dt <= 0.5)
     // for a Momentum shorter than two samples.
-    const double w = Min(1.0e3 / momentum, 0.5 / dt);
     velocity += dt * w * (w * (goal - position) - 2.0 * velocity);
     position = drive ? position + dt * velocity : Clamp(position + dt * velocity, 0.0, 1.0);
 }
@@ -424,14 +427,14 @@ void Engine::StepPlayer(double dt) {
     const double litres = controls[kBellows] * 1.0e-3, open = Max(1.0, kAutoBellows / litres);   // wheels
     const double perWheel = litres * (1.0 + controls[kAssist] * (Max(demand, 1.0) - 1.0));
     const double fastest = kAutoFastest / litres;
-    // The arm trails a steady stroke by 2 Momentum, and a turn (below) takes
-    // the hand at its fastest, helped by the air the reeds take, the time the
-    // air of the swing to zero asks, with the air the arm's own reversal costs
-    // (twice its trail of the air the reeds take), so the hand turns that much
-    // early and the pressure passes zero just before the bar line.
+    // A turn (below) takes the hand at its fastest, helped by the air the
+    // reeds take, the time the air of the swing to zero asks; the led arm
+    // (Hand::Tick) lags only while the stroke changes, its error largest one
+    // time constant (Momentum) after. The hand turns that much early, so the
+    // pressure passes zero just before the bar line.
     const double momentum = controls[kMomentum], size = kAutoPressure * (1.0 + 3.0 * hand.wheel);
-    const double swing = size / kBellowsStiffness + 4.0e-3 * momentum * Abs(player.hold);   // m^3
-    double ahead = player.cycle + (2.0e-3 * momentum + swing / (perWheel * fastest + Abs(player.hold))) * transport.bpm / 60.0;
+    const double swing = size / kBellowsStiffness;   // m^3
+    double ahead = player.cycle + (1.0e-3 * momentum + swing / (perWheel * fastest + Abs(player.hold))) * transport.bpm / 60.0;
     if (ahead >= cycle) ahead -= cycle;
     const int half = ahead < player.stroke ? 0 : 1;
     if (half != player.half) {
@@ -482,16 +485,15 @@ void Engine::StepPlayer(double dt) {
         player.hold = -player.hold;
         player.swinging = true;
     }
-    // The pressure once the arm has caught up with the hand: it trails a
-    // steady stroke by 2 / arm, so the air it owes beyond that is still to
-    // come. The player feels their own arm and closes on this, so its lag
-    // stays out of their loop.
-    const double coming = pressure - kBellowsStiffness * (perWheel * (player.drive - hand.position) + (arm > 0.0 ? 2.0 * player.hold / arm : 0.0));
-    // They close on the pressure they want in their part of a reaction time
+    // The pressure once the led arm has caught up with the hand. The player
+    // feels their own arm and closes on this, so its lag stays out of their
+    // loop.
+    const double coming = pressure - kBellowsStiffness * perWheel * (player.drive - hand.position);
+    // They close on the pressure they want in a reaction time
     // (above): the air that time asks of the bellows' stiffness. The hand's
     // air is undone through Assist and Bellows into wheel speed, and the hand
     // never moves against its stroke.
-    const double closing = player.swinging ? dt : Reaction(momentum) - 2.0e-3 * momentum;
+    const double closing = player.swinging ? dt : kReaction;
     const double flow = air + (want - coming) / (kBellowsStiffness * closing);
     const double wanted = -flow / perWheel;
     player.velocity = Clamp(wanted, pulling ? 0.0 : -fastest, pulling ? fastest : 0.0);

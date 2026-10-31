@@ -792,6 +792,34 @@ void AutoHoldsItsPressure() {
     Expect(std::fabs(hard / 1600.0 - 1.0) < 0.05, "AutoHoldsItsPressure", "the wheel at the top, Pa", hard);
 }
 
+void AutoLeadsTheArm() {
+    // The player leads their own arm, so whatever its Momentum a held triad
+    // gets its pressure soon and holds it, and a turn stays on its bar line.
+    // Before, at 200 ms the triad took 4.2 s to reach 360 Pa and held 349.
+    const double rate = 48000.0;
+    const std::vector<Note> triad { { 0.0, { kOn, 60, 100 } }, { 0.0, { kOn, 64, 100 } }, { 0.0, { kOn, 67, 100 } } };
+    double slowest = 0.0, low = 1.0e9, high = 0.0, early = 1.0e9, late = -1.0e9;
+    for (const double momentum : { 0.0, 25.0, 100.0, 200.0 }) {
+        auto e = MakeAuto(rate, [momentum](Controls& c) { c[kMomentum] = momentum; });
+        const Take t = PlayAuto(*e, rate, 9.0, triad, 120.0, 4, true);
+        double onset = 9.0;
+        for (std::size_t i = 0; i < t.pressure.size(); ++i)
+            if (std::fabs(t.pressure[i]) > 360.0) { onset = static_cast<double>(i) * 32.0 / rate; break; }
+        slowest = std::max(slowest, onset);
+        const double p = -MeanPressure(t, rate, 2.0, 7.0);
+        low = std::min(low, p);
+        high = std::max(high, p);
+        const std::vector<double> turns = Turns(t, rate, 0.5);
+        const double before = turns.size() == 1 ? 8.0 - turns[0] : -1.0;
+        early = std::min(early, before);
+        late = std::max(late, before);
+    }
+    Expect(slowest < 0.6, "AutoLeadsTheArm", "Momentum 0-200 ms: slowest time to 360 Pa, s", slowest);
+    Expect(low > 390.0 && high < 420.0, "AutoLeadsTheArm", "lowest steady pressure, Pa", low);
+    Expect(early >= -0.005 && late < 0.15, "AutoLeadsTheArm", "the turn, s before the bar line: latest", early);
+    Expect(late < 0.15, "AutoLeadsTheArm", "earliest", late);
+}
+
 // The mechanism's own part of a take: the same take with the mechanism all
 // but silenced, subtracted (the reeds do not hear the mechanism).
 std::vector<float> MechanismOf(int preset, double seconds, const std::vector<Note>& notes,
@@ -1300,6 +1328,7 @@ int main() {
     AutoHoldsItsPressure();
     AutoTurnsWhenTheAirRunsShort();
     AutoHandsBackToTheWheel();
+    AutoLeadsTheArm();
     FoldsSoundWithTheBellows();
     std::printf("%d failure(s)\n", failures);
     return failures == 0 ? 0 : 1;
