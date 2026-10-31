@@ -871,6 +871,41 @@ void DeterministicAfterReset() {
            "a reset engine plays the phrase to the same bits", Peak(first));
 }
 
+// A host's audio reset (the Rack's, before a bounce) starts a new
+// performance: whatever was played before, a reset engine plays as a new
+// instance given the same controls does, to the bit. A new instance once
+// glided its gains (the room's above all) up from zero while a
+// reset one started at them, and knocked the register switch it was loaded on.
+void ResetPlaysAsNew() {
+    const double rate = 48000.0;
+    bool same = true;
+    double peak = 0.0;
+    for (const bool autoHand : { false, true }) {
+        Controls controls = kPresets[4].ToControls();
+        controls[kAuto] = autoHand ? 1.0 : 0.0;
+        controls[kRoom] = 0.7;
+        controls[kRegister] = 5;
+        controls[kVolume] = -4.0;
+        Engine fresh;
+        fresh.Prepare(rate);
+        fresh.SetControls(controls);
+        const Take reference = Play(fresh, rate, 2.2, Phrase(), {});
+        Engine played;
+        played.Prepare(rate);
+        Controls other = controls;
+        other[kRoom] = 1.0;
+        other[kRegister] = 2;
+        played.SetControls(other);
+        Play(played, rate, 1.0, Phrase(), {});
+        played.SetControls(controls);
+        played.Reset();
+        const Take again = Play(played, rate, 2.2, Phrase(), {});
+        same = same && again.left == reference.left && again.right == reference.right;
+        peak = std::max(peak, Peak(reference));
+    }
+    Expect(same && peak > 1.0e-3, "ResetPlaysAsNew", "on the wheel and on Auto, in a room, a reset plays as a new instance, to the bit", peak);
+}
+
 void ReleaseAndAllNotesOff() {
     // The hand keeps moving after the notes stop, and the bellows' folds
     // rustle with the air that still leaks out (Mechanics.h); the mechanism is
@@ -1244,6 +1279,7 @@ int main() {
     MomentumSmoothsTheHand();
     BlockPartitionInvariance();
     DeterministicAfterReset();
+    ResetPlaysAsNew();
     ReleaseAndAllNotesOff();
     VoiceLimit();
     PresetsSitTogether();

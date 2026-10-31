@@ -288,16 +288,8 @@ void Engine::Reset() {
     bassSide.Reset();
     bassBox.Clear();
     grille = 0.0;
-    gain = gainTarget;
-    bassGain = bassGainTarget;
-    trebleGain = trebleGainTarget;
-    treblePanL = treblePanLTarget;
-    treblePanR = treblePanRTarget;
-    bassPanL = bassPanLTarget;
-    bassPanR = bassPanRTarget;
     output.Reset();
     room.Clear();
-    roomGain = roomGainTarget;
     keys.fill(Key {});
     movingCount = 0;
     knocks.fill(Knock {});
@@ -318,8 +310,21 @@ void Engine::Reset() {
     rustle.Set(rate);
     rustleForce = 0.0;
     for (BodyHighPass* body : { &mechanicsTreble, &mechanicsBass }) body->Clear();
-    mechanicsGain = mechanicsGainTarget;
+    TakeTargets();
     diag = Diagnostics {};
+    untouched = true;
+}
+
+void Engine::TakeTargets() {
+    gain = gainTarget;
+    bassGain = bassGainTarget;
+    trebleGain = trebleGainTarget;
+    treblePanL = treblePanLTarget;
+    treblePanR = treblePanRTarget;
+    bassPanL = bassPanLTarget;
+    bassPanR = bassPanRTarget;
+    roomGain = roomGainTarget;
+    mechanicsGain = mechanicsGainTarget;
 }
 
 void Engine::SetControls(const Controls& next) {
@@ -341,8 +346,11 @@ void Engine::SetControls(const Controls& next) {
     stages = 2 + index;
     internalRate = nextRate;
     const int reg = static_cast<int>(controls[kRegister]);
-    if (reg != registerIndex) {
-        SwitchRegister(registerIndex, reg);
+    // Until it first renders, the engine has made no sound: controls set then
+    // (a patch loaded into a new instance) take hold at once, with no knock
+    // and no glide, so a new instance plays as one after Reset() does.
+    if (reg != registerIndex) SwitchRegister(registerIndex, reg);
+    if (reg != registerIndex && !untouched) {
         StartKnock(kRegisterSwitch, kRegisterSwitch.travel / kOpenSeconds, 1.0, false);
         // The switch it pushes off springs back up onto its stop, in the time
         // a pallet's spring takes.
@@ -372,6 +380,7 @@ void Engine::SetControls(const Controls& next) {
     roomGainTarget = kRoomLevel * controls[kRoom];
     MicPair(kTrebleSideX, controls[kWidth], treblePanLTarget, treblePanRTarget);
     MicPair(kBassSideX, controls[kWidth], bassPanLTarget, bassPanRTarget);
+    if (untouched) TakeTargets();
 }
 
 void Engine::SetMasterTune(double cents) { masterTune = cents == cents ? Clamp(cents, -100.0, 100.0) : 0.0; }
@@ -714,6 +723,7 @@ void Engine::Render(float* left, float* right, int frames) {
     const bool airValve = airPedal || controls[kAir] >= 0.5;
     // The valve opens and closes in the time a pallet takes.
     const double valveOpen = dt / kOpenSeconds, valveClose = dt / kCloseSeconds;
+    if (frames > 0) untouched = false;
     for (int i = 0; i < frames; ++i) {
         if (autoHand) StepPlayer(dt);
         hand.Tick(dt, controls[kMomentum], autoHand ? &player.drive : nullptr, player.velocity);

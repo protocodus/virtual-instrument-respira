@@ -168,6 +168,10 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
   channels correlate as little as the five solo recordings' do. Init stays
   dry; the eight factory presets play at Room 70 %, where the channels
   correlate 0.49 on Paris Musette, at the dry end of the recordings.
+- A reset (the host's audio reset, before a bounce) plays as a new instance
+  does, to the bit: a new instance no longer glides its gains, the room's
+  above all, up from silence over its first notes, nor knocks the register
+  switch of the patch it was loaded with.
 
 ## Downloads
 

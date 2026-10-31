@@ -207,6 +207,7 @@ private:
     void NoteOn(int channel, int key, int velocity);
     void NoteOff(int channel, int key);
     void StartCell(int rank, int key, int source, int velocity);
+    void TakeTargets();   // every glided gain to its target at once
     void SwitchRegister(int from, int to);
     void MoveKey(int source);
     void StartKnock(const Stop& stop, double speed, double massScale, bool bass);
@@ -246,6 +247,7 @@ private:
     protocodus::OutputStage<2> output;
     Room room;
     double roomGain = 0.0, roomGainTarget = 0.0;
+    bool untouched = true;   // nothing rendered since Reset() (SetControls)
     // The microphones' gains for each side (MicPair, RespiraEngine.cpp).
     float treblePanL = 0.0f, treblePanR = 0.0f, treblePanLTarget = 0.0f, treblePanRTarget = 0.0f;
     float bassPanL = 0.0f, bassPanR = 0.0f, bassPanLTarget = 0.0f, bassPanRTarget = 0.0f;
