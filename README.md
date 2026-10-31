@@ -163,6 +163,9 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
   to the wheel, as the demo phrases do first, so they sound as before.
 - The room's late field has sixteen slowly drifting delay lines in place of
   eight fixed ones, so it no longer rings metallic on a held chord.
+- Auto's hand is a person's: the pressure it wants wanders a little and
+  each stroke takes its own level, so a held chord breathes rather than
+  sitting dead level.
 - **Room**, off by default, adds a room around the microphones: a 1 s
   diffuse field each microphone hears on its own, so at Room 1 the two
   channels correlate as little as the five solo recordings' do. Init stays
@@ -267,6 +270,18 @@ if a stroke still runs them out the hand turns there and finds the bars
 again at the next turn. Switched off, Auto leaves the bellows where they
 are: the wheel takes over without a stroke. Pressure, reaction time and
 capacity are voiced, not measured.
+
+The hand is a person's, who never presses quite evenly. The pressure it wants
+wanders by 8 % of itself, slowly (below about 1.5 Hz), and each stroke takes
+its own level, 6 % either way at one standard deviation, the range force
+steadiness reaches in a moving arm (a coefficient of variation of a few
+percent in a steady contraction, more when the limb moves). In a held chord
+the pressure varies by about 5–6 % within a stroke where it varied by 1 %.
+The sound follows only weakly: at 400 Pa the level rises about 0.26 dB per
+dB of pressure, so what is heard is mostly the reeds' colour and the
+beating's evenness moving, by 0.1–0.2 dB in level. Planning a turn, the
+player judges the air by the stroke's usual pressure and keeps enough for
+twice their wander above it, so the turns still fall on bar lines.
 
 ### Reed cells
 

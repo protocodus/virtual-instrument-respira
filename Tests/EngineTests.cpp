@@ -692,13 +692,16 @@ void AutoTurnsOnTheBars() {
     // In 3/4 at 240 (0.75 s a bar) the hand pulls through four bars and
     // pushes through the next four, 24 beats a cycle, from the first bar of
     // the song; one note leaves the bellows air to spare, so the pressure
-    // passes zero just before every fourth bar line and holds 400 Pa between.
-    const double rate = 48000.0;
+    // passes zero just before every fourth bar line and holds 400 Pa between,
+    // within 5 % and the person's own stroke level: each stroke takes its own,
+    // uniform to sqrt(3) kHandStroke = 10.4 % either side (RespiraEngine.cpp).
+    // The band was 5 % alone while the hand was perfectly even.
+    const double rate = 48000.0, band = 400.0 * (0.05 + 0.104);
     auto e = MakeAuto(rate);
     const Take t = PlayAuto(*e, rate, 9.6, { { 0.0, { kOn, 69, 100 } } }, 240.0, 3, true);
-    Expect(MeanPressure(t, rate, 0.8, 2.6) < -380.0 && MeanPressure(t, rate, 0.8, 2.6) > -420.0, "AutoTurnsOnTheBars",
+    Expect(std::fabs(MeanPressure(t, rate, 0.8, 2.6) + 400.0) < band, "AutoTurnsOnTheBars",
            "the first four bars pull at 400 Pa, Pa", MeanPressure(t, rate, 0.8, 2.6));
-    Expect(MeanPressure(t, rate, 3.4, 5.6) > 380.0 && MeanPressure(t, rate, 3.4, 5.6) < 420.0, "AutoTurnsOnTheBars",
+    Expect(std::fabs(MeanPressure(t, rate, 3.4, 5.6) - 400.0) < band, "AutoTurnsOnTheBars",
            "the next four push, Pa", MeanPressure(t, rate, 3.4, 5.6));
     const std::vector<double> turns = Turns(t, rate, 0.5);
     bool onBars = turns.size() == 3;
@@ -789,7 +792,11 @@ void AutoHoldsItsPressure() {
     Expect(high < 440.0, "AutoHoldsItsPressure", "highest Pa", high);
     auto e = MakeAuto(rate);
     const double hard = -MeanPressure(PlayAuto(*e, rate, 1.9, { { 0.0, { kOn, 69, 100 } } }, 120.0, 4, false, 0.0, 1.0), rate, 0.8, 1.8);
-    Expect(std::fabs(hard / 1600.0 - 1.0) < 0.05, "AutoHoldsItsPressure", "the wheel at the top, Pa", hard);
+    // Every take here starts the person's stroke at the same level, so the
+    // wheel's top is held against four times the chord's pressure, not 1.6 kPa:
+    // the stroke's own level moves both alike (AutoTurnsOnTheBars).
+    Expect(std::fabs(hard / (2.0 * (low + high)) - 1.0) < 0.05, "AutoHoldsItsPressure",
+           "the wheel at the top, against four times the chord's, Pa", hard);
 }
 
 void AutoLeadsTheArm() {

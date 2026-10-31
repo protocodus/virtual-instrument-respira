@@ -193,9 +193,16 @@ private:
         bool pulled = false;          // the way the hand moved last sample
         bool swinging = false;        // turning: the hand goes as fast as it can
         double hold = 0.0;            // the air the player expects the reeds to take, m^3/s
+        // The person's unevenness (kHandWander, kHandStroke): their own
+        // random draws, so the reeds' noise is the same whoever moves the bellows.
+        std::uint32_t luck = 1u;
+        double wanderA = 0.0, wanderB = 0.0;   // the arm's wander, two one-poles
+        double level = 0.0;                    // this stroke's level, against the pressure wanted
     };
 
     void StepPlayer(double dt);
+    void NewStroke();
+    double wanderStep = 0.0, wanderScale = 0.0;
 
     // A key or button of one channel (channel * 128 + key): its travel, 0 up
     // .. 1 down, which its pallets follow, and where it is headed.

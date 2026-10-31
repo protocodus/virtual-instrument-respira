@@ -1539,3 +1539,27 @@ to A's whole-file RMS (−0.02 and −1.73 dB). Under the standing rule B ships
 until the owner hears it. Verdict pending. What it licenses: a player who
 compensates for their own arm, not a measured arm or reaction time.
 
+## 2026-10-31 — a person's hand on the bellows (owner)
+
+The owner asked for realistic fluctuations in Auto's pushing and pulling,
+since a person never moves the bellows perfectly. Auto's hand held 400 Pa to
+about 1 % within a stroke. The pressure it wants now wanders through two
+one-poles at 1.5 Hz and each stroke takes its own level, drawn from the
+player's own seeded random stream so the reeds' noise is unchanged. Force
+steadiness in a steady contraction varies by a few percent, more in a moving
+limb, most of it below 2–3 Hz; the magnitudes are voiced within that range,
+not measured on accordionists. Pack 33-human-bellows (Paris Musette, Auto, a
+held chord under a slow line, 18 s): A even (shipping), B wander 4 % and
+stroke level 4 % (+0.04 dB trim), C wander 8 % and stroke level 6 %
+(−0.04 dB trim). C ships, the stronger of the two, by the project's rule that
+the candidate wins unless the owner says otherwise. In this model the level
+rises only about 0.26 dB per dB of pressure at 400 Pa, so C moves the level
+by 0.1–0.2 dB; most of what changes is the reeds' colour. The bar-line
+planner now judges the air by the stroke's usual pressure and keeps a margin
+of twice the wander, since with C a bass, chord and triad ran the bellows out
+half a bar after a bar line. `AutoTurnsOnTheBars` allowed 5 % about 400 Pa for
+a perfectly even hand; it now allows the stroke level's full range on top.
+`AutoHoldsItsPressure` held the wheel's top to 1.6 kPa within 5 %; its takes all
+start on the same stroke level, so it now holds it to four times the chord's
+own pressure within 5 %.
+

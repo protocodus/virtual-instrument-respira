@@ -45,6 +45,17 @@ constexpr double kAutoBars = 4.0;
 constexpr double kAutoBellows = 6.0e-3;     // m^3
 constexpr double kAutoRoom = 0.05;          // how far from its end, of the whole, the bellows start a stroke
 constexpr double kAutoFastest = 4.0e-3;     // m^3/s: the most air the hand moves, opening or closing
+// Auto's player is a person, whose arm never presses quite evenly. In a
+// steady contraction the force wanders by a few percent of itself, most of
+// that power below 2-3 Hz (force steadiness, e.g. Enoka and Farina, J
+// Physiol 599, 2021: a coefficient of variation of 1-5 %, larger for a moving
+// limb than a held one), and no two strokes are pressed alike. The pressure
+// the player wants wanders by kHandWander of itself through two one-poles at
+// kHandWanderHz, and each stroke takes its own level, kHandStroke of it at one
+// standard deviation. Voiced within those ranges, not measured on players.
+constexpr double kHandWander = 0.08;
+constexpr double kHandWanderHz = 1.5;
+constexpr double kHandStroke = 0.06;
 // Auto's player closes on the pressure they want in 0.1 s, a hand's reaction,
 // whatever their arm's Momentum: they lead the arm (Hand::Tick), so its lag
 // is not in their loop.
@@ -264,6 +275,8 @@ void Engine::Prepare(double sampleRate) {
     rustle.Set(rate);
     smoothing = 1.0 - std::exp(-1.0 / (0.02 * rate));
     bendSmoothing = 1.0 - std::exp(-1.0 / (0.005 * rate));
+    wanderStep = 1.0 - std::exp(-6.283185307179586 * kHandWanderHz / rate);
+    wanderScale = kHandWander / std::sqrt(CascadeVariance(wanderStep));
     output.Prepare(rate, kBellowsGuard);
     room.Set(kRoomSeconds, kRoomTrebleShare, rate);
     SetControls(controls);
@@ -449,12 +462,16 @@ void Engine::StepPlayer(double dt) {
     }
     // At each bar line the player turns early if the bellows will not last
     // the next bar at the air the reeds take, as players change at a bar line
-    // when the air runs short rather than in the middle of one.
+    // when the air runs short rather than in the middle of one. They know
+    // their arm wanders: they judge the air by the stroke's usual pressure,
+    // not this moment's, and keep enough for twice their usual wander above it.
     const double barLine = std::floor(ahead / player.bar);
     if (barLine != player.barLine) {
         player.barLine = barLine;
         const double left = (half == 0) != player.turned ? open - player.drive : player.drive;
-        if (player.running && left * perWheel < Abs(player.hold) * player.bar * 60.0 / transport.bpm) player.turned = !player.turned;
+        const double spare = 1.0 + 2.0 * kHandWander - wanderScale * player.wanderB;
+        if (player.running && left * perWheel < spare * Abs(player.hold) * player.bar * 60.0 / transport.bpm)
+            player.turned = !player.turned;
     }
     const bool pulling = (half == 0) != player.turned;
     const double want = pulling ? -size : size;
@@ -469,8 +486,12 @@ void Engine::StepPlayer(double dt) {
         player.drive = hand.position = pulling ? from : open - from;
         player.pulled = pulling;
         player.swinging = false;
+        NewStroke();
     }
     player.rested = 0.0;
+    player.luck = player.luck * 1664525u + 1013904223u;
+    player.wanderA += wanderStep * (1.7320508075688772 * Unit(player.luck) - player.wanderA);
+    player.wanderB += wanderStep * (player.wanderA - player.wanderB);
     // The player feels the air the reeds take and gives it, and expects it at
     // the rate the arm can follow, which also keeps the reeds' own ripple out
     // of what they expect.
@@ -484,6 +505,7 @@ void Engine::StepPlayer(double dt) {
         player.pulled = pulling;
         player.hold = -player.hold;
         player.swinging = true;
+        NewStroke();
     }
     // The pressure once the led arm has caught up with the hand. The player
     // feels their own arm and closes on this, so its lag stays out of their
@@ -494,7 +516,8 @@ void Engine::StepPlayer(double dt) {
     // air is undone through Assist and Bellows into wheel speed, and the hand
     // never moves against its stroke.
     const double closing = player.swinging ? dt : kReaction;
-    const double flow = air + (want - coming) / (kBellowsStiffness * closing);
+    const double meant = want * (1.0 + player.level + wanderScale * player.wanderB);
+    const double flow = air + (meant - coming) / (kBellowsStiffness * closing);
     const double wanted = -flow / perWheel;
     player.velocity = Clamp(wanted, pulling ? 0.0 : -fastest, pulling ? fastest : 0.0);
     if (player.velocity == wanted) player.swinging = false;
@@ -503,6 +526,12 @@ void Engine::StepPlayer(double dt) {
         player.drive = Clamp(player.drive, 0.0, open);
         player.turned = !player.turned;
     }
+}
+
+// A stroke's own level, uniform with kHandStroke's standard deviation.
+void Engine::NewStroke() {
+    player.luck = player.luck * 1664525u + 1013904223u;
+    player.level = 1.7320508075688772 * kHandStroke * Unit(player.luck);
 }
 
 void Engine::SetChannelPressure(int channel, double amount) {
