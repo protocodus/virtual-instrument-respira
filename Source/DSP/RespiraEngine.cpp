@@ -876,8 +876,12 @@ void Engine::Render(float* left, float* right, int frames) {
             // of the open air, not its share of the opening, and counting the
             // opening took the hand's air away, so half-pressed low notes died.
             c.settled = c.settled || (c.held && c.open == travel[j]);
-            const double full = c.depth >= 1.0 ? 1.0 : 0.5 - 0.5 * std::cos(kPi * c.depth);
-            open += (c.held && c.settled ? 1.0 : Min(1.0, c.lift / full)) * spec.airWeight;
+            double share = 1.0;
+            if (!c.held || !c.settled) {
+                const double full = c.depth >= 1.0 ? 1.0 : 0.5 - 0.5 * std::cos(kPi * c.depth);
+                share = Min(1.0, c.lift / full);
+            }
+            open += share * spec.airWeight;
             if (!c.held && c.open <= 0.0) {
                 c.closedFor += dt;
                 if (c.closedFor > kQuietSeconds) c.active = false;

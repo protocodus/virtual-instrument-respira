@@ -33,6 +33,14 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
+### Unreleased — 0.1.3 — less work for held aftertouch
+
+- A settled held key skips an unused opening calculation. A native M1 Max
+  test of 28 chambers with aftertouch used about 2.5 % less thread CPU;
+  ordinary playing showed no reliable change. Twelve dynamic render
+  sequences remained bit-identical across four rates and all quality modes.
+  This is not a host CPU or deadline guarantee. [Measurement notes](Docs/benchmarks/aftertouch-cpu-2026-11-01.md).
+
 ### Unreleased — 0.1.2 — room microphones and consistent bellows friction
 
 - Room follows Width's virtual microphone angle, including mono at zero.
