@@ -37,8 +37,8 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 - Room follows Width's virtual microphone angle, including mono at zero.
   Floor and ceiling reflections account for their elevation. The diffuse
-  tail uses the correlation of ideal coincident cardioids, instead of two
-  independent microphone outputs; its image is narrower than in 0.1.1.
+  tail uses the correlation of ideal coincident cardioids, instead of
+  fixed-angle room outputs; its image is narrower than in 0.1.1.
 - Bellows friction retains its audible-band level across sample rates.
   The 48 kHz rustle is unchanged; the former approximately 3 dB loss at
   96 kHz is corrected with a setup-only coefficient.
