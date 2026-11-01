@@ -1,13 +1,13 @@
 # Respira
 
-Respira is a physically modelled accordion played with the bellows: the mod
-wheel is the player's hand on the bellows, opening draws air through the pull
-reeds and closing presses it through the push reeds, and only the hand's
-motion moves air, so the wheel has to keep rocking back and forth. Every
-sounding reed is a simulated steel tongue in its own chamber, with eight
-treble registers, bass and chord buttons and stereo output with an optional
-room. This repository holds the JUCE-free C++17 engine, its tools and tests; the Reason
-Rack Extension adapter plays the same engine. There is no DAW plug-in yet.
+Respira is a physically modelled accordion with eight treble registers,
+bass and chord buttons. Auto supplies bellows air while you play; Life adds
+irregular effort and movement at the microphones, even on long held notes.
+Select Wheel to shape each pull and push yourself. Every sounding reed is a
+simulated steel tongue in its own chamber, driven by bellows air. Mechanical
+parts can also knock without air. This repository holds the JUCE-free C++17
+engine, tools and tests; the Reason Rack Extension plays the same engine.
+There is no native DAW plug-in yet.
 
 ## Audio demos
 
@@ -32,6 +32,13 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 <!-- audio-demos-end -->
 
 ## Version history
+
+### Unreleased — 0.1.4 — Life and prepared bellows turns
+
+- **Life** controls irregular Auto bellows effort and source movement at the microphones, including long held notes. Init and all presets use 100 %, selected by the owner from a level-matched listening comparison.
+- Auto prepares a pending reversal during a short rest, so the next fast note has air; with Life, capacity planning can turn on beats when a full bar does not fit.
+- New Life properties default to 100 %, including when absent from an older patch. Zero removes the added effort and movement; the rest-turn correction remains.
+- Motion targets update at 200 Hz. This is a voiced virtual performer, not a fitted human-motion measurement. See [model and noise audit](Docs/research/life-model-2026-11-01.md).
 
 ### Unreleased — 0.1.3 — less work for held aftertouch
 
@@ -265,6 +272,14 @@ working air button.
 
 ### Auto
 
+The pressure figures below describe the pre-Life baseline at Life zero.
+In 0.1.4 the selected default is Life 100 %; the shared pressure varies
+more strongly, and capacity is checked at each beat so a swell can turn
+before the bellows reaches its end. During a short rest Auto may prepare
+an imminent four-bar reversal: it physically changes pressure with the
+pallets closed rather than waiting for the next note. Longer rests still
+stop the hand. This correction also applies with Life at zero.
+
 **Auto** is on by default, on Init and on every factory preset: just play,
 and a player's hand keeps the bellows supplied while any key is held; the
 wheel no longer moves them. Switch it off to play the bellows on the wheel. The hand pulls through four
@@ -320,6 +335,29 @@ dB of pressure, so what is heard is mostly the reeds' colour and the
 beating's evenness moving, by 0.1–0.2 dB in level. Planning a turn, the
 player judges the air by the stroke's usual pressure and keeps enough for
 twice their wander above it, so the turns still fall on bar lines.
+
+### Life
+
+**Life** adds three slow, irregular movement signals, shared by the whole
+instrument. One varies Auto's requested effort; lateral and depth motion
+change the instrument's position relative to fixed microphones. These keep
+moving through held notes, without repeated key presses or MIDI expression
+curves. The owner's chosen setting is 100 %, on Init and every preset.
+Zero removes these additions; the earlier Auto wander remains.
+
+Pressure still comes from the hand moving bellows air. No pitch or audio
+amplitude modulation is added to the reeds. In Wheel mode the user's hand
+and air remain unchanged, so Life changes only microphone pickup. The
+pickup uses ideal cardioid reception and relative inverse-distance pressure,
+with nominal motion bounded by 5 cm sideways and 8 cm in depth at full Life.
+Bass-side position also follows virtual bellows opening. Width zero remains
+mono. Rates and movement extents are performer choices, not measured
+accordion constants; no Doppler or frequency-dependent radiation is modelled.
+
+The motion clock runs at 200 Hz, independent of host block size. Microphone
+targets retain their 20 ms glide. A separate random stream preserves the
+reed-turbulence sequence. Details, sources and the remaining movement-noise
+gaps are in the [Life audit](Docs/research/life-model-2026-11-01.md).
 
 ### Reed cells
 
@@ -498,7 +536,7 @@ well, so its hiss leaves the same way.
 
 ### The microphones
 
-The output is what a coincident pair of cardioid microphones (XY) hears from
+At Life zero, the output is what a coincident pair of cardioid microphones (XY) hears from
 1 m in front of the player, in the player's view, the treble on the right.
 The treble keyboard stands upright, so its pallet holes and the grille over
 them are one place across the pair, 0.20 m right of the bellows' middle; the

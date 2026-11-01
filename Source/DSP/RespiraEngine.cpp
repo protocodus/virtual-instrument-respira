@@ -280,6 +280,7 @@ void Engine::Prepare(double sampleRate) {
     bendSmoothing = 1.0 - std::exp(-1.0 / (0.005 * rate));
     wanderStep = 1.0 - std::exp(-6.283185307179586 * kHandWanderHz / rate);
     wanderScale = kHandWander / std::sqrt(CascadeVariance(wanderStep));
+    life.Prepare(rate);
     output.Prepare(rate, kBellowsGuard);
     room.Set(Room::kDecaySeconds, Room::kTrebleShare, rate);
     SetControls(controls);
@@ -290,6 +291,7 @@ void Engine::Reset() {
     for (auto& c : cells) c = Cell {};
     hand = Hand {};
     player = Player {};
+    life.Reset();
     SetTransport(transport);
     heldCells = 0;
     pressure = airFlow = airFlowSmoothed = demand = 0.0;
@@ -329,6 +331,7 @@ void Engine::Reset() {
     rustle.Set(rate);
     rustleForce = 0.0;
     for (BodyHighPass* body : { &mechanicsTreble, &mechanicsBass }) body->Clear();
+    UpdateMicrophones();
     TakeTargets();
     diag = Diagnostics {};
     untouched = true;
@@ -383,6 +386,7 @@ void Engine::SetControls(const Controls& next) {
     }
     if (nextAuto != autoHand) {
         player.running = false;
+        player.ready = player.earlyTurn = false;
         player.drive = hand.position;
     }
     autoHand = nextAuto;
@@ -398,9 +402,45 @@ void Engine::SetControls(const Controls& next) {
     mechanicsGainTarget = kForceToFlow * DbToGain(controls[kMechanics]);
     roomGainTarget = kRoomLevel * controls[kRoom];
     room.SetWidth(controls[kWidth], untouched || (roomGain == 0.0 && roomGainTarget == 0.0));
-    MicPair(kTrebleSideX, controls[kWidth], treblePanLTarget, treblePanRTarget);
-    MicPair(kBassSideX, controls[kWidth], bassPanLTarget, bassPanRTarget);
+    MicPair(kTrebleSideX, controls[kWidth], trebleMicL, trebleMicR);
+    MicPair(kBassSideX, controls[kWidth], bassMicL, bassMicR);
+    micCos = std::cos(controls[kWidth] * kMicHalfAngle);
+    micSin = std::sin(controls[kWidth] * kMicHalfAngle);
+    UpdateMicrophones();
     if (untouched) TakeTargets();
+}
+
+void Engine::UpdateMicrophones() {
+    // Life=0 is the original pickup, including its exact normalization.
+    treblePanLTarget = trebleMicL; treblePanRTarget = trebleMicR;
+    bassPanLTarget = bassMicL; bassPanRTarget = bassMicR;
+    if (life.amount == 0.0) return;
+    // Movement matters with a fixed microphone: Shure's own accordion test,
+    // https://www.shure.com/en-US/insights/eight-ways-to-mic-an-accordion .
+    // Ideal cardioid reception and 1/r spreading are geometry, not an EQ.
+    // Full Life permits at most +/-5 cm sideways and +/-8 cm toward/away
+    // from the pair. These are selectable performer motions, NOT fitted
+    // directivity measurements. No frequency-dependent radiation or Doppler
+    // is claimed by this point-source model.
+    const double side = 0.05 * life.amount * Clamp((life.side + life.effort) / 3.0, -1.0, 1.0);
+    const double depth = 0.08 * life.amount * Clamp((life.depth + life.effort) / 3.0, -1.0, 1.0);
+    // The bass end also moves with the bellows. The existing 6 L capacity and
+    // 0.41 x 0.19 m section imply 77 mm full travel. Treble stays at the chest.
+    const double open = autoHand ? Max(1.0, kAutoBellows / (controls[kBellows] * 1.0e-3)) : 1.0;
+    const double extension = life.amount * (kAutoBellows / kBellowsSection)
+                             * (Clamp(hand.position / open, 0.0, 1.0) - 0.5);
+    const double ca = micCos, sa = micSin;
+    const auto move = [&](double x0, double shift, float& left, float& right) {
+        const double r0 = Sqrt(x0 * x0 + kMicDistance * kMicDistance);
+        const double x = x0 + side + shift, z = kMicDistance + depth;
+        const double r = Sqrt(x * x + z * z);
+        const double oldL = 1.0 + (kMicDistance * ca - x0 * sa) / r0;
+        const double oldR = 1.0 + (kMicDistance * ca + x0 * sa) / r0;
+        left *= static_cast<float>((1.0 + (z * ca - x * sa) / r) / oldL * r0 / r);
+        right *= static_cast<float>((1.0 + (z * ca + x * sa) / r) / oldR * r0 / r);
+    };
+    move(kTrebleSideX, 0.0, treblePanLTarget, treblePanRTarget);
+    move(kBassSideX, -extension, bassPanLTarget, bassPanRTarget);
 }
 
 void Engine::SetMasterTune(double cents) { masterTune = cents == cents ? Clamp(cents, -100.0, 100.0) : 0.0; }
@@ -437,8 +477,10 @@ void Engine::SetTransport(const Transport& next) {
 // Runs before the hand's tick, from the keys the last sample held.
 void Engine::StepPlayer(double dt) {
     const double cycle = 2.0 * player.stroke;
-    if (heldCells > 0 && !player.running && !transport.playing && player.rested * transport.bpm / 60.0 >= player.stroke)
+    if (heldCells > 0 && !player.running && !transport.playing && player.rested * transport.bpm / 60.0 >= player.stroke) {
         player.cycle = 0.0;   // a new phrase starts on a pull
+        player.earlyTurn = false;
+    }
     player.cycle += transport.bpm / 60.0 * dt;
     if (player.cycle >= cycle) player.cycle -= cycle;
     const double litres = controls[kBellows] * 1.0e-3, open = Max(1.0, kAutoBellows / litres);   // wheels
@@ -457,27 +499,58 @@ void Engine::StepPlayer(double dt) {
     if (half != player.half) {
         player.half = half;
         player.turned = false;
+        player.earlyTurn = false;
     }
     if (heldCells == 0) {
-        player.running = false;
-        player.velocity = 0.0;
         player.rested += dt;
-        return;
+        // Use an available rest to prepare the next scheduled turn. With
+        // closed pallets there is no Assist demand: reversing pressure needs
+        // 2*P/K air volume at the hand's maximum 4 L/s, plus the arm's lag.
+        // This is a causal virtual-player choice, not MIDI look-ahead. Stop
+        // after the turn, and never start a new phrase without a key press.
+        const double preparation = 2.0 * swing / kAutoFastest + 2.0e-3 * momentum;
+        double future = player.cycle + preparation * transport.bpm / 60.0;
+        if (future >= cycle) future -= cycle;
+        if (player.ready && player.rested < player.bar * 60.0 / transport.bpm
+            && !player.turned && (future < player.stroke ? 0 : 1) != half)
+            player.earlyTurn = true;
+        const bool nextPull = ((half == 0) != player.turned) != player.earlyTurn;
+        if (!player.ready || player.rested >= player.bar * 60.0 / transport.bpm
+            || (nextPull == player.pulled && !player.swinging)) {
+            player.running = false;
+            player.velocity = 0.0;
+            return;
+        }
     }
     // At each bar line the player turns early if the bellows will not last
     // the next bar at the air the reeds take, as players change at a bar line
     // when the air runs short rather than in the middle of one. They know
     // their arm wanders: they judge the air by the stroke's usual pressure,
     // not this moment's, and keep enough for twice their usual wander above it.
-    const double barLine = std::floor(ahead / player.bar);
-    if (barLine != player.barLine) {
+    // With Life enabled, check air at each beat. A large swell can use a
+    // whole small bellows in less than one bar; waiting for that bar would
+    // force an unplanned turn against its end stop. The four-bar phrase
+    // direction is unchanged when there is enough air.
+    const double planningBeat = life.amount == 0.0 ? player.bar : 4.0 / transport.denominator;
+    const double barLine = std::floor(ahead / planningBeat) * planningBeat;
+    if (heldCells > 0 && barLine != player.barLine) {
         player.barLine = barLine;
         const double left = (half == 0) != player.turned ? open - player.drive : player.drive;
-        const double spare = 1.0 + 2.0 * kHandWander - wanderScale * player.wanderB;
-        if (player.running && left * perWheel < spare * Abs(player.hold) * player.bar * 60.0 / transport.bpm)
+        double spare = 1.0 + 2.0 * kHandWander - wanderScale * player.wanderB;
+        if (life.amount != 0.0) {
+            // A stronger forthcoming swell consumes more air. Bernoulli's
+            // flow through the same open pallets scales with sqrt(pressure),
+            // so reserve for Life's bounded upper effort, not just the old
+            // 8% wander. Evaluate only on the planning grid; Life=0 is unchanged.
+            const double current = Clamp(1.0 + player.level + wanderScale * player.wanderB
+                                         + 0.22 * life.amount * life.effort, 0.65, 1.45);
+            const double upper = Min(1.45, 1.0 + 2.0 * kHandWander + 0.33 * life.amount);
+            spare = Max(spare, Sqrt(upper / current));
+        }
+        if (player.running && left * perWheel < spare * Abs(player.hold) * planningBeat * 60.0 / transport.bpm)
             player.turned = !player.turned;
     }
-    const bool pulling = (half == 0) != player.turned;
+    const bool pulling = ((half == 0) != player.turned) != player.earlyTurn;
     const double want = pulling ? -size : size;
     if (!player.running) {
         // Each later stroke also swings the pressure through zero, a travel
@@ -487,12 +560,14 @@ void Engine::StepPlayer(double dt) {
         const double spared = (2.0 * Abs(want) - Abs(want - pressure)) / (kBellowsStiffness * perWheel);
         const double from = Clamp(kAutoRoom * open + spared, 0.0, 0.5 * open);
         player.running = true;
-        player.drive = hand.position = pulling ? from : open - from;
+        if (heldCells > 0) player.drive = hand.position = pulling ? from : open - from;
+        else player.drive = hand.position;
         player.pulled = pulling;
-        player.swinging = false;
+        player.swinging = player.ready && pressure * want < 0.0;
+        player.ready = true;
         NewStroke();
     }
-    player.rested = 0.0;
+    if (heldCells > 0) player.rested = 0.0;
     player.luck = player.luck * 1664525u + 1013904223u;
     player.wanderA += wanderStep * (1.7320508075688772 * Unit(player.luck) - player.wanderA);
     player.wanderB += wanderStep * (player.wanderA - player.wanderB);
@@ -520,7 +595,15 @@ void Engine::StepPlayer(double dt) {
     // air is undone through Assist and Bellows into wheel speed, and the hand
     // never moves against its stroke.
     const double closing = player.swinging ? dt : kReaction;
-    const double meant = want * (1.0 + player.level + wanderScale * player.wanderB);
+    double effort = 1.0 + player.level + wanderScale * player.wanderB;
+    if (life.amount != 0.0) {
+        // The same held note keeps hearing the player's slow corrections.
+        // Full Life adds up to +/-33% of requested effort (0.22 * 1.5).
+        // This is expressive playing depth, not a measured human tremor.
+        // It acts on the hand's force request, never on audio or reed tuning.
+        effort = Clamp(effort + 0.22 * life.amount * life.effort, 0.65, 1.45);
+    }
+    const double meant = want * effort;
     const double flow = air + (meant - coming) / (kBellowsStiffness * closing);
     const double wanted = -flow / perWheel;
     player.velocity = Clamp(wanted, pulling ? 0.0 : -fastest, pulling ? fastest : 0.0);
@@ -760,6 +843,7 @@ void Engine::Render(float* left, float* right, int frames) {
     const double valveOpen = dt / kOpenSeconds, valveClose = dt / kCloseSeconds;
     if (frames > 0) untouched = false;
     for (int i = 0; i < frames; ++i) {
+        if (life.Step(controls[kLife], heldCells > 0 || Abs(hand.velocity) > 1.0e-5)) UpdateMicrophones();
         if (autoHand) StepPlayer(dt);
         hand.Tick(dt, controls[kMomentum], autoHand ? &player.drive : nullptr, player.velocity);
         // Assist makes the hand's stroke move as much more air as the open

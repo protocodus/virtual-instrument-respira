@@ -1755,3 +1755,31 @@ finite-value checks. Both old and new diffused rooms pass 2400/2400 frames;
 bypassing the current diffusers gives 1978, and the original sparse room
 181. This corrects the one-channel occupancy assumption without relaxing
 the required time coverage or changing DSP to hide a cancellation.
+
+
+## 2026-11-01 — Life: candidate C selected by ear
+
+The owner asked for live variation during ordinary playing and long held
+notes, named the control **Life**, then selected C ("i like C"). A was the
+shipping 0.1.3 engine / Life 0 %, B Life 50 %, C Life 100 %. All used the
+same notes, seed, fixed wheel, rate and controls apart from Life. Whole-file
+stereo RMS matching trimmed A by -0.1367722 dB, B by -0.09306858 dB, C by
+0 dB. The original listening WAVs and key remain frozen outside the checkout
+in `diagnostics/respira-life-model-20261101/Listening`.
+
+This chooses the virtual performer's movement depth, not physiological or
+acoustic calibration. C licenses Life 100 % as the default for Init and all
+presets. Life adds Auto effort variation and source movement at the mics;
+manual wheel pressure remains the user's. The [model and noise audit](research/life-model-2026-11-01.md)
+separates sources, authored movements and unmodelled strap/hardware noises.
+
+Validation exposed three weak notes in an Auto Csardas excerpt: a closed
+bellows retained the old pressure through a rest, and reversed only after
+the next key opened. Auto now prepares the imminent turn in the available
+rest, using its existing stiffness, maximum hand flow and arm response.
+Life's larger swells also need capacity checks on beats when a whole bar
+would exceed the air left. These are causal player-planning corrections;
+they add neither a reed envelope nor MIDI expression automation. The
+corrected eight excerpts passed isolated-treble checks for 563 melody notes,
+including 192 under 180 ms. The threshold is a delivery regression check,
+not a complete perceptual model or a claim that all soft onsets are fixed.

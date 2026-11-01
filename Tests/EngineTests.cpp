@@ -685,6 +685,9 @@ std::vector<double> Turns(const Take& t, double rate, double after) {
 std::unique_ptr<Engine> MakeAuto(double rate, const std::function<void(Controls&)>& adjust = {}) {
     return Make(rate, 0, [&adjust](Controls& c) {
         c[kAuto] = 1.0;
+        // These pre-Life regressions measure the old 400 Pa pressure target.
+        // LifeTests separately covers ongoing force variation at 0/50/100 %.
+        c[kLife] = 0.0;
         if (adjust) adjust(c);
     });
 }
@@ -1208,10 +1211,11 @@ void MicrophonesHearTwoPlaces() {
     // A coincident pair hears each side of the instrument from one place, by
     // level: at the default Width a low and a high treble key sit the same
     // 1.4 dB to the right, the bass side 1.8 dB to the left, and at Width 0
-    // one microphone hears both channels alike.
+    // one microphone hears both channels alike. Life is zero here because
+    // this tests the neutral geometry; LifeTests covers the moving pickup.
     const double rate = 48000.0;
     const auto side = [rate](int key, double width) {
-        auto e = Make(rate, 0, [width](Controls& c) { c[kWidth] = width; c[kMechanics] = -40.0; });
+        auto e = Make(rate, 0, [width](Controls& c) { c[kWidth] = width; c[kMechanics] = -40.0; c[kLife] = 0.0; });
         const Take t = Play(*e, rate, 1.5, { { 0.0, { kOn, static_cast<std::uint8_t>(key), 100 } } }, PullThenPush);
         return Db(Rms(t.right, rate, 0.5, 1.5)) - Db(Rms(t.left, rate, 0.5, 1.5));
     };

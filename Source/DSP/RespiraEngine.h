@@ -36,6 +36,7 @@
 
 #include "Decimator.h"
 #include "Mechanics.h"
+#include "Life.h"
 #include "OutputStage.h"
 #include "Room.h"
 #include "ReedBank.h"
@@ -172,17 +173,14 @@ private:
         void Tick(double dt, double momentum, const double* drive = nullptr, double driveVelocity = 0.0);
     };
 
-    // Auto: a player's hand that moves the bellows while any key is held and
-    // rests when none is. It pulls for one stroke and pushes for the next, a
-    // stroke being one bar, or two, four or eight when a bar is shorter than
-    // kAutoShortestStroke; so in 3/4 a pull and a push take 6 beats. While the
-    // host plays, the strokes turn on its bar lines; stopped, they run at its
-    // tempo from the first note, starting again on a pull after a rest of a
-    // stroke or more. The player holds kAutoPressure, up to four times it with
-    // the wheel, whatever is played and whatever Bellows and Assist are set
-    // to, and turns early only if the bellows run out (Engine::StepPlayer).
+    // Auto supplies air while keys are held and can prepare an imminent turn
+    // in a short rest. A normal stroke lasts four host bars. Life swells may
+    // need an earlier turn on a beat when a whole bar exceeds the air left.
+    // The wheel sets pressure and Life varies the player's effort; all sound
+    // still comes from the physical hand, bellows, pallets and reeds.
     struct Player {
         bool running = false, turned = false;
+        bool ready = false, earlyTurn = false;
         int half = 0;                 // 0 pulling, 1 pushing, on the grid
         double cycle = 0.0;           // quarter notes into the pull + push cycle
         double stroke = 16.0;         // quarter notes in a stroke
@@ -202,6 +200,7 @@ private:
 
     void StepPlayer(double dt);
     void NewStroke();
+    void UpdateMicrophones();
     double wanderStep = 0.0, wanderScale = 0.0;
 
     // A key or button of one channel (channel * 128 + key): its travel, 0 up
@@ -230,6 +229,7 @@ private:
     Hand hand;
     Transport transport;
     Player player;
+    Life life;
     bool autoHand = false;
     int heldCells = 0;
     double pressure = 0.0, airFlow = 0.0, airFlowSmoothed = 0.0, demand = 0.0;
@@ -258,6 +258,8 @@ private:
     // The microphones' gains for each side (MicPair, RespiraEngine.cpp).
     float treblePanL = 0.0f, treblePanR = 0.0f, treblePanLTarget = 0.0f, treblePanRTarget = 0.0f;
     float bassPanL = 0.0f, bassPanR = 0.0f, bassPanLTarget = 0.0f, bassPanRTarget = 0.0f;
+    float trebleMicL = 0.0f, trebleMicR = 0.0f, bassMicL = 0.0f, bassMicR = 0.0f;
+    double micCos = 1.0, micSin = 0.0;
     std::array<Key, 3 * 128> keys {};
     std::array<std::uint16_t, 3 * 128> movingKeys {};   // the keys whose travel is changing
     int movingCount = 0;

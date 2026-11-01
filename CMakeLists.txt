@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(Respira VERSION 0.1.3 LANGUAGES CXX)
+project(Respira VERSION 0.1.4 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -30,6 +30,7 @@ set(RESPIRA_DSP_HEADERS
     Source/DSP/Decimator.h
     Source/DSP/DspMath.h
     Source/DSP/Mechanics.h
+    Source/DSP/Life.h
     Source/DSP/OutputStage.h
     Source/DSP/ReedBank.h
     Source/DSP/ReedModel.h
@@ -106,6 +107,12 @@ if(RESPIRA_BUILD_TOOLS)
 endif()
 
 if(BUILD_TESTING)
+    add_executable(RespiraLifeTests Tests/LifeTests.cpp)
+    target_link_libraries(RespiraLifeTests PRIVATE RespiraDSP)
+    target_compile_options(RespiraLifeTests PRIVATE ${RESPIRA_WARNINGS})
+    add_test(NAME Respira.Life COMMAND RespiraLifeTests)
+    set_tests_properties(Respira.Life PROPERTIES TIMEOUT 120 LABELS unit)
+
     if(RESPIRA_REQUIRE_PYTHON_TESTS)
         find_package(Python3 REQUIRED COMPONENTS Interpreter)
     else()

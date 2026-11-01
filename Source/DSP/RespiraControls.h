@@ -28,6 +28,7 @@ enum Control : int {
     kMechanics,  // the keys', pallets', buttons' and register switches' knocks, the bellows' folds and the push valves, dB re the estimate (Mechanics.h)
     kAuto,       // 0 the wheel is the hand, 1 (the default) the hand plays the bellows itself in time and the wheel presses harder
     kRoom,       // the room the microphones hear around the instrument: 0 none (dry) .. 1 as much as the owner's recordings' rooms (Room.h)
+    kLife,       // added Auto bellows effort and source movement at the microphones; 0 preserves the earlier response
     kControlCount
 };
 
@@ -78,6 +79,10 @@ inline constexpr std::array<ControlInfo, kControlCount> kControlInfo { {
     // amount is about 14.6 % of knob travel. The engine still receives the
     // physical wet amount; only front-end normalization changes.
     { "room", "Room", 0.0, 1.0, 0.005, 0, Curve::kSigmoid, "" },
+    // Appended, never inserted: old parameter indices and saved values stay
+    // stable. The owner selected C (100 %) by ear on 2026-11-01. Zero
+    // restores the earlier response; missing properties take the new default.
+    { "life", "Life", 0.0, 1.0, 1.0, 0, Curve::kLinear, "" },
 } };
 
 // Cubic rational S-curve, with exact dry, midpoint and full-wet endpoints.
