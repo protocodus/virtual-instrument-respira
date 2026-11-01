@@ -1798,3 +1798,28 @@ was therefore inactive and was not selected by this verdict. Its provenance,
 separate A/B and unresolved low-pressure attack mismatch are documented in
 [the research note](research/touch-model-2026-11-01.md). Both listening sets
 remain frozen outside the checkout; the 0.1.4 comparisons remain untouched.
+
+## 2026-11-01 — bounded soft-key travel restored (engineering)
+
+The owner reports slow starts at both very low MIDI velocity and very light
+bellows pressure. The 0.1.5 inverse-velocity extrapolation made a velocity-1
+key take 478 ms to open, so a short note could release before passing enough
+air. No measurement justified that interpretation of MIDI velocity. Restore
+the established 12–3 ms mapping across the full range, preserving the
+ordinary/fast velocities and the owner's stronger Touch gesture.
+
+This is a regression correction, not a new listening verdict or an acoustic
+calibration. The 72-note soft-staccato regression passes; the same fixture
+fails against frozen 0.1.5. The untrimmed A/B in the external soft-start
+evidence folder compares audibility, so level matching would conceal the
+quantity being checked. Eight frozen musical excerpts also keep all 563
+melody notes above their existing audibility checks, including 192 short
+notes. The MIDI scores are unchanged.
+
+The separate physical low-pressure growth problem remains open. Faster
+candidate reed settings choke under strong playing, and the airflow
+coupling experiments do not fix the full range. None is included in 0.1.6.
+Methods, recording limits and rejected candidates are recorded in the
+[investigation](research/soft-starts-2026-11-01.md); the
+[CPU report](benchmarks/soft-starts-cpu-2026-11-01.md) distinguishes native
+timings from host performance.

@@ -174,6 +174,29 @@ void OrdinaryStaccatoSpeaks() {
     std::printf("Touch 24 staccato notes: weakest final-30-ms RMS %.6f\n", weakest);
     Require(weakest > 0.002, "ordinary fast notes remain audible at full Life/Touch");
 }
+void SoftStaccatoSpeaks() {
+    // A soft strike still completes an ordinary short keystroke. Test actual
+    // audio through the public engine with the stronger Touch/Life defaults;
+    // do not merely assert the travel formula. 0.1.5's inverse-velocity
+    // extrapolation could keep the pallet nearly shut for the whole 50 ms.
+    // This is a finger-attack regression at normal preloaded bellows pressure,
+    // not a claim that fresh reeds at barely sustaining pressure start fast.
+    for (const int velocity : {1, 8, 16}) {
+        auto e = Make(1.0);
+        Controls c = e->GetControls(); c[kLife] = 1.0; e->SetControls(c);
+        Hold(*e, 100, 0.8); e->AllNotesOff();
+        std::vector<float> l(4800), r(4800); e->Render(l.data(), r.data(), 4800);
+        double weakest = 1.0;
+        for (int i = 0; i < 24; ++i) {
+            Note(*e, 64 + i % 18, velocity);
+            e->Render(l.data(), r.data(), 2400);
+            weakest = std::min(weakest, Rms(l, 0.02, 0.05));
+            e->AllNotesOff(); e->Render(l.data(), r.data(), 960);
+        }
+        std::printf("Touch soft staccato v%d: weakest final-30-ms RMS %.6f\n", velocity, weakest);
+        Require(weakest > 0.002, "soft short notes must pass air and remain audible");
+    }
+}
 } // namespace
 
 int main() {
@@ -182,5 +205,6 @@ int main() {
     OneSharedGestureDoesNotStackOrLatch();
     EventsAndResetAreIndependentOfBlockSize();
     OrdinaryStaccatoSpeaks();
+    SoftStaccatoSpeaks();
     return 0;
 }

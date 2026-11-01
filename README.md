@@ -20,18 +20,23 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 | # | Preset | Demo | Length | Peak |
 | --- | --- | --- | --- | --- |
-| 1 | Clarinet Solo | [01-clarinet-solo.wav](Docs/audio/01-clarinet-solo.wav) | 11.2 s | -3.8 dBFS |
-| 2 | Bassoon Low | [02-bassoon-low.wav](Docs/audio/02-bassoon-low.wav) | 9.6 s | -3.9 dBFS |
-| 3 | Violin Folk | [03-violin-folk.wav](Docs/audio/03-violin-folk.wav) | 10.4 s | -6.1 dBFS |
-| 4 | Paris Musette | [04-paris-musette.wav](Docs/audio/04-paris-musette.wav) | 10.7 s | -5.7 dBFS |
+| 1 | Clarinet Solo | [01-clarinet-solo.wav](Docs/audio/01-clarinet-solo.wav) | 11.2 s | -4.1 dBFS |
+| 2 | Bassoon Low | [02-bassoon-low.wav](Docs/audio/02-bassoon-low.wav) | 9.6 s | -5.1 dBFS |
+| 3 | Violin Folk | [03-violin-folk.wav](Docs/audio/03-violin-folk.wav) | 10.4 s | -6.4 dBFS |
+| 4 | Paris Musette | [04-paris-musette.wav](Docs/audio/04-paris-musette.wav) | 10.7 s | -6.4 dBFS |
 | 5 | Tango Bandoneon | [05-tango-bandoneon.wav](Docs/audio/05-tango-bandoneon.wav) | 11.2 s | -1.5 dBFS |
-| 6 | Organ Bellows | [06-organ-bellows.wav](Docs/audio/06-organ-bellows.wav) | 10.6 s | -4.5 dBFS |
-| 7 | Bright Oboe | [07-bright-oboe.wav](Docs/audio/07-bright-oboe.wav) | 9.8 s | -6.0 dBFS |
-| 8 | Master Tutti | [08-master-tutti.wav](Docs/audio/08-master-tutti.wav) | 8.7 s | -4.9 dBFS |
+| 6 | Organ Bellows | [06-organ-bellows.wav](Docs/audio/06-organ-bellows.wav) | 10.6 s | -4.4 dBFS |
+| 7 | Bright Oboe | [07-bright-oboe.wav](Docs/audio/07-bright-oboe.wav) | 9.8 s | -6.5 dBFS |
+| 8 | Master Tutti | [08-master-tutti.wav](Docs/audio/08-master-tutti.wav) | 8.7 s | -2.5 dBFS |
 
 <!-- audio-demos-end -->
 
 ## Version history
+
+### Unreleased — 0.1.6 — short soft key presses
+
+- Restores bounded 12–3 ms key travel. The 0.1.5 inverse-velocity extension could keep the pallet almost closed throughout a short, very soft note (478 ms travel at velocity 1). Ordinary/fast velocities 64–127, Touch, Life and all factory settings are unchanged.
+- This corrects the low-MIDI-velocity regression. It **does not fix** the separate slow growth of fresh reeds at very low bellows pressure. Recording measurements, rejected physical-model candidates and their limits are in the [soft-start investigation](Docs/research/soft-starts-2026-11-01.md).
 
 ### Unreleased — 0.1.5 — Touch and gentle key openings
 
@@ -462,10 +467,10 @@ The cells run at four times the host rate (192 kHz at 48 kHz) and are
 decimated by two half-band allpass stages; Oversampling at 2× or 4× runs them
 at eight or sixteen times the host rate through three or four stages, with
 the gap turbulence scaled so its spectrum stays the same at every host rate
-and Oversampling. Key travel takes 7.46–3 ms at velocities 64–127. Below 64,
-speed falls in proportion to velocity, allowing deliberate slow presses:
-about 30 ms at 16 and 478 ms at 1. This is an authored MIDI mapping, not a
-measured key-speed calibration. Pallet area follows the existing raised
+and Oversampling. Key travel takes 12–3 ms across the MIDI velocity range,
+with 7.46 ms at 64. The unbounded low-velocity extension in 0.1.5 was reverted:
+short soft strikes must still open their pallets. This is an authored MIDI
+mapping, not a measured key-speed calibration. Pallet area follows the existing raised
 cosine of travel, so velocity shapes the attack, and the key closes in 8 ms;
 in the last tenths of a millimetre the air leaves through the film under the
 pad's rim, a viscous gap that brings it to rest as the pad lands.
@@ -954,8 +959,13 @@ tempo, time signature, song position and bar start before each block
 - **Soft notes speak late.** At the measured accordion's piano (about
   55 dBA at 50 cm), its finger attacks took 60–140 ms from −50 to −5 dB of
   the fundamental from A2 to B6 (Llanos-Vázquez et al. 2014). Respira's 8'
-  cells at that loudness take about 960 ms at A2 and A3, 385 at A4 and 425 at
-  A5, so a soft staccato note can end before it has spoken. Its reeds sit
+  cells at the **inferred source** 55 dBA take about 1365/950/344/444 ms at
+  A2/A3/A4/A5 with `CompareAttacks`' 3 ms pallet and four-period tracker.
+  The free-field source estimate is not a calibration of the complete
+  accordion's body, microphone direction or room. A soft staccato note can
+  still end before the modeled reed speaks. The separate MIDI-velocity
+  delay was fixed in 0.1.6; see the [current investigation](Docs/research/soft-starts-2026-11-01.md).
+  Its reeds sit
   2.7 times as high above their plates as Okada's measured C4 (0.8 mm
   against 0.3, above), so that a key held while the bellows is slammed to
   the arm's full pressure still speaks. With every set scaled to Okada's they

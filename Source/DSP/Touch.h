@@ -7,22 +7,24 @@
 namespace respira {
 
 // MIDI velocity is a controller convention, not a measured finger speed.
-// Keep the established ordinary/fast strokes (64..127, 7.46..3 ms). Below
-// the midpoint, let speed fall in proportion to velocity: fixed travel at
-// that speed takes T(64)*64/v. This opens access to deliberate slow presses
-// (v16: 30 ms; v1: 478 ms) without slowing normal passagework.
+// Use the established bounded 12..3 ms travel across the whole MIDI range.
+// 0.1.5 extrapolated speed proportionally to velocity below 64, giving a
+// 478 ms travel at v1. A short soft note could then release its key before
+// the pallet passed enough air to start the reed. A small MIDI velocity
+// is not evidence that the player intended a half-second key movement.
 //
 // Motivation: Llanos-Vazquez et al., Acta Acustica 100 (2014), pp. 380-381,
 // doi:10.3813/AAA.918716, section 4 / Table II: slowly opening the valve
 // changes both harmonic growth and attack duration. Their measured 60/80 ms
 // A4 mf attacks are AUDIO rise times, not key travel and not MIDI calibration.
-// This mapping is an authored playing interface. It does not fit those times
-// or change the vent geometry, reed constants, sustained gain or tuning.
+// This mapping is an authored playing interface, restored from 0.1.4; it
+// is NOT a fit to the measured audio rise times. Velocity 64..127 and the
+// shared Touch bellows gesture are unchanged. Bellows pressure still governs
+// the reed's growth, colour, pitch and sustained level.
 inline double KeyOpeningSeconds(int velocity) {
     // Velocity zero is the existing register-slide gesture, never a key-on.
     if (velocity <= 0) return 0.012;
-    if (velocity >= 64) return 0.012 - 0.009 * velocity / 127.0;
-    return (0.012 - 0.009 * 64.0 / 127.0) * 64.0 / velocity;
+    return 0.012 - 0.009 * velocity / 127.0;
 }
 
 // Optional virtual-player interpretation of key emphasis, separate from the

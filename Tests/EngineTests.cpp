@@ -164,7 +164,7 @@ void SilentWithoutMotion() {
 
 void MechanicsKnock() {
     // With a still hand only the mechanism sounds (Mechanics.h). A key knocks
-    // as it lands, when its stroke ends (23.887 ms at v20, 3 ms at v127),
+    // as it lands, when its stroke ends (10.583 ms at v20, 3 ms at v127),
     // its pallet as the spring seats it 8 ms after it is let go, and a
     // faster stroke lands harder. A key let go before it lands, or held half
     // down by channel pressure, knocks only as its pallet seats. Mechanics
@@ -179,10 +179,10 @@ void MechanicsKnock() {
     };
     const Take soft = key(20, 0.0, 0.2, 0), hard = key(127, 0.0, 0.2, 0), quieter = key(20, -10.0, 0.2, 0);
     const auto softPress = PeakIn(soft, rate, 0.05, 0.1), hardPress = PeakIn(hard, rate, 0.05, 0.1), softSeat = PeakIn(soft, rate, 0.25, 0.3);
-    // The 0.1.5 slow-touch interface makes v20 take 23.8866 ms. The old
-    // 10.58 ms fixture predated that mapping; the collision's 4 ms window
-    // and all level/spectrum limits are unchanged.
-    const double landing = 0.05 + 0.02388661417322835;
+    // 0.1.6 restores the bounded pre-0.1.5 travel: v20 lands at 10.5827 ms.
+    // This is the collision's predicted time, not a relaxed timing window;
+    // the 4 ms window and all level/spectrum limits remain unchanged.
+    const double landing = 0.05 + 0.01058267716535433;
     Expect(softPress.second > landing && softPress.second < landing + 0.004, "MechanicsKnock", "a key knocks as it lands: peak after its stroke, ms",
            (softPress.second - landing) * 1.0e3);
     Expect(softSeat.second > 0.258 && softSeat.second < 0.262, "MechanicsKnock", "its pallet knocks as it seats: peak after the key is let go, ms",
