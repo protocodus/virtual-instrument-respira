@@ -20,6 +20,7 @@ std::unique_ptr<Engine> Make(double amount, bool automatic = true, double width 
     auto e = std::make_unique<Engine>();
     e->Prepare(48000.0);
     Controls c; c[kLife] = amount; c[kAuto] = automatic ? 1.0 : 0.0;
+    c[kTouch] = 0.0; // isolate Life; TouchTests and musical renders cover their combination
     c[kWidth] = width; c[kRoom] = 0.0;
     e->SetControls(c); e->Reset();
     Transport t; t.bpm = 40.0; e->SetTransport(t);

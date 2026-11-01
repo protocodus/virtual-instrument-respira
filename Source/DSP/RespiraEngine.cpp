@@ -124,7 +124,7 @@ constexpr protocodus::CompressorSettings kBellowsGuard { -18.0, 6.0, 5.0, 0.02, 
 // reeds within 3 dB up to 16 kHz.
 constexpr double kBassBoxDepth = 0.04, kBassBoxOpen = 0.10, kBassHoleLength = 0.0081, kClothRayl = 30.0;
 constexpr double kBassBoxAbsorbed = 0.04, kBassBoxModes = 2000.0;
-constexpr double kOpenSeconds = 0.012, kOpenVelocity = 0.009;  // pallet lift: 12 ms soft .. 3 ms hard
+constexpr double kOpenSeconds = 0.012;     // register slide / air button; key strokes: Touch.h
 constexpr double kCloseSeconds = 0.008;
 constexpr double kQuietSeconds = 0.02;      // a closed chamber is let go after this
 // Key travel at full channel pressure: the pallet opening (raised cosine of
@@ -281,6 +281,7 @@ void Engine::Prepare(double sampleRate) {
     wanderStep = 1.0 - std::exp(-6.283185307179586 * kHandWanderHz / rate);
     wanderScale = kHandWander / std::sqrt(CascadeVariance(wanderStep));
     life.Prepare(rate);
+    touch.Prepare(rate);
     output.Prepare(rate, kBellowsGuard);
     room.Set(Room::kDecaySeconds, Room::kTrebleShare, rate);
     SetControls(controls);
@@ -292,6 +293,7 @@ void Engine::Reset() {
     hand = Hand {};
     player = Player {};
     life.Reset();
+    touch.Reset();
     SetTransport(transport);
     heldCells = 0;
     pressure = airFlow = airFlowSmoothed = demand = 0.0;
@@ -385,6 +387,7 @@ void Engine::SetControls(const Controls& next) {
         else hand.velocity = 0.0;
     }
     if (nextAuto != autoHand) {
+        touch.ClearGesture();
         player.running = false;
         player.ready = player.earlyTurn = false;
         player.drive = hand.position;
@@ -474,6 +477,15 @@ void Engine::SetTransport(const Transport& next) {
     player.cycle -= cycle * std::floor(player.cycle / cycle);
 }
 
+double Engine::PlayerEffort() const {
+    double effort = 1.0 + player.level + wanderScale * player.wanderB;
+    if (life.amount != 0.0)
+        effort = Clamp(effort + 0.22 * life.amount * life.effort, 0.65, 1.45);
+    if (touch.amount != 0.0)
+        effort = Clamp(effort + touch.Effort(), 0.65, 1.45);
+    return effort;
+}
+
 // Runs before the hand's tick, from the keys the last sample held.
 void Engine::StepPlayer(double dt) {
     const double cycle = 2.0 * player.stroke;
@@ -531,20 +543,21 @@ void Engine::StepPlayer(double dt) {
     // whole small bellows in less than one bar; waiting for that bar would
     // force an unplanned turn against its end stop. The four-bar phrase
     // direction is unchanged when there is enough air.
-    const double planningBeat = life.amount == 0.0 ? player.bar : 4.0 / transport.denominator;
+    const double planningBeat = life.amount == 0.0 && touch.amount == 0.0
+                              ? player.bar : 4.0 / transport.denominator;
     const double barLine = std::floor(ahead / planningBeat) * planningBeat;
     if (heldCells > 0 && barLine != player.barLine) {
         player.barLine = barLine;
         const double left = (half == 0) != player.turned ? open - player.drive : player.drive;
         double spare = 1.0 + 2.0 * kHandWander - wanderScale * player.wanderB;
-        if (life.amount != 0.0) {
+        if (life.amount != 0.0 || touch.amount != 0.0) {
             // A stronger forthcoming swell consumes more air. Bernoulli's
             // flow through the same open pallets scales with sqrt(pressure),
             // so reserve for Life's bounded upper effort, not just the old
             // 8% wander. Evaluate only on the planning grid; Life=0 is unchanged.
-            const double current = Clamp(1.0 + player.level + wanderScale * player.wanderB
-                                         + 0.22 * life.amount * life.effort, 0.65, 1.45);
-            const double upper = Min(1.45, 1.0 + 2.0 * kHandWander + 0.33 * life.amount);
+            const double current = PlayerEffort();
+            const double upper = Min(1.45, 1.0 + 2.0 * kHandWander
+                                    + 0.33 * life.amount + 0.30 * touch.amount);
             spare = Max(spare, Sqrt(upper / current));
         }
         if (player.running && left * perWheel < spare * Abs(player.hold) * planningBeat * 60.0 / transport.bpm)
@@ -595,15 +608,9 @@ void Engine::StepPlayer(double dt) {
     // air is undone through Assist and Bellows into wheel speed, and the hand
     // never moves against its stroke.
     const double closing = player.swinging ? dt : kReaction;
-    double effort = 1.0 + player.level + wanderScale * player.wanderB;
-    if (life.amount != 0.0) {
-        // The same held note keeps hearing the player's slow corrections.
-        // Full Life adds up to +/-33% of requested effort (0.22 * 1.5).
-        // This is expressive playing depth, not a measured human tremor.
-        // It acts on the hand's force request, never on audio or reed tuning.
-        effort = Clamp(effort + 0.22 * life.amount * life.effort, 0.65, 1.45);
-    }
-    const double meant = want * effort;
+    // Life continues on held notes; Touch's emphasis relaxes after a press.
+    // Both act on the shared hand's force request, never on voice gain/tuning.
+    const double meant = want * PlayerEffort();
     const double flow = air + (meant - coming) / (kBellowsStiffness * closing);
     const double wanted = -flow / perWheel;
     player.velocity = Clamp(wanted, pulling ? 0.0 : -fastest, pulling ? fastest : 0.0);
@@ -742,7 +749,7 @@ void Engine::StartCell(int rank, int key, int source, int velocity) {
     cell->depth = channelDepth[static_cast<std::size_t>(source / 128)];
     cell->settled = false;
     // A sharper key stroke lifts the pallet faster.
-    cell->openRate = 1.0 / ((kOpenSeconds - kOpenVelocity * velocity / 127.0) * internalRate);
+    cell->openRate = 1.0 / (KeyOpeningSeconds(velocity) * internalRate);
 }
 
 void Engine::NoteOn(int channel, int key, int velocity) {
@@ -754,9 +761,10 @@ void Engine::NoteOn(int channel, int key, int velocity) {
     const int source = channel * 128 + key;
     Key& k = keys[static_cast<std::size_t>(source)];
     k.target = channelDepth[static_cast<std::size_t>(channel)];
-    k.rate = 1.0 / ((kOpenSeconds - kOpenVelocity * velocity / 127.0) * rate);
+    k.rate = 1.0 / (KeyOpeningSeconds(velocity) * rate);
     k.button = group != kTreble;
     MoveKey(source);
+    if (autoHand) touch.Press(velocity);
     if (group == kBassButtons) {
         StartCell(kRankBass16, PitchClass(key), source, velocity);
         StartCell(kRankBass8, PitchClass(key), source, velocity);
@@ -800,6 +808,7 @@ void Engine::NoteOff(int channel, int key) {
 }
 
 void Engine::AllNotesOff() {
+    touch.ClearGesture();
     for (auto& c : cells) c.held = false;
     trebleHeld.fill(0);
     for (int source = 0; source < 3 * 128; ++source) {
@@ -843,6 +852,7 @@ void Engine::Render(float* left, float* right, int frames) {
     const double valveOpen = dt / kOpenSeconds, valveClose = dt / kCloseSeconds;
     if (frames > 0) untouched = false;
     for (int i = 0; i < frames; ++i) {
+        touch.Step(controls[kTouch], autoHand);
         if (life.Step(controls[kLife], heldCells > 0 || Abs(hand.velocity) > 1.0e-5)) UpdateMicrophones();
         if (autoHand) StepPlayer(dt);
         hand.Tick(dt, controls[kMomentum], autoHand ? &player.drive : nullptr, player.velocity);
@@ -920,6 +930,12 @@ void Engine::Render(float* left, float* right, int frames) {
             }
         }
         for (int k = 0; k < oversample; ++k) {
+            // Ranks opened by one key usually share exactly the same travel.
+            // Reuse only that identical raised-cosine result; each chamber
+            // still computes its own vent law and air/reed state. A newly
+            // selected rank or unequal travel automatically misses the cache.
+            // Local to this internal sample: no changed timing or approximation.
+            double lastTravel = -1.0, lastLift = 0.0;
             for (int j = 0; j < active; ++j) {
                 Cell& c = *live[j];
                 const CellSpec& spec = c.spec;
@@ -928,7 +944,12 @@ void Engine::Render(float* left, float* right, int frames) {
                     // The pallet lifts off and settles smoothly: the hole area
                     // follows a raised cosine of the key travel, so the jet
                     // starts and stops without a step in the radiated flow.
-                    c.lift = c.open >= 1.0 ? 1.0 : c.open <= 0.0 ? 0.0 : 0.5 - 0.5 * std::cos(kPi * c.open);
+                    if (c.open == lastTravel) c.lift = lastLift;
+                    else {
+                        c.lift = c.open >= 1.0 ? 1.0 : c.open <= 0.0 ? 0.0 : 0.5 - 0.5 * std::cos(kPi * c.open);
+                        lastTravel = c.open;
+                        lastLift = c.lift;
+                    }
                     c.vent = MakeVent(spec.chamber, c.lift, invDtIn);
                 }
                 const double draw = draws[j * oversample + k];

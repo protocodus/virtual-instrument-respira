@@ -1783,3 +1783,18 @@ they add neither a reed envelope nor MIDI expression automation. The
 corrected eight excerpts passed isolated-treble checks for 563 melody notes,
 including 192 under 180 ms. The threshold is a delivery regression check,
 not a complete perceptual model or a claim that all soft onsets are fixed.
+# 2026-11-01 — Touch-driven Auto effort
+
+The owner asked for natural, live, hand-controlled playing grounded in
+research, and chose **C — stronger response** in the Fascination comparison.
+A was unchanged 0.1.4, B the new shared Auto gesture at Touch 50%, and C at
+100%. Life was 100% in all takes, with identical MIDI, transport, seed and
+controls. Whole-file stereo RMS trims: A 0, B −0.07746, C −0.10792 dB.
+The verdict sets Touch to 100% on Init and all presets. It concerns musical
+emphasis, not a measured human parameter or acoustic calibration.
+
+All velocities in that comparison exceed 64. The separate slow-key mapping
+was therefore inactive and was not selected by this verdict. Its provenance,
+separate A/B and unresolved low-pressure attack mismatch are documented in
+[the research note](research/touch-model-2026-11-01.md). Both listening sets
+remain frozen outside the checkout; the 0.1.4 comparisons remain untouched.

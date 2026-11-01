@@ -164,7 +164,7 @@ void SilentWithoutMotion() {
 
 void MechanicsKnock() {
     // With a still hand only the mechanism sounds (Mechanics.h). A key knocks
-    // as it lands, when its stroke ends (12 ms at velocity 0 .. 3 ms at 127),
+    // as it lands, when its stroke ends (23.887 ms at v20, 3 ms at v127),
     // its pallet as the spring seats it 8 ms after it is let go, and a
     // faster stroke lands harder. A key let go before it lands, or held half
     // down by channel pressure, knocks only as its pallet seats. Mechanics
@@ -179,7 +179,10 @@ void MechanicsKnock() {
     };
     const Take soft = key(20, 0.0, 0.2, 0), hard = key(127, 0.0, 0.2, 0), quieter = key(20, -10.0, 0.2, 0);
     const auto softPress = PeakIn(soft, rate, 0.05, 0.1), hardPress = PeakIn(hard, rate, 0.05, 0.1), softSeat = PeakIn(soft, rate, 0.25, 0.3);
-    const double landing = 0.05 + 0.012 - 0.009 * 20.0 / 127.0;
+    // The 0.1.5 slow-touch interface makes v20 take 23.8866 ms. The old
+    // 10.58 ms fixture predated that mapping; the collision's 4 ms window
+    // and all level/spectrum limits are unchanged.
+    const double landing = 0.05 + 0.02388661417322835;
     Expect(softPress.second > landing && softPress.second < landing + 0.004, "MechanicsKnock", "a key knocks as it lands: peak after its stroke, ms",
            (softPress.second - landing) * 1.0e3);
     Expect(softSeat.second > 0.258 && softSeat.second < 0.262, "MechanicsKnock", "its pallet knocks as it seats: peak after the key is let go, ms",
@@ -685,9 +688,11 @@ std::vector<double> Turns(const Take& t, double rate, double after) {
 std::unique_ptr<Engine> MakeAuto(double rate, const std::function<void(Controls&)>& adjust = {}) {
     return Make(rate, 0, [&adjust](Controls& c) {
         c[kAuto] = 1.0;
-        // These pre-Life regressions measure the old 400 Pa pressure target.
-        // LifeTests separately covers ongoing force variation at 0/50/100 %.
+        // These regressions measure the fixed 400 Pa target and old bar grid.
+        // LifeTests/TouchTests separately exercise expressive effort and its
+        // beat-level air reserve; neither belongs in this fixed-target fixture.
         c[kLife] = 0.0;
+        c[kTouch] = 0.0;
         if (adjust) adjust(c);
     });
 }

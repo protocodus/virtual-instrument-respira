@@ -33,6 +33,12 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
+### Unreleased — 0.1.5 — Touch and gentle key openings
+
+- **Touch** turns keyboard emphasis into a brief, shared Auto bellows gesture. The owner chose C (100%) in the level-matched comparison; Init and all presets use that setting. Manual bellows control is unchanged.
+- Deliberately soft velocities below 64 can open their pallets more slowly, changing the attack through the physical air/reed interaction. Ordinary and fast key travel is unchanged. No sustained velocity gain, tuning offset or brightness envelope was added.
+- Old patches acquire the Touch default. Set Touch to zero to remove its Auto emphasis; the soft-key mapping remains a behavior change. [Research, listening scope and remaining attack mismatch](Docs/research/touch-model-2026-11-01.md).
+
 ### Unreleased — 0.1.4 — Life and prepared bellows turns
 
 - **Life** controls irregular Auto bellows effort and source movement at the microphones, including long held notes. Init and all presets use 100 %, selected by the owner from a level-matched listening comparison.
@@ -272,8 +278,8 @@ working air button.
 
 ### Auto
 
-The pressure figures below describe the pre-Life baseline at Life zero.
-In 0.1.4 the selected default is Life 100 %; the shared pressure varies
+The pressure figures below describe the baseline at Life and Touch zero.
+Since 0.1.4 the selected default is Life 100 %; the shared pressure varies
 more strongly, and capacity is checked at each beat so a swell can turn
 before the bellows reaches its end. During a short rest Auto may prepare
 an imminent four-bar reversal: it physically changes pressure with the
@@ -358,6 +364,17 @@ The motion clock runs at 200 Hz, independent of host block size. Microphone
 targets retain their 20 ms glide. A separate random stream preserves the
 reed-turbulence sequence. Details, sources and the remaining movement-noise
 gaps are in the [Life audit](Docs/research/life-model-2026-11-01.md).
+
+### Touch
+
+**Touch** interprets key emphasis as a brief shared bellows gesture in Auto,
+then relaxes toward the wheel's pressure request. Its default is the owner's
+chosen 100 %. A chord requests one gesture, not a separate pressure boost
+per reed. Life keeps moving during held notes; Touch responds to presses.
+At zero the added gesture is off. It never changes the manual hand.
+The control runs at 200 Hz and acts through the existing physical bellows;
+its strength and relaxation are performer choices, not measured constants.
+See the [Touch study](Docs/research/touch-model-2026-11-01.md).
 
 ### Reed cells
 
@@ -445,8 +462,11 @@ The cells run at four times the host rate (192 kHz at 48 kHz) and are
 decimated by two half-band allpass stages; Oversampling at 2× or 4× runs them
 at eight or sixteen times the host rate through three or four stages, with
 the gap turbulence scaled so its spectrum stays the same at every host rate
-and Oversampling. The pallet lifts in 12 ms for a soft key and 3 ms for a hard
-one, along a raised cosine, so velocity sets the attack, and closes in 8 ms;
+and Oversampling. Key travel takes 7.46–3 ms at velocities 64–127. Below 64,
+speed falls in proportion to velocity, allowing deliberate slow presses:
+about 30 ms at 16 and 478 ms at 1. This is an authored MIDI mapping, not a
+measured key-speed calibration. Pallet area follows the existing raised
+cosine of travel, so velocity shapes the attack, and the key closes in 8 ms;
 in the last tenths of a millimetre the air leaves through the film under the
 pad's rim, a viscous gap that brings it to rest as the pad lands.
 Channel pressure lets a held key rise part way: at full pressure its travel

@@ -21,7 +21,8 @@
 // bellows pressure, its chamber initially at that pressure (Engine::StartCell),
 // no turbulence, and the engine's raised-cosine pallet opening. The default
 // 3 ms is the engine's fastest stroke (velocity 127), not a measured pallet
-// speed. --pallet-ms 6 reproduces the travel duration of earlier repo probes.
+// speed. Slow-pallet experiments accept up to 500 ms; this is an input
+// sweep, not a measured mechanical range. --pallet-ms 6 reproduces the travel duration of earlier repo probes.
 // It is a deterministic cell experiment, not the full engine: no mechanical
 // output, grille, room, output compression, or bellows-pressure feedback.
 //
@@ -286,9 +287,9 @@ Options Parse(int argc, char** argv) {
         } else throw std::runtime_error("unknown option: " + arg);
     }
     if (options.seconds < 2.0 || options.seconds > 30.0 ||
-        options.palletMs < 3.0 || options.palletMs > 12.0 ||
+        options.palletMs < 3.0 || options.palletMs > 500.0 ||
         (options.target != 0.0 && options.target != 55.0 && options.target != 70.0))
-        throw std::runtime_error("range: seconds 2..30, pallet-ms 3..12, target 55 or 70");
+        throw std::runtime_error("range: seconds 2..30, pallet-ms 3..500, target 55 or 70");
     if (!options.note.empty() && std::none_of(kReferences.begin(), kReferences.end(),
         [&](const Reference& r) { return options.note == r.name; }))
         throw std::runtime_error("note must be A2, A3, A4, or A5");

@@ -29,6 +29,7 @@ enum Control : int {
     kAuto,       // 0 the wheel is the hand, 1 (the default) the hand plays the bellows itself in time and the wheel presses harder
     kRoom,       // the room the microphones hear around the instrument: 0 none (dry) .. 1 as much as the owner's recordings' rooms (Room.h)
     kLife,       // added Auto bellows effort and source movement at the microphones; 0 preserves the earlier response
+    kTouch,      // optional velocity emphasis in Auto's shared bellows effort; manual hand is unaffected
     kControlCount
 };
 
@@ -83,6 +84,11 @@ inline constexpr std::array<ControlInfo, kControlCount> kControlInfo { {
     // stable. The owner selected C (100 %) by ear on 2026-11-01. Zero
     // restores the earlier response; missing properties take the new default.
     { "life", "Life", 0.0, 1.0, 1.0, 0, Curve::kLinear, "" },
+    // Performer interpretation, not a velocity-dependent reed gain. Zero
+    // leaves bellows phrasing to the wheel and Life; the key still moves at
+    // the played speed. The owner chose C (100%) in the matched Fascination
+    // comparison, 2026-11-01; this choice concerns performer emphasis only.
+    { "touch", "Touch", 0.0, 1.0, 1.0, 0, Curve::kLinear, "" },
 } };
 
 // Cubic rational S-curve, with exact dry, midpoint and full-wet endpoints.

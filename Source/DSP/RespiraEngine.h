@@ -37,6 +37,7 @@
 #include "Decimator.h"
 #include "Mechanics.h"
 #include "Life.h"
+#include "Touch.h"
 #include "OutputStage.h"
 #include "Room.h"
 #include "ReedBank.h"
@@ -200,6 +201,7 @@ private:
 
     void StepPlayer(double dt);
     void NewStroke();
+    double PlayerEffort() const;
     void UpdateMicrophones();
     double wanderStep = 0.0, wanderScale = 0.0;
 
@@ -230,6 +232,7 @@ private:
     Transport transport;
     Player player;
     Life life;
+    Touch touch;
     bool autoHand = false;
     int heldCells = 0;
     double pressure = 0.0, airFlow = 0.0, airFlowSmoothed = 0.0, demand = 0.0;
