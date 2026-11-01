@@ -31,7 +31,7 @@ enum Control : int {
     kControlCount
 };
 
-enum class Curve { kLinear, kLog, kStepped };
+enum class Curve { kLinear, kLog, kStepped, kSigmoid };
 
 struct ControlInfo {
     const char* id;        // stable parameter / property id
@@ -73,10 +73,32 @@ inline constexpr std::array<ControlInfo, kControlCount> kControlInfo { {
     // On by default, the owner's "just play": the hand keeps the bellows
     // supplied whatever is played, and the player never thinks about them.
     { "auto", "Auto", 0.0, 1.0, 1.0, 2, Curve::kStepped, "" },
-    // Init and every factory preset play at 5 %, the owner's ceiling for them
-    // (2026-10-31): a touch of the hall, the instrument still close.
-    { "room", "Room", 0.0, 1.0, 0.05, 0, Curve::kLinear, "" },
+    // The owner chose 0.5 % of the original wet range on Init and every
+    // preset (2026-11-01). A sigmoid gives fine adjustment near dry: that
+    // amount is about 14.6 % of knob travel. The engine still receives the
+    // physical wet amount; only front-end normalization changes.
+    { "room", "Room", 0.0, 1.0, 0.005, 0, Curve::kSigmoid, "" },
 } };
+
+// Cubic rational S-curve, with exact dry, midpoint and full-wet endpoints.
+// Its denominator is at least 1/4 on [0, 1]. This is a control taper, not an
+// audio transfer function; neither it nor its inverse runs per sample.
+inline double Sigmoid(double n) {
+    const double a = n * n * n, b = (1.0 - n) * (1.0 - n) * (1.0 - n);
+    return a / (a + b);
+}
+
+inline double InverseSigmoid(double value) {
+    if (value <= 0.0) return 0.0;
+    if (value >= 1.0) return 1.0;
+    double low = 0.0, high = 1.0;
+    for (int i = 0; i < 52; ++i) {
+        const double mid = 0.5 * (low + high);
+        if (Sigmoid(mid) < value) low = mid;
+        else high = mid;
+    }
+    return 0.5 * (low + high);
+}
 
 // Physical value of control `index` at normalised position n (clamped to 0..1).
 inline double FromNormalized(int index, double n) {
@@ -85,6 +107,7 @@ inline double FromNormalized(int index, double n) {
     switch (c.curve) {
     case Curve::kStepped: return std::floor(n * (c.steps - 1) + 0.5);
     case Curve::kLog: return c.min * std::pow(c.max / c.min, n);
+    case Curve::kSigmoid: return c.min + (c.max - c.min) * Sigmoid(n);
     case Curve::kLinear: break;
     }
     return c.min + (c.max - c.min) * n;
@@ -94,6 +117,7 @@ inline double ToNormalized(int index, double value) {
     const ControlInfo& c = kControlInfo[static_cast<std::size_t>(index)];
     value = value == value ? Clamp(value, c.min, c.max) : c.initial;
     if (c.curve == Curve::kLog) return std::log(value / c.min) / std::log(c.max / c.min);
+    if (c.curve == Curve::kSigmoid) return InverseSigmoid((value - c.min) / (c.max - c.min));
     return (value - c.min) / (c.max - c.min);
 }
 

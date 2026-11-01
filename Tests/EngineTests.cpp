@@ -1276,6 +1276,36 @@ void CascadeVarianceScales() {
     }
 }
 
+void RoomTaperAndDefaults() {
+    const Controls defaults;
+    bool bank = defaults[kRoom] == 0.005;
+    for (const auto& preset : kPresets) bank = bank && preset.ToControls()[kRoom] == 0.005;
+    Expect(bank, "RoomTaperAndDefaults", "Init and every preset use 0.5 percent physical wet", defaults[kRoom]);
+
+    // Independent exact landmarks of the cubic-odds taper: at a quarter
+    // turn the wet/dry odds are 1:27. The readout still reports wet amount.
+    Expect(FromNormalized(kRoom, 0.0) == 0.0 && FromNormalized(kRoom, 1.0) == 1.0
+           && FromNormalized(kRoom, 0.5) == 0.5
+           && std::fabs(FromNormalized(kRoom, 0.25) - 1.0 / 28.0) < 1.0e-15
+           && std::fabs(FromNormalized(kRoom, 0.75) - 27.0 / 28.0) < 1.0e-15,
+           "RoomTaperAndDefaults", "exact endpoints and quarter-turn wet/dry ratios", FromNormalized(kRoom, 0.25));
+    const double initial = ToNormalized(kRoom, defaults[kRoom]);
+    Expect(initial > 0.14 && initial < 0.15 && std::fabs(FromNormalized(kRoom, initial) - 0.005) < 1.0e-15,
+           "RoomTaperAndDefaults", "0.5 percent wet has usable knob travel and round-trips", initial);
+    bool ordered = true, roundTrip = true;
+    double previous = -1.0;
+    for (int i = 0; i <= 1000; ++i) {
+        const double amount = i / 1000.0, knob = ToNormalized(kRoom, amount);
+        ordered = ordered && knob > previous;
+        roundTrip = roundTrip && std::fabs(FromNormalized(kRoom, knob) - amount) < 2.0e-15;
+        previous = knob;
+    }
+    Expect(ordered && roundTrip, "RoomTaperAndDefaults", "typed wet percentages remain monotonic and reversible", initial);
+    Expect(ToNormalized(kRoom, -1.0) == 0.0 && ToNormalized(kRoom, 2.0) == 1.0
+           && ToNormalized(kRoom, std::nan("")) == initial,
+           "RoomTaperAndDefaults", "out-of-range and invalid wet values retain the control contract", initial);
+}
+
 void NonFiniteControls() {
     const double rate = 48000.0;
     auto e = Make(rate, 3);
@@ -1331,6 +1361,7 @@ int main() {
     MicrophonesHearTwoPlaces();
     ValveSlapsFollowTheTurn();
     RoomDecorrelatesAndRings();
+    RoomTaperAndDefaults();
     CascadeVarianceScales();
     NonFiniteControls();
     AutoTurnsOnTheBars();

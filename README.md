@@ -5,8 +5,8 @@ wheel is the player's hand on the bellows, opening draws air through the pull
 reeds and closing presses it through the push reeds, and only the hand's
 motion moves air, so the wheel has to keep rocking back and forth. Every
 sounding reed is a simulated steel tongue in its own chamber, with eight
-treble registers, bass and chord buttons and a dry stereo output. This
-repository holds the JUCE-free C++17 engine, its tools and tests; the Reason
+treble registers, bass and chord buttons and stereo output with an optional
+room. This repository holds the JUCE-free C++17 engine, its tools and tests; the Reason
 Rack Extension adapter plays the same engine. There is no DAW plug-in yet.
 
 ## Audio demos
@@ -33,7 +33,17 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
-### Unreleased — 0.1.0 — the dry engine
+### Unreleased — 0.1.1 — finer Room control
+
+- Room uses a sigmoid response for finer adjustment near dry. Init and all
+  eight factory presets use 0.005 wet (0.5 %), the owner's new default, and
+  the percentage display shows the actual wet amount to one decimal place.
+- The mapping changes only the control response; the hall and its
+  per-sample processing are unchanged. Old normalized Room positions now
+  use the new curve, changing their wet amount except at 0, 0.5 and 1.
+  Physical Room values passed directly to the engine keep their meaning.
+
+### 0.1.0 — engine development history
 
 - The accordion engine from the prototype in its own repository: reed cells
   with push and pull tongues, one bellows driven by the mod wheel, eight treble
@@ -482,7 +492,7 @@ align at zero lag, and in every band from 60 Hz to 12 kHz they differ by
 each key by pitch put Paris Musette's bass band 10 dB to the left. The
 positions are a full-size instrument's, estimated.
 
-**Room**, at 5 % on Init and on every factory preset, puts a room
+**Room**, at 0.5 % wet on Init and on every factory preset, puts a room
 around the pair: the late, diffuse field of a small hall with a hundred
 people in it, from a sixteen-line feedback delay network (`Source/DSP/Room.h`)
 behind four allpass diffusers, so it is dense from its first milliseconds.
@@ -507,6 +517,19 @@ cross-correlation of 170 ms frames peaks at only 0.20–0.51 at zero lag
 Paris Musette reads 0.49 at 70 %, as every room before the hall did. The
 hundred people are the owner's; the recordings' own rooms are not measured,
 since their notes rarely stop clean enough to read a decay.
+
+Room's normalized knob position `x` maps to the physical wet amount through
+`x³ / (x³ + (1 − x)³)`, giving finer control near dry. A wet amount of
+0.005 (0.5 %) lies at about 14.62 % travel and 0.01 (1 %) at 17.77 %;
+the endpoints and midpoint stay 0, 1 and 0.5. The percentage display shows
+the wet amount, not the travel, to one decimal place. This calculation runs
+when mapping controls; it adds no work to the per-sample room processing.
+
+Older normalized Room values are interpreted through this new curve.
+For example, a saved position of 0.05 gives about 0.0001458 wet (0.0146 %),
+where it gave 0.05 wet before. Restore an old room level by setting its
+displayed wet percentage to the former value. Direct engine callers that
+set physical Room values keep the same response at the same value.
 
 ### The mechanism
 
@@ -622,7 +645,7 @@ strokes read −1.7 VU at most. Volume sets the level going into the stage.
 | Oversampling | 1×, 2×, 4× | the reeds' time step: 1× is four times the host rate; 2× and 4× cost about two and four times the CPU |
 | Mechanics | −40 to +20 dB | the keys', pallets', buttons' and switches' knocks, the bellows' folds and the push valves' slaps, against the estimate (The mechanism); +10 dB by default, chosen by ear; at −40 dB they are all but silent |
 | Auto | off, on | on by default: the hand plays the bellows in time with the host and the wheel presses harder (Auto) |
-| Room | 0–1 | the hall around the microphones: 0 dry, 5 % by default, 1 as decorrelated as the solo recordings (The microphones) |
+| Room | 0–1 wet | the hall around the microphones: 0 dry, 0.5 % by default, 1 as decorrelated as the solo recordings; sigmoid knob response, actual wet percentage displayed (The microphones) |
 
 `Source/DSP/RespiraControls.h` holds these for every front end;
 `Source/DSP/RespiraPresets.h` holds the eight factory presets, one per
@@ -679,8 +702,8 @@ tempo, time signature, song position and bar start before each block
   push valves' slaps, are voiced by ear: no recording or measurement sets their level, and the
   folds' play, which decides how hard they land, is an estimate. The player
   makes no sound.
-- **The room is voiced.** Init and the factory presets play it at 5 %, the
-  owner's ceiling. Its first reflections come from an estimated hall's
+- **The room is voiced.** Init and the factory presets play it at 0.5 %, the
+  owner's chosen default. Its first reflections come from an estimated hall's
   geometry, not a measured one, and are heard through the pair at Width's
   default 90° whatever Width is set to. Its decay is Sabine's for that
   estimated hall and the owner's hundred people, with people's absorption

@@ -1636,3 +1636,30 @@ B ships by the project's rule that the candidate wins unless the owner says
 otherwise. What it licenses: a hall whose decay follows measured per-person
 and air absorption in an estimated geometry, its darkness above 2-3 kHz
 chosen by the owner's word; not a measured room.
+
+## 2026-11-01 — finer Room control and 0.5 % wet by default (owner; curve by engineering)
+
+The owner asked for a sigmoid Room response with finer adjustment near dry,
+and for Init and every preset to use the former linear control's 0.5 % wet
+amount. The amount is 0.005 in the engine, not 0.5 % of the new knob's
+travel. Init and all eight factory presets now use that value. The displayed
+percentage is the actual wet amount to one decimal place, so the default
+reads 0.5 %.
+
+The chosen curve is `S(x) = x³ / (x³ + (1 − x)³)` for normalized knob
+position `x`. This particular sigmoid is an engineering choice: it keeps
+dry and the maximum Room amount exact, leaves the midpoint at 50 %, and
+puts 0.5 % wet at
+about 14.62 % travel and 1 % wet at 17.77 %. The inverse mapping preserves
+physical values when writing the default and factory patches. Only control
+mapping changes; the hall, its gain at a given physical Room value and its
+per-sample processing are unchanged.
+
+Compatibility is explicit in canonical 0.1.1 and Rack 0.1.1d1: older songs
+and user patches store a normalized Room position, which now follows the
+new curve without migration. Their wet level therefore changes except at
+positions 0, 0.5 and 1. An old 5 % position gives about 0.0146 % wet; setting
+the displayed value to 5.0 % restores its former amount. Physical Room
+values passed directly to the engine retain their meaning. What this
+licenses: the owner's lower default and a more precise control near dry,
+not a newly measured hall or a change to the acoustic model.
