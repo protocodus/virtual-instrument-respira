@@ -1,10 +1,10 @@
 #pragma once
 
 // The room around the microphones: Init and the factory presets play in it at
-// 5 %, a touch of air around the instrument (RespiraControls.h). Its late diffuse field comes from a sixteen-line feedback delay network
+// 0.5 %, a touch of air around the instrument (RespiraControls.h). Its late diffuse field comes from a sixteen-line feedback delay network
 // (Jot and Chaigne, AES 90, 1991) with a Householder matrix: the two
-// microphones each hear eight of the lines, so the field reaching them is
-// decorrelated as a real room's is, where the instrument's own sound reaches
+// microphones decode two approximately independent field components with the
+// diffuse-field correlation of coincident cardioids, where the direct sound reaches
 // both microphones at once. Four Schroeder allpasses spread the sound before it
 // enters the lines, so the field is dense from its start: fed straight in, an
 // impulse came back as a dozen separate echoes in the first 50 ms, which a
@@ -48,17 +48,17 @@ public:
     // that seats a hundred, not a measured one). Each: delay after the direct
     // sound (path difference over 343 m/s), level against it (1/r, times the
     // surface's reflection, 0.9 for the wooden stage and 0.8 for plaster) and
-    // azimuth in the player's view (positive to the right). The wall behind
+    // direction from the microphones (forward, right, up in metres). The wall behind
     // the microphones reaches them from behind, where a cardioid hears almost
-    // nothing, so it is left out. The stage's reflection, -8 dB at 4 ms, combs
-    // the sound by at most +3/-4 dB below 4 kHz, as it does a real recording.
-    struct Reflection { double seconds, level, azimuth; };
+    // nothing, so it is left out. The stage arrives about 4 ms after the
+    // direct sound; its steep elevation reduces pickup at horizontal cardioids.
+    struct Reflection { double seconds, level, forward, right, up; };
     static constexpr std::array<Reflection, 5> kReflections { {
-        { 0.00407, 0.42 * 0.9, 0.0 },      // stage: 2.42 m against 1.02 m
-        { 0.01162, 0.204 * 0.8, 0.0 },     // the wall behind the player: 5.00 m
-        { 0.01419, 0.173 * 0.8, 0.0 },     // ceiling: 5.89 m
-        { 0.02343, 0.113 * 0.8, -1.46 },   // left wall: 9.06 m, 84 degrees left
-        { 0.02343, 0.113 * 0.8, 1.46 },    // right wall: the same, to the right
+        { 0.00407, 0.42 * 0.9, 1.0, 0.0, -2.2 },    // stage: 2.42 m against 1.02 m
+        { 0.01162, 0.204 * 0.8, 5.0, 0.0, -0.2 },   // wall behind the player: 5.00 m
+        { 0.01419, 0.173 * 0.8, 1.0, 0.0, 5.8 },    // ceiling: 5.89 m
+        { 0.02343, 0.113 * 0.8, 1.0, -9.0, -0.2 },  // left wall: 9.06 m
+        { 0.02343, 0.113 * 0.8, 1.0, 9.0, -0.2 },   // right wall
     } };
     static constexpr int kMaxEarly = 8192;      // 42 ms at 192 kHz
     // The audience's clothes and the walls' own absorption take the treble
@@ -105,18 +105,46 @@ public:
         }
         for (std::size_t i = 0; i < diffusers.size(); ++i)
             diffusers[i].length = static_cast<int>(Min(kDiffuserSeconds[i] * rate, static_cast<double>(kMaxDiffuser - 1)));
-        // An XY pair at 90 degrees, normalised as the instrument is
-        // (RespiraEngine.cpp, MicPair): a source straight ahead reaches each
-        // microphone at 1/sqrt(2).
-        const double axis = 0.7853981633974483, centre = (1.0 + std::cos(axis)) * 1.4142135623730951;
         for (std::size_t i = 0; i < kReflections.size(); ++i) {
             const Reflection& r = kReflections[i];
             early[i].length = static_cast<int>(Min(r.seconds * rate, static_cast<double>(kMaxEarly - 1)));
-            early[i].left = r.level * (1.0 + std::cos(r.azimuth + axis)) / centre;
-            early[i].right = r.level * (1.0 + std::cos(r.azimuth - axis)) / centre;
         }
+        widthSmoothing = 1.0 - std::exp(-1.0 / (0.02 * rate));
+        widthSettleSamples = static_cast<int>(std::ceil(0.64 * rate)); // 32 time constants: below 1.3e-14
+        SetWidth(width, true);
         earlyPole = std::exp(-6.283185307179586 * Min(kEarlyCorner, 0.45 * rate) / rate);
         latePole = std::exp(-6.283185307179586 * Min(kLateCorner, 0.45 * rate) / rate);
+    }
+
+    // Same horizontal XY axes as the direct microphones. A reflection keeps
+    // its 3D arrival angle; its gain is relative to the centre direct ray
+    // (1 m forward, 0.2 m down), rather than re-normalising every reflection.
+    void SetWidth(double next, bool immediate = false) {
+        next = next == next ? Clamp(next, 0.0, 1.0) : 0.6;
+        if (next == width && widthTargetsReady) {
+            if (immediate) TakeWidthTargets();
+            return;
+        }
+        width = next;
+        const double axis = width * 1.3089969389957472; // 0..75 degrees each side
+        const double forward = std::cos(axis), side = std::sin(axis);
+        const double centre = (1.0 + forward / std::sqrt(1.04)) * 1.4142135623730951;
+        for (std::size_t i = 0; i < kReflections.size(); ++i) {
+            const Reflection& r = kReflections[i];
+            const double inverseDistance = 1.0 / std::sqrt(r.forward * r.forward + r.right * r.right + r.up * r.up);
+            early[i].leftTarget = r.level * (1.0 + (r.forward * forward - r.right * side) * inverseDistance) / centre;
+            early[i].rightTarget = r.level * (1.0 + (r.forward * forward + r.right * side) * inverseDistance) / centre;
+        }
+        // Isotropic 3D field, ideal cardioids separated by theta=2*axis:
+        // rho=(3+cos(theta))/4. Equal-power independent mid/side components
+        // give L=a*M+b*S, R=a*M-b*S, a^2+b^2=1 and a^2-b^2=rho.
+        // Schoeps, Wittek et al., Double M/S (2010), section 3.2.1.
+        const double rho = (3.0 + std::cos(2.0 * axis)) * 0.25;
+        lateMidTarget = std::sqrt((1.0 + rho) * 0.5);
+        lateSideTarget = std::sqrt((1.0 - rho) * 0.5);
+        widthTargetsReady = true;
+        widthRemaining = widthSettleSamples;
+        if (immediate) TakeWidthTargets();
     }
 
     void Clear() {
@@ -137,11 +165,21 @@ public:
         earlyWrite = 0;
         earlyL = earlyR = 0.0;
         late = 0.0;
+        TakeWidthTargets();
     }
 
     // Takes the two microphones' direct sound and returns what the room adds
     // to each.
     void Process(double left, double right, double& roomLeft, double& roomRight) {
+        if (widthRemaining > 0) {
+            for (Tap& tap : early) {
+                tap.left += widthSmoothing * (tap.leftTarget - tap.left);
+                tap.right += widthSmoothing * (tap.rightTarget - tap.right);
+            }
+            lateMid += widthSmoothing * (lateMidTarget - lateMid);
+            lateSide += widthSmoothing * (lateSideTarget - lateSide);
+            if (--widthRemaining == 0) TakeWidthTargets();
+        }
         std::array<double, kLines> out {};
         double sum = 0.0;
         for (std::size_t i = 0; i < lines.size(); ++i) {
@@ -187,19 +225,29 @@ public:
             input = delayed - kDiffuserGain * v;
         }
         const double feedback = 2.0 / kLines * sum;
-        // Sixteen lines each fed the sound and each microphone hearing eight
-        // put twice the energy of the eight-line network into each channel
-        // twice over; the input and outputs each take 1/sqrt(2) of it back.
+        // Preserve the network's established input normalization. The output
+        // projections below preserve its former per-channel coefficient norm.
         input *= 0.7071067811865476;
         roomLeft = earlyL;
         roomRight = earlyR;
+        double sideField = 0.0;
         for (std::size_t i = 0; i < lines.size(); ++i) {
             Line& line = lines[i];
             const double sign = (i & 2u) ? -1.0 : 1.0;
             line.buffer[static_cast<std::size_t>(line.write)] = static_cast<float>(out[i] - feedback + sign * input);
             if (++line.write == kMaxLine) line.write = 0;
-            ((i & 1u) ? roomRight : roomLeft) += 0.7071067811865476 * sign * out[i];
+            // Constant and parity-of-three-bits Hadamard rows: orthogonal
+            // readouts, each also orthogonal to the alternating-pair input.
+            // The finite FDN only approximates independent diffuse components;
+            // impulse/noise-tail covariance is checked across sample rates.
+            const bool negative = ((i ^ (i >> 1u) ^ (i >> 2u)) & 1u) != 0u;
+            sideField += negative ? -out[i] : out[i];
         }
+        // Coefficient norm 16*(1/2)^2=4, as in each former eight-line output
+        // (8*(1/sqrt(2))^2). No fitted gain or adaptive normalisation.
+        const double mid = 0.5 * lateMid * sum, side = 0.5 * lateSide * sideField;
+        roomLeft += mid + side;
+        roomRight += mid - side;
     }
 
     void FlushTiny() {
@@ -211,6 +259,15 @@ public:
     }
 
 private:
+    void TakeWidthTargets() {
+        for (Tap& tap : early) {
+            tap.left = tap.leftTarget;
+            tap.right = tap.rightTarget;
+        }
+        lateMid = lateMidTarget;
+        lateSide = lateSideTarget;
+        widthRemaining = 0;
+    }
     struct Line {
         std::array<float, kMaxLine> buffer {};
         double length = 1.0;
@@ -228,12 +285,17 @@ private:
     struct Tap {
         int length = 1;
         double left = 0.0, right = 0.0;
+        double leftTarget = 0.0, rightTarget = 0.0;
     };
     std::array<Tap, kReflections.size()> early {};
     std::array<float, kMaxEarly> earlyBuffer {};
     int earlyWrite = 0;
     double earlyPole = 0.0, earlyL = 0.0, earlyR = 0.0;
     double latePole = 0.0, late = 0.0;
+    double width = 0.6, widthSmoothing = 0.0;
+    bool widthTargetsReady = false;
+    int widthSettleSamples = 0, widthRemaining = 0;
+    double lateMid = 0.0, lateSide = 0.0, lateMidTarget = 0.0, lateSideTarget = 0.0;
 };
 
 } // namespace respira

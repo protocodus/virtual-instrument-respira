@@ -4,6 +4,7 @@
 // invariance and determinism, release and voice limits, the noise scaling, and Auto's hand.
 #include "DSP/RespiraEngine.h"
 #include "DSP/RespiraPresets.h"
+#include "RoomMicrophoneTests.h"
 
 #include <array>
 #include <cmath>
@@ -862,6 +863,47 @@ void FoldsSoundWithTheBellows() {
            Db(Rms(vented.left, rate, 6.0, 10.0)));
 }
 
+void RustleKeepsItsBandPower() {
+    // Isolate the actual rustle force and its engine-side differentiation at
+    // a fixed 10 mm/s bellows speed. Two analysis-only 1 kHz bandpasses (Q=1)
+    // measure the same audible band at every rate, excluding differences in
+    // Nyquist bandwidth. Fixed-variance draws formerly lost 3 dB per doubling.
+    struct Band {
+        double b0, a1, a2, z1 = 0.0, z2 = 0.0;
+        explicit Band(double rate) {
+            const double w = 2.0 * kPi * 1000.0 / rate, a = std::sin(w) * 0.5;
+            b0 = a / (1.0 + a);
+            a1 = -2.0 * std::cos(w) / (1.0 + a);
+            a2 = (1.0 - a) / (1.0 + a);
+        }
+        double Process(double x) {
+            const double y = b0 * x + z1;
+            z1 = -a1 * y + z2;
+            z2 = -b0 * x - a2 * y;
+            return y;
+        }
+    };
+    constexpr std::array<double, 4> rates { { 48000.0, 22050.0, 44100.0, 96000.0 } };
+    std::array<double, rates.size()> power {};
+    for (std::size_t r = 0; r < rates.size(); ++r) {
+        const double rate = rates[r];
+        Rustle rustle;
+        rustle.Set(rate);
+        Band first(rate), second(rate);
+        double previous = 0.0;
+        const int warm = static_cast<int>(0.1 * rate), measured = static_cast<int>(2.0 * rate);
+        for (int i = 0; i < warm + measured; ++i) {
+            const double force = rustle.Step(0.010);
+            const double band = second.Process(first.Process((force - previous) * rate));
+            previous = force;
+            if (i >= warm) power[r] += band * band / measured;
+        }
+        const double change = 10.0 * std::log10(power[r] / power[0]);
+        Expect(power[r] > 0.0 && std::isfinite(change) && std::fabs(change) < 0.5,
+               "RustleKeepsItsBandPower", "fixed-band level against 48 kHz, dB", change);
+    }
+}
+
 void AutoHandsBackToTheWheel() {
     // Auto switched off mid-stroke leaves the bellows where they are: the arm
     // comes to rest instead of sweeping to the wheel's position (at 0).
@@ -1230,17 +1272,21 @@ void RoomDecorrelatesAndRings() {
     const double expected = 60.0 / Room::kDecaySeconds;
     Expect(std::fabs(perSecond / expected - 1.0) < 0.1, "RoomDecorrelatesAndRings", "the room's decay at 200 Hz, dB/s", perSecond);
 
-    // Diffused from its start: an impulse fills every sample from 50 ms on
-    // (fed straight into the lines it came back as about a dozen echoes in the
-    // first 50 ms and 131 samples in the next).
+    // Diffused from its start: every stereo frame from 50 ms has pressure
+    // RMS above 1e-6. A microphone angle can cancel one channel at a sample
+    // while the other still hears the field; that is not a gap in its density.
+    // Keep the same threshold and full occupancy requirement. The original
+    // undiffused eight-line room fills only 181 of these 2400 stereo frames
+    // (131 when counted in the left channel alone).
     room.Clear();
     int filled = 0;
     for (int i = 0; i < static_cast<int>(0.1 * rate); ++i) {
         double l, r;
         room.Process(i == 0 ? 1.0 : 0.0, i == 0 ? 1.0 : 0.0, l, r);
-        if (i >= static_cast<int>(0.05 * rate) && std::fabs(l) > 1.0e-6) ++filled;
+        if (i >= static_cast<int>(0.05 * rate) && std::isfinite(l) && std::isfinite(r)
+            && 0.5 * (l * l + r * r) > 1.0e-12) ++filled;
     }
-    Expect(filled == static_cast<int>(0.05 * rate), "RoomDecorrelatesAndRings", "samples heard 50-100 ms after an impulse", filled);
+    Expect(filled == static_cast<int>(0.05 * rate), "RoomDecorrelatesAndRings", "stereo frames heard 50-100 ms after an impulse", filled);
 
     // The stage's reflection comes first, 4.07 ms after the sound (Room.h):
     // nothing reaches the microphones from the room before it.
@@ -1327,6 +1373,7 @@ void NonFiniteControls() {
 int main() {
     SilentWithoutMotion();
     MechanicsKnock();
+    RustleKeepsItsBandPower();
     AirFromMotion();
     TurnWithoutClick();
     StillnessStopsTheSound();
@@ -1361,6 +1408,7 @@ int main() {
     MicrophonesHearTwoPlaces();
     ValveSlapsFollowTheTurn();
     RoomDecorrelatesAndRings();
+    respira_room_tests::Run(Expect);
     RoomTaperAndDefaults();
     CascadeVarianceScales();
     NonFiniteControls();

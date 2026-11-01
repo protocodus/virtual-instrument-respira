@@ -28,7 +28,8 @@ half overlapping), its power in the octave bands 0.5-1, 2-4, 4-8 and
 note averaged in dB. Respira plays Clarinet Solo (one 8' reed) through
 RenderRespira: the note held from 0.3 s while the bellows wheel travels 18
 of its 127 steps over 3 s (about 150-420 Pa), measured from 1.0 to 3.0 s,
-both channels averaged; C3 to A5 by minor thirds, against every library
+both channels averaged, explicitly in Wheel mode with Room off so later
+preset defaults cannot change the measurement; C3 to A5 by minor thirds, against every library
 note there. The Hohner starts at C4, and its G5 is left out: its 1-2 kHz
 band holds only a weak 2nd harmonic and sits 20 dB under its neighbours'.
 For each Grille setting the tool prints Respira's mean excess over each
@@ -177,7 +178,8 @@ def respira(render, grille, scratch, keys=KEYS, channel=0):
     for key in keys:
         mid, wav = scratch / f"{key}.mid", scratch / f"{key}.wav"
         held_note(key, mid, channel)
-        subprocess.run([render, "0", str(mid), str(wav), "--set", f"grille={grille}"], check=True, capture_output=True)
+        subprocess.run([render, "0", str(mid), str(wav), "--set", f"grille={grille}",
+                        "--set", "auto=0", "--set", "room=0"], check=True, capture_output=True)
         rate, x = wavfile.read(wav)
         notes[key] = x.astype(np.float64).mean(axis=1)[rate: 3 * rate], rate
     return notes

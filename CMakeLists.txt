@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(Respira VERSION 0.1.1 LANGUAGES CXX)
+project(Respira VERSION 0.1.2 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -87,6 +87,11 @@ if(RESPIRA_BUILD_TOOLS)
     add_executable(CompareHarmonics Tools/CompareHarmonics.cpp)
     target_include_directories(CompareHarmonics PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Source")
     target_compile_options(CompareHarmonics PRIVATE ${RESPIRA_WARNINGS})
+
+    # Single 8' finger attacks, with level calibration and estimator sensitivity.
+    add_executable(CompareAttacks Tools/CompareAttacks.cpp)
+    target_include_directories(CompareAttacks PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Source")
+    target_compile_options(CompareAttacks PRIVATE ${RESPIRA_WARNINGS})
 
     # Single 8' notes' pitch and tone against loudness, against a bandoneon's.
     add_executable(CompareBandoneon Tools/CompareBandoneon.cpp)

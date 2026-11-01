@@ -1663,3 +1663,95 @@ the displayed value to 5.0 % restores its former amount. Physical Room
 values passed directly to the engine retain their meaning. What this
 licenses: the owner's lower default and a more precise control near dry,
 not a newly measured hall or a change to the acoustic model.
+
+
+## 2026-11-01 — measured corrections for the next sound build
+
+The owner asked for realism grounded in reality and supplied five MP3
+performances, La Melodiosa and Pianobook's Accordion Double Reed. The last
+library's own ReadMe explicitly says it contains two synthesizers and no
+real accordion; it is a timbral reference, not acoustic evidence. No
+reference audio is copied into the source or package.
+
+The five current MP3s do not reproduce a universal stereo target: Chusen
+Kala is nearly mono (whole-file correlation 0.999963), and the other four
+read 0.727–0.886. Zero interchannel lag does not establish a coincident
+microphone setup. Earlier wording in the 30 October microphone decision
+inferred that setup too strongly; it remains the model's chosen recording
+geometry, not a fact about those recordings. Ordinary correlation and the
+earlier phase-transform metric are different measurements.
+
+The held-note comparison now explicitly selects Wheel mode and dry Room;
+otherwise later factory-default changes silently alter its protocol. At
+Grille 1 kHz, Respira relative to La Melodiosa reads −3.6, +2.0, +3.7 and
++3.7 dB in 0.5–1, 2–4, 4–8 and 8–16 kHz against 1–2 kHz. The other acoustic
+library, the Hohner sample set, reads +0.3, +3.1, −2.1 and +3.3 dB. Their
+opposing 4–8 kHz differences do not establish a common correction. Neither
+recording's pressure or microphone transfer is known; no reed-brightness
+change follows from these averages.
+
+Bellows friction had a concrete sampling error: fixed-variance white force
+samples through fixed-Hz filters lost about 3 dB per rate doubling. Scaling
+the existing draw coefficient by sqrt(rate / 48000) fixes power per Hz,
+with no extra sample-loop operation and identical 48 kHz rustle. Fixed-band
+measurements at 22.05, 44.1 and 96 kHz now differ from 48 kHz by at most
+0.11 dB in the 300–800, 800–1600 and 1600–3200 Hz diagnostic bands.
+
+Niewczas (2019), Fig. 50, supports a mechanical energy band around
+210–4000 Hz, but supplies no isolated excitation or decay from which to
+identify body-mode frequencies or Q. No invented body resonances were
+added. The thesis confirms bass-side movement without measuring its
+excursion. The current engine has a flow-derived velocity but no reliable
+absolute extension under Assist; a moving microphone image is deferred.
+
+`CompareAttacks` makes the remaining soft-onset gap reproducible against
+Llanos-Vázquez et al. (2014), Table I, DOI 10.3813/AAA.918716. It measures the
+bare tuned cell without turbulence or the output path, calibrates its
+inferred source SPL, separates apparent latency from −50 to −5 dB rise,
+and reports 2/4/8-cycle Hann-window sensitivity. The paper's temporal FFT
+window is unspecified, so it is not an exact estimator reproduction.
+With a 3 ms pallet and four-cycle window, piano/mezzo-forte rises are
+1365/233 ms (A2), 950/91 (A3), 344/44 (A4), 444/28 (A5), against
+110/80, 90/110, 90/60 and 60/50 in the paper. The discrepancy survives the
+window changes. No claim that these are shipping-engine key latencies,
+and no claim that the attack problem is fixed.
+
+
+The room receiver now uses its stated geometry. Stage and ceiling image
+sources arrive well below and above the horizontal microphone axes;
+`1 + dot(direction, axis)` attenuates them relative to the centre direct
+ray by 2.35 and 3.59 dB at the default 90-degree XY angle. Width changes
+these coefficients instead of leaving the early field at a fixed angle.
+For an isotropic 3D diffuse field, two ideal cardioids separated by theta
+have correlation `(3 + cos(theta)) / 4` (Wittek et al., Schoeps Double M/S,
+2010, section 3.2.1). Two equal-norm orthogonal delay-network readouts
+approximate independent mid/side field components, then decode to that
+correlation: 1 at Width zero, 0.75 at default, 0.5335 at maximum. The native
+impulse and noise-tail checks at 44.1/48/96 kHz measure 0.7436–0.7565 at
+default. Finite-network covariance is approximate, not an exact claim
+about short music windows. The old two outputs were not independent;
+using them directly in the new matrix would have overshot the target.
+
+No new delay lines, per-sample transcendental functions or adaptive gain
+normalisation are added. Width coefficients are computed only when changed
+and glide with a 20 ms time constant. The new readout has the old theoretical
+coefficient norm, but its actual tails can be around 0.6–2.1 dB quieter
+because the old readouts shared covariance. This and the narrower stereo
+image are intentional compatibility changes. The owner's 0.5-percent Room
+default, decay, filtering and reed simulation remain as specified. A/B
+review takes use the identical Paris Musette MIDI, with whole-file stereo
+RMS matching; they are comparison evidence, not an owner listening verdict.
+
+Primary sources: [Niewczas thesis](https://doi.org/10.5281/zenodo.20128891),
+[Schoeps Double M/S paper](https://schoeps.de/fileadmin/user_upload/user_upload/Downloads/Vortraege_Aufsaetze/Papers/SCHOEPS_Double_MS_paper_E_2010.pdf),
+and [accordion attack study](https://doi.org/10.3813/AAA.918716).
+
+
+The old diffusion regression counted every left-channel sample above
+1e-6 during 50–100 ms after an impulse. Two new left-channel zero crossings
+fell below it while the right channel remained above 0.0023. The test now
+requires every stereo frame to exceed the same 1e-6 RMS threshold, with
+finite-value checks. Both old and new diffused rooms pass 2400/2400 frames;
+bypassing the current diffusers gives 1978, and the original sparse room
+181. This corrects the one-channel occupancy assumption without relaxing
+the required time coverage or changing DSP to hide a cancellation.

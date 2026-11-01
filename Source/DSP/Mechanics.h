@@ -320,9 +320,15 @@ inline constexpr double kBellowsSection = 0.41 * 0.19, kFoldsStick = 0.001;
 struct Rustle {
     std::uint32_t seed = 0x2545F491u;
     double low = 0.0, lowCoeff = 0.0;
+    double drawScale = 1.7320508075688772;
     BodyHighPass body;
     void Set(double rate) {
         lowCoeff = 1.0 - std::exp(-2.0 * 3.14159265358979 * 2000.0 / rate);
+        // The force noise was voiced at 48 kHz. Preserve its power per Hz:
+        // fixed-variance draws otherwise lose 3 dB at each rate doubling
+        // through these fixed-Hz filters. Fold the rate scaling into the
+        // existing uniform-to-unit-variance factor; 48 kHz stays identical.
+        drawScale = 1.7320508075688772 * Sqrt(rate / 48000.0);
         body.Set(rate);
     }
     void Clear() {
@@ -337,7 +343,7 @@ struct Rustle {
             return 0.0;
         }
         seed = seed * 1664525u + 1013904223u;
-        const double draw = 1.7320508075688772 * ((seed >> 8) / double(1u << 24) * 2.0 - 1.0);
+        const double draw = drawScale * ((seed >> 8) / double(1u << 24) * 2.0 - 1.0);
         low += lowCoeff * (body.Process(draw * sliding) - low);
         return low;
     }

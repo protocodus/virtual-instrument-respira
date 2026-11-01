@@ -180,8 +180,9 @@ bool Sounds(const Register& reg, int rank, int key) {
 // keyboard stands upright, so its pallet holes and the grille over them are
 // one place across the pair, not spread by pitch; the bass end cover is the
 // other end of the instrument. A coincident pair hears them by level alone,
-// as the owner's five solo recordings were made: their channels align at zero
-// lag and differ by 0.1-2.2 dB in every band from 60 Hz to 12 kHz, where
+// consistent with the owner's five solo recordings, though not proof of their
+// microphone setup: their channels align at zero lag and differ by 0.1-2.2 dB
+// in every band from 60 Hz to 12 kHz, where
 // panning by pitch put the bass side 8-10 dB to one side (Docs/decisions.md).
 // The positions are a full-size instrument's halves, estimated.
 constexpr double kMicDistance = 1.0;                        // m
@@ -396,6 +397,7 @@ void Engine::SetControls(const Controls& next) {
     trebleGainTarget = DbToGain(kRegisterTrimDb[static_cast<std::size_t>(reg)]);
     mechanicsGainTarget = kForceToFlow * DbToGain(controls[kMechanics]);
     roomGainTarget = kRoomLevel * controls[kRoom];
+    room.SetWidth(controls[kWidth], untouched || (roomGain == 0.0 && roomGainTarget == 0.0));
     MicPair(kTrebleSideX, controls[kWidth], treblePanLTarget, treblePanRTarget);
     MicPair(kBassSideX, controls[kWidth], bassPanLTarget, bassPanRTarget);
     if (untouched) TakeTargets();

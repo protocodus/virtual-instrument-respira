@@ -33,6 +33,20 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
+### Unreleased — 0.1.2 — room microphones and consistent bellows friction
+
+- Room follows Width's virtual microphone angle, including mono at zero.
+  Floor and ceiling reflections account for their elevation. The diffuse
+  tail uses the correlation of ideal coincident cardioids, instead of two
+  independent microphone outputs; its image is narrower than in 0.1.1.
+- Bellows friction retains its audible-band level across sample rates.
+  The 48 kHz rustle is unchanged; the former approximately 3 dB loss at
+  96 kHz is corrected with a setup-only coefficient.
+- `CompareAttacks` reports fundamental rise times against a published
+  accordion measurement, with estimator sensitivity and apparent latency
+  separately. It documents the remaining soft-attack gap; reeds and their
+  tuning are unchanged.
+
 ### Unreleased — 0.1.1 — finer Room control
 
 - Room uses a sigmoid response for finer adjustment near dry. Init and all
@@ -486,9 +500,9 @@ off that microphone's axis, at the side's own power. **Width** turns the
 axes apart, from one microphone (0) through the usual XY pair's 90° (0.6,
 the default: the treble 1.4 dB to the right, the bass side 1.8 dB to the
 left) to 150° (1: 2.6 and 3.3 dB). The folds sit between the two, in the
-middle. Five solo accordion recordings were made this way: their channels
-align at zero lag, and in every band from 60 Hz to 12 kHz they differ by
-0.1–2.2 dB; the demos with bass now differ by up to 2.1 dB, where panning
+middle. Earlier measurements of five solo recordings found near-zero
+interchannel lag and modest level differences, consistent with this model
+but insufficient to identify their microphones; the demos with bass now differ by up to 2.1 dB, where panning
 each key by pitch put Paris Musette's bass band 10 dB to the left. The
 positions are a full-size instrument's, estimated.
 
@@ -506,17 +520,25 @@ person in an occupied hall (Chagok et al.), 0.29 m² at 125 Hz rising to
 Before it come the first reflections of that hall, by image sources (the
 stage, the wall behind the player, the ceiling and the side walls), each
 heard by the pair from its own direction: the stage's arrives 4.1 ms after
-the instrument, 8 dB under it at Room 1, the side walls' at 23 ms. The
+the instrument, the side walls' at 23 ms. Floor and ceiling pickup includes
+the elevation of each image source, and all reflections follow Width. The
 reflections are softened above 2 kHz and the late field above 3 kHz,
 voiced, for the owner's "quite dark".
-Each microphone hears four of the lines, so the field reaches the two
-decorrelated, as a room's does, while the instrument itself reaches both at
-once. In the five solo recordings the two channels' phase-transform
-cross-correlation of 170 ms frames peaks at only 0.20–0.51 at zero lag
-(median 0.38); the dry demos read 0.97–0.99, and Room's level is set so
-Paris Musette reads 0.49 at 70 %, as every room before the hall did. The
-hundred people are the owner's; the recordings' own rooms are not measured,
-since their notes rarely stop clean enough to read a decay.
+The late readout uses two orthogonal combinations of the sixteen lines,
+with equal theoretical energy. Their mix follows the ideal diffuse-field
+correlation of coincident cardioids: `(3 + cos(angle)) / 4`, where angle is
+zero to 150° according to Width. At the default 90° the target is 0.75;
+at zero the two outputs are identical. The finite delay network approximates
+that diffuse field, and short tonal passages need not have that correlation.
+Width changes glide over 20 ms. This changes the room's image and some tail
+levels compared with 0.1.1; no gain was fitted to restore the old decorrelation.
+
+The supplied performance recordings do not identify a unique room or stereo
+setup. Rechecking the five MP3s on 1 November found one nearly mono and
+whole-file ordinary correlations of 0.727–0.886 in the others. These are not
+the phase-transform metric previously used to voice Room, and neither
+measure alone establishes microphone placement or reverb time. Their notes
+rarely stop cleanly enough to infer a room decay.
 
 Room's normalized knob position `x` maps to the physical wet amount through
 `x³ / (x³ + (1 − x)³)`, giving finer control near dry. A wet amount of
@@ -585,7 +607,9 @@ leather and cloth rub: noise growing with the speed of the bellows end (the
 air leaving the bellows over their 0.41 × 0.19 m section, so a hand pressing
 on closed keys moves nothing and rubs nothing), between 210 Hz and 2 kHz,
 its level and band voiced; below 1 mm/s (an estimate) the folds stick, so
-the bellows' own slow leak rubs nothing. **Mechanics** sets both with the keys'. The
+the bellows' own slow leak rubs nothing. Its white force noise scales with
+the square root of sample rate relative to 48 kHz, preserving power per Hz
+through the fixed-frequency filters. **Mechanics** sets both with the keys'. The
 bass strap is silent: taken up as the bellows turn, its slack meets the hand
 at a few mm/s to a few cm/s, and a bass half of some kilograms on leather
 rings near 10 Hz, far under the body's 210 Hz.
@@ -704,13 +728,14 @@ tempo, time signature, song position and bar start before each block
   makes no sound.
 - **The room is voiced.** Init and the factory presets play it at 0.5 %, the
   owner's chosen default. Its first reflections come from an estimated hall's
-  geometry, not a measured one, and are heard through the pair at Width's
-  default 90° whatever Width is set to. Its decay is Sabine's for that
+  geometry, not a measured one, and use the pair's current angle with
+  three-dimensional arrival directions. Its decay is Sabine's for that
   estimated hall and the owner's hundred people, with people's absorption
   from one study of an occupied hall, fitted by a one-pole to within 21 %
   per octave (its bass short); its darkness above 2-3 kHz is voiced; its
-  level at Room 1 is set by one measure, the channels' correlation against
-  the solo recordings' (The microphones), on one demo.
+  level at Room 1 retains the earlier voiced scale, while the microphone
+  readout now follows an ideal diffuse cardioid field. The recordings do
+  not establish one room level, decay, or microphone configuration.
 - **Chord buttons are pitch classes**, not Stradella's fixed major, minor,
   seventh and diminished rows, and there are no bass register switches.
 - **One turbulence seed.** Two engines given the same input play identical
@@ -984,7 +1009,11 @@ target.
 The offline tools: `RenderRespira <preset> <in.mid> <out.wav> [trace.csv]`
 renders any MIDI file with a trace of the hand and the bellows;
 `ProbeReed [pressure] [rank]` prints what single reeds sound and the air they
-take; `CompareHarmonics [pressure]` sets the first twenty harmonics of single
+take; `CompareAttacks [--note A2|A3|A4|A5] [--target 55|70]` reports bare-cell
+finger-attack rise times, first/last threshold crossings and 2/4/8-cycle
+window sensitivity against Llanos-Vázquez et al. (2014), with the source-SPL
+and zero-turbulence limitations printed in its output; `CompareAttacks
+--self-test` checks its estimator; `CompareHarmonics [pressure]` sets the first twenty harmonics of single
 8' notes, and how far a half-open pallet bends them, against a published
 accordion measurement; `CompareBandoneon [top pressure]` sets how their pitch
 and tone follow their loudness, and how flat their attacks start, against a
