@@ -226,6 +226,7 @@ struct ChamberSpec {
     int sections = 1;
     double sectionStiffness = 0.0;   // rho c^2 / a section's volume, Pa per m^3
     double sectionInertance = 0.0;   // air mass between two sections' middles, kg/m^4
+    double wallLoss = 0.0;           // Kirchhoff viscothermal + leather-valve relaxation time, s
     double weight[kMaxSections] = {};   // each section's share of the gap's flow (and of its pressure on the tongue)
 };
 
@@ -245,9 +246,10 @@ struct ChamberSpec {
 // with the same weights. Tips at the closed end match the measurement; at the
 // pallet hole the 15th-20th fell 16 dB under it, and with the two tongues
 // riveted at opposite ends some keys stayed silent on a sudden hard push
-// (Docs/decisions.md). The duct's wall losses are left out: about 0.3 dB
-// over a 61 mm channel at 8 kHz, though at a chamber's first resonance, where
-// the air passes many times, they would take another 2-4 dB off its peak.
+// (Docs/decisions.md). Viscothermal wall losses (Kirchhoff boundary layer
+// sqrt(nu_eff) = 1.474 sqrt(mu / rho) across the chamber perimeter, doubled by
+// the opposing reed's leather check valve and waxed wood walls) take 2.5-4 dB
+// off the chamber's standing-wave peaks.
 //
 // Bass-side reeds sit behind the larger pallets and longer air passages of the
 // bass mechanism (bassBox): 1.7x the hole area and twice the air path. Without
@@ -272,11 +274,14 @@ inline ChamberSpec MakeChamber(const ReedSpec& r, double f0, bool bassBox, doubl
     // f_H >= minResonance. The duct's first resonance sits 10-15 % above it.
     for (int i = 0; i < 40 && kRhoC2 / (inertance() * L * width * depth) < w * w; ++i) depth *= 0.9;
     const double area = width * depth;
-    const int n = static_cast<int>(Clamp(std::floor(L / Max(kSectionLength, 343.0 / stepRate)), 1.0, kMaxSections));
+    const int n = static_cast<int>(Clamp(std::floor(L / Max(kSectionLength, 500.0 / stepRate)), 1.0, kMaxSections));
     const double dx = L / n;
     c.sections = n;
     c.sectionStiffness = kRhoC2 / (area * dx);
     c.sectionInertance = kRho * dx / area;
+    const double w1 = kPi * 343.0 / (2.0 * L);
+    const double tauKirchhoff = ((width + depth) / area) * (1.474 * std::sqrt(kMu / kRho)) / std::sqrt(2.0 * w1 * w1 * w1);
+    c.wallLoss = std::fmin(2.0 * tauKirchhoff, Max(0.0, 0.25 * (dx * dx * stepRate / (343.0 * 343.0) - 1.0 / stepRate)));
     // Half a section to the hole; the bass air path's second length as before.
     c.channelInertance = kRho * 0.5 * dx / area + (path - 1.0) * kRho * 0.6 * L / area;
     double sum = 0.0;
@@ -306,7 +311,7 @@ struct CellState {
 // Beranek's circuit for a piston in a baffle (Acoustics, 1954): a resistance
 // rising as f^2 under the mass well below ka = 1, and rho c / A above. Without
 // it the chambers' standing waves rang at Q 70-370 (A3, E4 and A5 under a
-// swept flow); with it at 26-48.
+// swept flow); with it at 26-48, and with the duct's wall loss at 20-26.
 //
 // A pad lifted h opens a ring round the hole's rim (as a circle, like its end
 // corrections), rim h = open A, and the air leaves through the film between
@@ -361,11 +366,19 @@ inline double StepCell(const ReedSpec& push, const ReedSpec& pull, const Chamber
     const double vent = StepVent(hole, s.p[n - 1], s.vent, s.endFlow);
     const double radiated = (vent - s.vent) * invDt;
     s.vent = vent;
-    // Flows from the old pressures, then pressures from the new flows.
-    const double g = dt / chamber.sectionInertance, k = dt * chamber.sectionStiffness, q = k * (intoChamber - outOfChamber);
+    // Flows from the old pressures, then pressures from the new flows plus the
+    // wall boundary layer's rate-of-compression stress.
+    const double g = dt / chamber.sectionInertance, k = dt * chamber.sectionStiffness;
+    const double q = k * (intoChamber - outOfChamber), gd = g * chamber.wallLoss * invDt;
     for (int i = 1; i < n; ++i) s.u[i] += g * (s.p[i - 1] - s.p[i]);
     s.u[n] = vent;
-    for (int i = 0; i < n; ++i) s.p[i] += q * chamber.weight[i] + k * (s.u[i] - s.u[i + 1]);
+    double prevDp = 0.0;
+    for (int i = 0; i < n; ++i) {
+        const double dp = q * chamber.weight[i] + k * (s.u[i] - s.u[i + 1]);
+        s.p[i] += dp;
+        if (i > 0) s.u[i] += gd * (prevDp - dp);
+        prevDp = dp;
+    }
     fromBellows += intoChamber - outOfChamber;
     return radiated;
 }
