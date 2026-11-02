@@ -851,6 +851,13 @@ void Engine::Render(float* left, float* right, int frames) {
     // The valve opens and closes in the time a pallet takes.
     const double valveOpen = dt / kOpenSeconds, valveClose = dt / kCloseSeconds;
     if (frames > 0) untouched = false;
+    // Notes and register changes arrive between Render calls. Build this
+    // ordered list once per callback; only a closing cell can leave it while
+    // rendering. Preserve cell order for turbulence draws and summed airflow.
+    Cell* live[kMaxCells];
+    int liveCount = 0;
+    for (auto& c : cells)
+        if (c.active) live[liveCount++] = &c;
     for (int i = 0; i < frames; ++i) {
         touch.Step(controls[kTouch], autoHand);
         if (life.Step(controls[kLife], heldCells > 0 || Abs(hand.velocity) > 1.0e-5)) UpdateMicrophones();
@@ -897,19 +904,17 @@ void Engine::Render(float* left, float* right, int frames) {
         const double jetStep = Max(Sqrt(2.0 * Abs(pressure) / kRho), 1.0) * dtIn;
         float t[kMaxOversample] = {}, b[kMaxOversample] = {};
         double drawn = 0.0, open = 0.0;
-        int active = 0, held = 0;
+        const int active = liveCount;
+        int held = 0;
         // One cell's steps are a serial chain of divisions and square roots,
         // so the cells take each internal step together, where the processor
         // can overlap them. Each cell's turbulence draws and its share of the
         // bellows' air are taken in the order of one cell's steps after
         // another, so the sound is the same to the bit.
-        Cell* live[kMaxCells];
         double ec[kMaxCells], breath[kMaxCells], travel[kMaxCells];
         double draws[kMaxCells * kMaxOversample], taken[kMaxCells * kMaxOversample];
-        for (auto& c : cells) {
-            if (!c.active) continue;
-            const int j = active++;
-            live[j] = &c;
+        for (int j = 0; j < active; ++j) {
+            Cell& c = *live[j];
             if (c.held) ++held;
             const CellSpec& spec = c.spec;
             travel[j] = c.held ? c.depth : 0.0;
@@ -964,6 +969,7 @@ void Engine::Render(float* left, float* right, int frames) {
                 (spec.bass ? b : t)[k] += o;
             }
         }
+        int nextLiveCount = 0;
         for (int j = 0; j < active; ++j) {
             Cell& c = *live[j];
             const CellSpec& spec = c.spec;
@@ -991,7 +997,11 @@ void Engine::Render(float* left, float* right, int frames) {
                 c.closedFor += dt;
                 if (c.closedFor > kQuietSeconds) c.active = false;
             }
+            // Removal takes effect on the next sample, just as the former
+            // per-sample scan did. Compaction never changes the live order.
+            if (c.active) live[nextLiveCount++] = &c;
         }
+        liveCount = nextLiveCount;
         sounding = active;
         heldCells = held;
         demand = open;

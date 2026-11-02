@@ -6,6 +6,7 @@
 #include "DSP/RespiraPresets.h"
 #include "RoomMicrophoneTests.h"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdio>
@@ -37,7 +38,9 @@ struct Take {
 };
 
 // Plays `notes` (in time order) while the hand follows `hand(seconds)`,
-// placed through SetHand at every sample, rendering in blocks of `block`.
+// placed through SetHand at every sample. `block` groups the test loop;
+// every Engine::Render call here has one frame. BlockPartitionInvariance
+// below uses actual multi-frame calls instead.
 Take Play(Engine& engine, double rate, double seconds, const std::vector<Note>& notes,
           const std::function<double(double)>& hand, int block = 256) {
     Take take;
@@ -934,15 +937,71 @@ void AutoHandsBackToTheWheel() {
 
 void BlockPartitionInvariance() {
     const double rate = 48000.0;
-    auto e = Make(rate, 7);
-    const Take reference = Play(*e, rate, 2.2, Phrase(), {}, 1);
-    bool same = true;
-    for (int block : { 7, 64, 256, 512 }) {
-        auto f = Make(rate, 7);
-        const Take t = Play(*f, rate, 2.2, Phrase(), {}, block);
-        same = same && t.left == reference.left && t.right == reference.right;
+    auto notes = Phrase();
+    // Fill and steal from the cell pool, then let these releases finish
+    // between controller events. This also checks ordered removal when
+    // several cells leave while other keys remain held.
+    for (int key = 48; key < 88; ++key) {
+        notes.push_back({ 0.953, { kOn, static_cast<std::uint8_t>(key), 100 } });
+        notes.push_back({ 1.073, { kOff, static_cast<std::uint8_t>(key), 0 } });
     }
-    Expect(same && Peak(reference) > 1.0e-3, "BlockPartitionInvariance", "blocks of 1, 7, 64, 256 and 512 give the same bits",
+    std::stable_sort(notes.begin(), notes.end(), [](const Note& a, const Note& b) { return a.seconds < b.seconds; });
+    // Play() updates the hand at every sample and therefore renders single
+    // frames, regardless of its test-loop grouping. Exercise real callbacks
+    // here: split only at a MIDI event, and let releases expire inside calls.
+    const auto play = [&](int block) {
+        auto e = Make(rate, 7);
+        Take take;
+        const auto frames = static_cast<std::size_t>(2.2 * rate);
+        take.left.resize(frames);
+        take.right.resize(frames);
+        std::size_t next = 0;
+        int largestCall = 0;
+        for (std::size_t done = 0; done < frames;) {
+            while (next < notes.size() && static_cast<std::size_t>(std::llround(notes[next].seconds * rate)) <= done)
+                e->Midi(notes[next++].bytes, 3);
+            auto end = std::min(frames, done + static_cast<std::size_t>(block));
+            if (next < notes.size())
+                end = std::min(end, static_cast<std::size_t>(std::llround(notes[next].seconds * rate)));
+            const int count = static_cast<int>(end - done);
+            largestCall = std::max(largestCall, count);
+            e->Render(&take.left[done], &take.right[done], count);
+            take.maxCells = std::max(take.maxCells, e->Diag().cells);
+            done = end;
+        }
+        Expect(largestCall == block, "BlockPartitionCalls", "actual maximum Render frames", largestCall);
+        return take;
+    };
+    const Take reference = play(1);
+    Expect(reference.maxCells == Engine::kMaxCells, "BlockPartitionPool", "the callback fixture fills the cell pool", reference.maxCells);
+    bool same = true;
+    for (int block : { 7, 64, 256, 512, 4096 }) {
+        const Take t = play(block);
+        if (t.left != reference.left || t.right != reference.right) {
+            std::size_t first = 0;
+            while (first < t.left.size() && t.left[first] == reference.left[first] && t.right[first] == reference.right[first]) ++first;
+            double apart = 0.0;
+            for (std::size_t i = 0; i < t.left.size(); ++i)
+                apart = std::max({ apart, std::fabs(double(t.left[i]) - reference.left[i]), std::fabs(double(t.right[i]) - reference.right[i]) });
+            std::printf("BlockPartition difference: block %d, first frame %zu, L %.9g / %.9g, largest absolute %.9g\n",
+                        block, first, double(reference.left[first]), double(t.left[first]), apart);
+        }
+        // Engine::Render deliberately flushes filter states below 1e-20 at
+        // the end of a silent callback. The shipping f9057b3 engine therefore
+        // differs across these real partitions too (max 9.0523e-22 here).
+        // The old Play()-based check never exercised this policy because all
+        // calls had one frame. Bound the absolute difference by the existing
+        // 1e-20 cleanup floor: mixing tiny states can put a resulting sample
+        // just above the per-state threshold. This is below -400 dBFS. Separate
+        // baseline/trial comparisons at identical partitions require every
+        // output byte to match; they do not apply this exception.
+        const auto sameSample = [](float a, float b) {
+            return std::fabs(double(a) - double(b)) < 1.0e-20;
+        };
+        for (std::size_t i = 0; i < t.left.size(); ++i)
+            same = same && sameSample(t.left[i], reference.left[i]) && sameSample(t.right[i], reference.right[i]);
+    }
+    Expect(same && Peak(reference) > 1.0e-3, "BlockPartitionInvariance", "actual calls of 1, 7, 64, 256, 512 and 4096 frames agree within the existing silence-cleanup floor",
            Peak(reference));
 }
 
