@@ -51,7 +51,7 @@ struct ReedSpec {
     double plate = 0.0012;                   // slot depth (plate thickness), m
     double rest = -0.0004;                   // tip rest position ("set"), m; < 0 is above the plate
     double clearArea = 0.0;                  // gap area while the tongue is inside the slot, m^2
-    double area = 0.0;                       // effective pressure area of the tip coordinate, m^2
+    double area = 0.0, pistonArea = 0.0;     // effective pressure area and slot-sealing piston area, m^2
     double invMass = 0.0, omega2 = 0.0, damping = 0.0; // 1/m_eff, (2 pi f0)^2, omega0 / Q
     double drag = 0.0;                       // quadratic air drag on the tongue / m_eff, 1/m
     double slotInertance = 0.0;              // rho * depth / slot area, kg/m^4
@@ -99,6 +99,7 @@ inline ReedSpec MakeReed(double f0, double q, double setScale = 1.0) {
     const double profileMass = 0.18 + 0.42 * std::fmin(1.0, std::fmax(0.0, (r.length - 0.019) / 0.011));
     const double tongueMass = profileMass * 0.25 * kSteelDensity * r.length * r.width * thickness;
     r.area = 0.39 * r.length * r.width;
+    r.pistonArea = profileMass * r.area;
     const double w0 = 2.0 * kPi * f0;
     // Low reeds carry brass tip weights, which keep the tongue stiff enough not
     // to be blown statically through its slot: at most an eighth of the slot
@@ -196,9 +197,14 @@ inline double StepReed(const ReedSpec& r, ReedState& s, double dp, double dt, do
     s.v += dt * ((r.area * drop + force) * r.invMass - r.omega2 * tune2 * (s.x - r.rest)
                  - (r.damping + r.drag * Abs(s.v)) * s.v);
     s.x += dt * s.v;
-    // The tongue only acts as a piston between the two sides while it seals the
-    // slot; above or below the plate the air it pushes escapes around it.
-    return flow * (1.0 + flowNoise) + r.area * s.v * (r.clearArea / area);
+    // The tongue only acts as a piston between the two sides while its profiled
+    // distal tip share (profileMass * area) seals the slot; above or below the
+    // plate, and along the thicker root section above the slot mouth, the air it
+    // pushes escapes around it. Using the full pressure area generated an
+    // oversized 2*f0 doublet in antiphase (184 deg) with the jet's 2nd harmonic,
+    // cancelling H2 by 4-12 dB (Tools/CompareHarmonics: H2 -11.5 -> -7.5 dB,
+    // mean H2-H4 -8.5 -> -5.3 dB against -5.7 dB measured).
+    return flow * (1.0 + flowNoise) + r.pistonArea * s.v * (r.clearArea / area);
 }
 
 // The reed chamber as a duct in sections of at most kSectionLength: four or
