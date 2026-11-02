@@ -62,6 +62,10 @@ Take Play(Engine& engine, double rate, double seconds, const std::vector<Note>& 
     return take;
 }
 
+// Engine's room delay storage makes each instance larger than the default
+// 1 MB MSVC executable stack. Keep every test engine on the heap, including
+// fixtures which need fresh construction rather than Make()'s reset state.
+// https://learn.microsoft.com/en-us/cpp/build/reference/stack-stack-allocations
 std::unique_ptr<Engine> Make(double rate, int preset, const std::function<void(Controls&)>& adjust = {}) {
     auto engine = std::make_unique<Engine>();
     engine->Prepare(rate);
@@ -1030,20 +1034,20 @@ void ResetPlaysAsNew() {
         controls[kRoom] = 0.7;
         controls[kRegister] = 5;
         controls[kVolume] = -4.0;
-        Engine fresh;
-        fresh.Prepare(rate);
-        fresh.SetControls(controls);
-        const Take reference = Play(fresh, rate, 2.2, Phrase(), {});
-        Engine played;
-        played.Prepare(rate);
+        auto fresh = std::make_unique<Engine>();
+        fresh->Prepare(rate);
+        fresh->SetControls(controls);
+        const Take reference = Play(*fresh, rate, 2.2, Phrase(), {});
+        auto played = std::make_unique<Engine>();
+        played->Prepare(rate);
         Controls other = controls;
         other[kRoom] = 1.0;
         other[kRegister] = 2;
-        played.SetControls(other);
-        Play(played, rate, 1.0, Phrase(), {});
-        played.SetControls(controls);
-        played.Reset();
-        const Take again = Play(played, rate, 2.2, Phrase(), {});
+        played->SetControls(other);
+        Play(*played, rate, 1.0, Phrase(), {});
+        played->SetControls(controls);
+        played->Reset();
+        const Take again = Play(*played, rate, 2.2, Phrase(), {});
         same = same && again.left == reference.left && again.right == reference.right;
         peak = std::max(peak, Peak(reference));
     }
@@ -1090,11 +1094,11 @@ void PresetsSitTogether() {
     for (int k : { 24, 36, 60, 64, 67 }) notes.push_back({ 0.0, { kOn, static_cast<std::uint8_t>(k), 100 } });
     const auto level = [&](Controls controls, double& peak) {
         controls[kAuto] = 0.0;   // the reference stroke is the wheel's; the bank plays on Auto
-        Engine e;
-        e.Prepare(rate);
-        e.SetControls(controls);
-        e.Reset();
-        const Take t = Play(e, rate, 4.0, notes, stroke);
+        auto e = std::make_unique<Engine>();
+        e->Prepare(rate);
+        e->SetControls(controls);
+        e->Reset();
+        const Take t = Play(*e, rate, 4.0, notes, stroke);
         peak = Peak(t);
         return 0.5 * (Db(Rms(t.left, rate, 0.5, 4.0)) + Db(Rms(t.right, rate, 0.5, 4.0)));
     };
@@ -1192,11 +1196,11 @@ void HardStrokesFit() {
         Controls controls = preset < 0 ? Controls {} : kPresets[static_cast<std::size_t>(preset)].ToControls();
         controls[kAuto] = 0.0;   // the strokes are the wheel's; every preset plays on Auto
         for (const auto& hand : { std::function<double(double)>(sweep), std::function<double(double)>(rock) }) {
-            Engine e;
-            e.Prepare(rate);
-            e.SetControls(controls);
-            e.Reset();
-            const Take t = Play(e, rate, 2.0, notes, hand);
+            auto e = std::make_unique<Engine>();
+            e->Prepare(rate);
+            e->SetControls(controls);
+            e->Reset();
+            const Take t = Play(*e, rate, 2.0, notes, hand);
             double pressure = 0.0;
             for (double p : t.pressure) pressure = std::max(pressure, std::fabs(p));
             worstPeak = std::max(worstPeak, Peak(t));
@@ -1325,15 +1329,16 @@ void RoomDecorrelatesAndRings() {
     const double tail = Db(Rms(wet.left, rate, 1.3, 1.5)) - Db(Rms(dry.left, rate, 1.3, 1.5));
     Expect(tail > 20.0, "RoomDecorrelatesAndRings", "Room 1 against dry 0.3 s after the key, dB", tail);
 
-    Room room;
-    room.Set(Room::kDecaySeconds, Room::kTrebleShare, rate);
-    room.Clear();
+    // The delay network alone also exceeds the default Windows stack.
+    auto room = std::make_unique<Room>();
+    room->Set(Room::kDecaySeconds, Room::kTrebleShare, rate);
+    room->Clear();
     std::vector<float> out(static_cast<std::size_t>(2.0 * rate));
     for (std::size_t i = 0; i < out.size(); ++i) {
         double l, r;
         // A low tone, so the decay read is the room's low-frequency one.
         const double tone = i < static_cast<std::size_t>(0.5 * rate) ? std::sin(2.0 * kPi * 200.0 * i / rate) : 0.0;
-        room.Process(tone, tone, l, r);
+        room->Process(tone, tone, l, r);
         out[i] = static_cast<float>(l);
     }
     const double perSecond = (Db(Rms(out, rate, 0.7, 0.8)) - Db(Rms(out, rate, 1.2, 1.3))) / 0.5;
@@ -1346,11 +1351,11 @@ void RoomDecorrelatesAndRings() {
     // Keep the same threshold and full occupancy requirement. The original
     // undiffused eight-line room fills only 181 of these 2400 stereo frames
     // (131 when counted in the left channel alone).
-    room.Clear();
+    room->Clear();
     int filled = 0;
     for (int i = 0; i < static_cast<int>(0.1 * rate); ++i) {
         double l, r;
-        room.Process(i == 0 ? 1.0 : 0.0, i == 0 ? 1.0 : 0.0, l, r);
+        room->Process(i == 0 ? 1.0 : 0.0, i == 0 ? 1.0 : 0.0, l, r);
         if (i >= static_cast<int>(0.05 * rate) && std::isfinite(l) && std::isfinite(r)
             && 0.5 * (l * l + r * r) > 1.0e-12) ++filled;
     }
@@ -1358,11 +1363,11 @@ void RoomDecorrelatesAndRings() {
 
     // The stage's reflection comes first, 4.07 ms after the sound (Room.h):
     // nothing reaches the microphones from the room before it.
-    room.Clear();
+    room->Clear();
     int first = -1;
     for (int i = 0; i < static_cast<int>(0.01 * rate) && first < 0; ++i) {
         double l, r;
-        room.Process(i == 0 ? 1.0 : 0.0, i == 0 ? 1.0 : 0.0, l, r);
+        room->Process(i == 0 ? 1.0 : 0.0, i == 0 ? 1.0 : 0.0, l, r);
         if (std::fabs(l) > 1.0e-6) first = i;
     }
     Expect(first == static_cast<int>(0.00407 * rate), "RoomDecorrelatesAndRings", "the first reflection, samples after the sound", first);
