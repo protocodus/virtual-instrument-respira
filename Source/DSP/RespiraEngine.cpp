@@ -18,6 +18,7 @@ namespace {
 constexpr double kBellowsStiffness = 4.0e6;
 constexpr double kBellowsVolumeSlope = 0.30;
 constexpr double kPalletCoupling = 0.25;   // shared outer end-correction share between sibling ranks under one pallet pad
+constexpr double kPalletChiff = 1.5;       // extra orifice-jet turbulence across the unseating pallet rim at mid-lift
 
 double BellowsStiffness(double position, double open) {
     const double extension = Clamp(position / open, 0.0, 1.0);
@@ -237,10 +238,9 @@ void Engine::Compartment::Set(double depth, double open, double neck, double ray
 }
 
 void Engine::Compartment::FlushTiny() {
-    for (Section* s : { &box, &leak, &modes }) {
-        if (Abs(s->z1) < 1.0e-20) s->z1 = 0.0;
-        if (Abs(s->z2) < 1.0e-20) s->z2 = 0.0;
-    }
+    for (Section* s : { &box, &leak, &modes })
+        if (Abs(s->z1) >= 1.0e-30 || Abs(s->z2) >= 1.0e-30) return;
+    Clear();
 }
 
 void Engine::Hand::Tick(double dt, double momentum, const double* drive, double driveVelocity) {
@@ -990,7 +990,8 @@ void Engine::Render(float* left, float* right, int frames) {
             for (int j = 0; j < active; ++j) {
                 Cell& c = *live[j];
                 const CellSpec& spec = c.spec;
-                if (c.open != travel[j]) {
+                const bool palletMoving = c.open != travel[j];
+                if (palletMoving) {
                     c.open = c.open < travel[j] ? Min(travel[j], c.open + c.openRate) : Max(travel[j], c.open - closeRate);
                     // The pallet lifts off and settles smoothly: the hole area
                     // follows a raised cosine of the key travel, so the jet
@@ -1007,14 +1008,19 @@ void Engine::Render(float* left, float* right, int frames) {
                 c.breathA += ec[j] * (draw - c.breathA);
                 c.breathB += ec[j] * (c.breathA - c.breathB);
                 const double pushForce = turbulence * draw * spec.push.area * Abs(pressure);
+                // While the pallet pad is lifting or seating, the narrow
+                // crescent rim orifice (peaking at c.lift = 0.5) adds starting
+                // jet shear ("chiff") before the reed's periodic oscillation
+                // locks the flow.
+                const double palletChiff = palletMoving ? 1.0 + kPalletChiff * 4.0 * c.lift * (1.0 - c.lift) : 1.0;
                 const double siblingRad = palletRad[groupOf[j]] - c.radiated;
                 const double palletPressure = Clamp(kPalletCoupling * spec.chamber.endInertance * siblingRad,
                                                     -0.25 * kMaxPressure, 0.25 * kMaxPressure);
                 double& share = taken[j * oversample + k];
                 share = 0.0;
                 const double out = StepCell(spec.push, spec.pull, spec.chamber, c.vent, c.state, pressure, dtIn,
-                                            invDtIn, pushForce, -pushForce, share, bend2, breath[j] * c.breathB,
-                                            palletPressure);
+                                            invDtIn, pushForce, -pushForce, share, bend2,
+                                            breath[j] * palletChiff * c.breathB, palletPressure);
                 c.radiated = out;
                 const float o = static_cast<float>(out);
                 (spec.bass ? b : t)[k] += o;

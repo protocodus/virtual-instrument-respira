@@ -67,27 +67,54 @@ inline constexpr double kForceToFlow = 3.14159265358979 * 0.01 * 0.01 * 0.1 / (k
 // The body radiates that force only above its lowest panel modes: a real
 // accordion's mechanism sound spans about 210 Hz to 4 kHz (K. Niewczas,
 // "Nagłośnienie i rejestracja akordeonu", Akademia Muzyczna w Łodzi 2019,
-// Fig. 50, DOI 10.5281/zenodo.20128891). A second-order Butterworth high-pass
-// at 210 Hz (bilinear, prewarped), in transposed direct form II.
+// Fig. 50, DOI 10.5281/zenodo.20128891), with structural bending resonances
+// of the wooden keybed/soundboard (~850 Hz) and the aluminum key-rod/grille
+// frame (~2.4 kHz). A second-order Butterworth high-pass at 210 Hz followed
+// by two parallel bilinear-prewarped modal resonators, in transposed direct
+// form II.
 struct BodyHighPass {
     static constexpr double kHz = 210.0;
+    struct Mode {
+        double b0 = 0.0, a1 = 0.0, a2 = 0.0, z1 = 0.0, z2 = 0.0;
+        void Set(double hz, double q, double gain, double rate) {
+            const double k = std::tan(3.14159265358979 * hz / rate);
+            const double norm = 1.0 / (1.0 + k / q + k * k);
+            b0 = gain * (k / q) * norm;
+            a1 = 2.0 * (k * k - 1.0) * norm;
+            a2 = (1.0 - k / q + k * k) * norm;
+        }
+        void Clear() { z1 = z2 = 0.0; }
+        bool Tiny() const { return Abs(z1) < 1.0e-30 && Abs(z2) < 1.0e-30; }
+        double Process(double x) {
+            const double y = b0 * x + z1;
+            z1 = -a1 * y + z2;
+            z2 = -b0 * x - a2 * y;
+            return y;
+        }
+    };
     double b0 = 1.0, a1 = 0.0, a2 = 0.0, z1 = 0.0, z2 = 0.0;
+    Mode wood, metal;
     void Set(double rate) {
         const double k = std::tan(3.14159265358979 * kHz / rate), norm = 1.0 / (1.0 + 1.4142135623730951 * k + k * k);
         b0 = norm;
         a1 = 2.0 * (k * k - 1.0) * norm;
         a2 = (1.0 - 1.4142135623730951 * k + k * k) * norm;
+        wood.Set(850.0, 4.5, 0.35, rate);
+        metal.Set(2400.0, 5.5, 0.40, rate);
     }
-    void Clear() { z1 = z2 = 0.0; }
+    void Clear() {
+        z1 = z2 = 0.0;
+        wood.Clear();
+        metal.Clear();
+    }
     void FlushTiny() {
-        if (Abs(z1) < 1.0e-20) z1 = 0.0;
-        if (Abs(z2) < 1.0e-20) z2 = 0.0;
+        if (Abs(z1) < 1.0e-30 && Abs(z2) < 1.0e-30 && wood.Tiny() && metal.Tiny()) Clear();
     }
     double Process(double x) {   // b1 = -2 b0, b2 = b0
         const double y = b0 * x + z1;
         z1 = -2.0 * b0 * x - a1 * y + z2;
         z2 = b0 * x - a2 * y;
-        return y;
+        return y + wood.Process(y) + metal.Process(y);
     }
 };
 
