@@ -373,18 +373,19 @@ inline double StepVent(const Vent& v, double pressure, double flow, double& endF
 }
 
 // One step of a whole cell at bellows pressure pb through the pallet hole
-// `vent`. Returns the volume flow out of the pallet hole's time derivative (the
-// radiated monopole source strength) and adds the flow drawn from the bellows
-// to `fromBellows`.
+// `vent`, with optional back-pressure `palletPressure` from sibling ranks
+// sharing the same pallet hole. Returns the volume flow out of the pallet
+// hole's time derivative (the radiated monopole source strength) and adds the
+// flow drawn from the bellows to `fromBellows`.
 inline double StepCell(const ReedSpec& push, const ReedSpec& pull, const ChamberSpec& chamber, const Vent& hole,
                        CellState& s, double pb, double dt, double invDt, double pushForce, double pullForce,
-                       double& fromBellows, double tune2 = 1.0, double flowNoise = 0.0) {
+                       double& fromBellows, double tune2 = 1.0, double flowNoise = 0.0, double palletPressure = 0.0) {
     const int n = chamber.sections;
     double reedPressure = 0.0;
     for (int i = 0; i < n; ++i) reedPressure += chamber.weight[i] * s.p[i];
     const double intoChamber = StepReed(push, s.push, pb - reedPressure, dt, invDt, pushForce, tune2, flowNoise);
     const double outOfChamber = StepReed(pull, s.pull, reedPressure - pb, dt, invDt, pullForce, tune2, flowNoise);
-    const double vent = StepVent(hole, s.p[n - 1], s.vent, s.endFlow);
+    const double vent = StepVent(hole, s.p[n - 1] - palletPressure, s.vent, s.endFlow);
     const double radiated = (vent - s.vent) * invDt;
     s.vent = vent;
     // Flows from the old pressures, then pressures from the new flows plus the

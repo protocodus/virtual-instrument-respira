@@ -126,6 +126,7 @@ private:
         CellSpec spec;
         Vent vent;               // the pallet hole's flow law at `lift`
         CellState state;
+        double radiated = 0.0;   // volume acceleration out of the pallet hole, m^3/s^2
         bool valveOpen = false;  // the push reed's valve is lifted (Mechanics.h, kFlapDensity)
         double valveMass = 0.0;
         double breathA = 0.0, breathB = 0.0;   // the gap turbulence, shaped to its eddies

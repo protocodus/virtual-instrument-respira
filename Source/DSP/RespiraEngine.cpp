@@ -12,7 +12,17 @@ namespace {
 // Pa per m^3 of air the hand moves but the reeds do not take. The air in a
 // ~6 L bellows alone is 2.4e7; the folds and the player's arm give a few
 // times more, which keeps the pressure from collapsing whenever a chord opens.
+// As the bellows open from their closed frame and fold dead space, the
+// enclosed air volume grows, so the stiffness falls around kBellowsStiffness
+// at mid-extension (BellowsStiffness).
 constexpr double kBellowsStiffness = 4.0e6;
+constexpr double kBellowsVolumeSlope = 0.30;
+constexpr double kPalletCoupling = 0.25;   // shared outer end-correction share between sibling ranks under one pallet pad
+
+double BellowsStiffness(double position, double open) {
+    const double extension = Clamp(position / open, 0.0, 1.0);
+    return kBellowsStiffness / (1.0 + kBellowsVolumeSlope * (extension - 0.5));
+}
 constexpr double kBellowsLeak = 2.0e-8;     // m^3/s per Pa: 0.02 L/s at 1 kPa
 // The air button lifts a pad off a 25 mm hole in the bass end. Air leaves
 // through it as through the reed gaps (Bernoulli with Cd = 0.65, plus the
@@ -619,7 +629,8 @@ void Engine::StepPlayer(double dt) {
     // The pressure once the led arm has caught up with the hand. The player
     // feels their own arm and closes on this, so its lag stays out of their
     // loop.
-    const double coming = pressure - kBellowsStiffness * perWheel * (player.drive - hand.position);
+    const double bellowsStiffness = BellowsStiffness(hand.position, open);
+    const double coming = pressure - bellowsStiffness * perWheel * (player.drive - hand.position);
     // They close on the pressure they want in a reaction time
     // (above): the air that time asks of the bellows' stiffness. The hand's
     // air is undone through Assist and Bellows into wheel speed, and the hand
@@ -628,7 +639,7 @@ void Engine::StepPlayer(double dt) {
     // Life continues on held notes; Touch's emphasis relaxes after a press.
     // Both act on the shared hand's force request, never on voice gain/tuning.
     const double meant = want * PlayerEffort();
-    const double flow = air + (meant - coming) / (kBellowsStiffness * closing);
+    const double flow = air + (meant - coming) / (bellowsStiffness * closing);
     const double wanted = -flow / perWheel;
     player.velocity = Clamp(wanted, pulling ? 0.0 : -fastest, pulling ? fastest : 0.0);
     if (player.velocity == wanted) player.swinging = false;
@@ -753,6 +764,7 @@ void Engine::StartCell(int rank, int key, int source, int velocity) {
         // the clearance of whichever reed the bellows drives.
         for (double& p : cell->state.p) p = pressure;
         cell->open = cell->lift = 0.0;
+        cell->radiated = 0.0;
         cell->vent = Vent {};
         cell->valveOpen = false;
         cell->valveMass = kFlapDensity * FlapArea(cell->spec.push.length, cell->spec.push.width);
@@ -872,14 +884,24 @@ void Engine::Render(float* left, float* right, int frames) {
     // ordered list once per callback; only a closing cell can leave it while
     // rendering. Preserve cell order for turbulence draws and summed airflow.
     Cell* live[kMaxCells];
-    int liveCount = 0;
-    for (auto& c : cells)
-        if (c.active) live[liveCount++] = &c;
+    int groupOf[kMaxCells];
+    int liveCount = 0, groupCount = 0;
+    for (auto& c : cells) {
+        if (!c.active) continue;
+        int g = groupCount;
+        for (int m = 0; m < liveCount; ++m)
+            if (live[m]->source == c.source) { g = groupOf[m]; break; }
+        if (g == groupCount) ++groupCount;
+        groupOf[liveCount] = g;
+        live[liveCount++] = &c;
+    }
+    const double openSpan = autoHand ? Max(1.0, kAutoBellows / litres) : 1.0;
     for (int i = 0; i < frames; ++i) {
         touch.Step(controls[kTouch], autoHand);
         if (life.Step(controls[kLife], heldCells > 0 || Abs(hand.velocity) > 1.0e-5)) UpdateMicrophones();
         if (autoHand) StepPlayer(dt);
         hand.Tick(dt, controls[kMomentum], autoHand ? &player.drive : nullptr, player.velocity);
+        const double bellowsStiffness = BellowsStiffness(hand.position, openSpan);
         // Assist makes the hand's stroke move as much more air as the open
         // reeds take beyond one A4 reed, so one wheel speed gives one pressure
         // whatever is played; at 0 the hand moves the bellows' own air only.
@@ -895,7 +917,7 @@ void Engine::Render(float* left, float* right, int frames) {
             const double a = 0.5 * kRho / (kCd * kCd * area * area), b = kLaminar / area;
             // Never more than empties the bellows in one step, which only
             // matters at very low host rates.
-            const double q = Min(2.0 * p / (b + Sqrt(b * b + 4.0 * a * p)), p / (dt * kBellowsStiffness));
+            const double q = Min(2.0 * p / (b + Sqrt(b * b + 4.0 * a * p)), p / (dt * bellowsStiffness));
             vented = pressure >= 0.0 ? q : -q;
             // Two one-pole stages at the eddies' rate shape white noise, scaled
             // back to unit variance.
@@ -912,7 +934,7 @@ void Engine::Render(float* left, float* right, int frames) {
         }
         const double leak = kBellowsLeak * pressure + vented;
         const double pressureWas = pressure;
-        pressure = Clamp(pressure + dt * kBellowsStiffness * (handFlow - airFlow - leak), -kMaxPressure, kMaxPressure);
+        pressure = Clamp(pressure + dt * bellowsStiffness * (handFlow - airFlow - leak), -kMaxPressure, kMaxPressure);
         bend2 += bendSmoothing * (bend2Target - bend2);
 
         // Below about 1 m/s the gap flow is laminar (ReedModel.h, kLaminar),
@@ -952,6 +974,13 @@ void Engine::Render(float* left, float* right, int frames) {
             }
         }
         for (int k = 0; k < oversample; ++k) {
+            // Ranks opened by one key share a single lifted pallet pad and
+            // couple through the mutual acoustic radiation inertance at the
+            // pallet mouth. Sum each key group's previous-step volume
+            // acceleration (~2 mm acoustic transit at 192 kHz) so sibling
+            // ranks hear each other symmetrically regardless of rank order.
+            double palletRad[kMaxCells] = {};
+            for (int j = 0; j < active; ++j) palletRad[groupOf[j]] += live[j]->radiated;
             // Ranks opened by one key usually share exactly the same travel.
             // Reuse only that identical raised-cosine result; each chamber
             // still computes its own vent law and air/reed state. A newly
@@ -978,10 +1007,15 @@ void Engine::Render(float* left, float* right, int frames) {
                 c.breathA += ec[j] * (draw - c.breathA);
                 c.breathB += ec[j] * (c.breathA - c.breathB);
                 const double pushForce = turbulence * draw * spec.push.area * Abs(pressure);
+                const double siblingRad = palletRad[groupOf[j]] - c.radiated;
+                const double palletPressure = Clamp(kPalletCoupling * spec.chamber.endInertance * siblingRad,
+                                                    -0.25 * kMaxPressure, 0.25 * kMaxPressure);
                 double& share = taken[j * oversample + k];
                 share = 0.0;
                 const double out = StepCell(spec.push, spec.pull, spec.chamber, c.vent, c.state, pressure, dtIn,
-                                            invDtIn, pushForce, -pushForce, share, bend2, breath[j] * c.breathB);
+                                            invDtIn, pushForce, -pushForce, share, bend2, breath[j] * c.breathB,
+                                            palletPressure);
+                c.radiated = out;
                 const float o = static_cast<float>(out);
                 (spec.bass ? b : t)[k] += o;
             }
@@ -1016,7 +1050,10 @@ void Engine::Render(float* left, float* right, int frames) {
             }
             // Removal takes effect on the next sample, just as the former
             // per-sample scan did. Compaction never changes the live order.
-            if (c.active) live[nextLiveCount++] = &c;
+            if (c.active) {
+                groupOf[nextLiveCount] = groupOf[j];
+                live[nextLiveCount++] = &c;
+            }
         }
         liveCount = nextLiveCount;
         sounding = active;
