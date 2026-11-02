@@ -33,6 +33,16 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
+### Unreleased — 0.1.8 — microphone colour during movement
+
+- Life movement now changes the low-frequency colour of the direct microphone pickup through the relative proximity response of the existing ideal cardioids. The owner chose B, **“B but tiny”**, in the level-matched comparison; this is a small preference by ear, not measured acoustic calibration.
+- Motion depth, the reference voicing, Room and reed behaviour retain their existing settings. Life zero remains exactly neutral. [Model and scope](Docs/research/microphone-motion-2026-11-02.md); [validation](Docs/validation/microphone-motion-2026-11-02.md).
+
+### Unreleased — 0.1.7 — lower CPU during sparse playing
+
+- Reuses the active reed list within each callback. Same-input baseline and optimized renders remain byte-identical across dynamic controls, rates, quality modes and callback sizes.
+- Native M1 Max measurements show about 11.5% lower single-note thread CPU with the 0.1.8 microphone change present; dense-playing gains are small or variable. This is not Reason CPU evidence. [CPU-only measurements](Docs/benchmarks/active-cells-cpu-2026-11-02.md); [combined measurements](Docs/benchmarks/microphone-motion-cpu-2026-11-02.md#combined-with-the-separate-active-list-optimization).
+
 ### Unreleased — 0.1.6 — short soft key presses
 
 - Restores bounded 12–3 ms key travel. The 0.1.5 inverse-velocity extension could keep the pallet almost closed throughout a short, very soft note (478 ms travel at velocity 1). Ordinary/fast velocities 64–127, Touch, Life and all factory settings are unchanged.
@@ -361,9 +371,13 @@ amplitude modulation is added to the reeds. In Wheel mode the user's hand
 and air remain unchanged, so Life changes only microphone pickup. The
 pickup uses ideal cardioid reception and relative inverse-distance pressure,
 with nominal motion bounded by 5 cm sideways and 8 cm in depth at full Life.
-Bass-side position also follows virtual bellows opening. Width zero remains
-mono. Rates and movement extents are performer choices, not measured
-accordion constants; no Doppler or frequency-dependent radiation is modelled.
+Bass-side position also follows virtual bellows opening. Its relative
+proximity response adds a small change in low-frequency microphone colour
+as the source moves, using four one-pole states. The reference pose and Life
+zero add no correction; Room retains its surrounding-field response. Width
+zero remains mono. Rates and movement extents are performer choices, not
+measured accordion constants; no Doppler or frequency-dependent instrument
+radiation is modelled. See the [microphone model](Docs/research/microphone-motion-2026-11-02.md).
 
 The motion clock runs at 200 Hz, independent of host block size. Microphone
 targets retain their 20 ms glide. A separate random stream preserves the

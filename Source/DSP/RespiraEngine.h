@@ -36,6 +36,7 @@
 
 #include "Decimator.h"
 #include "Mechanics.h"
+#include "MicrophoneMotion.h"
 #include "Life.h"
 #include "Touch.h"
 #include "OutputStage.h"
@@ -263,6 +264,7 @@ private:
     float bassPanL = 0.0f, bassPanR = 0.0f, bassPanLTarget = 0.0f, bassPanRTarget = 0.0f;
     float trebleMicL = 0.0f, trebleMicR = 0.0f, bassMicL = 0.0f, bassMicR = 0.0f;
     double micCos = 1.0, micSin = 0.0;
+    std::array<MicrophoneMotion, 2> trebleMicMotion {}, bassMicMotion {};
     std::array<Key, 3 * 128> keys {};
     std::array<std::uint16_t, 3 * 128> movingKeys {};   // the keys whose travel is changing
     int movingCount = 0;

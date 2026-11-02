@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(Respira VERSION 0.1.7 LANGUAGES CXX)
+project(Respira VERSION 0.1.8 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -30,6 +30,7 @@ set(RESPIRA_DSP_HEADERS
     Source/DSP/Decimator.h
     Source/DSP/DspMath.h
     Source/DSP/Mechanics.h
+    Source/DSP/MicrophoneMotion.h
     Source/DSP/Life.h
     Source/DSP/Touch.h
     Source/DSP/OutputStage.h
@@ -108,6 +109,12 @@ if(RESPIRA_BUILD_TOOLS)
 endif()
 
 if(BUILD_TESTING)
+    add_executable(RespiraMicrophoneMotionTests Tests/MicrophoneMotionTests.cpp)
+    target_link_libraries(RespiraMicrophoneMotionTests PRIVATE RespiraDSP)
+    target_compile_options(RespiraMicrophoneMotionTests PRIVATE ${RESPIRA_WARNINGS})
+    add_test(NAME Respira.MicrophoneMotion COMMAND RespiraMicrophoneMotionTests)
+    set_tests_properties(Respira.MicrophoneMotion PROPERTIES TIMEOUT 120 LABELS unit)
+
     add_executable(RespiraTouchTests Tests/TouchTests.cpp)
     target_link_libraries(RespiraTouchTests PRIVATE RespiraDSP)
     target_compile_options(RespiraTouchTests PRIVATE ${RESPIRA_WARNINGS})

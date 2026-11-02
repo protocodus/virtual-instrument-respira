@@ -1823,3 +1823,31 @@ Methods, recording limits and rejected candidates are recorded in the
 [investigation](research/soft-starts-2026-11-01.md); the
 [CPU report](benchmarks/soft-starts-cpu-2026-11-01.md) distinguishes native
 timings from host performance.
+
+## 2026-11-02 — microphone movement: B selected with a tiny preference
+
+The owner chose **“B but tiny”** when asked which of the 9.6-second clips
+sounded more natural. A is the unchanged 0.1.6 engine at
+`f9057b33cbfa0c5230131e44862f4cced159bd2d`. B adds only the relative
+spherical-wave proximity response of the existing ideal cardioid pair
+during Life movement. The verdict prefers B by a small amount; it does not
+establish a large audible improvement or acoustic calibration.
+
+Both clips use the same committed Bassoon Low MIDI, preset 1, Life/Touch 1,
+Room 0.005, Width 0.5, reset seeds, 48 kHz/24-bit output and callback/event
+splitting. Each includes all 460,999 stereo frames and the complete release
+tail. Whole-file stereo RMS matching trims A by -0.00162034 dB and B by
+0 dB. The original WAVs and separate key remain frozen outside the checkout
+in `diagnostics/respira-mic-motion-20261102/comparison`.
+
+The choice licenses this exact sound mechanism and the push requested after
+A/B approval. It does not license enlarging movement, adding a bass boost,
+retuning the reeds or changing the default Life amount. The separate
+0.1.7 CPU commit `ae221afa18bfe5963d96619457ae68d6746a98fa` leaves the B
+audio unchanged; the combined 0.1.8 renderer reproduces the original B WAV
+and trace byte for byte. The microphone change is its own commit on top.
+
+The [research](research/microphone-motion-2026-11-02.md) states the ideal-
+microphone and point-source assumptions; the
+[validation](validation/microphone-motion-2026-11-02.md) records the native
+gates and CPU evidence. The low-pressure reed-start mismatch remains open.

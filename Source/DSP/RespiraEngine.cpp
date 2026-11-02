@@ -313,6 +313,8 @@ void Engine::Reset() {
     grille = 0.0;
     output.Reset();
     room.Clear();
+    for (auto& mic : trebleMicMotion) mic.Clear();
+    for (auto& mic : bassMicMotion) mic.Clear();
     keys.fill(Key {});
     movingCount = 0;
     knocks.fill(Knock {});
@@ -349,6 +351,8 @@ void Engine::TakeTargets() {
     bassPanR = bassPanRTarget;
     roomGain = roomGainTarget;
     mechanicsGain = mechanicsGainTarget;
+    for (auto& mic : trebleMicMotion) mic.TakeTarget();
+    for (auto& mic : bassMicMotion) mic.TakeTarget();
 }
 
 void Engine::SetControls(const Controls& next) {
@@ -409,6 +413,13 @@ void Engine::SetControls(const Controls& next) {
     MicPair(kBassSideX, controls[kWidth], bassMicL, bassMicR);
     micCos = std::cos(controls[kWidth] * kMicHalfAngle);
     micSin = std::sin(controls[kWidth] * kMicHalfAngle);
+    const auto reference = [&](double x, std::array<MicrophoneMotion, 2>& pair) {
+        const double r = Sqrt(x * x + kMicDistance * kMicDistance);
+        pair[0].SetReference(r, (kMicDistance * micCos - x * micSin) / r, rate);
+        pair[1].SetReference(r, (kMicDistance * micCos + x * micSin) / r, rate);
+    };
+    reference(kTrebleSideX, trebleMicMotion);
+    reference(kBassSideX, bassMicMotion);
     UpdateMicrophones();
     if (untouched) TakeTargets();
 }
@@ -417,6 +428,8 @@ void Engine::UpdateMicrophones() {
     // Life=0 is the original pickup, including its exact normalization.
     treblePanLTarget = trebleMicL; treblePanRTarget = trebleMicR;
     bassPanLTarget = bassMicL; bassPanRTarget = bassMicR;
+    for (auto& mic : trebleMicMotion) mic.RestoreReference();
+    for (auto& mic : bassMicMotion) mic.RestoreReference();
     if (life.amount == 0.0) return;
     // Movement matters with a fixed microphone: Shure's own accordion test,
     // https://www.shure.com/en-US/insights/eight-ways-to-mic-an-accordion .
@@ -424,7 +437,8 @@ void Engine::UpdateMicrophones() {
     // Full Life permits at most +/-5 cm sideways and +/-8 cm toward/away
     // from the pair. These are selectable performer motions, NOT fitted
     // directivity measurements. No frequency-dependent radiation or Doppler
-    // is claimed by this point-source model.
+    // is claimed for the instrument. MicrophoneMotion adds only the relative
+    // spherical-wave proximity response of these ideal cardioids; no Doppler.
     const double side = 0.05 * life.amount * Clamp((life.side + life.effort) / 3.0, -1.0, 1.0);
     const double depth = 0.08 * life.amount * Clamp((life.depth + life.effort) / 3.0, -1.0, 1.0);
     // The bass end also moves with the bellows. The existing 6 L capacity and
@@ -433,7 +447,8 @@ void Engine::UpdateMicrophones() {
     const double extension = life.amount * (kAutoBellows / kBellowsSection)
                              * (Clamp(hand.position / open, 0.0, 1.0) - 0.5);
     const double ca = micCos, sa = micSin;
-    const auto move = [&](double x0, double shift, float& left, float& right) {
+    const auto move = [&](double x0, double shift, float& left, float& right,
+                          std::array<MicrophoneMotion, 2>& pair) {
         const double r0 = Sqrt(x0 * x0 + kMicDistance * kMicDistance);
         const double x = x0 + side + shift, z = kMicDistance + depth;
         const double r = Sqrt(x * x + z * z);
@@ -441,9 +456,11 @@ void Engine::UpdateMicrophones() {
         const double oldR = 1.0 + (kMicDistance * ca + x0 * sa) / r0;
         left *= static_cast<float>((1.0 + (z * ca - x * sa) / r) / oldL * r0 / r);
         right *= static_cast<float>((1.0 + (z * ca + x * sa) / r) / oldR * r0 / r);
+        pair[0].Move(r, (z * ca - x * sa) / r);
+        pair[1].Move(r, (z * ca + x * sa) / r);
     };
-    move(kTrebleSideX, 0.0, treblePanLTarget, treblePanRTarget);
-    move(kBassSideX, -extension, bassPanLTarget, bassPanRTarget);
+    move(kTrebleSideX, 0.0, treblePanLTarget, treblePanRTarget, trebleMicMotion);
+    move(kBassSideX, -extension, bassPanLTarget, bassPanRTarget, bassMicMotion);
 }
 
 void Engine::SetMasterTune(double cents) { masterTune = cents == cents ? Clamp(cents, -100.0, 100.0) : 0.0; }
@@ -1058,6 +1075,12 @@ void Engine::Render(float* left, float* right, int frames) {
             // the tail it held.
             if (roomGain == 0.0) room.Clear();
         }
+        // Room is the surrounding field. Only the direct source paths take
+        // the relative near-field microphone colour caused by Life movement.
+        l += gain * (treblePanL * trebleMicMotion[0].Correction(treble, smoothing)
+                   + bassPanL * bassMicMotion[0].Correction(bass, smoothing));
+        r += gain * (treblePanR * trebleMicMotion[1].Correction(treble, smoothing)
+                   + bassPanR * bassMicMotion[1].Correction(bass, smoothing));
         std::array<float, 2> frame { { static_cast<float>(l), static_cast<float>(r) } };
         output.Process(frame);
         left[i] = frame[0];
@@ -1067,6 +1090,8 @@ void Engine::Render(float* left, float* right, int frames) {
         trebleSide.FlushTiny();
         bassSide.FlushTiny();
         bassBox.FlushTiny();
+        for (auto& mic : trebleMicMotion) mic.FlushTiny();
+        for (auto& mic : bassMicMotion) mic.FlushTiny();
         for (BodyHighPass* body : { &mechanicsTreble, &mechanicsBass }) body->FlushTiny();
         room.FlushTiny();
         if (Abs(grille) < 1.0e-20) grille = 0.0;
