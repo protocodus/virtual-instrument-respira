@@ -49,12 +49,15 @@ constexpr double kPadOverlap = 0.003;
 struct ReedSpec {
     double length = 0.026, width = 0.0024;   // tongue, m
     double plate = 0.0012;                   // slot depth (plate thickness), m
+    double exit = 0.0012;                    // tip depth where the tongue's upper face clears the bottom of the plate, m
+    double arch = 0.0;                       // half-thickness slot-entry fillet depth at the top of the plate, m
     double rest = -0.0004;                   // tip rest position ("set"), m; < 0 is above the plate
     double clearArea = 0.0;                  // gap area while the tongue is inside the slot, m^2
     double area = 0.0, pistonArea = 0.0;     // effective pressure area and slot-sealing piston area, m^2
     double invMass = 0.0, omega2 = 0.0, damping = 0.0; // 1/m_eff, (2 pi f0)^2, omega0 / Q
     double drag = 0.0;                       // quadratic air drag on the tongue / m_eff, 1/m
     double slotInertance = 0.0;              // rho * depth / slot area, kg/m^4
+    double slitLaminar = 0.0;                // plane Poiseuille clearance-slit resistance, Pa s/m
     double breath = 0.0;                     // the gap flow's turbulent fluctuation per unit noise and sqrt(m) of the tip's opening
     double eddyShare = 0.0;                  // the gap's eddies' mean size over the tip's opening
     double edge = 0.0, cube = 0.0, cube3 = 0.0;   // 2L/3 + W, L^3, 3L^2: GapArea's constants, made once
@@ -114,7 +117,15 @@ inline ReedSpec MakeReed(double f0, double q, double setScale = 1.0) {
     // Adachi et al., Forum Acusticum 2026). The weight adds mass, not air
     // loss, so the damping stays that of the bare tongue (and Q rises).
     const double stiffness = std::fmax(tongueMass * w0 * w0, r.area * 1000.0 / (0.125 * r.plate));
-    r.rest = std::fmin(r.rest, -(r.area * kMaxPressure / stiffness + kClearance));
+    // A voiced tongue's finite distal thickness (profileMass * thickness) means
+    // its upper face clears the bottom of the plate at r.exit = r.plate +
+    // tipThickness, and its half-thickness camber sweeps upper-slot closure
+    // across [-r.arch, +r.arch] (GapArea), keeping dA/dx < 0 into the slot mouth
+    // so the 2.5 kPa choke clamp can sit 0.2 * r.arch closer to the plate.
+    const double tipThickness = profileMass * thickness;
+    r.exit = r.plate + tipThickness;
+    r.arch = 0.5 * tipThickness;
+    r.rest = std::fmin(r.rest, -(r.area * kMaxPressure / stiffness + kClearance - 0.2 * r.arch));
     const double mass = stiffness / (w0 * w0);
     r.invMass = 1.0 / mass;
     r.omega2 = w0 * w0;
@@ -126,7 +137,11 @@ inline ReedSpec MakeReed(double f0, double q, double setScale = 1.0) {
     // swings of ordinary playing, 0.4-4 mm on tongues 2.2-2.6 mm wide. 8 keeps
     // tip excursions near a tenth of the length.
     r.drag = 0.5 * kRho * 8.0 * r.area / mass;
-    r.slotInertance = kRho * r.plate / (r.length * r.width);
+    r.slotInertance = kRho * r.exit / (r.length * r.width);
+    // Plane Poiseuille laminar resistance 12 mu h / c^2 through the 30 um
+    // clearance slit while the distal fifth of the tongue's perimeter engages
+    // the slot wall.
+    r.slitLaminar = 0.2 * 12.0 * kMu * tipThickness / (kClearance * kClearance);
     // The jet through the gap is turbulent (a Reynolds number near 10^3 at
     // 26 m/s through a 0.5 mm gap), so its volume flow fluctuates. Its eddies
     // are the size of the gap where they form, h, so along the edge the jet
@@ -156,7 +171,7 @@ inline ReedSpec MakeReed(double f0, double q, double setScale = 1.0) {
 // short of a 100-cent master tune.
 inline void Retune(ReedSpec& r, double scale) {
     r.omega2 *= scale * scale;
-    r.rest = std::fmin(r.rest, -(r.area * kMaxPressure * r.invMass / r.omega2 + kClearance));
+    r.rest = std::fmin(r.rest, -(r.area * kMaxPressure * r.invMass / r.omega2 + kClearance - 0.2 * r.arch));
 }
 
 // Gap area for tip displacement x. The tongue bends as (s/L)^2 along its length,
@@ -164,11 +179,16 @@ inline void Retune(ReedSpec& r, double scale) {
 // past the slot the part of the tongue below the plate opens again.
 inline double GapArea(const ReedSpec& r, double x) {
     double open = 0.0;
-    if (x < 0.0) {
-        open = r.edge * -x;
-    } else if (x > r.plate) {
-        const double L = r.length, s = L * Sqrt(r.plate / x);
-        open = r.width * (x - r.plate) + 2.0 * (x * (r.cube - s * s * s) / r.cube3 - r.plate * (L - s));
+    if (x < r.arch) {
+        if (x <= -r.arch) {
+            open = r.edge * -x;
+        } else {
+            const double d = r.arch - x;
+            open = r.edge * (d * d) / (4.0 * r.arch);
+        }
+    } else if (x > r.exit) {
+        const double L = r.length, s = L * Sqrt(r.exit / x);
+        open = r.width * (x - r.exit) + 2.0 * (x * (r.cube - s * s * s) / r.cube3 - r.exit * (L - s));
     }
     return Sqrt(open * open + r.clearArea * r.clearArea);
 }
@@ -188,8 +208,9 @@ inline double StepReed(const ReedSpec& r, ReedState& s, double dp, double dt, do
     const double c = dp + inertia * s.flow;
     double flow = 0.0, drop = 0.0;
     if (c > 0.0) {   // else the valve holds the gap shut: the silent reed of the pair
+        const double engaged = Clamp(s.x / r.plate, 0.0, 1.0);
         const double a = 0.5 * kRho / (kCd * kCd * area * area);
-        const double b = kLaminar / area + inertia;
+        const double b = (kLaminar + r.slitLaminar * engaged * (r.clearArea / area)) / area + inertia;
         flow = 2.0 * c / (b + Sqrt(b * b + 4.0 * a * c));
         drop = dp - inertia * (flow - s.flow);
     }

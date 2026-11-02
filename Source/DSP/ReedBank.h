@@ -132,7 +132,7 @@ inline CellSpec MakeCell(int rank, int key, double musetteCents, const float* ra
     const int index = TuningIndex(rank, key);
     spec.hz = NoteHz(RankNote(rank, key, musetteCents));
     spec.bass = !IsTreble(rank);
-    // Probe at 400 Pa (Tools/ProbeReed): 0.66 L/s at C2, 0.47 at C3, 0.24 at C4,
+    // Probe at 400 Pa (Tools/ProbeReed): 0.65 L/s at C2, 0.46 at C3, 0.23 at C4,
     // 0.13 at A4, 0.06 at C6, 0.04 at C7 -- close to 0.13 L/s * 440 / f from C3
     // up; C2 takes 20 % less.
     spec.airWeight = 440.0 / spec.hz;
