@@ -24,7 +24,9 @@ std::unique_ptr<Engine> Make(double amount, bool automatic = true, double width 
     c[kWidth] = width; c[kRoom] = 0.0;
     e->SetControls(c); e->Reset();
     Transport t; t.bpm = 40.0; e->SetTransport(t);
-    e->SetHand(automatic ? 0.2 : 0.25);
+    // In Auto mode, wheel=0 is the full 400 Pa baseline (raising the wheel
+    // slows the bellows down).
+    e->SetHand(automatic ? 0.0 : 0.25);
     return e;
 }
 struct Take { std::vector<float> l, r; std::vector<double> p; };
@@ -58,7 +60,7 @@ void BlocksAndResetDoNotChangeThePlayer() {
     auto a = Make(0.7), b = Make(0.7);
     const Take x = Hold(*a, 64, 3 * 48000), y = Hold(*b, 17, 3 * 48000);
     Require(x.l == y.l && x.r == y.r, "same audio at different host block sizes");
-    a->Reset(); a->SetHand(0.2);
+    a->Reset(); a->SetHand(0.0);
     const Take z = Hold(*a, 127, 3 * 48000);
     Require(x.l == z.l && x.r == z.r, "reset repeats the virtual player exactly");
 }
@@ -70,14 +72,32 @@ void ManualControlKeepsItsAirAndMonoStaysMono() {
         const double hand = 0.25 + 0.14 * at / 48000.0;
         a->SetHand(hand); b->SetHand(hand);
         a->Render(al, ar, 64); b->Render(bl, br, 64);
-        Require(a->Diag().pressure == b->Diag().pressure && a->Diag().handVelocity == b->Diag().handVelocity,
-                "manual bellows performance is preserved; Life changes only pickup there");
+        Require(a->Diag().hand == b->Diag().hand && a->Diag().handVelocity == b->Diag().handVelocity
+                && std::fabs(a->Diag().pressure - b->Diag().pressure) < 80.0,
+                "manual bellows trajectory is preserved; pressure differs only by the physical reed tolerance");
         for (int i = 0; i < 64; ++i) difference += std::fabs(al[i] - bl[i]) + std::fabs(ar[i] - br[i]);
     }
-    Require(difference > 0.1, "Life movement reaches the manual-mode microphone pickup");
+    Require(difference > 0.1, "Life movement and reed tolerances reach the manual-mode output");
     auto mono = Make(1.0, true, 0.0);
     const Take m = Hold(*mono, 64, 2 * 48000);
     Require(m.l == m.r, "coincident parallel microphones remain mono while the source moves");
+}
+void LifeScalesReedAndChamberImperfections() {
+    Require(kControlInfo[kLife].initial == 0.5, "default Life is 0.5 (standard well-made unit)");
+    const ReedVariation v0 = Variation(kRankM, 33, 0, 0.0);
+    const ReedVariation vMid = Variation(kRankM, 33, 0, 0.5);
+    const ReedVariation vMax = Variation(kRankM, 33, 0, 1.0);
+    Require(v0.setScale == 1.0 && v0.qScale == 1.0 && v0.tuneCents == 0.0
+            && v0.clearanceScale == 1.0 && v0.plateScale == 1.0 && v0.profileScale == 1.0
+            && v0.chamberScale == 1.0 && v0.ventScale == 1.0,
+            "Life 0 means perfection (zero reed/chamber variation)");
+    Require(std::fabs((vMax.tuneCents) - 2.0 * (vMid.tuneCents)) < 1.0e-12
+            && std::fabs((vMax.clearanceScale - 1.0) - 2.0 * (vMid.clearanceScale - 1.0)) < 1.0e-12,
+            "Life 1.0 over-emphasizes variation to 2x the standard Life 0.5 unit");
+    const CellSpec c0 = MakeCell(kRankM, 69, 22.0, nullptr, 192000.0, 0.0);
+    Require(c0.voiceGain == 1.0 && c0.push.rest == c0.pull.rest && c0.push.clearArea == c0.pull.clearArea
+            && c0.push.vortexShare == 0.0,
+            "Life 0 produces identical push/pull reeds with zero vortex imperfection");
 }
 void NoHandStillMeansNoAir() {
     auto e = Make(1.0, false);
@@ -137,6 +157,7 @@ void AShortRestPreparesTheNextNote() {
 int main() {
     HeldNotesKeepMoving(); BlocksAndResetDoNotChangeThePlayer();
     ManualControlKeepsItsAirAndMonoStaysMono(); NoHandStillMeansNoAir();
+    LifeScalesReedAndChamberImperfections();
     SwellsReserveEnoughAir();
     AShortRestPreparesTheNextNote();
     std::puts("PASS Life: held notes, deterministic blocks/reset, manual air, moving pickup, mono and silence");

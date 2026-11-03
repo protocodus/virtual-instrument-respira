@@ -27,27 +27,41 @@ inline double KeyOpeningSeconds(int velocity) {
     return 0.012 - 0.009 * velocity / 127.0;
 }
 
-// Optional virtual-player interpretation of key emphasis, separate from the
+// Optional virtual-player interpretation of key velocity, separate from the
 // valve mechanism above. A real accordion's sustained dynamics come from the
 // bellows, not strike velocity (same source, sections 2-4). Touch asks Auto's
-// HAND to make one shared effort gesture; it never scales voice audio or pitch.
-// Its +/-30% extent and 200 ms relaxation are authored performance choices,
-// NOT measured human constants. The existing arm and pressure feedback still
-// determine the actual response. Manual hand control bypasses it entirely.
+// HAND to adjust its shared effort: strong strikes add an initial accent and
+// sustain at full playing speed (with the mod wheel slowing the bellows down),
+// while soft strikes catch the reed and settle to a slower sustaining bellows
+// speed (with the mod wheel swelling the bellows up toward full speed). Manual
+// hand control bypasses it entirely.
 struct Touch {
     static constexpr double kControlRate = 200.0;
-    double phase = 0.0, phaseStep = 0.0, release = 0.0, glide = 0.0;
-    double amount = 0.0, gesture = 0.0;
-    int pending = 0, strongest = 0, cluster = 0;
+    // Below v=100, sustained velocity slows the bellows down toward 45% (180 Pa)
+    // at v=1 (~6-8 dB softer than ff, keeping every treble register speaking
+    // clearly on fast melodies), while starting a fresh soft press at >=68%
+    // for 35 ms so short staccato reeds catch immediately.
+    static constexpr int kFullVelocity = 100;
+    static constexpr double kSoftSustainReduction = 0.55;
+    static constexpr double kSoftCatchFloor = -0.32;
+    double phase = 0.0, phaseStep = 0.0, release = 0.0, glide = 0.0, sustainGlide = 0.0;
+    double amount = 0.0, gesture = 0.0, sustain = 0.0, sustainTarget = 0.0;
+    double wheelAim = 0.0, wheelTarget = 0.0;
+    int pending = 0, heldPending = 0, strongest = 0, cluster = 0, catchTicks = 0;
 
     void Prepare(double rate) {
         phaseStep = kControlRate / rate;
         release = std::exp(-1.0 / (0.2 * kControlRate));
         glide = 1.0 - std::exp(-1.0 / (0.04 * kControlRate));
+        sustainGlide = 1.0 - std::exp(-1.0 / (0.08 * kControlRate));
     }
-    void ClearGesture() { gesture = 0.0; pending = strongest = cluster = 0; }
+    void ClearGesture() {
+        gesture = sustain = sustainTarget = wheelAim = wheelTarget = 0.0;
+        pending = heldPending = strongest = cluster = catchTicks = 0;
+    }
     void Reset() { phase = amount = 0.0; ClearGesture(); }
     void Press(int velocity) { if (velocity > pending) pending = velocity; }
+    void Hold(int velocity) { if (velocity > 0) heldPending = velocity; }
     void Step(double target, bool automatic) {
         if (!automatic) ClearGesture();
         if (target == 0.0 && amount == 0.0) { ClearGesture(); return; }
@@ -58,6 +72,14 @@ struct Touch {
         if (Abs(amount - target) < 1.0e-9) amount = target;
         gesture *= release;
         if (Abs(gesture) < 1.0e-12) gesture = 0.0;
+        if (catchTicks > 0) {
+            --catchTicks;
+        } else {
+            sustain += sustainGlide * (sustainTarget - sustain);
+            if (Abs(sustain - sustainTarget) < 1.0e-12) sustain = sustainTarget;
+        }
+        wheelAim += sustainGlide * (wheelTarget - wheelAim);
+        if (Abs(wheelAim - wheelTarget) < 1.0e-12) wheelAim = wheelTarget;
         if (cluster > 0) --cluster;
         if (pending > 0) {
             // One strongest intent for a chord/short roll, never a sum over
@@ -66,11 +88,40 @@ struct Touch {
             // the causal player updates at most 5 ms after the first press.
             if (cluster == 0) { strongest = pending; cluster = 2; }
             else if (pending > strongest) strongest = pending;
-            gesture = (strongest - 64.0) / 63.0;
-            pending = 0;
+            gesture = strongest > 64 ? (strongest - 64.0) / 63.0 : 0.0;
+            wheelTarget = strongest < 64 ? 1.0 : 0.0;
+            if (strongest >= kFullVelocity) {
+                sustain = sustainTarget = 0.0;
+                catchTicks = 0;
+            } else {
+                const double u = (kFullVelocity - strongest) / (kFullVelocity - 1.0);
+                sustainTarget = -kSoftSustainReduction * u;
+                // Hold the reed-catch floor for 35 ms on a fresh press so
+                // 50 ms staccato notes speak, then glide (80 ms) to
+                // sustainTarget; within a soft phrase keep the soft level.
+                if (sustain > -0.25) {
+                    sustain = Max(sustain, Max(sustainTarget, kSoftCatchFloor));
+                    catchTicks = 7;
+                } else {
+                    sustain = Max(sustain, Max(sustainTarget, -0.45));
+                    catchTicks = 2;
+                }
+            }
+            pending = heldPending = 0;
+        } else if (heldPending > 0 && cluster == 0) {
+            strongest = heldPending;
+            wheelTarget = strongest < 64 ? 1.0 : 0.0;
+            if (strongest >= kFullVelocity) {
+                sustainTarget = 0.0;
+            } else {
+                const double u = (kFullVelocity - strongest) / (kFullVelocity - 1.0);
+                sustainTarget = -kSoftSustainReduction * u;
+            }
+            heldPending = 0;
         }
     }
-    double Effort() const { return 0.30 * amount * gesture; }
+    double Effort() const { return amount * (0.30 * gesture + sustain); }
+    double SwellUp() const { return amount * wheelAim; }
 };
 
 } // namespace respira

@@ -24,7 +24,9 @@ std::unique_ptr<Engine> Make(double touch, bool automatic = true) {
     auto e = std::make_unique<Engine>(); e->Prepare(kRate);
     Controls c; c[kTouch] = touch; c[kLife] = 0.0; c[kAuto] = automatic ? 1.0 : 0.0;
     c[kKeyboard] = 1.0; c[kRoom] = 0.0; c[kMechanics] = -40.0;
-    e->SetControls(c); e->Reset(); e->SetHand(automatic ? 0.25 : 0.2);
+    // In Auto mode, wheel=0 is the full 400 Pa baseline (raising the wheel
+    // slows the bellows down).
+    e->SetControls(c); e->Reset(); e->SetHand(automatic ? 0.0 : 0.2);
     Transport t; t.bpm = 40.0; e->SetTransport(t);
     return e;
 }
@@ -100,7 +102,8 @@ void SlowKeysChangeAttackWithoutPermanentGainOrTuning() {
     for (Engine* e : {a.get(), b.get()}) {
         Hold(*e, 100, 0.6); Note(*e, 69, 0, false);
         std::vector<float> l(9600), r(9600); e->Render(l.data(), r.data(), 9600);
-        Require(std::fabs(e->Diag().pressure) > 500.0, "finger-attack fixture preloads the bellows");
+        // At wheel=0 (400 Pa baseline), the preloaded bellows sits near 400 Pa.
+        Require(std::fabs(e->Diag().pressure) > 350.0, "finger-attack fixture preloads the bellows");
     }
     const Take soft = Hold(*a, 8), hard = Hold(*b, 127);
     const double first = Rms(soft.l, 0.002, 0.025) / Rms(hard.l, 0.002, 0.025);
@@ -155,7 +158,7 @@ void EventsAndResetAreIndependentOfBlockSize() {
     auto a = Make(1.0), b = Make(1.0);
     const auto x = play(*a, 64), y = play(*b, 17);
     Require(x == y, "gesture timing is sample-driven across event/block partitions");
-    a->Reset(); a->SetHand(0.25);
+    a->Reset(); a->SetHand(0.0);
     Require(x == play(*a, 127), "Reset clears all touch history");
     std::printf("PASS Touch block partition and reset identity\n");
 }
@@ -197,6 +200,64 @@ void SoftStaccatoSpeaks() {
         Require(weakest > 0.002, "soft short notes must pass air and remain audible");
     }
 }
+void VelocityAndWheelTransitionBothWays() {
+    // 1. High velocity -> low via mod wheel (0 -> 1), and low velocity -> high
+    // via mod wheel (0 -> 1).
+    {
+        auto loud = Make(1.0), soft = Make(1.0);
+        Note(*loud, 69, 115); Note(*soft, 69, 16);
+        std::vector<float> ll(2 * kRate), lr(2 * kRate), sl(2 * kRate), sr(2 * kRate);
+        for (int i = 0; i < 2 * kRate; i += 32) {
+            if (i == kRate) { loud->SetHand(1.0); soft->SetHand(1.0); }
+            loud->Render(ll.data() + i, lr.data() + i, 32);
+            soft->Render(sl.data() + i, sr.data() + i, 32);
+        }
+        const double loudToSoftDb = 20.0 * std::log10(Rms(ll, 0.4, 0.9) / Rms(ll, 1.4, 1.9));
+        const double softToLoudDb = 20.0 * std::log10(Rms(sl, 1.4, 1.9) / Rms(sl, 0.4, 0.9));
+        std::printf("Touch wheel transitions: high->low %.2f dB, low->high %.2f dB\n", loudToSoftDb, softToLoudDb);
+        Require(loudToSoftDb > 12.0, "raising the wheel on a strong note slows the bellows down");
+        Require(softToLoudDb > 4.5, "raising the wheel on a soft note swells the bellows up");
+    }
+    // 2. Legato velocity transitions: soft held note -> loud note -> release
+    // back to the held soft note.
+    {
+        auto e = Make(1.0);
+        std::vector<float> l(3 * kRate), r(3 * kRate);
+        Note(*e, 69, 16);
+        for (int i = 0; i < 3 * kRate; i += 32) {
+            if (i == kRate) Note(*e, 72, 115);
+            if (i == 2 * kRate) Note(*e, 72, 0, false);
+            e->Render(l.data() + i, r.data() + i, 32);
+        }
+        const double upDb = 20.0 * std::log10(Rms(l, 1.4, 1.9) / Rms(l, 0.5, 0.9));
+        const double downDb = 20.0 * std::log10(Rms(l, 1.4, 1.9) / Rms(l, 2.5, 2.9));
+        std::printf("Touch legato velocity low->high->low: +%.2f dB then -%.2f dB\n", upDb, downDb);
+        Require(upDb > 4.5 && downDb > 4.5, "legato velocity changes bellows speed both ways");
+    }
+    // 3. Manual mode: gentle wheel speed (pp) catches promptly and stays
+    // clearly audible, while speeding up and slowing down on a stroke changes
+    // dynamic level both ways.
+    {
+        auto m = Make(1.0, false);
+        std::vector<float> l(3 * kRate), r(3 * kRate);
+        double hand = 0.2;
+        m->SetHand(hand);
+        Note(*m, 69, 20);
+        for (int i = 0; i < 3 * kRate; i += 32) {
+            const double t = double(i) / kRate;
+            const double speed = t < 1.0 ? 0.045 : (t < 2.0 ? 0.11 : 0.040);
+            hand += speed * (32.0 / kRate);
+            m->SetHand(hand);
+            m->Render(l.data() + i, r.data() + i, 32);
+        }
+        const double ppEarlyDb = 20.0 * std::log10(std::max(Rms(l, 0.25, 0.9), 1.0e-12));
+        const double ffMidDb = 20.0 * std::log10(std::max(Rms(l, 1.35, 1.95), 1.0e-12));
+        const double ppLateDb = 20.0 * std::log10(std::max(Rms(l, 2.35, 2.95), 1.0e-12));
+        std::printf("Manual slow->fast->slow: %.2f dBFS -> %.2f dBFS -> %.2f dBFS\n", ppEarlyDb, ffMidDb, ppLateDb);
+        Require(ppEarlyDb > -30.0 && ppLateDb > -31.0, "manual low speed remains clearly audible");
+        Require(ffMidDb - ppEarlyDb > 4.0 && ffMidDb - ppLateDb > 4.0, "manual wheel speed changes level both ways");
+    }
+}
 } // namespace
 
 int main() {
@@ -206,5 +267,6 @@ int main() {
     EventsAndResetAreIndependentOfBlockSize();
     OrdinaryStaccatoSpeaks();
     SoftStaccatoSpeaks();
+    VelocityAndWheelTransitionBothWays();
     return 0;
 }

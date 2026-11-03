@@ -43,7 +43,7 @@ struct MicrophoneMotion {
     void RestoreReference() { target = 0.0; }
     void TakeTarget() { delta = target; }
     void Clear() { delta = target = integral = 0.0; }
-    void FlushTiny() { if (Abs(integral) < 1.0e-20) integral = 0.0; }
+    void FlushTiny() { if (Abs(integral) < 1.0e-30) integral = 0.0; }
 
     // Bilinear one-pole integral, with its physical state retained when
     // Width changes. Return only the correction to the direct sound:

@@ -26,7 +26,8 @@
 //   pitch bend +-2 semitones, retuning every sounding tongue
 // Other channels play as channel 1. Velocity sets how fast the pallet lifts.
 // With Auto on, the hand plays the bellows by itself while keys are held, in
-// time with the host (SetTransport), and the wheel presses it harder.
+// time with the host (SetTransport), at full playing speed with the wheel at 0
+// and slowing down as the wheel rises.
 // The register switches act on held keys too, as the slides they move do.
 // The keys, buttons, pallets and switches knock on their stops, and the
 // bellows' folds flip as the bellows turn and rustle as they move
@@ -212,6 +213,7 @@ private:
     // .. 1 down, which its pallets follow, and where it is headed.
     struct Key {
         double travel = 0.0, target = 0.0, rate = 0.0;   // rate: travel per sample going down
+        std::uint8_t velocity = 0;
         bool button = false, listed = false;
     };
 

@@ -86,23 +86,49 @@ inline std::uint32_t Hash(std::uint32_t a, std::uint32_t b) {
 inline double Unit(std::uint32_t h) { return (h & 0xFFFFFF) / double(0x1000000) * 2.0 - 1.0; } // -1..1
 
 // Push and pull reeds are separate tongues, made and tuned separately: their
-// set and loss differ a little, and so does their tuning. The differences are
-// fixed per instrument, not drawn per performance. Each reed sits off its
-// pitch by a standard deviation of 3 cents, as two played accordions' do:
-// La Melodiosa's single reeds scatter 2.7-2.9 cents about a smooth line
-// (two takes a note, 1.2-1.6 cents apart), its reeds two octaves apart 4.2
-// cents from each other (3.0 each; Tools/measure_tuning.py), and a Hohner's
-// musette pairs 4.6 cents about their beat law (3.3 each;
-// Tools/measure_musette.py).
+// set, loss, slot clearance, plate thickness and distal tip profiling differ a
+// little, and so does their tuning. Each chamber also has its own wall/valve
+// loss and tip-jet coupling. The differences are fixed per instrument, not
+// drawn per performance, and scaled by Life:
+//   - Life = 0.0: perfection (zero manufacturing/voicing scatter)
+//   - Life = 0.5 (default): standard well-made unit in good shape (1x)
+//   - Life = 1.0 (max): over-emphasized character (2x)
+// At Life = 0.5 each reed sits off its nominal pitch by a standard deviation
+// of 3 cents, as two played accordions' do: La Melodiosa's single reeds
+// scatter 2.7-2.9 cents about a smooth line (two takes a note, 1.2-1.6 cents
+// apart), its reeds two octaves apart 4.2 cents from each other (3.0 each;
+// Tools/measure_tuning.py), and a Hohner's musette pairs 4.6 cents about their
+// beat law (3.3 each; Tools/measure_musette.py).
+inline double ImperfectionScale(double life) {
+    return 2.0 * Clamp(life, 0.0, 1.0);
+}
+
 struct ReedVariation {
     double setScale, qScale, tuneCents;
+    double clearanceScale, plateScale, profileScale;
+    double chamberScale, ventScale;
 };
 
-inline ReedVariation Variation(int rank, int index, int side) {
+inline ReedVariation Variation(int rank, int index, int side, double life = 0.5) {
     constexpr std::uint32_t kInstrument = 1u;
     constexpr double kTuneSpread = 3.0 * 1.7320508075688772;   // Unit's standard deviation is 1 / sqrt(3)
+    const double s = ImperfectionScale(life);
     const std::uint32_t h = Hash(kInstrument, static_cast<std::uint32_t>(rank * 1000 + index * 2 + side));
-    return { 1.0 + 0.10 * Unit(h), 1.0 + 0.20 * Unit(Hash(h, 1)), kTuneSpread * Unit(Hash(h, 2)) };
+    const std::uint32_t hc = Hash(kInstrument, static_cast<std::uint32_t>(rank * 1000 + index * 2));
+    // Front vs back reed-block voicing: L and M sit on the inner blocks
+    // (slightly warmer wall damping), M-, M+ and H on the outer blocks.
+    const double blockLossBias = (rank == kRankL || rank == kRankM) ? 0.08 : (IsTreble(rank) ? -0.06 : 0.0);
+    const double blockTipBias = (rank == kRankL || rank == kRankM) ? -0.04 : (IsTreble(rank) ? 0.04 : 0.0);
+    return {
+        1.0 + s * 0.06 * Unit(h),
+        1.0 + s * 0.12 * Unit(Hash(h, 1)),
+        s * kTuneSpread * Unit(Hash(h, 2)),
+        1.0 + s * 0.12 * Unit(Hash(h, 3)),
+        1.0 + s * 0.06 * Unit(Hash(h, 4)),
+        1.0 + s * 0.08 * Unit(Hash(h, 5)),
+        1.0 + s * (blockLossBias + 0.10 * Unit(Hash(hc, 6))),
+        1.0 + s * (blockTipBias + 0.08 * Unit(Hash(hc, 7)))
+    };
 }
 
 // The bare tongue's quality factor in air: a voicing estimate, inside the one
@@ -121,28 +147,39 @@ struct CellSpec {
     ChamberSpec chamber;
     double hz = 0.0;        // sounding pitch
     double airWeight = 0.0; // air the cell takes relative to an A4 reed (Assist)
+    double voiceGain = 1.0; // per-cell acoustic radiation coupling trim
     bool bass = false;
 };
 
 // The cell for `rank` and a treble key (folded) or bass pitch class, with the
 // tuning table's ratios for its push and pull reeds, to be stepped at stepRate
 // or faster (MakeChamber).
-inline CellSpec MakeCell(int rank, int key, double musetteCents, const float* ratios, double stepRate) {
+inline CellSpec MakeCell(int rank, int key, double musetteCents, const float* ratios, double stepRate, double life = 0.5) {
     CellSpec spec;
     const int index = TuningIndex(rank, key);
+    const double s = ImperfectionScale(life);
     spec.hz = NoteHz(RankNote(rank, key, musetteCents));
     spec.bass = !IsTreble(rank);
     // Probe at 400 Pa (Tools/ProbeReed): 0.65 L/s at C2, 0.46 at C3, 0.23 at C4,
     // 0.13 at A4, 0.06 at C6, 0.04 at C7 -- close to 0.13 L/s * 440 / f from C3
     // up; C2 takes 20 % less.
     spec.airWeight = 440.0 / spec.hz;
+    const std::uint32_t hc = Hash(1u, static_cast<std::uint32_t>(rank * 1000 + index * 2));
+    spec.voiceGain = 1.0 + s * 0.07 * Unit(Hash(hc, 8));
     const double q = ReedQ(spec.hz);
+    const double baseRatio = ratios ? 0.5 * (static_cast<double>(ratios[0]) + static_cast<double>(ratios[1])) : 1.0;
     for (int side = 0; side < 2; ++side) {
-        const ReedVariation v = Variation(rank, index, side);
+        const ReedVariation v = Variation(rank, index, side, life);
         const double wanted = spec.hz * std::pow(2.0, v.tuneCents / 1200.0);
-        if (side == 0) spec.chamber = MakeChamber(MakeReed(wanted, q * v.qScale, v.setScale), wanted, spec.bass, stepRate);
-        const double natural = wanted * (ratios ? ratios[side] : 1.0);
-        (side == 0 ? spec.push : spec.pull) = MakeReed(natural, q * v.qScale, v.setScale);
+        if (side == 0) {
+            const ReedSpec chamberReed = MakeReed(wanted, q * v.qScale, v.setScale,
+                                                  v.clearanceScale, v.plateScale, v.profileScale, s);
+            spec.chamber = MakeChamber(chamberReed, wanted, spec.bass, stepRate, v.chamberScale, v.ventScale);
+        }
+        const double ratio = ratios ? (baseRatio + s * (static_cast<double>(ratios[side]) - baseRatio)) : 1.0;
+        const double natural = wanted * ratio;
+        (side == 0 ? spec.push : spec.pull) = MakeReed(natural, q * v.qScale, v.setScale,
+                                                       v.clearanceScale, v.plateScale, v.profileScale, s);
     }
     return spec;
 }

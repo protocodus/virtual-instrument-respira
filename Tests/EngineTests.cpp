@@ -788,8 +788,9 @@ void AutoTurnsWhenTheAirRunsShort() {
 
 void AutoHoldsItsPressure() {
     // The player gives the reeds the air they take: one pressure whatever is
-    // played and however large the bellows or Assist, four times it with the
-    // wheel at the top.
+    // played and however large the bellows or Assist, slowed to 15 % of it
+    // (60 Pa) with the wheel at the top so moving the wheel mid-note softens
+    // and swells the held note.
     const double rate = 48000.0;
     const std::vector<Note> chord { { 0.0, { kOn, 60, 100 } }, { 0.0, { kOn, 64, 100 } }, { 0.0, { kOn, 67, 100 } },
                                     { 0.0, { kOn, 36, 100 } }, { 0.0, { kOn, 24, 100 } } };
@@ -807,12 +808,22 @@ void AutoHoldsItsPressure() {
     Expect(low > 360.0 && high < 440.0, "AutoHoldsItsPressure", "a chord with Bellows 0.5-8 L and Assist 0, lowest Pa", low);
     Expect(high < 440.0, "AutoHoldsItsPressure", "highest Pa", high);
     auto e = MakeAuto(rate);
-    const double hard = -MeanPressure(PlayAuto(*e, rate, 1.9, { { 0.0, { kOn, 69, 100 } } }, 120.0, 4, false, 0.0, 1.0), rate, 0.8, 1.8);
+    const double soft = -MeanPressure(PlayAuto(*e, rate, 1.9, { { 0.0, { kOn, 69, 100 } } }, 120.0, 4, false, 0.0, 1.0), rate, 0.8, 1.8);
     // Every take here starts the person's stroke at the same level, so the
-    // wheel's top is held against four times the chord's pressure, not 1.6 kPa:
+    // wheel's top is held against 0.15 of the chord's pressure, not 60 Pa:
     // the stroke's own level moves both alike (AutoTurnsOnTheBars).
-    Expect(std::fabs(hard / (2.0 * (low + high)) - 1.0) < 0.05, "AutoHoldsItsPressure",
-           "the wheel at the top, against four times the chord's, Pa", hard);
+    Expect(std::fabs(soft / (0.15 * 0.5 * (low + high)) - 1.0) < 0.05, "AutoHoldsItsPressure",
+           "the wheel at the top, against 0.15 of the chord's, Pa", soft);
+    // Moving the wheel from 0 to 1 and back while a note is held slows the
+    // bellows and drops the level by >12 dB, then swells it back up.
+    auto swell = MakeAuto(rate);
+    const Take dynamic = Play(*swell, rate, 3.0, { { 0.0, { kOn, 69, 100 } } },
+                              [](double s) { return s >= 1.0 && s < 2.0 ? 1.0 : 0.0; });
+    const double loudBefore = Db(Rms(dynamic.left, rate, 0.5, 1.0));
+    const double quietMid = Db(Rms(dynamic.left, rate, 1.4, 1.9));
+    const double loudAfter = Db(Rms(dynamic.left, rate, 2.4, 2.9));
+    Expect(loudBefore - quietMid > 12.0, "AutoHoldsItsPressure", "held note softened by wheel at 1, dB drop", loudBefore - quietMid);
+    Expect(loudAfter - quietMid > 12.0, "AutoHoldsItsPressure", "held note swelled back at wheel 0, dB rise", loudAfter - quietMid);
 }
 
 void AutoLeadsTheArm() {

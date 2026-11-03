@@ -1851,3 +1851,57 @@ The [research](research/microphone-motion-2026-11-02.md) states the ideal-
 microphone and point-source assumptions; the
 [validation](validation/microphone-motion-2026-11-02.md) records the native
 gates and CPU evidence. The low-pressure reed-start mismatch remains open.
+
+## 2026-11-03 — Auto bellows speed from note velocity and mod wheel (owner)
+
+The owner asked for **Auto** to let a player simply play notes with natural
+velocity-driven bellows speed while also changing the speed in either direction
+(`high -> low` and `low -> high`) via note velocity or the mod wheel, with
+`Mod = 0` resting at the played note's normal level. Previously `Auto` mapped
+`wheel` `0..1` to `400..1600 Pa` (inside reed saturation and the output
+compressor's knee, giving only ~2.5 dB of change), clamped `player.velocity`
+to one direction (trapping excess pressure on single treble notes for >1 s),
+and decayed **Touch**'s `-30 %` low-velocity dip back to full `400 Pa` after
+`200 ms`.
+
+`Auto` and **Touch** now drive the shared physical hand as follows:
+- **Velocity at `Mod = 0`:** Normal/strong strikes (`v >= 100`) sustain at full
+  `400 Pa` (with the existing `200 ms` initial accent above `v = 64`). Softer
+  strikes (`v = 1..99`) hold a `35 ms` reed-catching floor on fresh presses so
+  short staccato notes catch immediately (`SoftStaccatoSpeaks`), then glide
+  (`80 ms`) down to a gentler sustaining bellows speed (`45 %` / `~180 Pa` at
+  `v = 1`, ~8 dB softer so soft `pp` melodies remain clearly audible). Legato
+  notes and key releases while other keys remain held smoothly transition the
+  bellows speed both ways (`low -> high` and `high -> low`).
+- **Mod wheel (`0 -> 127`) during held notes:** On normal/strong strikes
+  (`v >= 64`), raising the wheel slows the bellows down to `15 %` (`60 Pa`,
+  `kAutoSoftShare`, ~16.5 dB fade); on soft strikes (`v < 64`), raising the
+  wheel swells the bellows up toward full `400 Pa` speed.
+- **Arm yield on a stroke:** Once on a stroke (`!player.swinging`),
+  `player.velocity` can yield within `[-fastest, fastest]` so easing pressure
+  takes `kReaction` (`0.1 s`) even on a single reed.
+- **Manual mode low-speed calibration (`Auto = 0`):** Because reed orifice flow
+  scales as $\sqrt{P}$, a linear wheel-velocity-to-flow law caused bellows
+  pressure to collapse quadratically ($P \propto v^2$) at slow wheel speeds,
+  stalling the reeds below `~0.06/s` and taking `>0.6 s` to reverse pressure
+  across `kBellowsStiffness`. Sub-reference wheel speeds (`< 0.095/s`) are now
+  shaped by $v^{0.48}$ with wrist slack take-up below `220 Pa` and arm
+  relaxation when slowing down mid-note, so manual `pp` strokes catch promptly
+  and sustain at a warm, clearly audible level matching Auto mode.
+
+## 2026-11-03 — Life-scaled reed, chamber, pallet-onset, and vortex-jet realism (owner)
+
+The owner noted that the reeds sounded too regular and asked to implement
+physical reed/chamber/pallet/vortex imperfections scaled by **Life** (`kLife`),
+with:
+- `Life = 0.0` (`ImperfectionScale = 0.0`): **Perfection** (zero manufacturing
+  or voicing variation, push and pull reeds identical, zero performer sway).
+- `Life = 0.5` (`ImperfectionScale = 1.0`, new default on Init and all factory
+  presets): **Standard well-made unit** with quality manufacturing in good
+  shape (`1x` tolerances: `±6 %` tip-set height, `±12 %` Q damping, `~3 cents`
+  RMS tuning jitter, `±12 %` frame slot clearance, `±6 %` plate slot depth,
+  `±8 %` tongue profile, `±10 %` chamber wall loss with inner/outer reed-block
+  bias, `±0.6 dB` cell trim, `±16 %` secondary-rank pallet onset skew, and
+  `0.35` vortex-jet inertia coupling).
+- `Life = 1.0` (`ImperfectionScale = 2.0`): **Over-emphasized** (`2x`
+  tolerances across all reed, chamber, pallet, and vortex parameters).

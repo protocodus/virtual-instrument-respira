@@ -33,6 +33,13 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
+### Unreleased — 0.1.11 — Auto bellows speed and Life-scaled reed realism
+
+- In **Auto**, with the mod wheel at `0`, note velocity (**Touch**) sets the bellows playing speed: normal/strong strikes (`velocity >= 100`) run at full playing speed (`400 Pa`, about −9 VU) with an initial attack accent, while softer strikes hold a brief reed-catching floor (`35 ms`) so short staccato notes speak immediately and then settle (`80 ms`) down to a gentler sustaining speed (`~180 Pa` at `velocity = 1`, about 8 dB softer so soft melodies stay warm and clearly audible). Legato velocity transitions smoothly speed up or slow down the bellows in both directions, and releasing a note while other keys remain held returns to the remaining keys' velocity.
+- Raising the mod wheel (`0 -> 127`) during a held note moves toward the opposite dynamic: on normal/strong notes (`velocity >= 64`) it slows the bellows down to `60 Pa` (`15 %`, about −16 dB fade), and on soft notes (`velocity < 64`) it swells the bellows up to full playing speed (`400 Pa`).
+- While on a stroke, the virtual arm yields when the target pressure drops so the bellows relaxes in `0.1 s` even on a single treble reed rather than waiting for the open reed alone to bleed off trapped air.
+- **Life** now scales per-reed, per-side (push vs. pull), chamber, pallet-onset, and turbulent vortex-jet imperfections continuously via `ImperfectionScale(life) = 2 * life`: `0 %` is perfection (zero reed/chamber/pallet/vortex variation, push and pull identical), `50 %` (the new default on Init and every preset) models a standard well-made accordion in good shape, and `100 %` doubles all manufacturing and voicing tolerances.
+
 ### Unreleased — 0.1.8 — microphone colour during movement
 
 - Life movement now changes the low-frequency colour of the direct microphone pickup through the relative proximity response of the existing ideal cardioids. The owner chose B, **“B but tiny”**, in the level-matched comparison; this is a small preference by ear, not measured acoustic calibration.
@@ -324,8 +331,10 @@ stroke the player means and its mass shows only where the stroke changes, as
 a softer, slightly longer turn; and it closes on the pressure the arm will
 bring once it catches up, so the arm's lag is not in its loop. It wants 400 Pa, the pressure the demo phrases' ordinary
 strokes are fitted to and about −9 VU, whatever is played and whatever
-Bellows and Assist are set to; the wheel raises that up to four times, 1.6
-kPa at the top, so it is an expression control from its resting place at 0.
+Bellows and Assist are set to; raising the wheel slows the bellows down to
+15 % of that (60 Pa at the top) and lets the arm yield to the lower pressure,
+so moving the wheel from its resting place at 0 softens and swells a held note
+by about 16 dB.
 A turn is planned rather than reacted to: expecting the reeds to take the
 air they took, the other way, the hand moves as fast as it goes (4 L/s of
 its own air, more with Assist) until the pressure its arm will bring is the
@@ -359,12 +368,16 @@ twice their wander above it, so the turns still fall on bar lines.
 
 ### Life
 
-**Life** adds three slow, irregular movement signals, shared by the whole
+**Life** scales both performer movement and physical reed/chamber imperfections:
+- `0 %` (`ImperfectionScale = 0`): **Perfection** — zero reed, chamber, pallet-onset, or vortex-jet variation, identical push and pull reeds, and zero performer movement.
+- `50 %` (`ImperfectionScale = 1`, the default on Init and every preset): **Standard well-made unit** with quality manufacturing in good shape (`±6 %` tip-set height, `±12 %` Q damping, `~3 cents` RMS tuning jitter, `±12 %` frame slot clearance, `±6 %` plate slot depth, `±8 %` tongue profile, `±10 %` chamber wall loss with inner/outer reed-block bias, `±0.6 dB` cell trim, `±16 %` secondary-rank pallet onset skew, and `0.35` vortex-jet inertia coupling).
+- `100 %` (`ImperfectionScale = 2`): **Over-emphasized** (`2x` tolerances across all reed, chamber, pallet, and vortex parameters).
+
+In addition to per-reed and per-chamber tolerances, **Life** adds three slow, irregular movement signals, shared by the whole
 instrument. One varies Auto's requested effort; lateral and depth motion
 change the instrument's position relative to fixed microphones. These keep
 moving through held notes, without repeated key presses or MIDI expression
-curves. The owner's chosen setting is 100 %, on Init and every preset.
-Zero removes these additions; the earlier Auto wander remains.
+curves. Zero removes these additions; the earlier Auto wander remains.
 
 Pressure still comes from the hand moving bellows air. No pitch or audio
 amplitude modulation is added to the reeds. In Wheel mode the user's hand
@@ -386,14 +399,22 @@ gaps are in the [Life audit](Docs/research/life-model-2026-11-01.md).
 
 ### Touch
 
-**Touch** interprets key emphasis as a brief shared bellows gesture in Auto,
-then relaxes toward the wheel's pressure request. Its default is the owner's
-chosen 100 %. A chord requests one gesture, not a separate pressure boost
-per reed. Life keeps moving during held notes; Touch responds to presses.
-At zero the added gesture is off. It never changes the manual hand.
-The control runs at 200 Hz and acts through the existing physical bellows;
-its strength and relaxation are performer choices, not measured constants.
-See the [Touch study](Docs/research/touch-model-2026-11-01.md).
+**Touch** interprets key velocity as shared bellows effort in Auto. Its
+default is the owner's chosen 100 %. Strong presses (`velocity >= 100`) add a
+brief initial accent (above `velocity = 64`, relaxing over 200 ms) and sustain
+at full playing speed (`400 Pa` at `wheel = 0`), while softer presses hold a
+brief reed-catching floor (`35 ms`) for short staccato notes to catch at once
+and then glide over 80 ms down to a gentler sustaining bellows speed (`45 %` /
+`~180 Pa` at `velocity = 1`). Raising the mod wheel (`0 -> 127`) during a held
+note moves toward the opposite dynamic: on normal/strong notes (`velocity >= 64`)
+it slows the bellows down to `60 Pa` (`15 %`), and on soft notes (`velocity < 64`)
+it swells the bellows up toward full `400 Pa` speed. A chord requests one
+shared gesture from its strongest key, and legato notes or key releases while
+other keys remain held smoothly transition the bellows speed in either
+direction. At zero the added velocity response is off. It never changes the
+manual hand. The control runs at 200 Hz and acts through the existing physical
+bellows; its strength and time constants are performer choices, not measured
+constants. See the [Touch study](Docs/research/touch-model-2026-11-01.md).
 
 ### Reed cells
 

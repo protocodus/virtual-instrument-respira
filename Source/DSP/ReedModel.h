@@ -60,6 +60,7 @@ struct ReedSpec {
     double slitLaminar = 0.0;                // plane Poiseuille clearance-slit resistance, Pa s/m
     double breath = 0.0;                     // the gap flow's turbulent fluctuation per unit noise and sqrt(m) of the tip's opening
     double eddyShare = 0.0;                  // the gap's eddies' mean size over the tip's opening
+    double vortexShare = 0.0;                // turbulent jet-vortex modulation of the slot's unsteady flow inertia
     double edge = 0.0, cube = 0.0, cube3 = 0.0;   // 2L/3 + W, L^3, 3L^2: GapArea's constants, made once
 };
 
@@ -80,9 +81,12 @@ struct ReedState {
 // fall ends, A5, puts A5-B6's attacks at 36-127 ms from -50 to -5 dB, where
 // Llanos-Vazquez et al. (2014, Acta Acustica 100, Table I) measured 50-100;
 // with 0.3 they took 111-311. The share above 30 mm stays a voicing estimate.
-inline ReedSpec MakeReed(double f0, double q, double setScale = 1.0) {
+inline ReedSpec MakeReed(double f0, double q, double setScale = 1.0,
+                         double clearanceScale = 1.0, double plateScale = 1.0, double profileScale = 1.0,
+                         double imperfection = 1.0) {
     // q is the bare tongue's quality factor in air.
     ReedSpec r;
+    const double clearance = kClearance * clearanceScale;
     r.length = std::fmin(0.075, std::fmax(0.008, 0.026 * std::pow(440.0 / f0, 0.45)));
     r.width = std::fmin(0.0045, std::fmax(0.0016, 0.0024 * std::pow(440.0 / f0, 0.15)));
     // The reed plate's thickness, the slot's depth: it varies between
@@ -94,15 +98,16 @@ inline ReedSpec MakeReed(double f0, double q, double setScale = 1.0) {
     // thesis, 2014, Fig. 8.5; caliper), where this gives 2.4; scaled to it,
     // A#2-A3's 2nd harmonic fell 12 dB under that measurement and a
     // half-pressed key fell silent.
-    r.plate = 0.0018 + 0.0225 * r.length;
+    const double basePlate = 0.0018 + 0.0225 * r.length;
+    r.plate = basePlate * plateScale;
     r.rest = -(0.0001 + 0.010 * r.length) * setScale;
-    r.clearArea = (2.0 * r.length + r.width) * kClearance;
+    r.clearArea = (2.0 * r.length + r.width) * clearance;
     // First cantilever mode: f = 0.1615 (t / L^2) sqrt(E / rho).
     const double thickness = f0 * r.length * r.length / (0.1615 * std::sqrt(kSteelE / kSteelDensity));
     const double profileMass = 0.18 + 0.42 * std::fmin(1.0, std::fmax(0.0, (r.length - 0.019) / 0.011));
     const double tongueMass = profileMass * 0.25 * kSteelDensity * r.length * r.width * thickness;
     r.area = 0.39 * r.length * r.width;
-    r.pistonArea = profileMass * r.area;
+    r.pistonArea = Clamp(profileMass * profileScale, 0.14, 0.72) * r.area;
     const double w0 = 2.0 * kPi * f0;
     // Low reeds carry brass tip weights, which keep the tongue stiff enough not
     // to be blown statically through its slot: at most an eighth of the slot
@@ -116,16 +121,17 @@ inline ReedSpec MakeReed(double f0, double q, double setScale = 1.0) {
     // measured 0.24 and 2.5 on one reed set 0.3 mm high (this one 0.8 mm;
     // Adachi et al., Forum Acusticum 2026). The weight adds mass, not air
     // loss, so the damping stays that of the bare tongue (and Q rises).
-    const double stiffness = std::fmax(tongueMass * w0 * w0, r.area * 1000.0 / (0.125 * r.plate));
+    const double stiffness = std::fmax(tongueMass * w0 * w0, r.area * 1000.0 / (0.125 * basePlate));
     // A voiced tongue's finite distal thickness (profileMass * thickness) means
     // its upper face clears the bottom of the plate at r.exit = r.plate +
     // tipThickness, and its half-thickness camber sweeps upper-slot closure
     // across [-r.arch, +r.arch] (GapArea), keeping dA/dx < 0 into the slot mouth
     // so the 2.5 kPa choke clamp can sit 0.2 * r.arch closer to the plate.
-    const double tipThickness = profileMass * thickness;
+    const double baseTip = profileMass * thickness;
+    const double tipThickness = baseTip * profileScale;
     r.exit = r.plate + tipThickness;
     r.arch = 0.5 * tipThickness;
-    r.rest = std::fmin(r.rest, -(r.area * kMaxPressure / stiffness + kClearance - 0.2 * r.arch));
+    r.rest = std::fmin(r.rest, -(r.area * kMaxPressure / stiffness + std::fmax(clearance, kClearance) - 0.1 * baseTip));
     const double mass = stiffness / (w0 * w0);
     r.invMass = 1.0 / mass;
     r.omega2 = w0 * w0;
@@ -137,11 +143,14 @@ inline ReedSpec MakeReed(double f0, double q, double setScale = 1.0) {
     // swings of ordinary playing, 0.4-4 mm on tongues 2.2-2.6 mm wide. 8 keeps
     // tip excursions near a tenth of the length.
     r.drag = 0.5 * kRho * 8.0 * r.area / mass;
-    r.slotInertance = kRho * r.exit / (r.length * r.width);
-    // Plane Poiseuille laminar resistance 12 mu h / c^2 through the 30 um
-    // clearance slit while the distal fifth of the tongue's perimeter engages
-    // the slot wall.
-    r.slitLaminar = 0.2 * 12.0 * kMu * tipThickness / (kClearance * kClearance);
+    r.slotInertance = kRho * (basePlate + baseTip) / (r.length * r.width);
+    // Plane Poiseuille laminar resistance 12 mu h / c^2 through the clearance
+    // slit while the distal fifth of the tongue's perimeter engages the slot wall.
+    r.slitLaminar = 0.2 * 12.0 * kMu * tipThickness / (clearance * clearance);
+    // Turbulent vortex shedding in the reed slot modulates the unsteady jet
+    // inertia during oscillation, scaled by Life (imperfection = 0 at Life 0,
+    // 1 at default Life 0.5, 2 at Life 1).
+    r.vortexShare = imperfection * 0.35;
     // The jet through the gap is turbulent (a Reynolds number near 10^3 at
     // 26 m/s through a 0.5 mm gap), so its volume flow fluctuates. Its eddies
     // are the size of the gap where they form, h, so along the edge the jet
@@ -212,7 +221,8 @@ inline double StepReed(const ReedSpec& r, ReedState& s, double dp, double dt, do
         const double a = 0.5 * kRho / (kCd * kCd * area * area);
         const double b = (kLaminar + r.slitLaminar * engaged * (r.clearArea / area)) / area + inertia;
         flow = 2.0 * c / (b + Sqrt(b * b + 4.0 * a * c));
-        drop = dp - inertia * (flow - s.flow);
+        const double pulsedFlow = flow * (1.0 + r.vortexShare * flowNoise);
+        drop = dp - inertia * (pulsedFlow - s.flow);
     }
     s.flow = flow;
     s.v += dt * ((r.area * drop + force) * r.invMass - r.omega2 * tune2 * (s.x - r.rest)
@@ -279,7 +289,8 @@ struct ChamberSpec {
 //
 // stepRate is the lowest rate the cell will be stepped at: sound must not
 // cross a section in less than a step, or the duct goes unstable.
-inline ChamberSpec MakeChamber(const ReedSpec& r, double f0, bool bassBox, double stepRate) {
+inline ChamberSpec MakeChamber(const ReedSpec& r, double f0, bool bassBox, double stepRate,
+                               double chamberScale = 1.0, double ventScale = 1.0) {
     ChamberSpec c;
     const double width = r.width + 0.004, L = r.length;
     double depth = 0.003 + 0.2 * L;
@@ -302,13 +313,13 @@ inline ChamberSpec MakeChamber(const ReedSpec& r, double f0, bool bassBox, doubl
     c.sectionInertance = kRho * dx / area;
     const double w1 = kPi * 343.0 / (2.0 * L);
     const double tauKirchhoff = ((width + depth) / area) * (1.474 * std::sqrt(kMu / kRho)) / std::sqrt(2.0 * w1 * w1 * w1);
-    c.wallLoss = std::fmin(2.0 * tauKirchhoff, Max(0.0, 0.25 * (dx * dx * stepRate / (343.0 * 343.0) - 1.0 / stepRate)));
+    c.wallLoss = std::fmin(2.0 * chamberScale * tauKirchhoff, Max(0.0, 0.25 * (dx * dx * stepRate / (343.0 * 343.0) - 1.0 / stepRate)));
     // Half a section to the hole; the bass air path's second length as before.
     c.channelInertance = kRho * 0.5 * dx / area + (path - 1.0) * kRho * 0.6 * L / area;
     double sum = 0.0;
     for (int i = 0; i < n; ++i) {   // section 0 at the closed end, under the tip
         const double near = 1.0 - (i + 1) * dx / L, far = 1.0 - i * dx / L;   // distance from the root over L
-        c.weight[i] = 2.0 * L / 3.0 * (far * far * far - near * near * near) + (i == 0 ? r.width : 0.0);
+        c.weight[i] = 2.0 * L / 3.0 * (far * far * far - near * near * near) + (i == 0 ? r.width * ventScale : 0.0);
         sum += c.weight[i];
     }
     for (int i = 0; i < n; ++i) c.weight[i] /= sum;

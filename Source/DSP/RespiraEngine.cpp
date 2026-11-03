@@ -49,8 +49,11 @@ constexpr double kValveBreath = 0.0196;
 constexpr double kHandCatchUp = 25.0;       // 1/s: how fast the hand closes on the wheel position
 // Auto's hand holds 400 Pa with the wheel at rest, the pressure the demo
 // phrases' ordinary strokes are fitted to (Tools/write_preset_midi.py), and
-// four times that with the wheel at the top. Voiced, not measured.
+// slows the bellows to kAutoSoftShare of that with the wheel at the top, so
+// the wheel softens and swells a held note across the reeds' dynamic range.
+// Voiced, not measured.
 constexpr double kAutoPressure = 400.0;     // Pa
+constexpr double kAutoSoftShare = 0.15;     // 60 Pa with the wheel at the top
 // An otherwise undefined controller sets who moves the bellows on the engine's
 // own MIDI: below 64 the wheel, from 64 Auto's hand. The demo phrases send it
 // at their start, since they play the bellows on the wheel.
@@ -96,7 +99,7 @@ constexpr double kPascalToFullScale = 1.5;
 // Musette register's RMS. More reeds are louder on a real accordion too (the
 // Master register 1.9 dB, one reed 3.5-3.9 dB); the owner asked for registers
 // that change the colour, not the level (RegistersSitTogether).
-constexpr std::array<double, 8> kRegisterTrimDb { { 3.45, 3.93, 1.39, 0.0, 1.46, 1.25, 1.68, -1.91 } };
+constexpr std::array<double, 8> kRegisterTrimDb { { 2.34, 2.98, 1.08, 0.0, 0.48, 0.78, 1.16, -1.90 } };
 // The output stage, which the owner asked for: no red on Reason's meters
 // however hard the bellows are pushed (OutputStage.h, shared by the newer
 // instruments). Its compressor follows the louder channel's power over 20 ms
@@ -380,6 +383,7 @@ void Engine::TakeTargets() {
 }
 
 void Engine::SetControls(const Controls& next) {
+    const double prevLife = controls[kLife];
     for (int i = 0; i < kControlCount; ++i) {
         const ControlInfo& info = kControlInfo[static_cast<std::size_t>(i)];
         const double v = next[i];
@@ -398,6 +402,19 @@ void Engine::SetControls(const Controls& next) {
     oversample = kBaseOversample << index;
     stages = 2 + index;
     internalRate = nextRate;
+    if (controls[kLife] != prevLife)
+        for (auto& c : cells) {
+            if (!c.active) continue;
+            const int r = c.rank, k = c.reed - r * 128;
+            const int idx = TuningIndex(r, k);
+            c.spec = MakeCell(r, k, controls[kMusette], kReedTuning[r][idx], rate * kBaseOversample, controls[kLife]);
+            if (masterTune != 0.0) {
+                const double scale = std::pow(2.0, masterTune / 1200.0);
+                Retune(c.spec.push, scale);
+                Retune(c.spec.pull, scale);
+            }
+            c.vent = MakeVent(c.spec.chamber, c.lift, internalRate);
+        }
     const int reg = static_cast<int>(controls[kRegister]);
     // Until it first renders, the engine has made no sound: controls set then
     // (a patch loaded into a new instance) take hold at once, with no knock
@@ -546,7 +563,7 @@ double Engine::PlayerEffort() const {
     if (life.amount != 0.0)
         effort = Clamp(effort + 0.22 * life.amount * life.effort, 0.65, 1.45);
     if (touch.amount != 0.0)
-        effort = Clamp(effort + touch.Effort(), 0.65, 1.45);
+        effort = Clamp(effort * (1.0 + touch.Effort()), 0.35, 1.45);
     return effort;
 }
 
@@ -567,7 +584,9 @@ void Engine::StepPlayer(double dt) {
     // (Hand::Tick) lags only while the stroke changes, its error largest one
     // time constant (Momentum) after. The hand turns that much early, so the
     // pressure passes zero just before the bar line.
-    const double momentum = controls[kMomentum], size = kAutoPressure * (1.0 + 3.0 * hand.wheel);
+    const double momentum = controls[kMomentum];
+    const double wheelEndShare = kAutoSoftShare + (1.0 - kAutoSoftShare) * touch.SwellUp();
+    const double size = kAutoPressure * (1.0 - (1.0 - wheelEndShare) * hand.wheel);
     const double swing = size / kBellowsStiffness;   // m^3
     double ahead = player.cycle + (1.0e-3 * momentum + swing / (perWheel * fastest + Abs(player.hold))) * transport.bpm / 60.0;
     if (ahead >= cycle) ahead -= cycle;
@@ -670,21 +689,34 @@ void Engine::StepPlayer(double dt) {
     const double coming = pressure - bellowsStiffness * perWheel * (player.drive - hand.position);
     // They close on the pressure they want in a reaction time
     // (above): the air that time asks of the bellows' stiffness. The hand's
-    // air is undone through Assist and Bellows into wheel speed, and the hand
-    // never moves against its stroke.
+    // air is undone through Assist and Bellows into wheel speed; while
+    // swinging through a turn it goes one way at full speed, and once on the
+    // stroke it can yield as the wheel eases so a held note softens at once.
     const double closing = player.swinging ? dt : kReaction;
-    // Life continues on held notes; Touch's emphasis relaxes after a press.
-    // Both act on the shared hand's force request, never on voice gain/tuning.
-    const double meant = want * PlayerEffort();
+    // Life continues on held notes; Touch sets both initial accent and
+    // sustained velocity speed. On normal/strong notes (v >= 64), raising the
+    // wheel slows the bellows down to kAutoSoftShare (60 Pa); on soft notes
+    // (v < 64), raising the wheel swells the bellows up to full playing speed.
+    double steady = 1.0 + player.level + wanderScale * player.wanderB;
+    if (life.amount != 0.0)
+        steady = Clamp(steady + 0.22 * life.amount * life.effort, 0.65, 1.45);
+    const double wheelZero = kAutoPressure * PlayerEffort();
+    const double wheelFull = kAutoPressure * wheelEndShare * steady;
+    const double targetSize = (1.0 - hand.wheel) * wheelZero + hand.wheel * wheelFull;
+    const double meant = pulling ? -targetSize : targetSize;
     const double flow = air + (meant - coming) / (bellowsStiffness * closing);
     const double wanted = -flow / perWheel;
-    player.velocity = Clamp(wanted, pulling ? 0.0 : -fastest, pulling ? fastest : 0.0);
+    const double low = player.swinging && pulling ? 0.0 : -fastest;
+    const double high = player.swinging && !pulling ? 0.0 : fastest;
+    player.velocity = Clamp(wanted, low, high);
     if (player.velocity == wanted) player.swinging = false;
-    player.drive += dt * player.velocity;
-    if (player.drive >= open || player.drive <= 0.0) {   // the bellows ran out: turn now
-        player.drive = Clamp(player.drive, 0.0, open);
+    const double nextDrive = player.drive + dt * player.velocity;
+    if (pulling ? nextDrive >= open : nextDrive <= 0.0) {   // the bellows ran out: turn now
         player.turned = !player.turned;
     }
+    const double clampedDrive = Clamp(nextDrive, 0.0, open);
+    player.velocity = (clampedDrive - player.drive) / dt;
+    player.drive = clampedDrive;
 }
 
 // A stroke's own level, uniform with kHandStroke's standard deviation.
@@ -788,8 +820,8 @@ void Engine::StartCell(int rank, int key, int source, int velocity) {
     }
     if (!cell->active) {
         const int index = TuningIndex(rank, key);
-        // Musette and master tune changes reach the reeds at their next note.
-        cell->spec = MakeCell(rank, key, controls[kMusette], kReedTuning[rank][index], rate * kBaseOversample);
+        // Musette, master tune and Life changes reach the reeds at their next note.
+        cell->spec = MakeCell(rank, key, controls[kMusette], kReedTuning[rank][index], rate * kBaseOversample, controls[kLife]);
         if (masterTune != 0.0) {
             const double scale = std::pow(2.0, masterTune / 1200.0);
             Retune(cell->spec.push, scale);
@@ -817,8 +849,16 @@ void Engine::StartCell(int rank, int key, int source, int velocity) {
     cell->closedFor = 0.0;
     cell->depth = channelDepth[static_cast<std::size_t>(source / 128)];
     cell->settled = false;
-    // A sharper key stroke lifts the pallet faster.
-    cell->openRate = 1.0 / (KeyOpeningSeconds(velocity) * internalRate);
+    // A sharper key stroke lifts the pallet faster; secondary ranks routed
+    // through register-slide apertures and side channels unseat with slight
+    // mechanical skew scaled by Life (0 at Life=0, +-16 % at default Life=0.5,
+    // +-32 % at Life=1), while the primary rank directly under the pallet
+    // opens on the key's exact travel.
+    const bool primaryRank = rank == kRankM || rank == kRankBass8 || rank == kRankChord8;
+    const double rankSkew = primaryRank
+        ? 1.0
+        : 1.0 + 0.16 * ImperfectionScale(controls[kLife]) * Unit(Hash(7u, static_cast<std::uint32_t>(reed)));
+    cell->openRate = rankSkew / (KeyOpeningSeconds(velocity) * internalRate);
 }
 
 void Engine::NoteOn(int channel, int key, int velocity) {
@@ -831,6 +871,7 @@ void Engine::NoteOn(int channel, int key, int velocity) {
     Key& k = keys[static_cast<std::size_t>(source)];
     k.target = channelDepth[static_cast<std::size_t>(channel)];
     k.rate = 1.0 / (KeyOpeningSeconds(velocity) * rate);
+    k.velocity = static_cast<std::uint8_t>(velocity);
     k.button = group != kTreble;
     MoveKey(source);
     if (autoHand) touch.Press(velocity);
@@ -872,8 +913,17 @@ void Engine::NoteOff(int channel, int key) {
     for (auto& c : cells)
         if (c.active && c.held && c.source == source) c.held = false;
     if (channel == 0) trebleHeld[static_cast<std::size_t>(key)] = 0;
-    keys[static_cast<std::size_t>(source)].target = 0.0;
+    Key& released = keys[static_cast<std::size_t>(source)];
+    released.target = 0.0;
+    released.velocity = 0;
     MoveKey(source);
+    if (autoHand) {
+        int heldVelocity = 0;
+        for (const auto& k : keys)
+            if (k.target > 0.0 && k.velocity > heldVelocity)
+                heldVelocity = k.velocity;
+        if (heldVelocity > 0) touch.Hold(heldVelocity);
+    }
 }
 
 void Engine::AllNotesOff() {
@@ -882,6 +932,7 @@ void Engine::AllNotesOff() {
     trebleHeld.fill(0);
     for (int source = 0; source < 3 * 128; ++source) {
         keys[static_cast<std::size_t>(source)].target = 0.0;
+        keys[static_cast<std::size_t>(source)].velocity = 0;
         MoveKey(source);
     }
 }
@@ -945,7 +996,43 @@ void Engine::Render(float* left, float* right, int frames) {
         // Assist makes the hand's stroke move as much more air as the open
         // reeds take beyond one A4 reed, so one wheel speed gives one pressure
         // whatever is played; at 0 the hand moves the bellows' own air only.
-        const double handFlow = -litres * hand.velocity * (1.0 + assist * (Max(demand, 1.0) - 1.0));
+        // In Manual mode, orifice flow scales as sqrt(P), which would make P
+        // collapse quadratically at slow wheel speeds (P ~ v^2) and stall the
+        // reeds below ~0.06/s; shaping sub-reference wheel speeds by v^0.55
+        // linearises steady pressure against wheel speed, while brisk wrist
+        // take-up across zero pressure lets gentle manual starts and reversals
+        // catch the reeds promptly.
+        double effectiveHandVelocity = hand.velocity;
+        if (!autoHand && hand.velocity != 0.0) {
+            constexpr double kManualRefSpeed = 0.095;
+            const double speed = Abs(hand.velocity);
+            if (speed < kManualRefSpeed) {
+                const double u = speed / kManualRefSpeed;
+                double shaped = kManualRefSpeed * std::pow(u, 0.48);
+                if (heldCells > 0) {
+                    const double signedP = hand.velocity < 0.0 ? pressure : -pressure;
+                    if (signedP < 220.0)
+                        shaped *= 1.0 + 2.4 * (1.0 - u) * Clamp((220.0 - signedP) / 220.0, 0.0, 2.0);
+                }
+                effectiveHandVelocity = hand.velocity < 0.0 ? -shaped : shaped;
+            } else if (heldCells > 0 && speed < 0.115) {
+                const double signedP = hand.velocity < 0.0 ? pressure : -pressure;
+                if (signedP >= -20.0 && signedP < 180.0) {
+                    const double w = (0.115 - speed) / (0.115 - kManualRefSpeed);
+                    effectiveHandVelocity *= 1.0 + 1.5 * w * Clamp((180.0 - signedP) / 180.0, 0.0, 1.2);
+                }
+            }
+        }
+        double handFlow = -litres * effectiveHandVelocity * (1.0 + assist * (Max(demand, 1.0) - 1.0));
+        if (!autoHand && heldCells > 0 && hand.velocity != 0.0) {
+            constexpr double kManualRefSpeed = 0.095;
+            const double speed = Abs(hand.velocity);
+            const double signedP = hand.velocity < 0.0 ? pressure : -pressure;
+            if (speed < kManualRefSpeed && signedP > 150.0 && Abs(handFlow) < Abs(airFlow)) {
+                const double u = speed / kManualRefSpeed;
+                handFlow += 3.0 * (1.0 - u) * (handFlow - airFlow);
+            }
+        }
         const double valveWas = valve;
         valve = airValve ? Min(1.0, valve + valveOpen) : Max(0.0, valve - valveClose);
         if (valve >= 1.0 && valveWas < 1.0) StartKnock(kButton, kButton.travel / kOpenSeconds, 1.0, true);
@@ -1079,7 +1166,7 @@ void Engine::Render(float* left, float* right, int frames) {
                                             invDtIn, pushing ? force : 0.0, pushing ? 0.0 : force, share, bend2,
                                             breath[j] * palletChiff * c.breathB, palletPressure, ventNoise);
                 c.radiated = out;
-                const float o = static_cast<float>(out);
+                const float o = static_cast<float>(out * spec.voiceGain);
                 (spec.bass ? b : t)[k] += o;
             }
         }
@@ -1208,7 +1295,7 @@ void Engine::Render(float* left, float* right, int frames) {
         for (auto& mic : bassMicMotion) mic.FlushTiny();
         for (BodyHighPass* body : { &mechanicsTreble, &mechanicsBass }) body->FlushTiny();
         room.FlushTiny();
-        if (Abs(grille) < 1.0e-20) grille = 0.0;
+        if (Abs(grille) < 1.0e-30) grille = 0.0;
     }
     diag.hand = hand.position;
     diag.handVelocity = hand.velocity;
