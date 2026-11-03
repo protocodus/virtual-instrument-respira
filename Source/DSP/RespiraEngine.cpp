@@ -183,8 +183,18 @@ constexpr double kRustleVoicing = 0.1778279410038923;   // -15 dB
 constexpr double kRoomLevel = 2.32;
 constexpr double kValveVoicing = 0.031622776601683794;   // -30 dB: the push valves' slaps (kFlapDensity), against their estimate
 
-// Rank of the bass side a group sounds: channel 2 bass buttons, channel 3 chords.
+// Rank of the bass side a group sounds: channel 1 bass buttons, channel 2 chords.
 enum Group { kTreble, kBassButtons, kChordButtons };
+
+// Which reeds a key of a channel plays: its own treble reeds, or, on the split
+// keyboard's low keys, the bass or chord buttons'.
+Group GroupOf(int channel, int key, bool split) {
+    if (channel == 1) return kBassButtons;
+    if (channel == 2) return kChordButtons;
+    if (split && key < 36) return kBassButtons;
+    if (split && key < 48) return kChordButtons;
+    return kTreble;
+}
 
 // Whether a register sounds `rank` for a (folded) treble key. Broken back
 // above C#7, the 4' would double the 8' in unison, a cent or so apart, and
@@ -822,11 +832,7 @@ void Engine::StartCell(int rank, int key, int source, int velocity) {
 }
 
 void Engine::NoteOn(int channel, int key, int velocity) {
-    Group group = channel == 1 ? kBassButtons : channel == 2 ? kChordButtons : kTreble;
-    if (group == kTreble && controls[kKeyboard] < 0.5) {
-        if (key < 36) group = kBassButtons;
-        else if (key < 48) group = kChordButtons;
-    }
+    const Group group = GroupOf(channel, key, controls[kKeyboard] < 0.5);
     const int source = channel * 128 + key;
     Key& k = keys[static_cast<std::size_t>(source)];
     k.target = channelDepth[static_cast<std::size_t>(channel)];
@@ -869,8 +875,25 @@ void Engine::SwitchRegister(int from, int to) {
 
 void Engine::NoteOff(int channel, int key) {
     const int source = channel * 128 + key;
+    // A bass or chord reed is one per pitch class, so buttons an octave apart
+    // open the same chamber, which belongs to the latest of them. It keeps
+    // speaking, now for another button still down, until none is.
+    int other = -1;
+    const bool split = controls[kKeyboard] < 0.5;
+    const Group group = GroupOf(channel, key, split);
+    if (group != kTreble)
+        for (int s = 0; s < 3 * 128 && other < 0; ++s)
+            if (s != source && keys[static_cast<std::size_t>(s)].target > 0.0 && GroupOf(s / 128, s % 128, split) == group
+                && PitchClass(s % 128) == PitchClass(key))
+                other = s;
     for (auto& c : cells)
-        if (c.active && c.held && c.source == source) c.held = false;
+        if (c.active && c.held && c.source == source) {
+            if (other < 0) c.held = false;
+            else {
+                c.source = other;
+                c.depth = channelDepth[static_cast<std::size_t>(other / 128)];
+            }
+        }
     if (channel == 0) trebleHeld[static_cast<std::size_t>(key)] = 0;
     keys[static_cast<std::size_t>(source)].target = 0.0;
     MoveKey(source);

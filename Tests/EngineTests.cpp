@@ -1075,6 +1075,21 @@ void ReleaseAndAllNotesOff() {
     Expect(e->Diag().cells == 0, "ReleaseAndAllNotesOff", "no chamber left sounding", e->Diag().cells);
 }
 
+void AnOctaveApartButtonsShareTheReed() {
+    // A bass or chord reed is one per pitch class, so buttons an octave apart
+    // open the same chamber: it speaks until the last of them is let go, in
+    // whichever order they come up. C0 and C1 (the split keyboard's bass
+    // buttons) are held; the later one goes up first at 0.5 s.
+    const double rate = 48000.0;
+    auto e = Make(rate, 3, [](Controls& c) { c[kMechanics] = kControlInfo[kMechanics].min; });
+    const Take t = Play(*e, rate, 2.0, { { 0.0, { kOn, 12, 100 } }, { 0.0, { kOn, 24, 100 } }, { 0.5, { kOff, 24, 0 } }, { 1.5, { kOff, 12, 0 } } },
+                        PullThenPush);
+    const double held = Rms(t.left, rate, 0.8, 1.4), after = Rms(t.left, rate, 1.8, 2.0);
+    Expect(held > 1.0e-3, "AnOctaveApartButtonsShareTheReed", "the first button still sounds after the second is up, RMS", held);
+    Expect(Db(after) < -100.0, "AnOctaveApartButtonsShareTheReed", "silent 300 ms after the last is up, dBFS RMS", Db(after));
+    Expect(e->Diag().cells == 0, "AnOctaveApartButtonsShareTheReed", "no chamber left sounding", e->Diag().cells);
+}
+
 void VoiceLimit() {
     const double rate = 48000.0;
     std::vector<Note> notes;
@@ -1488,6 +1503,7 @@ int main() {
     DeterministicAfterReset();
     ResetPlaysAsNew();
     ReleaseAndAllNotesOff();
+    AnOctaveApartButtonsShareTheReed();
     VoiceLimit();
     PresetsSitTogether();
     RegistersSitTogether();
