@@ -868,6 +868,10 @@ void FoldsSoundWithTheBellows() {
     const auto stopping = MechanismOf(3, 3.5, note, [](double s) { return s < 1.5 ? 0.3 + 0.2 * s : 0.6; });
     const double moving = Rms(stopping, rate, 0.8, 1.4), still = Rms(stopping, rate, 3.0, 3.5);
     Expect(Db(moving) - Db(still) > 30.0, "FoldsSoundWithTheBellows", "level drop once the hand stops, dB", Db(moving) - Db(still));
+    // Pumping the bellows with all keys closed still flexes and rubs the fold walls.
+    const auto closedStroke = MechanismOf(0, 1.5, {}, [](double s) { return 0.3 + 0.25 * s; });
+    Expect(Db(Rms(closedStroke, rate, 0.3, 1.3)) > -120.0, "FoldsSoundWithTheBellows",
+           "fold-wall distension rustle with closed keys, dBFS RMS", Db(Rms(closedStroke, rate, 0.3, 1.3)));
     // Vented to almost no pressure, the panels settle within their play and
     // the device falls silent (they once drifted there for ever).
     auto e = Make(rate, 0);

@@ -94,13 +94,17 @@ struct BodyHighPass {
     };
     double b0 = 1.0, a1 = 0.0, a2 = 0.0, z1 = 0.0, z2 = 0.0;
     Mode wood, metal;
-    void Set(double rate) {
+    // The bass mechanism sits in the deeper enclosed wooden bass casing with
+    // heavy steel Stradella pistons and clevises (~640 Hz and ~1.85 kHz),
+    // whereas the treble keybed and aluminum grille rods ring higher (~850 Hz
+    // and ~2.4 kHz).
+    void Set(double rate, bool bassSide = false) {
         const double k = std::tan(3.14159265358979 * kHz / rate), norm = 1.0 / (1.0 + 1.4142135623730951 * k + k * k);
         b0 = norm;
         a1 = 2.0 * (k * k - 1.0) * norm;
         a2 = (1.0 - 1.4142135623730951 * k + k * k) * norm;
-        wood.Set(850.0, 4.5, 0.35, rate);
-        metal.Set(2400.0, 5.5, 0.40, rate);
+        wood.Set(bassSide ? 640.0 : 850.0, bassSide ? 4.0 : 4.5, bassSide ? 0.38 : 0.35, rate);
+        metal.Set(bassSide ? 1850.0 : 2400.0, bassSide ? 5.0 : 5.5, bassSide ? 0.35 : 0.40, rate);
     }
     void Clear() {
         z1 = z2 = 0.0;
@@ -173,6 +177,11 @@ inline constexpr double kFlapOpenPa = 15.0;     // the drop that lifts it that f
 // The drop past which the valve counts as lifted or reversed, Pa: the
 // bellows' ripple and a still hand's drift do not move it.
 inline constexpr double kFlapHold = 2.0;
+// The pull reed's check valve sits on the bellows side of the reed plate: its
+// slap must couple through the reed slot and chamber (or bellows walls) rather
+// than directly into the chamber mouth, attenuating it relative to the push
+// valve's slap.
+inline constexpr double kPullValveShare = 0.35;
 
 inline double FlapArea(double length, double width) { return (length + kFlapMargin) * (width + kFlapMargin); }
 // Landing speed at a turn whose drop reverses at `rate` Pa/s, m/s.

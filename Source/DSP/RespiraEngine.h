@@ -128,7 +128,8 @@ private:
         CellState state;
         double radiated = 0.0;   // volume acceleration out of the pallet hole, m^3/s^2
         bool valveOpen = false;  // the push reed's valve is lifted (Mechanics.h, kFlapDensity)
-        double valveMass = 0.0;
+        bool pullValveOpen = false;
+        double valveMass = 0.0, pullValveMass = 0.0;
         double breathA = 0.0, breathB = 0.0;   // the gap turbulence, shaped to its eddies
     };
 
@@ -222,7 +223,7 @@ private:
     void MoveKey(int source);
     void StartKnock(const Stop& stop, double speed, double massScale, bool bass);
     void StartSlap(double mass, double speed, bool bass);
-    void StepKeys();
+    void StepKeys(double seatScale);
 
     Controls controls;
     double rate = 48000.0, internalRate = 192000.0;
@@ -252,7 +253,7 @@ private:
     std::array<Cell, kMaxCells> cells {};
     Decimator trebleSide, bassSide;
     Compartment bassBox;   // under the bass end cover
-    double grilleCoeff = 0.0;
+    double grilleCoeff = 0.0, grilleCoeffBase = 0.0, grilleCoeffTarget = 0.0;
     double grille = 0.0;
     double gain = 0.0, gainTarget = 0.0, bassGain = 0.0, bassGainTarget = 0.0, smoothing = 0.0;
     double trebleGain = 1.0, trebleGainTarget = 1.0;   // the register's trim
@@ -263,6 +264,7 @@ private:
     // The microphones' gains for each side (MicPair, RespiraEngine.cpp).
     float treblePanL = 0.0f, treblePanR = 0.0f, treblePanLTarget = 0.0f, treblePanRTarget = 0.0f;
     float bassPanL = 0.0f, bassPanR = 0.0f, bassPanLTarget = 0.0f, bassPanRTarget = 0.0f;
+    float foldsPanL = 0.70710678f, foldsPanR = 0.70710678f, foldsPanLTarget = 0.70710678f, foldsPanRTarget = 0.70710678f;
     float trebleMicL = 0.0f, trebleMicR = 0.0f, bassMicL = 0.0f, bassMicR = 0.0f;
     double micCos = 1.0, micSin = 0.0;
     std::array<MicrophoneMotion, 2> trebleMicMotion {}, bassMicMotion {};
@@ -270,11 +272,12 @@ private:
     std::array<std::uint16_t, 3 * 128> movingKeys {};   // the keys whose travel is changing
     int movingCount = 0;
     std::array<Knock, 32> knocks {};
-    std::array<Knock, 48> slaps {};   // the push valves'
+    std::array<Knock, 48> slaps {};   // the check valves'
 
     Folds folds;
     Rustle rustle;
     double rustleForce = 0.0;
+    bool strapPushed = false;
     BodyHighPass mechanicsTreble, mechanicsBass;
     double mechanicsGain = 0.0, mechanicsGainTarget = 0.0;
     Diagnostics diag;

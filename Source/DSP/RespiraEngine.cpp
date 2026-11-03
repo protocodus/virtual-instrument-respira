@@ -17,8 +17,17 @@ namespace {
 // at mid-extension (BellowsStiffness).
 constexpr double kBellowsStiffness = 4.0e6;
 constexpr double kBellowsVolumeSlope = 0.30;
+// A ~6 L bellows' air alone has bulk stiffness 2.4e7 Pa/m^3; the remaining
+// compliance comes from the cardboard/leather folds bowing and the player's
+// arm yielding. When the hand moves against closed or throttled pallets,
+// kFoldDistensionShare of the hand's stroke distends or compresses the fold
+// walls themselves, rubbing their cloth and leather hinges even before air
+// leaves through the reeds.
+constexpr double kFoldDistensionShare = 0.35;
 constexpr double kPalletCoupling = 0.25;   // shared outer end-correction share between sibling ranks under one pallet pad
 constexpr double kPalletChiff = 1.5;       // extra orifice-jet turbulence across the unseating pallet rim at mid-lift
+constexpr double kPalletVentChiff = 0.35;  // pallet-hole orifice-jet fluctuation share while the pad lifts or seats
+constexpr double kEddyForceShare = 0.65;   // coherent gap-eddy pressure fluctuation on the speaking reed tongue
 
 double BellowsStiffness(double position, double open) {
     const double extension = Clamp(position / open, 0.0, 1.0);
@@ -284,7 +293,8 @@ Engine::Engine() { Prepare(48000.0); }
 void Engine::Prepare(double sampleRate) {
     rate = sampleRate > 1000.0 && sampleRate < 1.0e6 ? sampleRate : 48000.0;
     bassBox.Set(kBassBoxDepth, kBassBoxOpen, kBassHoleLength, kClothRayl, kBassBoxAbsorbed, kBassBoxModes, rate);
-    for (BodyHighPass* body : { &mechanicsTreble, &mechanicsBass }) body->Set(rate);
+    mechanicsTreble.Set(rate, false);
+    mechanicsBass.Set(rate, true);
     rustle.Set(rate);
     smoothing = 1.0 - std::exp(-1.0 / (0.02 * rate));
     bendSmoothing = 1.0 - std::exp(-1.0 / (0.005 * rate));
@@ -344,6 +354,7 @@ void Engine::Reset() {
     rustle = Rustle {};
     rustle.Set(rate);
     rustleForce = 0.0;
+    strapPushed = false;
     for (BodyHighPass* body : { &mechanicsTreble, &mechanicsBass }) body->Clear();
     UpdateMicrophones();
     TakeTargets();
@@ -355,10 +366,13 @@ void Engine::TakeTargets() {
     gain = gainTarget;
     bassGain = bassGainTarget;
     trebleGain = trebleGainTarget;
+    grilleCoeff = grilleCoeffTarget;
     treblePanL = treblePanLTarget;
     treblePanR = treblePanRTarget;
     bassPanL = bassPanLTarget;
     bassPanR = bassPanRTarget;
+    foldsPanL = foldsPanLTarget;
+    foldsPanR = foldsPanRTarget;
     roomGain = roomGainTarget;
     mechanicsGain = mechanicsGainTarget;
     for (auto& mic : trebleMicMotion) mic.TakeTarget();
@@ -372,7 +386,8 @@ void Engine::SetControls(const Controls& next) {
         controls[i] = v == v ? Clamp(v, info.min, info.max) : info.initial;
         if (info.steps > 0) controls[i] = std::floor(controls[i] + 0.5);
     }
-    grilleCoeff = 1.0 - std::exp(-2.0 * kPi * Min(controls[kGrille], 0.45 * rate) / rate);
+    grilleCoeffBase = 1.0 - std::exp(-2.0 * kPi * Min(controls[kGrille], 0.45 * rate) / rate);
+    grilleCoeffTarget = grilleCoeffBase;
     const int index = static_cast<int>(controls[kOversampling]);
     const double nextRate = rate * (kBaseOversample << index);
     if (nextRate != internalRate)
@@ -438,6 +453,8 @@ void Engine::UpdateMicrophones() {
     // Life=0 is the original pickup, including its exact normalization.
     treblePanLTarget = trebleMicL; treblePanRTarget = trebleMicR;
     bassPanLTarget = bassMicL; bassPanRTarget = bassMicR;
+    foldsPanLTarget = 0.70710678f; foldsPanRTarget = 0.70710678f;
+    grilleCoeffTarget = grilleCoeffBase;
     for (auto& mic : trebleMicMotion) mic.RestoreReference();
     for (auto& mic : bassMicMotion) mic.RestoreReference();
     if (life.amount == 0.0) return;
@@ -446,9 +463,12 @@ void Engine::UpdateMicrophones() {
     // Ideal cardioid reception and 1/r spreading are geometry, not an EQ.
     // Full Life permits at most +/-5 cm sideways and +/-8 cm toward/away
     // from the pair. These are selectable performer motions, NOT fitted
-    // directivity measurements. No frequency-dependent radiation or Doppler
-    // is claimed for the instrument. MicrophoneMotion adds only the relative
-    // spherical-wave proximity response of these ideal cardioids; no Doppler.
+    // directivity measurements. No Doppler is claimed for the instrument.
+    // MicrophoneMotion adds the relative spherical-wave proximity response of
+    // these ideal cardioids, while the treble grille's baffled-piston aperture
+    // shades its off-axis high-frequency cutoff as the player sways and the
+    // bellows fan open (Beranek, Acoustics, 1954, p. 101: 2 J1(k a sin theta)
+    // / (k a sin theta) ~= 1 - (k a sin theta)^2 / 8).
     const double side = 0.05 * life.amount * Clamp((life.side + life.effort) / 3.0, -1.0, 1.0);
     const double depth = 0.08 * life.amount * Clamp((life.depth + life.effort) / 3.0, -1.0, 1.0);
     // The bass end also moves with the bellows. The existing 6 L capacity and
@@ -457,8 +477,7 @@ void Engine::UpdateMicrophones() {
     const double extension = life.amount * (kAutoBellows / kBellowsSection)
                              * (Clamp(hand.position / open, 0.0, 1.0) - 0.5);
     const double ca = micCos, sa = micSin;
-    const auto move = [&](double x0, double shift, float& left, float& right,
-                          std::array<MicrophoneMotion, 2>& pair) {
+    const auto panAt = [&](double x0, double shift, float& left, float& right) {
         const double r0 = Sqrt(x0 * x0 + kMicDistance * kMicDistance);
         const double x = x0 + side + shift, z = kMicDistance + depth;
         const double r = Sqrt(x * x + z * z);
@@ -466,11 +485,29 @@ void Engine::UpdateMicrophones() {
         const double oldR = 1.0 + (kMicDistance * ca + x0 * sa) / r0;
         left *= static_cast<float>((1.0 + (z * ca - x * sa) / r) / oldL * r0 / r);
         right *= static_cast<float>((1.0 + (z * ca + x * sa) / r) / oldR * r0 / r);
+    };
+    const auto move = [&](double x0, double shift, float& left, float& right,
+                          std::array<MicrophoneMotion, 2>& pair) {
+        panAt(x0, shift, left, right);
+        const double x = x0 + side + shift, z = kMicDistance + depth;
+        const double r = Sqrt(x * x + z * z);
         pair[0].Move(r, (z * ca - x * sa) / r);
         pair[1].Move(r, (z * ca + x * sa) / r);
     };
     move(kTrebleSideX, 0.0, treblePanLTarget, treblePanRTarget, trebleMicMotion);
     move(kBassSideX, -extension, bassPanLTarget, bassPanRTarget, bassMicMotion);
+    // The bellows folds sit midway between the chest-anchored treble frame and
+    // the moving left-hand bass casing (-0.5 * extension).
+    panAt(0.0, -0.5 * extension, foldsPanLTarget, foldsPanRTarget);
+    // Upper-body sway and the bellows' fan opening rotate the treble grille's
+    // normal relative to the microphone stand, shading its effective cutoff.
+    const double r0 = Sqrt(kTrebleSideX * kTrebleSideX + kMicDistance * kMicDistance);
+    const double sin0 = kTrebleSideX / r0;
+    const double x = kTrebleSideX + side, z = kMicDistance + depth, r = Sqrt(x * x + z * z);
+    const double yaw = 0.8 * side / kMicDistance - 0.25 * extension / kPleatLongWall;
+    const double sinTheta = Clamp((x - z * yaw) / r, -0.95, 0.95);
+    const double aperture = Clamp((1.0 - 0.85 * sinTheta * sinTheta) / (1.0 - 0.85 * sin0 * sin0), 0.65, 1.35);
+    grilleCoeffTarget = Clamp(grilleCoeffBase * aperture, 0.0, 1.0);
 }
 
 void Engine::SetMasterTune(double cents) { masterTune = cents == cents ? Clamp(cents, -100.0, 100.0) : 0.0; }
@@ -699,12 +736,14 @@ void Engine::StartSlap(double mass, double speed, bool bass) {
 }
 
 // The keys move as their pallets do (Render): down at the stroke's speed,
-// up in the time the spring takes. A key knocks on its felt when it reaches
-// the bottom and its pallet on its seat when it is back up; a key that turns
-// before either does not. Each key's felt and leverage differ a little from
-// its neighbours' (mass +-20 %, fixed per instrument, as the reeds differ).
-void Engine::StepKeys() {
-    const double up = 1.0 / (kCloseSeconds * rate);
+// up in the time the spring takes, accelerated by suction on pull and
+// cushioned by chamber pressure on push (seatScale). A key knocks on its felt
+// when it reaches the bottom and its pallet on its seat when it is back up; a
+// key that turns before either does not. Each key's felt and leverage differ a
+// little from its neighbours' (mass +-20 %, fixed per instrument, as the reeds
+// differ).
+void Engine::StepKeys(double seatScale) {
+    const double up = seatScale / (kCloseSeconds * rate);
     for (int i = 0; i < movingCount;) {
         const int source = movingKeys[static_cast<std::size_t>(i)];
         Key& k = keys[static_cast<std::size_t>(source)];
@@ -766,8 +805,9 @@ void Engine::StartCell(int rank, int key, int source, int velocity) {
         cell->open = cell->lift = 0.0;
         cell->radiated = 0.0;
         cell->vent = Vent {};
-        cell->valveOpen = false;
+        cell->valveOpen = cell->pullValveOpen = false;
         cell->valveMass = kFlapDensity * FlapArea(cell->spec.push.length, cell->spec.push.width);
+        cell->pullValveMass = kPullValveShare * kFlapDensity * FlapArea(cell->spec.pull.length, cell->spec.pull.width);
         cell->reed = reed;
         cell->rank = rank;
     }
@@ -910,7 +950,12 @@ void Engine::Render(float* left, float* right, int frames) {
         valve = airValve ? Min(1.0, valve + valveOpen) : Max(0.0, valve - valveClose);
         if (valve >= 1.0 && valveWas < 1.0) StartKnock(kButton, kButton.travel / kOpenSeconds, 1.0, true);
         if (valve <= 0.0 && valveWas > 0.0) StartKnock(kBassPallet, kBassPallet.travel / kCloseSeconds, 1.0, true);
-        StepKeys();
+        // Suction on pull accelerates a closing pallet onto its seat; positive
+        // chamber pressure on push cushions its landing. Zero pressure stays
+        // exact at kCloseSeconds.
+        const double seatScale = Clamp(1.0 - 0.20 * pressure / 1000.0, 0.75, 1.30);
+        const double stepCloseRate = closeRate * seatScale;
+        StepKeys(seatScale);
         double vented = 0.0, hiss = 0.0;
         if (valve > 0.0) {
             const double area = kAirValveArea * valve, p = Abs(pressure);
@@ -935,12 +980,20 @@ void Engine::Render(float* left, float* right, int frames) {
         const double leak = kBellowsLeak * pressure + vented;
         const double pressureWas = pressure;
         pressure = Clamp(pressure + dt * bellowsStiffness * (handFlow - airFlow - leak), -kMaxPressure, kMaxPressure);
+        // On a push-to-pull reversal the left wrist shifts from pressing the
+        // bass board to drawing the leather bass strap, taking up its slack.
+        if (pressure > kPleatHold) strapPushed = true;
+        else if (strapPushed && pressure < -kPleatHold && hand.velocity > 0.02) {
+            strapPushed = false;
+            StartKnock(kBassPallet, Clamp(hand.velocity * 0.15, 0.02, 0.35), 1.0, true);
+        }
         bend2 += bendSmoothing * (bend2Target - bend2);
 
         // Below about 1 m/s the gap flow is laminar (ReedModel.h, kLaminar),
         // which also keeps the eddies' rate finite as the bellows pressure
         // passes zero.
         const double jetStep = Max(Sqrt(2.0 * Abs(pressure) / kRho), 1.0) * dtIn;
+        const bool pushing = pressure >= 0.0;
         float t[kMaxOversample] = {}, b[kMaxOversample] = {};
         double drawn = 0.0, open = 0.0;
         const int active = liveCount;
@@ -950,7 +1003,7 @@ void Engine::Render(float* left, float* right, int frames) {
         // can overlap them. Each cell's turbulence draws and its share of the
         // bellows' air are taken in the order of one cell's steps after
         // another, so the sound is the same to the bit.
-        double ec[kMaxCells], breath[kMaxCells], travel[kMaxCells];
+        double ec[kMaxCells], breath[kMaxCells], eddyForce[kMaxCells], travel[kMaxCells];
         double draws[kMaxCells * kMaxOversample], taken[kMaxCells * kMaxOversample];
         for (int j = 0; j < active; ++j) {
             Cell& c = *live[j];
@@ -960,12 +1013,13 @@ void Engine::Render(float* left, float* right, int frames) {
             // The breath's two one-pole stages at the eddies' rate in the
             // flowing reed's gap, scaled back to the white draw's variance; once
             // a host sample, some 20 times a cycle of the highest reed.
-            const bool pushing = pressure >= 0.0;
             const ReedSpec& flowing = pushing ? spec.push : spec.pull;
             const double tip = GapArea(flowing, (pushing ? c.state.push : c.state.pull).x) / flowing.edge;
             const double eddy = jetStep / (flowing.eddyShare * tip);
             ec[j] = eddy / (1.0 + eddy);
-            breath[j] = flowing.breath * Sqrt(tip / Max(CascadeVariance(ec[j]), 1.0e-30));
+            const double invEddyRms = 1.0 / Sqrt(Max(CascadeVariance(ec[j]), 1.0e-30));
+            breath[j] = flowing.breath * Sqrt(tip) * invEddyRms;
+            eddyForce[j] = kEddyForceShare * invEddyRms;
             // Turbulence in the gap: a small random force that also seeds the
             // reeds, and the fluctuation of the jet's flow.
             for (int k = 0; k < oversample; ++k) {
@@ -992,7 +1046,7 @@ void Engine::Render(float* left, float* right, int frames) {
                 const CellSpec& spec = c.spec;
                 const bool palletMoving = c.open != travel[j];
                 if (palletMoving) {
-                    c.open = c.open < travel[j] ? Min(travel[j], c.open + c.openRate) : Max(travel[j], c.open - closeRate);
+                    c.open = c.open < travel[j] ? Min(travel[j], c.open + c.openRate) : Max(travel[j], c.open - stepCloseRate);
                     // The pallet lifts off and settles smoothly: the hole area
                     // follows a raised cosine of the key travel, so the jet
                     // starts and stops without a step in the radiated flow.
@@ -1007,20 +1061,23 @@ void Engine::Render(float* left, float* right, int frames) {
                 const double draw = draws[j * oversample + k];
                 c.breathA += ec[j] * (draw - c.breathA);
                 c.breathB += ec[j] * (c.breathA - c.breathB);
-                const double pushForce = turbulence * draw * spec.push.area * Abs(pressure);
                 // While the pallet pad is lifting or seating, the narrow
                 // crescent rim orifice (peaking at c.lift = 0.5) adds starting
-                // jet shear ("chiff") before the reed's periodic oscillation
-                // locks the flow.
-                const double palletChiff = palletMoving ? 1.0 + kPalletChiff * 4.0 * c.lift * (1.0 - c.lift) : 1.0;
+                // jet shear ("chiff") at both the pallet rim and the reed slot
+                // before the reed's periodic oscillation locks the flow.
+                const double palletPulse = palletMoving ? 4.0 * c.lift * (1.0 - c.lift) : 0.0;
+                const double palletChiff = 1.0 + kPalletChiff * palletPulse;
+                const double reedArea = (pushing ? spec.push : spec.pull).area;
+                const double force = turbulence * (draw + palletChiff * eddyForce[j] * c.breathB) * reedArea * Abs(pressure);
+                const double ventNoise = kPalletVentChiff * palletPulse * breath[j] * c.breathB;
                 const double siblingRad = palletRad[groupOf[j]] - c.radiated;
                 const double palletPressure = Clamp(kPalletCoupling * spec.chamber.endInertance * siblingRad,
                                                     -0.25 * kMaxPressure, 0.25 * kMaxPressure);
                 double& share = taken[j * oversample + k];
                 share = 0.0;
                 const double out = StepCell(spec.push, spec.pull, spec.chamber, c.vent, c.state, pressure, dtIn,
-                                            invDtIn, pushForce, -pushForce, share, bend2,
-                                            breath[j] * palletChiff * c.breathB, palletPressure);
+                                            invDtIn, pushing ? force : 0.0, pushing ? 0.0 : force, share, bend2,
+                                            breath[j] * palletChiff * c.breathB, palletPressure, ventNoise);
                 c.radiated = out;
                 const float o = static_cast<float>(out);
                 (spec.bass ? b : t)[k] += o;
@@ -1032,12 +1089,18 @@ void Engine::Render(float* left, float* right, int frames) {
             const CellSpec& spec = c.spec;
             for (int k = 0; k < oversample; ++k) drawn += taken[j * oversample + k];
             // The push valve lifts with the push air, and slaps shut when the
-            // bellows turn or, as the pallet shuts, the chamber fills.
+            // bellows turn or, as the pallet shuts, the chamber fills; the pull
+            // valve on the bellows side does the converse on pull strokes.
             const double drop = pressure * c.lift;
             if (!c.valveOpen) c.valveOpen = drop > kFlapHold;
             else if (drop < -kFlapHold || (c.lift < 1.0 && drop < kFlapHold)) {
                 c.valveOpen = false;
                 StartSlap(c.valveMass, drop < -kFlapHold ? FlapTurnSpeed((pressureWas - pressure) / dt) : kFlapCurlSpeed, spec.bass);
+            }
+            if (!c.pullValveOpen) c.pullValveOpen = drop < -kFlapHold;
+            else if (drop > kFlapHold || (c.lift < 1.0 && drop > -kFlapHold)) {
+                c.pullValveOpen = false;
+                StartSlap(c.pullValveMass, drop > kFlapHold ? FlapTurnSpeed((pressure - pressureWas) / dt) : kFlapCurlSpeed, spec.bass);
             }
             // Assist counts a held key in full once its pallet is down, however
             // far channel pressure holds it: a half-open pallet passes 0.3-0.9
@@ -1069,6 +1132,7 @@ void Engine::Render(float* left, float* right, int frames) {
         airFlowSmoothed += 0.002 * (airFlow - airFlowSmoothed);
 
         mechanicsGain += smoothing * (mechanicsGainTarget - mechanicsGain);
+        grilleCoeff += smoothing * (grilleCoeffTarget - grilleCoeff);
         double valveTreble = 0.0, valveBass = 0.0;
         for (auto& k : slaps) {
             if (!k.active) continue;
@@ -1085,6 +1149,8 @@ void Engine::Render(float* left, float* right, int frames) {
         treblePanR += glide * (treblePanRTarget - treblePanR);
         bassPanL += glide * (bassPanLTarget - bassPanL);
         bassPanR += glide * (bassPanRTarget - bassPanR);
+        foldsPanL += glide * (foldsPanLTarget - foldsPanL);
+        foldsPanR += glide * (foldsPanRTarget - foldsPanR);
         double knockTreble = 0.0, knockBass = 0.0;
         for (auto& k : knocks) {
             if (!k.active) continue;
@@ -1094,19 +1160,24 @@ void Engine::Render(float* left, float* right, int frames) {
         // The folds sit between the halves and radiate straight to the air, not
         // through the body, as panels of their own size (kPleatToFlow).
         const double flips = folds.Step(pressure, dt);
-        // The folds move as far as air leaves the bellows; the rest of the hand's
-        // stroke only presses on the air.
-        const double rubbing = rustle.Step((airFlow + leak) / kBellowsSection);
-        const double folds = (kFoldVoicing * flips + kRustleVoicing * (rubbing - rustleForce)) * rate
-                             * (kPleatToFlow / kForceToFlow) * 0.7071067811865476;
+        // The folds rub both as air leaves the bellows and as the hand's stroke
+        // distends or compresses the fold walls (kFoldDistensionShare), with
+        // higher hinge friction when pleats crowd near closed or pull taut near
+        // full extension.
+        const double extension = Clamp(hand.position / openSpan, 0.0, 1.0);
+        const double foldStrain = 1.0 + 0.35 * (2.0 * extension - 1.0) * (2.0 * extension - 1.0);
+        const double foldFlow = (1.0 - kFoldDistensionShare) * (airFlow + leak) + kFoldDistensionShare * handFlow;
+        const double rubbing = rustle.Step(foldStrain * foldFlow / kBellowsSection);
+        const double foldsOut = (kFoldVoicing * flips + kRustleVoicing * (rubbing - rustleForce)) * rate
+                                * (kPleatToFlow / kForceToFlow);
         rustleForce = rubbing;
         // The air valve and the bass mechanism sit in the bass box too: their
         // sound leaves through the bass end cover's holes with the bass reeds'.
         const double bass = bassBox.Process(bassSide.Process(b, stages) + hiss + valves * valveBass
                                             + mechanicsGain * mechanicsBass.Process(knockBass)) * bassGain;
         const double treble = grille * trebleGain + mechanicsGain * mechanicsTreble.Process(knockTreble);
-        double l = gain * (treble * treblePanL + mechanicsGain * folds + bass * bassPanL);
-        double r = gain * (treble * treblePanR + mechanicsGain * folds + bass * bassPanR);
+        double l = gain * (treble * treblePanL + mechanicsGain * foldsOut * foldsPanL + bass * bassPanL);
+        double r = gain * (treble * treblePanR + mechanicsGain * foldsOut * foldsPanR + bass * bassPanR);
         if (roomGain != 0.0 || roomGainTarget != 0.0) {
             roomGain += glide * (roomGainTarget - roomGain);
             if (Abs(roomGain - roomGainTarget) < 1.0e-6) roomGain = roomGainTarget;
