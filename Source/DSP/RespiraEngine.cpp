@@ -981,11 +981,18 @@ void Engine::Render(float* left, float* right, int frames) {
         const double pressureWas = pressure;
         pressure = Clamp(pressure + dt * bellowsStiffness * (handFlow - airFlow - leak), -kMaxPressure, kMaxPressure);
         // On a push-to-pull reversal the left wrist shifts from pressing the
-        // bass board to drawing the leather bass strap, taking up its slack.
+        // bass board to drawing the leather bass strap, taking up its slack
+        // at the bellows end's speed: a few mm/s to a few cm/s, so soft
+        // (Mechanics.h). It was taken from the hand's speed in wheel ranges
+        // a second as though it were m/s, 6 times too hard at the default
+        // Bellows and independent of it.
         if (pressure > kPleatHold) strapPushed = true;
-        else if (strapPushed && pressure < -kPleatHold && hand.velocity > 0.02) {
-            strapPushed = false;
-            StartKnock(kBassPallet, Clamp(hand.velocity * 0.15, 0.02, 0.35), 1.0, true);
+        else if (strapPushed && pressure < -kPleatHold) {
+            const double slack = BellowsEndSpeed(litres, hand.velocity);
+            if (slack > kFoldsStick) {
+                strapPushed = false;
+                StartKnock(kBassPallet, slack, 1.0, true);
+            }
         }
         bend2 += bendSmoothing * (bend2Target - bend2);
 

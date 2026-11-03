@@ -1307,6 +1307,16 @@ void ValveSlapsFollowTheTurn() {
     Expect(std::fabs(FlapTurnSpeed(128000.0) / v - 2.0) < 1.0e-9, "ValveSlapsFollowTheTurn", "eight times as quick, ratio", FlapTurnSpeed(128000.0) / v);
 }
 
+void StrapTakesUpAtTheBellowsSpeed() {
+    // The strap meets the wrist at the speed the bass end moves, litres x
+    // wheel ranges a second over the bellows' section (0.41 x 0.19 m): a hand
+    // sweeping 2 L a second moves it 2.6 cm/s, soft against the pallets' 0.1-1 m/s,
+    // and twice the air moves it twice as fast.
+    const double v = BellowsEndSpeed(2.0e-3, 1.0);
+    Expect(std::fabs(v - 0.02567) < 1.0e-4, "StrapTakesUpAtTheBellowsSpeed", "a 2 L sweep a second, m/s", v);
+    Expect(std::fabs(BellowsEndSpeed(4.0e-3, 1.0) / v - 2.0) < 1.0e-9, "StrapTakesUpAtTheBellowsSpeed", "twice the air, ratio", BellowsEndSpeed(4.0e-3, 1.0) / v);
+}
+
 void RoomDecorrelatesAndRings() {
     // Off, the microphones hear only the instrument, the same sound in both
     // channels but for level; at Room 1 the room's field, which each
@@ -1484,6 +1494,7 @@ int main() {
     WidthGlides();
     MicrophonesHearTwoPlaces();
     ValveSlapsFollowTheTurn();
+    StrapTakesUpAtTheBellowsSpeed();
     RoomDecorrelatesAndRings();
     respira_room_tests::Run(Expect);
     RoomTaperAndDefaults();

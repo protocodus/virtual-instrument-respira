@@ -353,6 +353,10 @@ struct Folds {
 // which creeps a closed bellows at well under that, rubs nothing, and a
 // device left with its bellows pressed falls silent.
 inline constexpr double kBellowsSection = 0.41 * 0.19, kFoldsStick = 0.001;
+// How fast the bass end moves, m/s, when the hand moves the bellows at
+// `handVelocity` wheel ranges a second and one range is `litres` of air over
+// the bellows' section: the speed the strap's slack meets the wrist at.
+inline double BellowsEndSpeed(double litres, double handVelocity) { return litres * handVelocity / kBellowsSection; }
 struct Rustle {
     std::uint32_t seed = 0x2545F491u;
     double low = 0.0, lowCoeff = 0.0;
