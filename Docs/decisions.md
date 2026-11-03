@@ -1852,7 +1852,35 @@ microphone and point-source assumptions; the
 [validation](validation/microphone-motion-2026-11-02.md) records the native
 gates and CPU evidence. The low-pressure reed-start mismatch remains open.
 
-## 2026-11-03 — Auto bellows speed from note velocity and mod wheel (owner)
+## 2026-11-03 — 0.1.11: defect fixes after the 0.1.10 mechanism work (engineering)
+
+Not chosen by ear. A review of the model at 0.1.10 found four defects and one
+CPU cost; each is fixed on its own commit with a test, and **no listening
+verdict exists for any of them**:
+
+- the bass-strap knock took the hand's speed in wheel ranges a second as m/s;
+  it now takes the bellows end's speed (litres × velocity over 0.41 × 0.19 m²);
+- Life's 6.5 Hz tremor was filtered to 0.40 RMS where `kTremorShare = 0.12`
+  assumes 1, so its control signal is now 2.5 times what 0.1.10 gave. The
+  output of a held Auto note does not measurably change (5–8 Hz level wobble
+  0.278 dB before, 0.283 dB after), so the share 0.12, an authored choice, is
+  left as written;
+- a bass or chord reed shared by two buttons an octave apart sounds until the
+  last button is let go;
+- each bellows panel steps its hinge once per host sample, 13 % less CPU on the
+  demos and not bit-exact (−60 dB null against 0.1.10 over all four changes).
+
+On the demos the four changes null at −60 dB with no octave band moving by
+0.05 dB. In targeted clips only the shared reed is audible (+1.6 dB for the
+3.2 s the first button stays down); the strap's difference peaks at −53.6 dBFS against a
+−1.9 dBFS peak.
+
+`BlockPartitionInvariance` allows a float ulp at a sample under −240 dBFS where
+the 1e-20 flush floor is below that ulp; every louder sample keeps the floor.
+Details, evidence and what was not changed:
+[review](validation/review-2026-11-03.md), [CPU](benchmarks/folds-cpu-2026-11-03.md).
+
+## 2026-11-03 — Auto bellows speed from note velocity and mod wheel, plus manual low-speed calibration (owner)
 
 The owner asked for **Auto** to let a player simply play notes with natural
 velocity-driven bellows speed while also changing the speed in either direction

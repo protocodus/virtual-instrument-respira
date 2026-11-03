@@ -27,7 +27,7 @@ class Room {
 public:
     // Line lengths spread geometrically over 23-83 ms, each a prime number of
     // samples at 48 kHz, so the modes they make do not pile up on one
-    // frequency: 1.27 s of delay in all, a mode every 0.8 Hz.
+    // frequency: 0.76 s of delay in all, a mode every 1.3 Hz.
     static constexpr int kLines = 16;
     static constexpr std::array<double, kLines> kLineSeconds { {
         0.023396, 0.025354, 0.027646, 0.030146, 0.032729, 0.035604, 0.038771, 0.042229,
@@ -38,7 +38,7 @@ public:
     static constexpr double kDriftSeconds = 0.000125, kSlowestDrift = 0.13, kFastestDrift = 0.97;
     // The diffusers' delays, mutually prime at 48 kHz, and their gain.
     static constexpr std::array<double, 4> kDiffuserSeconds { { 0.00153, 0.00271, 0.00419, 0.00587 } };
-    static constexpr int kMaxDiffuser = 2048;   // 5.9 ms at 192 kHz, plus room to spare
+    static constexpr int kMaxDiffuser = 2048;   // 10.7 ms at 192 kHz, against the longest delay's 5.9 ms
     static constexpr double kDiffuserGain = 0.7;
 
     // The first reflections, by image sources: the player seated on a wooden

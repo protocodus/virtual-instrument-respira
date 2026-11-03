@@ -33,12 +33,25 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
-### Unreleased — 0.1.11 — Auto bellows speed and Life-scaled reed realism
+### Unreleased — 0.1.12 — Auto/manual bellows speed calibration and Life-scaled reed realism
 
 - In **Auto**, with the mod wheel at `0`, note velocity (**Touch**) sets the bellows playing speed: normal/strong strikes (`velocity >= 100`) run at full playing speed (`400 Pa`, about −9 VU) with an initial attack accent, while softer strikes hold a brief reed-catching floor (`35 ms`) so short staccato notes speak immediately and then settle (`80 ms`) down to a gentler sustaining speed (`~180 Pa` at `velocity = 1`, about 8 dB softer so soft melodies stay warm and clearly audible). Legato velocity transitions smoothly speed up or slow down the bellows in both directions, and releasing a note while other keys remain held returns to the remaining keys' velocity.
 - Raising the mod wheel (`0 -> 127`) during a held note moves toward the opposite dynamic: on normal/strong notes (`velocity >= 64`) it slows the bellows down to `60 Pa` (`15 %`, about −16 dB fade), and on soft notes (`velocity < 64`) it swells the bellows up to full playing speed (`400 Pa`).
 - While on a stroke, the virtual arm yields when the target pressure drops so the bellows relaxes in `0.1 s` even on a single treble reed rather than waiting for the open reed alone to bleed off trapped air.
+- In **Manual** mode (`Auto = 0`), sub-reference wheel speeds (`< 0.095/s`) are shaped by $v^{0.48}$ with wrist slack take-up below `220 Pa` and arm relaxation when slowing down mid-note, preventing quadratic pressure collapse at slow wheel speeds so `pp` passages catch promptly and remain clearly audible.
 - **Life** now scales per-reed, per-side (push vs. pull), chamber, pallet-onset, and turbulent vortex-jet imperfections continuously via `ImperfectionScale(life) = 2 * life`: `0 %` is perfection (zero reed/chamber/pallet/vortex variation, push and pull identical), `50 %` (the new default on Init and every preset) models a standard well-made accordion in good shape, and `100 %` doubles all manufacturing and voicing tolerances.
+
+### Unreleased — 0.1.11 — fixes to the 0.1.10 mechanism and the folds' CPU
+
+- The bass strap's knock follows the bellows end's own speed (litres × hand speed over the 0.41 × 0.19 m section: a few mm/s to a few cm/s). 0.1.10 took the hand's speed in wheel ranges a second as m/s, so it hit about six times too hard at the default Bellows and ignored it.
+- The 6.5 Hz effort tremor of Life reaches the 12 % share it is written against; its filter was normalised to 0.40 RMS, not 1, so the control signal is 2.5 times what 0.1.10 gave. On a held Auto note the output does not measurably change (5–8 Hz level wobble 0.28 dB before and after).
+- Two bass or chord buttons an octave apart open the same reed. It now keeps sounding until the last of them is let go; it used to stop when the later one came up while the other was still held.
+- Each bellows panel steps its hinge once per host sample, not four times: 5–28 % less CPU on the eight demos (13 % in all). The demos null against 0.1.10 at −60 dB and no octave band moves by 0.05 dB; only the octave-apart bass reed is audible in a targeted clip (+1.6 dB for the 3.2 s the first button stays down, of a bass and chord held together), and none of it has been judged by ear. [Review and measurements](Docs/validation/review-2026-11-03.md); [CPU](Docs/benchmarks/folds-cpu-2026-11-03.md).
+
+### Unreleased — 0.1.9 and 0.1.10 — reed, chamber and mechanism physics, recorded after the fact
+
+- Six commits changed the reed and mechanism model without a ledger entry: the slot flow scaled by the tongue's profiled tip, damped duct standing waves, a finite tip thickness with a curved slot entry and slit loss, shared pallet-hole coupling between ranks with bellows compliance, keybed resonances with a pallet-opening chiff (0.1.9), and Life's tremor, off-axis microphone shading, fold distension, the bass strap, pull-valve slaps and jet-to-reed force (0.1.10). No listening verdict is recorded for them.
+- Measured on the eight demos against 0.1.8: whole-file RMS within 0.5 dB and peaks from 0.8 dB lower to 2.4 dB higher; octave bands between 700 Hz and 5.6 kHz from 0.7 dB lower to 3.7 dB higher (mostly 1–2 dB up), up to 2.4 dB lower under 700 Hz, and 4–7 dB lower above 11 kHz. Against the published accordion harmonics (`CompareHarmonics`) the 2nd moved from 8.4 to 4.7 dB under, the 9th–14th from −11.0 to −8.8 dB on average (measured −11.3) and the 15th–20th from −13.9 to −11.5 (measured −13.4).
 
 ### Unreleased — 0.1.8 — microphone colour during movement
 
@@ -468,8 +481,9 @@ standing waves ring at Q 26–48. A chamber whose resonance would fall near its 
 is made smaller, as reed makers do with wax in the top octaves. Against the
 one published harmonic measurement of an accordion's 8' reeds (A#2–A3, mezzo
 forte, 50 cm; `Tools/CompareHarmonics.cpp`), the 2nd–14th harmonics agree
-within 2.3 dB on average at its loudness, though the 2nd sits 8 dB under, and
-the 15th–20th average −13.9 dB against the measured −13.4. The 2nd is low
+within 2.5 dB on average at its loudness, though the 2nd sits 4.7 dB under, and
+the 9th–14th average −8.8 dB against the measured −11.3 and the 15th–20th
+−11.5 against −13.4. The 2nd is low
 because, while the tongue seals its slot, the air it sweeps through arrives
 almost opposite the gap's own 2nd harmonic: at A3 the gap flow's 2nd is 7 dB
 under its fundamental, their sum's 22 dB. A lab measurement of real
@@ -492,8 +506,8 @@ pressed at 1.4 kPa. Against a bandoneon's held notes
 from C2 to C6 (`Tools/CompareBandoneon.cpp`, from a Pianobook library by
 Miguel Lopez), read against loudness so that neither the bellows pressure nor
 the microphone matters: over the loudest 30 dB, with the loudest at 1.5 kPa,
-single 8' cells go 0.51 cents flat per dB louder on average against the
-bandoneon's 0.39, and their 3rd, 5th and 7th harmonics gain 0.40–0.61 dB per
+single 8' cells go 0.50 cents flat per dB louder on average against the
+bandoneon's 0.39, and their 3rd, 5th and 7th harmonics gain 0.36–0.50 dB per
 dB on the fundamental against its 0.64–0.80. Over the loudest 15 dB they fall
 twice as far, and from E4 up their 9th–15th harmonics hardly grow at all
 (Known gaps).
@@ -616,7 +630,7 @@ positions are a full-size instrument's, estimated.
 around the pair: the late, diffuse field of a small hall with a hundred
 people in it, from a sixteen-line feedback delay network (`Source/DSP/Room.h`)
 behind four allpass diffusers, so it is dense from its first milliseconds.
-Its modes lie 0.8 Hz apart and each line's length drifts slowly by 0.125 ms,
+Its lines add up to 0.76 s of delay, so its modes lie 1.3 Hz apart, and each line's length drifts slowly by 0.125 ms,
 so a held chord's tail never rings metallic; it costs about 1 % of one core
 in the development container. Its decay is Sabine's for the estimated hall
 (12 × 9 × 4 m, 432 m³) with each person adding the absorption measured per
@@ -716,9 +730,11 @@ its level and band voiced; below 1 mm/s (an estimate) the folds stick, so
 the bellows' own slow leak rubs nothing. Its white force noise scales with
 the square root of sample rate relative to 48 kHz, preserving power per Hz
 through the fixed-frequency filters. **Mechanics** sets both with the keys'. The
-bass strap is silent: taken up as the bellows turn, its slack meets the hand
-at a few mm/s to a few cm/s, and a bass half of some kilograms on leather
-rings near 10 Hz, far under the body's 210 Hz.
+bass strap only taps: drawn up as the bellows turn from push to pull, its
+slack meets the wrist at the bellows end's speed (litres × hand speed over
+the section above, a few mm/s to a few cm/s), a bass pallet's knock at that
+speed. A bass half of some kilograms on leather rings near 10 Hz, far under
+the body's 210 Hz, so no ring is modelled.
 
 The push reeds' valves slap. Each reed has a leather or plastic flap over
 its slot on the far side of the plate, so it passes air one way; the push
@@ -733,8 +749,10 @@ turning at R (0.74 m/s at 16 kPa/s, slower for a slow turn); as a pushed
 key is let go, by its own curl as the chamber fills, at its lift times its
 natural frequency (0.24 m/s). Landing it stops the chamber air it moves, a
 source of its area times its speed, so it radiates through the pallet hole
-and the grille, or the bass box, as the reeds do. Turning from pull to push
-the slaps are in the bellows and are not heard. The flutter the reeds'
+and the grille, or the bass box, as the reeds do. Turning from pull to push the
+pull reeds' valves, on the bellows side of the plate, slap too; their sound
+must couple through the slot and the chamber, so each takes 0.35 of the mass
+of a push valve over the same slot (an estimate). The flutter the reeds'
 pulses shake into an open valve is left out, so their tone stays as it was
 fitted. The valves are estimates from typical sizes, so their level is
 voiced: 30 dB under that estimate, a push-to-pull turn's slaps about 38 dB
@@ -924,11 +942,11 @@ tempo, time signature, song position and bar start before each block
 - **How far a loud note's pitch falls rests on an unknown pressure.** Over
   the loudest 30 dB of a bandoneon's held notes its pitch rises 0.39 cents
   per dB softer on average, 0.34–0.62 from C2 to D3; Respira's 8' cells, with
-  the loudest at 1.5 kPa, rise 0.51, and 0.33–0.52 from C2 to D3
-  (`CompareBandoneon`). Over the loudest 15 dB they fall 0.88 cents per dB
+  the loudest at 1.5 kPa, rise 0.50, and 0.31–0.49 from C2 to D3
+  (`CompareBandoneon`). Over the loudest 15 dB they fall 0.97 cents per dB
   against the bandoneon's 0.47. Which pressure the bandoneon's loudest notes
   were played at is not known: with the loudest at 0.7 kPa the two agree
-  within 0.04 on both. Okada's C4 reed (Adachi et al. 2026) falls 2.5 Hz per
+  within 0.13 over the loudest 30 dB and 0.05 over the loudest 15. Okada's C4 reed (Adachi et al. 2026) falls 2.5 Hz per
   kPa with its pallet open against Respira's 2.3; Respira's C4 bends 0.32 mm
   per kPa at the tip against its 0.24, and is set 0.8 mm above its plate
   against its 0.3, because a lower set lets a bellows slammed to full
@@ -963,8 +981,8 @@ tempo, time signature, song position and bar start before each block
   paper a player bent A#2–A3 by closing the pallet part way at a steady
   bellows pressure: 16 cents flat on average and 11 dB quieter (the mean
   over the first twenty harmonics). Respira's 8' cells at that loudness, with
-  the pallet opened 0.32 as full channel pressure holds it, fall 9.1 cents
-  and 12.5 dB (`CompareHarmonics`). The player found no bend possible from C6
+  the pallet opened 0.32 as full channel pressure holds it, fall 7.1 cents
+  and 14.7 dB (`CompareHarmonics`). The player found no bend possible from C6
   up, on tongues with no valves; Respira's all have valves, and a single cell
   from E5 to G6 bends 12–23 cents at 200 Pa and 22–28 at 400.
   At a steady wheel, Assist counts a held key in full however far channel

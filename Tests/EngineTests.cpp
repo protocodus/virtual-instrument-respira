@@ -1014,8 +1014,12 @@ void BlockPartitionInvariance() {
         // just above the per-state threshold. This is below -400 dBFS. Separate
         // baseline/trial comparisons at identical partitions require every
         // output byte to match; they do not apply this exception.
+        // Where the decaying tail has reached 1e-12 (-240 dBFS) a float sample's
+        // ulp is already 1e-19, above that floor, so the same flush can move
+        // the sample by that one ulp; allow it there and nowhere louder.
         const auto sameSample = [](float a, float b) {
-            return std::fabs(double(a) - double(b)) < 1.0e-20;
+            const double apart = std::fabs(double(a) - double(b)), size = std::max(std::fabs(double(a)), std::fabs(double(b)));
+            return apart < 1.0e-20 || (size < 1.0e-12 && apart <= 1.2e-7 * size);
         };
         for (std::size_t i = 0; i < t.left.size(); ++i)
             same = same && sameSample(t.left[i], reference.left[i]) && sameSample(t.right[i], reference.right[i]);
@@ -1080,6 +1084,21 @@ void ReleaseAndAllNotesOff() {
     const double after = Rms(t.left, rate, 1.1, 2.0);
     Expect(Db(after) < -100.0, "ReleaseAndAllNotesOff", "100 ms after note-off and CC123, dBFS RMS", Db(after));
     Expect(e->Diag().cells == 0, "ReleaseAndAllNotesOff", "no chamber left sounding", e->Diag().cells);
+}
+
+void AnOctaveApartButtonsShareTheReed() {
+    // A bass or chord reed is one per pitch class, so buttons an octave apart
+    // open the same chamber: it speaks until the last of them is let go, in
+    // whichever order they come up. C0 and C1 (the split keyboard's bass
+    // buttons) are held; the later one goes up first at 0.5 s.
+    const double rate = 48000.0;
+    auto e = Make(rate, 3, [](Controls& c) { c[kMechanics] = kControlInfo[kMechanics].min; });
+    const Take t = Play(*e, rate, 2.0, { { 0.0, { kOn, 12, 100 } }, { 0.0, { kOn, 24, 100 } }, { 0.5, { kOff, 24, 0 } }, { 1.5, { kOff, 12, 0 } } },
+                        PullThenPush);
+    const double held = Rms(t.left, rate, 0.8, 1.4), after = Rms(t.left, rate, 1.8, 2.0);
+    Expect(held > 1.0e-3, "AnOctaveApartButtonsShareTheReed", "the first button still sounds after the second is up, RMS", held);
+    Expect(Db(after) < -100.0, "AnOctaveApartButtonsShareTheReed", "silent 300 ms after the last is up, dBFS RMS", Db(after));
+    Expect(e->Diag().cells == 0, "AnOctaveApartButtonsShareTheReed", "no chamber left sounding", e->Diag().cells);
 }
 
 void VoiceLimit() {
@@ -1318,6 +1337,16 @@ void ValveSlapsFollowTheTurn() {
     Expect(std::fabs(FlapTurnSpeed(128000.0) / v - 2.0) < 1.0e-9, "ValveSlapsFollowTheTurn", "eight times as quick, ratio", FlapTurnSpeed(128000.0) / v);
 }
 
+void StrapTakesUpAtTheBellowsSpeed() {
+    // The strap meets the wrist at the speed the bass end moves, litres x
+    // wheel ranges a second over the bellows' section (0.41 x 0.19 m): a hand
+    // sweeping 2 L a second moves it 2.6 cm/s, soft against the pallets' 0.1-1 m/s,
+    // and twice the air moves it twice as fast.
+    const double v = BellowsEndSpeed(2.0e-3, 1.0);
+    Expect(std::fabs(v - 0.02567) < 1.0e-4, "StrapTakesUpAtTheBellowsSpeed", "a 2 L sweep a second, m/s", v);
+    Expect(std::fabs(BellowsEndSpeed(4.0e-3, 1.0) / v - 2.0) < 1.0e-9, "StrapTakesUpAtTheBellowsSpeed", "twice the air, ratio", BellowsEndSpeed(4.0e-3, 1.0) / v);
+}
+
 void RoomDecorrelatesAndRings() {
     // Off, the microphones hear only the instrument, the same sound in both
     // channels but for level; at Room 1 the room's field, which each
@@ -1485,6 +1514,7 @@ int main() {
     DeterministicAfterReset();
     ResetPlaysAsNew();
     ReleaseAndAllNotesOff();
+    AnOctaveApartButtonsShareTheReed();
     VoiceLimit();
     PresetsSitTogether();
     RegistersSitTogether();
@@ -1495,6 +1525,7 @@ int main() {
     WidthGlides();
     MicrophonesHearTwoPlaces();
     ValveSlapsFollowTheTurn();
+    StrapTakesUpAtTheBellowsSpeed();
     RoomDecorrelatesAndRings();
     respira_room_tests::Run(Expect);
     RoomTaperAndDefaults();

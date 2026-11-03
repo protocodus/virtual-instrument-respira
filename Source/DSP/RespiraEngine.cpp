@@ -186,8 +186,18 @@ constexpr double kRustleVoicing = 0.1778279410038923;   // -15 dB
 constexpr double kRoomLevel = 2.32;
 constexpr double kValveVoicing = 0.031622776601683794;   // -30 dB: the push valves' slaps (kFlapDensity), against their estimate
 
-// Rank of the bass side a group sounds: channel 2 bass buttons, channel 3 chords.
+// Rank of the bass side a group sounds: channel 1 bass buttons, channel 2 chords.
 enum Group { kTreble, kBassButtons, kChordButtons };
+
+// Which reeds a key of a channel plays: its own treble reeds, or, on the split
+// keyboard's low keys, the bass or chord buttons'.
+Group GroupOf(int channel, int key, bool split) {
+    if (channel == 1) return kBassButtons;
+    if (channel == 2) return kChordButtons;
+    if (split && key < 36) return kBassButtons;
+    if (split && key < 48) return kChordButtons;
+    return kTreble;
+}
 
 // Whether a register sounds `rank` for a (folded) treble key. Broken back
 // above C#7, the 4' would double the 8' in unison, a cent or so apart, and
@@ -862,11 +872,7 @@ void Engine::StartCell(int rank, int key, int source, int velocity) {
 }
 
 void Engine::NoteOn(int channel, int key, int velocity) {
-    Group group = channel == 1 ? kBassButtons : channel == 2 ? kChordButtons : kTreble;
-    if (group == kTreble && controls[kKeyboard] < 0.5) {
-        if (key < 36) group = kBassButtons;
-        else if (key < 48) group = kChordButtons;
-    }
+    const Group group = GroupOf(channel, key, controls[kKeyboard] < 0.5);
     const int source = channel * 128 + key;
     Key& k = keys[static_cast<std::size_t>(source)];
     k.target = channelDepth[static_cast<std::size_t>(channel)];
@@ -910,8 +916,25 @@ void Engine::SwitchRegister(int from, int to) {
 
 void Engine::NoteOff(int channel, int key) {
     const int source = channel * 128 + key;
+    // A bass or chord reed is one per pitch class, so buttons an octave apart
+    // open the same chamber, which belongs to the latest of them. It keeps
+    // speaking, now for another button still down, until none is.
+    int other = -1;
+    const bool split = controls[kKeyboard] < 0.5;
+    const Group group = GroupOf(channel, key, split);
+    if (group != kTreble)
+        for (int s = 0; s < 3 * 128 && other < 0; ++s)
+            if (s != source && keys[static_cast<std::size_t>(s)].target > 0.0 && GroupOf(s / 128, s % 128, split) == group
+                && PitchClass(s % 128) == PitchClass(key))
+                other = s;
     for (auto& c : cells)
-        if (c.active && c.held && c.source == source) c.held = false;
+        if (c.active && c.held && c.source == source) {
+            if (other < 0) c.held = false;
+            else {
+                c.source = other;
+                c.depth = channelDepth[static_cast<std::size_t>(other / 128)];
+            }
+        }
     if (channel == 0) trebleHeld[static_cast<std::size_t>(key)] = 0;
     Key& released = keys[static_cast<std::size_t>(source)];
     released.target = 0.0;
@@ -1003,19 +1026,18 @@ void Engine::Render(float* left, float* right, int frames) {
         // take-up across zero pressure lets gentle manual starts and reversals
         // catch the reeds promptly.
         double effectiveHandVelocity = hand.velocity;
-        if (!autoHand && hand.velocity != 0.0) {
+        if (!autoHand && heldCells > 0 && hand.velocity != 0.0) {
             constexpr double kManualRefSpeed = 0.095;
             const double speed = Abs(hand.velocity);
             if (speed < kManualRefSpeed) {
                 const double u = speed / kManualRefSpeed;
-                double shaped = kManualRefSpeed * std::pow(u, 0.48);
-                if (heldCells > 0) {
-                    const double signedP = hand.velocity < 0.0 ? pressure : -pressure;
-                    if (signedP < 220.0)
-                        shaped *= 1.0 + 2.4 * (1.0 - u) * Clamp((220.0 - signedP) / 220.0, 0.0, 2.0);
-                }
+                const double active = Clamp((speed - 0.001) / 0.004, 0.0, 1.0);
+                double shaped = speed + active * (kManualRefSpeed * std::pow(u, 0.48) - speed);
+                const double signedP = hand.velocity < 0.0 ? pressure : -pressure;
+                if (signedP < 220.0)
+                    shaped *= 1.0 + 2.4 * active * (1.0 - u) * Clamp((220.0 - signedP) / 220.0, 0.0, 2.0);
                 effectiveHandVelocity = hand.velocity < 0.0 ? -shaped : shaped;
-            } else if (heldCells > 0 && speed < 0.115) {
+            } else if (speed < 0.115) {
                 const double signedP = hand.velocity < 0.0 ? pressure : -pressure;
                 if (signedP >= -20.0 && signedP < 180.0) {
                     const double w = (0.115 - speed) / (0.115 - kManualRefSpeed);
@@ -1028,9 +1050,10 @@ void Engine::Render(float* left, float* right, int frames) {
             constexpr double kManualRefSpeed = 0.095;
             const double speed = Abs(hand.velocity);
             const double signedP = hand.velocity < 0.0 ? pressure : -pressure;
-            if (speed < kManualRefSpeed && signedP > 150.0 && Abs(handFlow) < Abs(airFlow)) {
+            if (speed > 0.001 && speed < kManualRefSpeed && signedP > 150.0 && Abs(handFlow) < Abs(airFlow)) {
                 const double u = speed / kManualRefSpeed;
-                handFlow += 3.0 * (1.0 - u) * (handFlow - airFlow);
+                const double active = Clamp((speed - 0.001) / 0.004, 0.0, 1.0);
+                handFlow += 3.0 * active * (1.0 - u) * (handFlow - airFlow);
             }
         }
         const double valveWas = valve;
@@ -1068,11 +1091,18 @@ void Engine::Render(float* left, float* right, int frames) {
         const double pressureWas = pressure;
         pressure = Clamp(pressure + dt * bellowsStiffness * (handFlow - airFlow - leak), -kMaxPressure, kMaxPressure);
         // On a push-to-pull reversal the left wrist shifts from pressing the
-        // bass board to drawing the leather bass strap, taking up its slack.
+        // bass board to drawing the leather bass strap, taking up its slack
+        // at the bellows end's speed: a few mm/s to a few cm/s, so soft
+        // (Mechanics.h). It was taken from the hand's speed in wheel ranges
+        // a second as though it were m/s, 6 times too hard at the default
+        // Bellows and independent of it.
         if (pressure > kPleatHold) strapPushed = true;
-        else if (strapPushed && pressure < -kPleatHold && hand.velocity > 0.02) {
-            strapPushed = false;
-            StartKnock(kBassPallet, Clamp(hand.velocity * 0.15, 0.02, 0.35), 1.0, true);
+        else if (strapPushed && pressure < -kPleatHold) {
+            const double slack = BellowsEndSpeed(litres, hand.velocity);
+            if (slack > kFoldsStick) {
+                strapPushed = false;
+                StartKnock(kBassPallet, slack, 1.0, true);
+            }
         }
         bend2 += bendSmoothing * (bend2Target - bend2);
 
