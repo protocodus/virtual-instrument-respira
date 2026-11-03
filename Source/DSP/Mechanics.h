@@ -210,6 +210,12 @@ inline constexpr double kFlapCurlSpeed = kFlapLift * 158.11388300841895;   // sq
 inline constexpr int kPleats = 144;
 inline constexpr double kPleatDepth = 0.035, kPleatLongWall = 0.41, kPleatShortWall = 0.19;
 inline constexpr double kPleatSurfaceMass = 1.0, kPleatPlay = 0.0005;
+// A panel's hinge is stepped at no more than this. Under the full kMaxPressure
+// its cloth resonates near 0.5 kHz and damps at about 8 000 a second, so a step
+// of 25 us (one host sample from 40 kHz up) is under a tenth of a radian of
+// the resonance and a fifth of the damping time, well inside an explicit step's
+// stability.
+inline constexpr double kPleatMaxStep = 25.0e-6;
 inline constexpr double kPleatHold = 1.0;   // Pa: the cloth's friction within the play, an estimate
 // A panel radiates as a key does (kForceToFlow), a strip of its own size
 // driven by the force on it: pi (w/2)^2 L / m with m = rho_s w L, the same for
@@ -241,8 +247,9 @@ struct Pleat {
             else x = (x > 0.0 ? 1.0 : -1.0) * (play + Compression(Abs(contact)));
             moving = true;
         }
-        const double before = contact, h = dt / Knock::kSteps, slow = hold / mass * h;
-        for (int i = 0; i < Knock::kSteps; ++i) {
+        const int steps = dt > kPleatMaxStep ? static_cast<int>(dt / kPleatMaxStep) + 1 : 1;
+        const double before = contact, h = dt / steps, slow = hold / mass * h;
+        for (int i = 0; i < steps; ++i) {
             v += (load - Hinge(x, v)) / mass * h;
             if (Abs(x) <= play) v = Abs(v) <= slow ? 0.0 : v - (v > 0.0 ? slow : -slow);
             x += v * h;
