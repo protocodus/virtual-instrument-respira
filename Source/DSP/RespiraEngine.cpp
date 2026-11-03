@@ -14,7 +14,7 @@ namespace {
 // times more, which keeps the pressure from collapsing whenever a chord opens.
 // As the bellows open from their closed frame and fold dead space, the
 // enclosed air volume grows, so the stiffness falls around kBellowsStiffness
-// at mid-extension (BellowsStiffness).
+// at mid-extension (BellowsStiffness, Engine::Extension).
 constexpr double kBellowsStiffness = 4.0e6;
 constexpr double kBellowsVolumeSlope = 0.30;
 // A ~6 L bellows' air alone has bulk stiffness 2.4e7 Pa/m^3; the remaining
@@ -29,8 +29,8 @@ constexpr double kPalletChiff = 1.5;       // extra orifice-jet turbulence acros
 constexpr double kPalletVentChiff = 0.35;  // pallet-hole orifice-jet fluctuation share while the pad lifts or seats
 constexpr double kEddyForceShare = 0.65;   // coherent gap-eddy pressure fluctuation on the speaking reed tongue
 
-double BellowsStiffness(double position, double open) {
-    const double extension = Clamp(position / open, 0.0, 1.0);
+// At `extension` of the bellows' travel, 0 closed .. 1 fully open.
+double BellowsStiffness(double extension) {
     return kBellowsStiffness / (1.0 + kBellowsVolumeSlope * (extension - 0.5));
 }
 constexpr double kBellowsLeak = 2.0e-8;     // m^3/s per Pa: 0.02 L/s at 1 kPa
@@ -58,15 +58,14 @@ constexpr double kAutoSoftShare = 0.15;     // 60 Pa with the wheel at the top
 // own MIDI: below 64 the wheel, from 64 Auto's hand. The demo phrases send it
 // at their start, since they play the bellows on the wheel.
 constexpr int kHandModeCc = 85;
-// A stroke is four bars, as accordionists are taught to change the bellows
-// on a full-size instrument (every two on a small one: accordionlife.com,
-// "Top 3 Mistakes Accordionists Make With The Bellows"), unless the air runs
-// short first (StepPlayer).
-constexpr double kAutoBars = 4.0;
-// The bellows Auto's hand moves hold 6 L between closed and open, an estimate
-// for a full-size accordion; the wheel's sweep (Bellows) is only its gearing.
-constexpr double kAutoBellows = 6.0e-3;     // m^3
-constexpr double kAutoRoom = 0.05;          // how far from its end, of the whole, the bellows start a stroke
+// With Auto on, these treble-channel keys latch which way its hand moves the
+// bellows, the player's own choice of turn (owner, 2026-11-03). They sit an
+// octave under the bass buttons, where the split keyboard only repeats them;
+// with Auto off they play as keys.
+constexpr int kPullKey = 12, kPushKey = 13;   // C0, C#0 (C4 = 60, as Respira names notes)
+// A full-size accordion's bellows hold about 6 L between closed and open, an
+// estimate: with its 0.41 x 0.19 m section, 77 mm of travel at the bass end.
+constexpr double kBellowsVolume = 6.0e-3;   // m^3
 constexpr double kAutoFastest = 4.0e-3;     // m^3/s: the most air the hand moves, opening or closing
 // Auto's player is a person, whose arm never presses quite evenly. In a
 // steady contraction the force wanders by a few percent of itself, most of
@@ -327,7 +326,6 @@ void Engine::Reset() {
     player = Player {};
     life.Reset();
     touch.Reset();
-    SetTransport(transport);
     heldCells = 0;
     pressure = airFlow = airFlowSmoothed = demand = 0.0;
     valve = valveNoiseA = valveNoiseB = valveSound = 0.0;
@@ -444,8 +442,7 @@ void Engine::SetControls(const Controls& next) {
     }
     if (nextAuto != autoHand) {
         touch.ClearGesture();
-        player.running = false;
-        player.ready = player.earlyTurn = false;
+        player.running = player.ready = false;
         player.drive = hand.position;
     }
     autoHand = nextAuto;
@@ -498,11 +495,9 @@ void Engine::UpdateMicrophones() {
     // / (k a sin theta) ~= 1 - (k a sin theta)^2 / 8).
     const double side = 0.05 * life.amount * Clamp((life.side + life.effort) / 3.0, -1.0, 1.0);
     const double depth = 0.08 * life.amount * Clamp((life.depth + life.effort) / 3.0, -1.0, 1.0);
-    // The bass end also moves with the bellows. The existing 6 L capacity and
-    // 0.41 x 0.19 m section imply 77 mm full travel. Treble stays at the chest.
-    const double open = autoHand ? Max(1.0, kAutoBellows / (controls[kBellows] * 1.0e-3)) : 1.0;
-    const double extension = life.amount * (kAutoBellows / kBellowsSection)
-                             * (Clamp(hand.position / open, 0.0, 1.0) - 0.5);
+    // The bass end also moves with the bellows, over their 77 mm of travel
+    // (kBellowsVolume). Treble stays at the chest.
+    const double extension = life.amount * (kBellowsVolume / kBellowsSection) * (Extension() - 0.5);
     const double ca = micCos, sa = micSin;
     const auto panAt = [&](double x0, double shift, float& left, float& right) {
         const double r0 = Sqrt(x0 * x0 + kMicDistance * kMicDistance);
@@ -549,25 +544,6 @@ void Engine::SetHand(double position) {
     hand.received = true;
 }
 
-void Engine::SetTransport(const Transport& next) {
-    transport = next;
-    Transport& t = transport;
-    t.bpm = t.bpm == t.bpm ? Clamp(t.bpm, 1.0, 999.0) : 120.0;
-    t.numerator = t.numerator >= 1 && t.numerator <= 64 ? t.numerator : 4;
-    t.denominator = t.denominator >= 1 && t.denominator <= 64 ? t.denominator : 4;
-    const double bar = 4.0 * t.numerator / t.denominator;
-    player.bar = bar;
-    player.stroke = kAutoBars * bar;
-    const double cycle = 2.0 * player.stroke;
-    if (t.playing && t.position == t.position && t.barStart == t.barStart && Abs(t.position) < 1.0e9 && Abs(t.barStart) < 1.0e9) {
-        // The bar's number from the song's start places it in the cycle, so
-        // every pull starts on the same bars wherever playback starts.
-        const double bars = std::floor(t.barStart / bar + 0.5), perCycle = cycle / bar;
-        player.cycle = (bars - perCycle * std::floor(bars / perCycle)) * bar + t.position - t.barStart;
-    }
-    player.cycle -= cycle * std::floor(player.cycle / cycle);
-}
-
 double Engine::PlayerEffort() const {
     double effort = 1.0 + player.level + wanderScale * player.wanderB;
     if (life.amount != 0.0)
@@ -577,103 +553,39 @@ double Engine::PlayerEffort() const {
     return effort;
 }
 
+// Auto's bellows are endless, so nothing that depends on how far open the
+// bellows are moves while it plays: they stay at mid-travel. The wheel's run
+// from 0 to 1 is the whole travel.
+double Engine::Extension() const { return autoHand ? 0.5 : Clamp(hand.position, 0.0, 1.0); }
+
 // Runs before the hand's tick, from the keys the last sample held.
 void Engine::StepPlayer(double dt) {
-    const double cycle = 2.0 * player.stroke;
-    if (heldCells > 0 && !player.running && !transport.playing && player.rested * transport.bpm / 60.0 >= player.stroke) {
-        player.cycle = 0.0;   // a new phrase starts on a pull
-        player.earlyTurn = false;
-    }
-    player.cycle += transport.bpm / 60.0 * dt;
-    if (player.cycle >= cycle) player.cycle -= cycle;
-    const double litres = controls[kBellows] * 1.0e-3, open = Max(1.0, kAutoBellows / litres);   // wheels
+    const double litres = controls[kBellows] * 1.0e-3;   // per wheel range
     const double perWheel = litres * (1.0 + controls[kAssist] * (Max(demand, 1.0) - 1.0));
     const double fastest = kAutoFastest / litres;
-    // A turn (below) takes the hand at its fastest, helped by the air the
-    // reeds take, the time the air of the swing to zero asks; the led arm
-    // (Hand::Tick) lags only while the stroke changes, its error largest one
-    // time constant (Momentum) after. The hand turns that much early, so the
-    // pressure passes zero just before the bar line.
     const double momentum = controls[kMomentum];
     const double wheelEndShare = kAutoSoftShare + (1.0 - kAutoSoftShare) * touch.SwellUp();
     const double size = kAutoPressure * (1.0 - (1.0 - wheelEndShare) * hand.wheel);
-    const double swing = size / kBellowsStiffness;   // m^3
-    double ahead = player.cycle + (1.0e-3 * momentum + swing / (perWheel * fastest + Abs(player.hold))) * transport.bpm / 60.0;
-    if (ahead >= cycle) ahead -= cycle;
-    const int half = ahead < player.stroke ? 0 : 1;
-    if (half != player.half) {
-        player.half = half;
-        player.turned = false;
-        player.earlyTurn = false;
+    const bool pulling = player.pull;
+    // With every key up the hand rests and the closed pallets keep the
+    // bellows at their pressure, unless a keyswitch has turned them: the hand
+    // then swings the pressure round with the pallets shut, as a player turns
+    // in a rest, so the next note speaks the new way at once. A first note has
+    // no pressure to turn.
+    if (heldCells == 0 && (!player.ready || (pulling == player.pulled && !player.swinging))) {
+        player.running = false;
+        player.velocity = 0.0;
+        return;
     }
-    if (heldCells == 0) {
-        player.rested += dt;
-        // Use an available rest to prepare the next scheduled turn. With
-        // closed pallets there is no Assist demand: reversing pressure needs
-        // 2*P/K air volume at the hand's maximum 4 L/s, plus the arm's lag.
-        // This is a causal virtual-player choice, not MIDI look-ahead. Stop
-        // after the turn, and never start a new phrase without a key press.
-        const double preparation = 2.0 * swing / kAutoFastest + 2.0e-3 * momentum;
-        double future = player.cycle + preparation * transport.bpm / 60.0;
-        if (future >= cycle) future -= cycle;
-        if (player.ready && player.rested < player.bar * 60.0 / transport.bpm
-            && !player.turned && (future < player.stroke ? 0 : 1) != half)
-            player.earlyTurn = true;
-        const bool nextPull = ((half == 0) != player.turned) != player.earlyTurn;
-        if (!player.ready || player.rested >= player.bar * 60.0 / transport.bpm
-            || (nextPull == player.pulled && !player.swinging)) {
-            player.running = false;
-            player.velocity = 0.0;
-            return;
-        }
-    }
-    // At each bar line the player turns early if the bellows will not last
-    // the next bar at the air the reeds take, as players change at a bar line
-    // when the air runs short rather than in the middle of one. They know
-    // their arm wanders: they judge the air by the stroke's usual pressure,
-    // not this moment's, and keep enough for twice their usual wander above it.
-    // With Life enabled, check air at each beat. A large swell can use a
-    // whole small bellows in less than one bar; waiting for that bar would
-    // force an unplanned turn against its end stop. The four-bar phrase
-    // direction is unchanged when there is enough air.
-    const double planningBeat = life.amount == 0.0 && touch.amount == 0.0
-                              ? player.bar : 4.0 / transport.denominator;
-    const double barLine = std::floor(ahead / planningBeat) * planningBeat;
-    if (heldCells > 0 && barLine != player.barLine) {
-        player.barLine = barLine;
-        const double left = (half == 0) != player.turned ? open - player.drive : player.drive;
-        double spare = 1.0 + 2.0 * kHandWander - wanderScale * player.wanderB;
-        if (life.amount != 0.0 || touch.amount != 0.0) {
-            // A stronger forthcoming swell consumes more air. Bernoulli's
-            // flow through the same open pallets scales with sqrt(pressure),
-            // so reserve for Life's bounded upper effort, not just the old
-            // 8% wander. Evaluate only on the planning grid; Life=0 is unchanged.
-            const double current = PlayerEffort();
-            const double upper = Min(1.45, 1.0 + 2.0 * kHandWander
-                                    + 0.33 * life.amount + 0.30 * touch.amount);
-            spare = Max(spare, Sqrt(upper / current));
-        }
-        if (player.running && left * perWheel < spare * Abs(player.hold) * planningBeat * 60.0 / transport.bpm)
-            player.turned = !player.turned;
-    }
-    const bool pulling = ((half == 0) != player.turned) != player.earlyTurn;
     const double want = pulling ? -size : size;
     if (!player.running) {
-        // Each later stroke also swings the pressure through zero, a travel
-        // this one is spared by as much as it starts nearer its pressure: the
-        // hand starts that much in from the end, so the strokes that follow
-        // all fit the bellows.
-        const double spared = (2.0 * Abs(want) - Abs(want - pressure)) / (kBellowsStiffness * perWheel);
-        const double from = Clamp(kAutoRoom * open + spared, 0.0, 0.5 * open);
         player.running = true;
-        if (heldCells > 0) player.drive = hand.position = pulling ? from : open - from;
-        else player.drive = hand.position;
+        player.drive = hand.position;
         player.pulled = pulling;
         player.swinging = player.ready && pressure * want < 0.0;
         player.ready = true;
         NewStroke();
     }
-    if (heldCells > 0) player.rested = 0.0;
     player.luck = player.luck * 1664525u + 1013904223u;
     player.wanderA += wanderStep * (1.7320508075688772 * Unit(player.luck) - player.wanderA);
     player.wanderB += wanderStep * (player.wanderA - player.wanderB);
@@ -683,9 +595,9 @@ void Engine::StepPlayer(double dt) {
     const double air = airFlow + kBellowsLeak * pressure;
     const double arm = momentum > 0.0 ? Min(1.0e3 / momentum, 0.5 / dt) : 0.0;   // as Hand::Tick
     player.hold = arm > 0.0 ? player.hold + Min(1.0, dt * arm) * (air - player.hold) : air;
-    // A turn is planned: the player expects the reeds to take the air they
-    // took, the other way, and moves the hand as fast as it goes until the
-    // pressure the arm will bring is the new one; then they play on.
+    // A keyswitch turns the bellows: the player expects the reeds to take the
+    // air they took, the other way, and moves the hand as fast as it goes
+    // until the pressure the arm will bring is the new one; then they play on.
     if (pulling != player.pulled) {
         player.pulled = pulling;
         player.hold = -player.hold;
@@ -695,8 +607,7 @@ void Engine::StepPlayer(double dt) {
     // The pressure once the led arm has caught up with the hand. The player
     // feels their own arm and closes on this, so its lag stays out of their
     // loop.
-    const double bellowsStiffness = BellowsStiffness(hand.position, open);
-    const double coming = pressure - bellowsStiffness * perWheel * (player.drive - hand.position);
+    const double coming = pressure - kBellowsStiffness * perWheel * (player.drive - hand.position);
     // They close on the pressure they want in a reaction time
     // (above): the air that time asks of the bellows' stiffness. The hand's
     // air is undone through Assist and Bellows into wheel speed; while
@@ -714,19 +625,13 @@ void Engine::StepPlayer(double dt) {
     const double wheelFull = kAutoPressure * wheelEndShare * steady;
     const double targetSize = (1.0 - hand.wheel) * wheelZero + hand.wheel * wheelFull;
     const double meant = pulling ? -targetSize : targetSize;
-    const double flow = air + (meant - coming) / (bellowsStiffness * closing);
+    const double flow = air + (meant - coming) / (kBellowsStiffness * closing);
     const double wanted = -flow / perWheel;
     const double low = player.swinging && pulling ? 0.0 : -fastest;
     const double high = player.swinging && !pulling ? 0.0 : fastest;
     player.velocity = Clamp(wanted, low, high);
     if (player.velocity == wanted) player.swinging = false;
-    const double nextDrive = player.drive + dt * player.velocity;
-    if (pulling ? nextDrive >= open : nextDrive <= 0.0) {   // the bellows ran out: turn now
-        player.turned = !player.turned;
-    }
-    const double clampedDrive = Clamp(nextDrive, 0.0, open);
-    player.velocity = (clampedDrive - player.drive) / dt;
-    player.drive = clampedDrive;
+    player.drive += dt * player.velocity;   // no end to run into
 }
 
 // A stroke's own level, uniform with kHandStroke's standard deviation.
@@ -965,8 +870,14 @@ void Engine::Midi(const std::uint8_t* bytes, int size) {
     const int type = bytes[0] & 0xF0, channel = bytes[0] & 0x0F;
     const int d1 = bytes[1] & 0x7F, d2 = size > 2 ? bytes[2] & 0x7F : 0;
     const int ch = channel <= 2 ? channel : 0;
-    if (type == 0x90 && d2 > 0) NoteOn(ch, d1, d2);
-    else if (type == 0x80 || type == 0x90) NoteOff(ch, d1);
+    const bool keyswitch = autoHand && ch == 0 && (d1 == kPullKey || d1 == kPushKey);
+    if (type == 0x90 && d2 > 0) {
+        if (keyswitch) player.pull = d1 == kPullKey;
+        else NoteOn(ch, d1, d2);
+    } else if (type == 0x80 || type == 0x90) {
+        // A key pressed before Auto came on is still let go.
+        if (!keyswitch || keys[static_cast<std::size_t>(d1)].target > 0.0) NoteOff(ch, d1);
+    }
     else if (type == 0xB0) {
         if (d1 == 1) { msb = d2; lsb = 0; }
         else if (d1 == 33) { lsb = d2; fineWheel = true; }
@@ -1009,13 +920,12 @@ void Engine::Render(float* left, float* right, int frames) {
         groupOf[liveCount] = g;
         live[liveCount++] = &c;
     }
-    const double openSpan = autoHand ? Max(1.0, kAutoBellows / litres) : 1.0;
     for (int i = 0; i < frames; ++i) {
         touch.Step(controls[kTouch], autoHand);
         if (life.Step(controls[kLife], heldCells > 0 || Abs(hand.velocity) > 1.0e-5)) UpdateMicrophones();
         if (autoHand) StepPlayer(dt);
         hand.Tick(dt, controls[kMomentum], autoHand ? &player.drive : nullptr, player.velocity);
-        const double bellowsStiffness = BellowsStiffness(hand.position, openSpan);
+        const double bellowsStiffness = BellowsStiffness(Extension());
         // Assist makes the hand's stroke move as much more air as the open
         // reeds take beyond one A4 reed, so one wheel speed gives one pressure
         // whatever is played; at 0 the hand moves the bellows' own air only.
@@ -1281,7 +1191,7 @@ void Engine::Render(float* left, float* right, int frames) {
         // distends or compresses the fold walls (kFoldDistensionShare), with
         // higher hinge friction when pleats crowd near closed or pull taut near
         // full extension.
-        const double extension = Clamp(hand.position / openSpan, 0.0, 1.0);
+        const double extension = Extension();
         const double foldStrain = 1.0 + 0.35 * (2.0 * extension - 1.0) * (2.0 * extension - 1.0);
         const double foldFlow = (1.0 - kFoldDistensionShare) * (airFlow + leak) + kFoldDistensionShare * handFlow;
         const double rubbing = rustle.Step(foldStrain * foldFlow / kBellowsSection);

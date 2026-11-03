@@ -24,10 +24,13 @@
 //              leaves each pallet lifted 1 mm, so a strong bellows bends
 //              the reeds flat and quieter, as a half-pressed key does
 //   pitch bend +-2 semitones, retuning every sounding tongue
+//   C0 / C#0   (MIDI 12 / 13, channel 1) with Auto on: keyswitches that latch
+//              the bellows to pull or push; with Auto off they are keys
 // Other channels play as channel 1. Velocity sets how fast the pallet lifts.
-// With Auto on, the hand plays the bellows by itself while keys are held, in
-// time with the host (SetTransport), at full playing speed with the wheel at 0
-// and slowing down as the wheel rises.
+// With Auto on, the hand plays the bellows by itself while keys are held, at
+// full playing speed with the wheel at 0 and slowing down as the wheel rises.
+// Its bellows are endless and never turn by themselves; the keyswitches turn
+// them.
 // The register switches act on held keys too, as the slides they move do.
 // The keys, buttons, pallets and switches knock on their stops, and the
 // bellows' folds flip as the bellows turn and rustle as they move
@@ -67,16 +70,6 @@ inline constexpr std::array<Register, 8> kRegisters { {
     { "Master", { true, true, true, true, true } },
 } };
 
-// The host's tempo and song position, for Auto. A front end sets it before a
-// block; while `playing`, the engine advances the position through the block.
-struct Transport {
-    double bpm = 120.0;
-    int numerator = 4, denominator = 4;
-    bool playing = false;
-    double position = 0.0;   // quarter notes, at the next sample
-    double barStart = 0.0;   // quarter notes, where the bar holding `position` began
-};
-
 struct Diagnostics {
     double hand = 0.0;           // 0..1
     double handVelocity = 0.0;   // wheel ranges per second
@@ -102,7 +95,6 @@ public:
     void SetMasterTune(double cents);     // applies to the next notes
     void SetPitchBend(double amount);     // -1 .. 1, kBendSemitones each way, sounding reeds too
     void SetHand(double position);        // 0 closed .. 1 open
-    void SetTransport(const Transport& transport);
     void SetChannelPressure(int channel, double amount);   // 0 keys fully down .. 1 half pressed
     void Midi(const std::uint8_t* bytes, int size);
     void AllNotesOff();
@@ -178,20 +170,15 @@ private:
         void Tick(double dt, double momentum, const double* drive = nullptr, double driveVelocity = 0.0);
     };
 
-    // Auto supplies air while keys are held and can prepare an imminent turn
-    // in a short rest. A normal stroke lasts four host bars. Life swells may
-    // need an earlier turn on a beat when a whole bar exceeds the air left.
-    // The wheel sets pressure and Life varies the player's effort; all sound
-    // still comes from the physical hand, bellows, pallets and reeds.
+    // Auto supplies air while keys are held, from an endless bellows: the
+    // hand goes the way the keyswitches last latched (pull until one is
+    // played) and turns only when they change it, also in a rest, so the
+    // next note speaks the new way at once. The wheel sets pressure and Life
+    // varies the player's effort; all sound still comes from the physical
+    // hand, bellows, pallets and reeds.
     struct Player {
-        bool running = false, turned = false;
-        bool ready = false, earlyTurn = false;
-        int half = 0;                 // 0 pulling, 1 pushing, on the grid
-        double cycle = 0.0;           // quarter notes into the pull + push cycle
-        double stroke = 16.0;         // quarter notes in a stroke
-        double bar = 4.0;             // quarter notes in a bar
-        double barLine = 0.0;         // the bar line the hand's next turn is timed for
-        double rested = 1.0e9;        // seconds since the hand last moved
+        bool running = false, ready = false;
+        bool pull = true;             // the way the keyswitches latched the bellows
         double drive = 0.0, velocity = 0.0;   // the hand's path, in wheel ranges, which the arm follows
         bool pulled = false;          // the way the hand moved last sample
         bool swinging = false;        // turning: the hand goes as fast as it can
@@ -206,6 +193,7 @@ private:
     void StepPlayer(double dt);
     void NewStroke();
     double PlayerEffort() const;
+    double Extension() const;
     void UpdateMicrophones();
     double wanderStep = 0.0, wanderScale = 0.0;
 
@@ -234,7 +222,6 @@ private:
     double masterTune = 0.0;
     double bend2 = 1.0, bend2Target = 1.0, bendSmoothing = 0.0;   // tongue stiffness scale
     Hand hand;
-    Transport transport;
     Player player;
     Life life;
     Touch touch;

@@ -1,8 +1,9 @@
 # Respira
 
 Respira is a physically modelled accordion with eight treble registers,
-bass and chord buttons. Auto supplies bellows air while you play; Life adds
-irregular effort and movement at the microphones, even on long held notes.
+bass and chord buttons. Auto supplies bellows air while you play, from
+endless bellows that turn only when a keyswitch asks; Life adds irregular
+effort and movement at the microphones, even on long held notes.
 Select Wheel to shape each pull and push yourself. Every sounding reed is a
 simulated steel tongue in its own chamber, driven by bellows air. Mechanical
 parts can also knock without air. This repository holds the JUCE-free C++17
@@ -32,6 +33,13 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 <!-- audio-demos-end -->
 
 ## Version history
+
+### Unreleased — 0.1.13 — Auto's endless bellows and keyswitch turns
+
+- **Auto** no longer turns the bellows by itself. Its bellows are endless: the hand pulls for as long as keys are held, with no four-bar strokes, no early turn when the air runs short and no use of the host's tempo or song position. In 0.1.12 a held chord turned every 8 s at 120 in 4/4, wherever the phrase was, and every bar on a big chord with Assist at 0.
+- Two keyswitches on the treble channel turn them, with Auto on: **C0** (MIDI 12) latches pull and **C#0** (MIDI 13) push. A turn sounds as Auto's turns did; it starts at the keyswitch, so the pressure passes zero 10–35 ms later at the default Momentum. Played in rhythm, they give a bellows shake. With Auto off the two notes are the split keyboard's bass C and C# as before.
+- Under Auto, what followed how far the bellows were open (their stiffness, the folds' strain and, with Life, the bass end's position at the microphones) stays at mid-travel.
+- The wheel mode is unchanged: the eight demos render bit for bit as in 0.1.12. Front ends no longer pass the host's transport (`Engine::SetTransport` is gone).
 
 ### Unreleased — 0.1.12 — Auto/manual bellows speed calibration and Life-scaled reed realism
 
@@ -313,28 +321,22 @@ working air button.
 
 ### Auto
 
-The pressure figures below describe the baseline at Life and Touch zero.
-Since 0.1.4 the selected default is Life 100 %; the shared pressure varies
-more strongly, and capacity is checked at each beat so a swell can turn
-before the bellows reaches its end. During a short rest Auto may prepare
-an imminent four-bar reversal: it physically changes pressure with the
-pallets closed rather than waiting for the next note. Longer rests still
-stop the hand. This correction also applies with Life at zero.
+The pressure figures below describe the baseline at Life and Touch zero;
+Life and Touch vary the pressure the hand wants (below).
 
 **Auto** is on by default, on Init and on every factory preset: just play,
 and a player's hand keeps the bellows supplied while any key is held; the
-wheel no longer moves them. Switch it off to play the bellows on the wheel. The hand pulls through four
-bars and pushes through the next four, as accordionists are taught to change
-the bellows on a full-size instrument, so a pull and a push take 32 beats in
-4/4 and 24 in 3/4. At each bar line the player turns early if the bellows
-will not last the next bar at the air the reeds take, as players change at a
-bar line when the air runs short: at 120 in 4/4 a melody line turns every
-four bars, while a bass, chord and triad with Assist at 0 (some 3 L/s) turns
-every bar. While the host plays, the strokes turn on its bar lines, and the
-four-bar strokes count from the song's first bar wherever playback starts.
-With the transport stopped they run at the host's tempo from the first note,
-and a phrase that starts after a rest of a stroke or more starts on a pull,
-as a player starts with the bellows closed.
+wheel no longer moves them. Switch it off to play the bellows on the wheel.
+Auto's bellows are endless: the hand goes one way for as long as keys are
+held, however long a note or however much air a chord takes, and never turns
+by itself (the owner's choice, 2026-11-03). No real bellows is endless; the
+departure is in their capacity only, and every note still sounds from the
+air the hand moves. Two keyswitches on the treble channel turn them: C0
+(MIDI 12) latches pull and C#0 (MIDI 13) push, so a region plays the same
+wherever playback starts, and one that repeats the way the bellows already
+go changes nothing. They sit an octave under the bass buttons, where the
+split keyboard only repeats them, and with Auto off they are keys again.
+After a reset the hand pulls, as a player starts with the bellows closed.
 
 The hand does not move at a fixed speed: like a player it feels the air the
 reeds take and gives it, and closes on the pressure it wants in a reaction
@@ -348,24 +350,28 @@ Bellows and Assist are set to; raising the wheel slows the bellows down to
 15 % of that (60 Pa at the top) and lets the arm yield to the lower pressure,
 so moving the wheel from its resting place at 0 softens and swells a held note
 by about 16 dB.
-A turn is planned rather than reacted to: expecting the reeds to take the
-air they took, the other way, the hand moves as fast as it goes (4 L/s of
-its own air, more with Assist) until the pressure its arm will bring is the
-new one, so a held chord falls more than 10 dB below its level for only 5–15
-ms. The hand turns early by Momentum, when the led arm lags its turn most,
-plus the time that swing to zero takes it, so the pressure passes zero just
-before the bar line (15 ms at the default Momentum, 0–125 ms from 0 to 200)
-and the new stroke speaks on the downbeat. From 0 to 200 ms of Momentum a
-held triad reaches 360 Pa in 0.2–0.5 s and holds 400. Each stroke
-starts from rest; let go of every key and the hand stops, the closed pallets
-keeping the bellows at their pressure, so the next note speaks at once. A
-first stroke starts far enough in from the end of the bellows that the
-strokes after it fit; the bellows Auto moves hold 6 L, an estimate for a
-full-size accordion (the Bellows control is only the wheel's gearing), and
-if a stroke still runs them out the hand turns there and finds the bars
-again at the next turn. Switched off, Auto leaves the bellows where they
-are: the wheel takes over without a stroke. Pressure, reaction time and
-capacity are voiced, not measured.
+A turn is planned rather than reacted to: at the keyswitch, expecting the
+reeds to take the air they took, the other way, the hand moves as fast as it
+goes (4 L/s of its own air, more with Assist) until the pressure its arm will
+bring is the new one, so at the default Momentum a held chord falls more than
+10 dB below its level for 4–17 ms. The engine cannot look ahead, so the
+pressure passes zero 10–35 ms after the keyswitch at the default Momentum,
+less on a big chord, whose reeds' air helps the swing: put a keyswitch just
+before the beat it turns on. A heavy arm turns slowly, as its bar-timed turns
+did: at Momentum 100–200 ms a bass, chord and triad takes 0.1–0.6 s to pass
+zero. Playing the keyswitches in rhythm gives a bellows shake; at the default
+Momentum five turns a second still swing the pressure fully round. A
+keyswitch in a rest, once the hand has played, turns the pressure with the
+pallets closed, so the next note speaks the new way at once. From 0 to 200
+ms of Momentum a held triad reaches 360 Pa in 0.2–0.5 s and holds 400. Each
+stroke starts from rest; let go of every key and the hand stops, the closed
+pallets keeping the bellows at their pressure, so the next note speaks at
+once. Nothing that depends on how far the bellows are open moves under
+Auto: their stiffness, the folds' strain and, with Life, the bass end's
+position at the microphones stay at mid-travel (the Bellows control is only
+the wheel's gearing). Switched off, Auto leaves the bellows where they are:
+the wheel takes over without a stroke. Pressure and reaction time are
+voiced, not measured.
 
 The hand is a person's, who never presses quite evenly. The pressure it wants
 wanders by 8 % of itself, slowly (below about 1.5 Hz), and each stroke takes
@@ -375,9 +381,7 @@ percent in a steady contraction, more when the limb moves). In a held chord
 the pressure varies by about 5–6 % within a stroke where it varied by 1 %.
 The sound follows only weakly: at 400 Pa the level rises about 0.26 dB per
 dB of pressure, so what is heard is mostly the reeds' colour and the
-beating's evenness moving, by 0.1–0.2 dB in level. Planning a turn, the
-player judges the air by the stroke's usual pressure and keeps enough for
-twice their wander above it, so the turns still fall on bar lines.
+beating's evenness moving, by 0.1–0.2 dB in level.
 
 ### Life
 
@@ -792,7 +796,7 @@ strokes read −1.7 VU at most. Volume sets the level going into the stage.
 | Momentum | 0–200 ms | how far the arm trails the wheel; 0 follows it exactly |
 | Oversampling | 1×, 2×, 4× | the reeds' time step: 1× is four times the host rate; 2× and 4× cost about two and four times the CPU |
 | Mechanics | −40 to +20 dB | the keys', pallets', buttons' and switches' knocks, the bellows' folds and the push valves' slaps, against the estimate (The mechanism); +10 dB by default, chosen by ear; at −40 dB they are all but silent |
-| Auto | off, on | on by default: the hand plays the bellows in time with the host and the wheel presses harder (Auto) |
+| Auto | off, on | on by default: the hand plays endless bellows, turned by the C0 and C#0 keyswitches, and the wheel softens or swells it (Auto) |
 | Room | 0–1 wet | the hall around the microphones: 0 dry, 0.5 % by default, 1 as decorrelated as the solo recordings; sigmoid knob response, actual wet percentage displayed (The microphones) |
 
 `Source/DSP/RespiraControls.h` holds these for every front end;
@@ -803,14 +807,13 @@ and push), with its peak below −3 dBFS.
 
 MIDI channel 1 is the keyboard (split as above, or all treble), channel 2 the
 bass buttons and channel 3 the chord buttons by pitch class; other channels
-play as channel 1. CC1 + CC33 are the hand (with Auto, how hard it presses), CC85 who moves it
+play as channel 1. With Auto on, notes 12 and 13 (C0 and C#0) on channel 1 latch the bellows to pull
+and push. CC1 + CC33 are the hand (with Auto, how hard it presses), CC85 who moves it
 (below 64 the wheel, from 64 Auto; the demo phrases send 0 first), CC64 the air valve, channel
 pressure how far the channel's held keys rise, CC120 and CC123 release every
 key. Pitch bend retunes every sounding tongue, up to two
 semitones each way, by scaling its stiffness; no real reed bends that far, but
-a pitch wheel should do what it says. A front end gives Auto the host's
-tempo, time signature, song position and bar start before each block
-(`Engine::SetTransport`); without them Auto plays at 120 in 4/4.
+a pitch wheel should do what it says.
 
 ## Known gaps
 

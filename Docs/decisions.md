@@ -1933,3 +1933,56 @@ with:
   `0.35` vortex-jet inertia coupling).
 - `Life = 1.0` (`ImperfectionScale = 2.0`): **Over-emphasized** (`2x`
   tolerances across all reed, chamber, pallet, and vortex parameters).
+
+## 2026-11-03 — Auto: endless bellows, turned by keyswitch (owner)
+
+The owner first asked whether manual mode could go and Auto lose its
+reverse, and what a keyswitch reverse would cost. The answer weighed three
+options: Auto with no reverse at all (simplest, but a stroke can never
+change direction, so no bellows shake and no phrasing by turns), the bar-timed
+turns as they were (they land wherever the phrase is: at 120 in 4/4 a held
+chord turned every 8 s, and a big chord at Assist 0 every bar), and endless
+bellows with keyswitch turns. The owner chose: **keep manual mode as it is;
+make Auto's bellows endless and turned only by keyswitch, with no automatic
+reverse on the bars.** Not chosen by ear; the per-fix previews below were
+rendered for review and have no listening verdict yet.
+
+What it licensed:
+
+- **Endless bellows under Auto.** The hand goes one way for as long as keys
+  are held. The four-bar stroke, the turn on a bar line when the air runs
+  short, the bar count from the song's first bar and `Engine::SetTransport`
+  are removed. No real bellows is endless: the fiction is in their capacity
+  only, and every note still sounds from the air the hand moves.
+- **Keyswitch latches.** With Auto on, MIDI 12 (C0, Respira naming C4 = 60)
+  latches pull and MIDI 13 (C#0) push, on the treble channel. A latch is a
+  state, not a toggle, so a region plays the same from any start point and a
+  repeated keyswitch changes nothing. These sit an octave under the bass
+  buttons (MIDI 24 up), where the split keyboard only repeats them; with Auto
+  off they play as keys, and a key pressed before Auto came on is still let
+  go. After a reset the hand pulls.
+- **No look-ahead.** The engine cannot see the keyswitch coming, so the turn
+  starts at it: the pressure passes zero 10–35 ms after the keyswitch at the
+  default Momentum (about 25 ms on a single reed: 400 Pa over the bellows'
+  stiffness at 4 L/s, plus the arm's 25 ms). The turn is otherwise the old
+  planned turn: the hand moves at full speed until the pressure its arm will
+  bring is the new one. At the same phrase point a held chord's dip below
+  −10 dB lasts 4–8 ms against 5–6 ms for the old bar turn; at Momentum
+  100–200 ms a bass, chord and triad still take 0.1–0.6 s to pass zero, as
+  they did.
+- **Turns in a rest.** Once the hand has played, a keyswitch with no key held
+  swings the pressure with the pallets closed, so the next note speaks the new
+  way at once (548 Pa before the next note in `AKeyswitchInARestPreparesTheNextNote`;
+  the old short-rest turn gave 547).
+- **Mid-travel under Auto.** Since an endless bellows has no position, what
+  followed it (stiffness, fold strain, and with Life the bass end's distance
+  at the microphones) stays at mid-travel (`Engine::Extension`). Manual mode
+  still uses the hand's position, and the eight demos, which play the wheel,
+  render bit for bit as in 0.1.12.
+
+Removed with the bar turns: `AutoTurnsOnTheBars`, `AutoFollowsTheSong`,
+`AutoTurnsWhenTheAirRunsShort` and `SwellsReserveEnoughAir`, whose behaviour no
+longer exists. Added: `AutoNeverTurnsByItself`, `KeyswitchesTurnTheBellows`,
+`SwellsNeverRunTheBellowsOut` and `AKeyswitchInARestPreparesTheNextNote`;
+`AutoLeadsTheArm` now turns on a keyswitch. The front ends must drop their
+transport feed and document the keyswitches when the Rack pin advances.

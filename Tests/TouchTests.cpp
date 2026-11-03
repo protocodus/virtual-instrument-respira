@@ -27,7 +27,6 @@ std::unique_ptr<Engine> Make(double touch, bool automatic = true) {
     // In Auto mode, wheel=0 is the full 400 Pa baseline (raising the wheel
     // slows the bellows down).
     e->SetControls(c); e->Reset(); e->SetHand(automatic ? 0.0 : 0.2);
-    Transport t; t.bpm = 40.0; e->SetTransport(t);
     return e;
 }
 struct Take { std::vector<float> l, r; std::vector<double> p; };

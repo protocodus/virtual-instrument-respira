@@ -23,7 +23,6 @@ std::unique_ptr<Engine> Make(double amount, bool automatic = true, double width 
     c[kTouch] = 0.0; // isolate Life; TouchTests and musical renders cover their combination
     c[kWidth] = width; c[kRoom] = 0.0;
     e->SetControls(c); e->Reset();
-    Transport t; t.bpm = 40.0; e->SetTransport(t);
     // In Auto mode, wheel=0 is the full 400 Pa baseline (raising the wheel
     // slows the bellows down).
     e->SetHand(automatic ? 0.0 : 0.25);
@@ -108,47 +107,42 @@ void NoHandStillMeansNoAir() {
     for (std::size_t i = 48000; i < t.l.size(); ++i) tail = std::max(tail, std::fabs(double(t.l[i])));
     Require(tail < 1.0e-9, "held keys without hand movement remain silent after their mechanical knock");
 }
-void SwellsReserveEnoughAir() {
-    // Fixed 120 BPM, five keys and no Assist: the original bellows-capacity
-    // witness. Full Life formerly hit the end stop 269 ms before a bar line.
-    // Life's stronger swells require beat boundaries when a whole bar no
-    // longer fits. Keep the 80 ms turn window against that musical grid.
+void SwellsNeverRunTheBellowsOut() {
+    // Five keys and no Assist at full Life: the old bellows-capacity witness,
+    // which turned on beats to spare its 6 L. Auto's bellows are endless now,
+    // so its strongest swells never force a turn.
     auto e = Make(1.0);
     Controls c = e->GetControls(); c[kAssist] = 0.0; e->SetControls(c); e->SetHand(0.0);
     for (const int key : { 60, 64, 67, 36, 24 }) {
         const std::uint8_t note[] = { 0x90, static_cast<std::uint8_t>(key), 100 }; e->Midi(note, 3);
     }
-    double previous = 0.0, worst = 0.0; int turns = 0;
+    double previous = 0.0; int turns = 0;
     float l[32], r[32];
     for (int frame = 0; frame < int(8.6 * 48000); frame += 32) {
-        Transport t; t.playing = true; t.bpm = 120.0;
-        t.position = frame / 24000.0; t.barStart = 4.0 * std::floor(t.position / 4.0);
-        e->SetTransport(t); e->Render(l, r, 32);
+        e->Render(l, r, 32);
         const double pressure = e->Diag().pressure, seconds = (frame + 32) / 48000.0;
-        if (seconds > 0.5 && (previous < 0.0) != (pressure < 0.0)) {
-            ++turns; worst = std::max(worst, 0.5 * std::ceil(seconds / 0.5) - seconds);
-        }
+        if (seconds > 0.5 && (previous < 0.0) != (pressure < 0.0)) ++turns;
         previous = pressure;
     }
-    std::printf("Life air reserve: %d turns, furthest %.4f s before a beat\n", turns, worst);
-    Require(turns >= 3 && worst < 0.08, "Life swells turn on beats before exhausting the bellows");
+    std::printf("Life swells: %d turns in 8.6 s\n", turns);
+    Require(turns == 0, "Life's swells never run the endless bellows out");
 }
-void AShortRestPreparesTheNextNote() {
+void AKeyswitchInARestPreparesTheNextNote() {
+    // C#0 (MIDI 13) in a short rest turns the pressure with the pallets shut,
+    // so the next note speaks pushing at once.
     for (const double amount : { 0.0, 1.0 }) {
         auto e = Make(amount); Note(*e, true);
         float l[48], r[48]; double beforeNote = 0.0, energy = 0.0;
         for (int ms = 0; ms < 8100; ++ms) {
-            Transport t; t.playing = true; t.bpm = 120.0;
-            t.position = ms / 500.0; t.barStart = 4.0 * std::floor(t.position / 4.0);
-            e->SetTransport(t);
             if (ms == 7820) Note(*e, false);
+            if (ms == 7900) { const std::uint8_t push[] = { 0x90, 13, 100 }; e->Midi(push, 3); }
             if (ms == 8000) { beforeNote = e->Diag().pressure; Note(*e, true); }
             e->Render(l, r, 48);
             if (ms >= 8020) for (float x : l) energy += x * x;
         }
         std::printf("Life %.0f rest: %.1f Pa before the next note, %.1f dBFS short-note RMS\n",
                     amount, beforeNote, 10.0 * std::log10(energy / (80 * 48)));
-        Require(beforeNote > 200.0, "Auto reverses physical pressure during the rest before the note");
+        Require(beforeNote > 200.0, "a keyswitch in the rest turns the physical pressure before the note");
         Require(energy / (80 * 48) > 1.0e-5, "the first 100 ms note after the turn remains audible");
     }
 }
@@ -170,7 +164,7 @@ int main() {
     HeldNotesKeepMoving(); BlocksAndResetDoNotChangeThePlayer();
     ManualControlKeepsItsAirAndMonoStaysMono(); NoHandStillMeansNoAir();
     LifeScalesReedAndChamberImperfections();
-    SwellsReserveEnoughAir();
-    AShortRestPreparesTheNextNote();
+    SwellsNeverRunTheBellowsOut();
+    AKeyswitchInARestPreparesTheNextNote();
     std::puts("PASS Life: held notes, deterministic blocks/reset, manual air, moving pickup, mono and silence");
 }

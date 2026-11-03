@@ -26,7 +26,7 @@ enum Control : int {
     kMomentum,   // the arm's lag behind the wheel, ms: 0 the wheel moves the bellows directly
     kOversampling, // 0, 1, 2: 1x, 2x, 4x the engine's own internal rate (4x the host rate)
     kMechanics,  // the keys', pallets', buttons' and register switches' knocks, the bellows' folds and the push valves, dB re the estimate (Mechanics.h)
-    kAuto,       // 0 the wheel is the hand, 1 (the default) the hand plays the bellows itself in time and the wheel slows it down
+    kAuto,       // 0 the wheel is the hand, 1 (the default) the hand plays endless bellows itself, turned by keyswitch, and the wheel slows it down
     kRoom,       // the room the microphones hear around the instrument: 0 none (dry) .. 1 as much as the owner's recordings' rooms (Room.h)
     kLife,       // added Auto bellows effort and source movement at the microphones; 0 preserves the earlier response
     kTouch,      // optional velocity emphasis in Auto's shared bellows effort; manual hand is unaffected
