@@ -1861,15 +1861,19 @@ verdict exists for any of them**:
 - the bass-strap knock took the hand's speed in wheel ranges a second as m/s;
   it now takes the bellows end's speed (litres × velocity over 0.41 × 0.19 m²);
 - Life's 6.5 Hz tremor was filtered to 0.40 RMS where `kTremorShare = 0.12`
-  assumes 1, so it is now 2.5 times what 0.1.10 gave. This is the one change
-  that is plausibly audible on the demos' Auto and moving-pickup shiver; the
-  share 0.12 is an authored choice that was never heard at its written size,
-  and the owner may prefer to keep what 0.1.10 sounded like and re-pin the share
-  to 0.048 instead;
+  assumes 1, so its control signal is now 2.5 times what 0.1.10 gave. The
+  output of a held Auto note does not measurably change (5–8 Hz level wobble
+  0.278 dB before, 0.283 dB after), so the share 0.12, an authored choice, is
+  left as written;
 - a bass or chord reed shared by two buttons an octave apart sounds until the
   last button is let go;
 - each bellows panel steps its hinge once per host sample, 13 % less CPU on the
   demos and not bit-exact (−60 dB null against 0.1.10 over all four changes).
+
+On the demos the four changes null at −60 dB with no octave band moving by
+0.05 dB. In targeted clips only the shared reed is audible (+1.6 dB for the
+3.2 s the first button stays down); the strap's difference peaks at −53.6 dBFS against a
+−1.9 dBFS peak.
 
 `BlockPartitionInvariance` allows a float ulp at a sample under −240 dBFS where
 the 1e-20 flush floor is below that ulp; every louder sample keeps the floor.

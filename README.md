@@ -36,9 +36,9 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 ### Unreleased — 0.1.11 — fixes to the 0.1.10 mechanism and the folds' CPU
 
 - The bass strap's knock follows the bellows end's own speed (litres × hand speed over the 0.41 × 0.19 m section: a few mm/s to a few cm/s). 0.1.10 took the hand's speed in wheel ranges a second as m/s, so it hit about six times too hard at the default Bellows and ignored it.
-- The 6.5 Hz effort tremor of Life reaches the 12 % share it is written against; its filter was normalised to 0.40 RMS, not 1, so the shiver in Auto's air and in the moving pickup is 2.5 times what 0.1.10 gave.
+- The 6.5 Hz effort tremor of Life reaches the 12 % share it is written against; its filter was normalised to 0.40 RMS, not 1, so the control signal is 2.5 times what 0.1.10 gave. On a held Auto note the output does not measurably change (5–8 Hz level wobble 0.28 dB before and after).
 - Two bass or chord buttons an octave apart open the same reed. It now keeps sounding until the last of them is let go; it used to stop when the later one came up while the other was still held.
-- Each bellows panel steps its hinge once per host sample, not four times: 5–28 % less CPU on the eight demos (13 % in all). The demos null against 0.1.10 at −60 dB and no octave band moves by 0.05 dB; none of this is heard on the demo phrases and none has been judged by ear. [Review and measurements](Docs/validation/review-2026-11-03.md); [CPU](Docs/benchmarks/folds-cpu-2026-11-03.md).
+- Each bellows panel steps its hinge once per host sample, not four times: 5–28 % less CPU on the eight demos (13 % in all). The demos null against 0.1.10 at −60 dB and no octave band moves by 0.05 dB; only the octave-apart bass reed is audible in a targeted clip (+1.6 dB for the 3.2 s the first button stays down, of a bass and chord held together), and none of it has been judged by ear. [Review and measurements](Docs/validation/review-2026-11-03.md); [CPU](Docs/benchmarks/folds-cpu-2026-11-03.md).
 
 ### Unreleased — 0.1.9 and 0.1.10 — reed, chamber and mechanism physics, recorded after the fact
 
