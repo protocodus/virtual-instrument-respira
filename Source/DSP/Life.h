@@ -47,11 +47,11 @@ struct Life {
             b0 = (k / q) * norm;
             a1 = 2.0 * (k * k - 1.0) * norm;
             a2 = (1.0 - k / q + k * k) * norm;
-            // Discrete-time white-noise variance of a biquad bandpass H(z) =
-            // b0 (1 - z^-2) / (1 + a1 z^-1 + a2 z^-2) is b0^2 (1 + a2) /
-            // ((1 - a2) ((1 + a2)^2 - a1^2)); normalize back to unit RMS.
-            const double denom = (1.0 - a2) * ((1.0 + a2) * (1.0 + a2) - a1 * a1);
-            scale = denom > 1.0e-12 ? 1.0 / std::sqrt(b0 * b0 * (1.0 + a2) / denom) : 0.0;
+            // The (1 - z^-2) zeros make the output x[n] - x[n-2] of the all-pole
+            // process, whose variance is 2 (r0 - r2) = 2 / (1 - a2) for unit
+            // white noise, so normalize by that. The all-pole variance alone
+            // left the tremor at 0.4 RMS, not 1.
+            scale = std::sqrt((1.0 - a2) / 2.0) / b0;
         }
         double Tick(double draw) {
             const double y = b0 * draw + z1;

@@ -132,9 +132,21 @@ void AShortRestPreparesTheNextNote() {
         Require(energy / (80 * 48) > 1.0e-5, "the first 100 ms note after the turn remains audible");
     }
 }
+void TheTremorHasUnitRms() {
+    // Life.h scales the 6.5 Hz tremor to unit RMS before kTremorShare weights
+    // it. Only the +-1.5 clamp takes a little off a unit-variance, nearly
+    // Gaussian signal (0.88 RMS for a Gaussian); the scale once left it at 0.4.
+    Life life; life.Prepare(48000.0);
+    double sum = 0.0;
+    const int n = 200000;
+    for (int i = 0; i < n; ++i) { const double y = life.effortTremor.Tick(life.Draw()); sum += y * y; }
+    const double rms = std::sqrt(sum / n);
+    Require(rms > 0.85 && rms < 0.92, "the tremor is scaled to unit RMS");
+}
 }
 
 int main() {
+    TheTremorHasUnitRms();
     HeldNotesKeepMoving(); BlocksAndResetDoNotChangeThePlayer();
     ManualControlKeepsItsAirAndMonoStaysMono(); NoHandStillMeansNoAir();
     SwellsReserveEnoughAir();

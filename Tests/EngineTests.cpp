@@ -1003,8 +1003,12 @@ void BlockPartitionInvariance() {
         // just above the per-state threshold. This is below -400 dBFS. Separate
         // baseline/trial comparisons at identical partitions require every
         // output byte to match; they do not apply this exception.
+        // Where the decaying tail has reached 1e-12 (-240 dBFS) a float sample's
+        // ulp is already 1e-19, above that floor, so the same flush can move
+        // the sample by that one ulp; allow it there and nowhere louder.
         const auto sameSample = [](float a, float b) {
-            return std::fabs(double(a) - double(b)) < 1.0e-20;
+            const double apart = std::fabs(double(a) - double(b)), size = std::max(std::fabs(double(a)), std::fabs(double(b)));
+            return apart < 1.0e-20 || (size < 1.0e-12 && apart <= 1.2e-7 * size);
         };
         for (std::size_t i = 0; i < t.left.size(); ++i)
             same = same && sameSample(t.left[i], reference.left[i]) && sameSample(t.right[i], reference.right[i]);
