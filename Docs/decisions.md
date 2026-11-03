@@ -1851,3 +1851,27 @@ The [research](research/microphone-motion-2026-11-02.md) states the ideal-
 microphone and point-source assumptions; the
 [validation](validation/microphone-motion-2026-11-02.md) records the native
 gates and CPU evidence. The low-pressure reed-start mismatch remains open.
+
+## 2026-11-03 — 0.1.11: defect fixes after the 0.1.10 mechanism work (engineering)
+
+Not chosen by ear. A review of the model at 0.1.10 found four defects and one
+CPU cost; each is fixed on its own commit with a test, and **no listening
+verdict exists for any of them**:
+
+- the bass-strap knock took the hand's speed in wheel ranges a second as m/s;
+  it now takes the bellows end's speed (litres × velocity over 0.41 × 0.19 m²);
+- Life's 6.5 Hz tremor was filtered to 0.40 RMS where `kTremorShare = 0.12`
+  assumes 1, so it is now 2.5 times what 0.1.10 gave. This is the one change
+  that is plausibly audible on the demos' Auto and moving-pickup shiver; the
+  share 0.12 is an authored choice that was never heard at its written size,
+  and the owner may prefer to keep what 0.1.10 sounded like and re-pin the share
+  to 0.048 instead;
+- a bass or chord reed shared by two buttons an octave apart sounds until the
+  last button is let go;
+- each bellows panel steps its hinge once per host sample, 13 % less CPU on the
+  demos and not bit-exact (−60 dB null against 0.1.10 over all four changes).
+
+`BlockPartitionInvariance` allows a float ulp at a sample under −240 dBFS where
+the 1e-20 flush floor is below that ulp; every louder sample keeps the floor.
+Details, evidence and what was not changed:
+[review](validation/review-2026-11-03.md), [CPU](benchmarks/folds-cpu-2026-11-03.md).
