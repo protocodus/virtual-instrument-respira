@@ -20,8 +20,15 @@ enum Rank : int {
 
 inline bool IsTreble(int rank) { return rank <= kRankH; }
 
-// The treble reed blocks cover C2..C7; keys outside are folded in by octaves.
-constexpr int kTrebleLow = 36, kTrebleHigh = 96;
+// The treble reed blocks cover C2..C8; keys outside are folded in by octaves.
+// An accordion's treble stops near C7. Above it every rank goes on with the
+// same reed design to a piano's top, so that every key to C8 sounds at its own
+// pitch (the owner's rule for every Rack instrument). Tuned and played alone,
+// those reeds come within 20 dB of their 400 Pa level after 2 s from about
+// 100 Pa at C#7, 140 at D7 and 265-280 at C8, where C7 needs 90 (ReedProbe's
+// Radiated, each treble rank): Auto's 400 Pa speaks them all, Touch's softest
+// strokes (about 180 Pa) not those from G#7 up.
+constexpr int kTrebleLow = 36, kTrebleHigh = 108;
 constexpr int kTrebleKeys = kTrebleHigh - kTrebleLow + 1;
 
 inline int TrebleKey(int key) {
@@ -30,8 +37,9 @@ inline int TrebleKey(int key) {
     return key;
 }
 
-// C#7, the 4' rank's highest reed: above it the model's reeds need more than
-// a moderate pressure to speak (D7-F7 from about 400 Pa, C8 only at 1.5 kPa).
+// C#7, the 4' rank's highest note an octave up: above it the rank breaks back
+// to sound with the 8', as an accordion's 4' does near the keyboard's top,
+// where its reeds would be the smallest and need the most pressure to start.
 constexpr int kHighestReed = 97;
 
 inline int PitchClass(int key) { return ((key % 12) + 12) % 12; }
@@ -62,8 +70,7 @@ inline double RankNote(int rank, int key, double musetteCents) {
         return key + (rank == kRankMPlus ? cents : -cents) / 100.0;
     }
     case kRankH: {
-        // The 4' rank breaks back an octave at the top, where its reeds would be
-        // too small to speak: no reed sounds above C#7.
+        // The 4' rank breaks back an octave at the top (kHighestReed).
         const int note = key + 12;
         return note > kHighestReed ? note - 12 : note;
     }

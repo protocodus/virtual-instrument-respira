@@ -1,5 +1,5 @@
-// Engine contracts: air only from the hand's motion, the mechanism's knocks, the bellows' turn, pitch and pitch bend, rates and
-// Oversampling, routing, register switches on held keys, the 4' rank's break, half-pressed keys,
+// Engine contracts: air only from the hand's motion, the mechanism's knocks, the bellows' turn, pitch and pitch bend, every key
+// to C8 at its own pitch, rates and Oversampling, routing, register switches on held keys, the 4' rank's break, half-pressed keys,
 // the air button and Assist, a hard push on a held key, the controller stream and the arm's momentum, block-partition
 // invariance and determinism, release and voice limits, the noise scaling, and Auto's hand and keyswitches.
 #include "DSP/RespiraEngine.h"
@@ -695,6 +695,65 @@ std::unique_ptr<Engine> MakeAuto(double rate, const std::function<void(Controls&
 
 // The keyswitches, C0 (MIDI 12) pull and C#0 (MIDI 13) push.
 constexpr std::uint8_t kPull = 12, kPush = 13;
+
+// Hann-windowed DFT magnitude of x at hz from `from` seconds to `to`.
+double Magnitude(const std::vector<float>& x, double rate, double from, double to, double hz) {
+    const auto a = static_cast<std::size_t>(from * rate), n = static_cast<std::size_t>((to - from) * rate);
+    double re = 0.0, im = 0.0;
+    for (std::size_t i = 0; i < n; ++i) {
+        const double w = (0.5 - 0.5 * std::cos(2.0 * kPi * static_cast<double>(i) / static_cast<double>(n))) * x[a + i];
+        re += w * std::cos(2.0 * kPi * hz * static_cast<double>(i) / rate);
+        im += w * std::sin(2.0 * kPi * hz * static_cast<double>(i) / rate);
+    }
+    return std::sqrt(re * re + im * im);
+}
+
+void EveryKeySounds() {
+    // The default patch, Auto at its 400 Pa: every key of a piano, A0 to C8,
+    // sounds, and every treble key, C3 up on the split keyboard, at its own
+    // pitch: its strongest component within a semitone either side is within
+    // 10 cents of the key, and nothing an octave below it comes within 20 dB.
+    // Keys above C7 were folded down an octave before the reeds reached C8.
+    const double rate = 48000.0;
+    double quietest = 0.0, worstCents = 0.0, worstOctave = -1.0e9;
+    int quietKey = 0, offKey = 0, octaveKey = 0;
+    for (int key = 21; key <= 108; ++key) {
+        auto e = Make(rate, 0, [](Controls& c) {
+            c = Controls {};
+            c[kRoom] = 0.0;
+        });
+        const Take t = PlayAuto(*e, rate, 0.7, { { 0.0, { kOn, static_cast<std::uint8_t>(key), 100 } } });
+        const double level = Db(Rms(t.left, rate, 0.4, 0.7));
+        if (quietKey == 0 || level < quietest) {
+            quietest = level;
+            quietKey = key;
+        }
+        if (key < 48) continue;
+        const double hz = NoteHz(key);
+        double best = 0.0, at = 0.0;
+        for (int c = -100; c <= 100; c += 2) {
+            const double m = Magnitude(t.left, rate, 0.4, 0.7, hz * std::pow(2.0, c / 1200.0));
+            if (m > best) {
+                best = m;
+                at = c;
+            }
+        }
+        if (std::fabs(at) > std::fabs(worstCents)) {
+            worstCents = at;
+            offKey = key;
+        }
+        double below = 0.0;
+        for (int c = -100; c <= 100; c += 10) below = std::max(below, Magnitude(t.left, rate, 0.4, 0.7, 0.5 * hz * std::pow(2.0, c / 1200.0)));
+        if (Db(below / best) > worstOctave) {
+            worstOctave = Db(below / best);
+            octaveKey = key;
+        }
+    }
+    std::printf("  quietest key %d, furthest key %d, strongest octave below at key %d\n", quietKey, offKey, octaveKey);
+    Expect(quietest > -60.0, "EveryKeySounds", "A0 to C8 on the default patch, the quietest key's level, dBFS RMS", quietest);
+    Expect(std::fabs(worstCents) <= 10.0, "EveryKeySounds", "C3 to C8 sound at their own pitch, furthest off, cents", worstCents);
+    Expect(worstOctave < -20.0, "EveryKeySounds", "and none an octave down, the octave below at most, dB", worstOctave);
+}
 
 void AutoNeverTurnsByItself() {
     // Auto's bellows are endless: one note held for 30 s pulls throughout,
@@ -1494,6 +1553,7 @@ int main() {
     SplitKeyboardRouting();
     RegisterActsOnHeldNotes();
     TopOctaveSteady();
+    EveryKeySounds();
     LowReedHoldsItsTuning();
     HalfPressedKeys();
     AirButtonVents();
