@@ -34,6 +34,11 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
+### 0.1.15 — 2026-11-04 — the wheel is Auto's volume at every velocity
+
+- Under **Auto**, raising the mod wheel now slows the bellows down to 60 Pa at the top whatever the velocity: about 16 dB on a held A4 struck at 100 or harder and 9 dB at velocity 1, on Init. From 0.1.12 to 0.1.14 a note struck under 64 swelled instead, by only 3–8 dB, the opposite way from the Rack panel's volume pictures, and the owner heard the wheel do nothing in Reason.
+- Velocity still sets where the wheel starts from. The wheel mode is unchanged: the eight demos render bit for bit as in 0.1.14.
+
 ### 0.1.14 — 2026-11-04 — every key to C8 at its own pitch
 
 - The treble reeds go on to C8, a piano's top, past an accordion's C7: every key from C#7 up sounds at its own pitch, where C#7–C8 played an octave down. They speak at Auto's 400 Pa, need more air the higher they are (about 100 Pa at C#7, 270 at C8), and fall some 13 dB from C7 to C8 on Init. Touch's softest strokes do not start those from G#7 up.
@@ -286,9 +291,8 @@ at full playing speed (`400 Pa` at `wheel = 0`), while softer presses hold a
 brief reed-catching floor (`35 ms`) for short staccato notes to catch at once
 and then glide over 80 ms down to a gentler sustaining bellows speed (`45 %` /
 `~180 Pa` at `velocity = 1`). Raising the mod wheel (`0 -> 127`) during a held
-note moves toward the opposite dynamic: on normal/strong notes (`velocity >= 64`)
-it slows the bellows down to `60 Pa` (`15 %`), and on soft notes (`velocity < 64`)
-it swells the bellows up toward full `400 Pa` speed. A chord requests one
+note slows the bellows down from that speed to `60 Pa` (`15 %`) at every
+velocity, so the wheel is Auto's volume (0.1.15). A chord requests one
 shared gesture from its strongest key, and legato notes or key releases while
 other keys remain held smoothly transition the bellows speed in either
 direction. At zero the added velocity response is off. It never changes the

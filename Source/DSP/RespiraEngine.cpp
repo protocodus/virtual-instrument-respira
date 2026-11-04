@@ -50,7 +50,9 @@ constexpr double kHandCatchUp = 25.0;       // 1/s: how fast the hand closes on 
 // Auto's hand holds 400 Pa with the wheel at rest, the pressure the demo
 // phrases' ordinary strokes are fitted to (Tools/write_preset_midi.py), and
 // slows the bellows to kAutoSoftShare of that with the wheel at the top, so
-// the wheel softens and swells a held note across the reeds' dynamic range.
+// the wheel softens and swells a held note across the reeds' dynamic range,
+// at every velocity: the wheel is Auto's volume (owner, 2026-11-04). 0.1.12
+// to 0.1.14 swelled notes struck under 64 instead, by only 3-8 dB.
 // Voiced, not measured.
 constexpr double kAutoPressure = 400.0;     // Pa
 constexpr double kAutoSoftShare = 0.15;     // 60 Pa with the wheel at the top
@@ -564,8 +566,7 @@ void Engine::StepPlayer(double dt) {
     const double perWheel = litres * (1.0 + controls[kAssist] * (Max(demand, 1.0) - 1.0));
     const double fastest = kAutoFastest / litres;
     const double momentum = controls[kMomentum];
-    const double wheelEndShare = kAutoSoftShare + (1.0 - kAutoSoftShare) * touch.SwellUp();
-    const double size = kAutoPressure * (1.0 - (1.0 - wheelEndShare) * hand.wheel);
+    const double size = kAutoPressure * (1.0 - (1.0 - kAutoSoftShare) * hand.wheel);
     const bool pulling = player.pull;
     // With every key up the hand rests and the closed pallets keep the
     // bellows at their pressure, unless a keyswitch has turned them: the hand
@@ -615,14 +616,13 @@ void Engine::StepPlayer(double dt) {
     // stroke it can yield as the wheel eases so a held note softens at once.
     const double closing = player.swinging ? dt : kReaction;
     // Life continues on held notes; Touch sets both initial accent and
-    // sustained velocity speed. On normal/strong notes (v >= 64), raising the
-    // wheel slows the bellows down to kAutoSoftShare (60 Pa); on soft notes
-    // (v < 64), raising the wheel swells the bellows up to full playing speed.
+    // sustained velocity speed. Raising the wheel slows the bellows down to
+    // kAutoSoftShare (60 Pa) from whatever speed the velocity set.
     double steady = 1.0 + player.level + wanderScale * player.wanderB;
     if (life.amount != 0.0)
         steady = Clamp(steady + 0.22 * life.amount * life.effort, 0.65, 1.45);
     const double wheelZero = kAutoPressure * PlayerEffort();
-    const double wheelFull = kAutoPressure * wheelEndShare * steady;
+    const double wheelFull = kAutoPressure * kAutoSoftShare * steady;
     const double targetSize = (1.0 - hand.wheel) * wheelZero + hand.wheel * wheelFull;
     const double meant = pulling ? -targetSize : targetSize;
     const double flow = air + (meant - coming) / (kBellowsStiffness * closing);

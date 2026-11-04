@@ -1986,3 +1986,17 @@ longer exists. Added: `AutoNeverTurnsByItself`, `KeyswitchesTurnTheBellows`,
 `SwellsNeverRunTheBellowsOut` and `AKeyswitchInARestPreparesTheNextNote`;
 `AutoLeadsTheArm` now turns on a keyswitch. The front ends must drop their
 transport feed and document the keyswitches when the Rack pin advances.
+
+## 2026-11-04 — the wheel fades Auto at every velocity (owner)
+
+The owner played 0.1.14 in Reason and reported that under Auto the mod wheel
+did not seem to do anything. Through the Rack device the wheel faded a held
+note struck at velocity 100 by 15.5 dB, but a note struck under 64 swelled by
+only 3 dB (velocity 63) to 8 dB (velocity 1), the opposite way from the volume
+pictures the owner had chosen for the wheel under Auto that morning. The
+owner had asked for the wheel to show volume under Auto, so it now slows the
+bellows to `kAutoSoftShare` (60 Pa) at every velocity, and Touch keeps only
+what the velocity sets: the accent and the sustaining speed the wheel starts
+from. This is a playing-interface choice, not a measurement.
+`VelocityAndWheelTransitionBothWays` now requires the soft note to fade by more
+than 8 dB.

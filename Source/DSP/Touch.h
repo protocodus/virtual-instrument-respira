@@ -31,9 +31,8 @@ inline double KeyOpeningSeconds(int velocity) {
 // valve mechanism above. A real accordion's sustained dynamics come from the
 // bellows, not strike velocity (same source, sections 2-4). Touch asks Auto's
 // HAND to adjust its shared effort: strong strikes add an initial accent and
-// sustain at full playing speed (with the mod wheel slowing the bellows down),
-// while soft strikes catch the reed and settle to a slower sustaining bellows
-// speed (with the mod wheel swelling the bellows up toward full speed). Manual
+// sustain at full playing speed, while soft strikes catch the reed and settle
+// to a slower sustaining bellows speed; the mod wheel slows either down. Manual
 // hand control bypasses it entirely.
 struct Touch {
     static constexpr double kControlRate = 200.0;
@@ -46,7 +45,6 @@ struct Touch {
     static constexpr double kSoftCatchFloor = -0.32;
     double phase = 0.0, phaseStep = 0.0, release = 0.0, glide = 0.0, sustainGlide = 0.0;
     double amount = 0.0, gesture = 0.0, sustain = 0.0, sustainTarget = 0.0;
-    double wheelAim = 0.0, wheelTarget = 0.0;
     int pending = 0, heldPending = 0, strongest = 0, cluster = 0, catchTicks = 0;
 
     void Prepare(double rate) {
@@ -56,7 +54,7 @@ struct Touch {
         sustainGlide = 1.0 - std::exp(-1.0 / (0.08 * kControlRate));
     }
     void ClearGesture() {
-        gesture = sustain = sustainTarget = wheelAim = wheelTarget = 0.0;
+        gesture = sustain = sustainTarget = 0.0;
         pending = heldPending = strongest = cluster = catchTicks = 0;
     }
     void Reset() { phase = amount = 0.0; ClearGesture(); }
@@ -78,8 +76,6 @@ struct Touch {
             sustain += sustainGlide * (sustainTarget - sustain);
             if (Abs(sustain - sustainTarget) < 1.0e-12) sustain = sustainTarget;
         }
-        wheelAim += sustainGlide * (wheelTarget - wheelAim);
-        if (Abs(wheelAim - wheelTarget) < 1.0e-12) wheelAim = wheelTarget;
         if (cluster > 0) --cluster;
         if (pending > 0) {
             // One strongest intent for a chord/short roll, never a sum over
@@ -89,7 +85,6 @@ struct Touch {
             if (cluster == 0) { strongest = pending; cluster = 2; }
             else if (pending > strongest) strongest = pending;
             gesture = strongest > 64 ? (strongest - 64.0) / 63.0 : 0.0;
-            wheelTarget = strongest < 64 ? 1.0 : 0.0;
             if (strongest >= kFullVelocity) {
                 sustain = sustainTarget = 0.0;
                 catchTicks = 0;
@@ -110,7 +105,6 @@ struct Touch {
             pending = heldPending = 0;
         } else if (heldPending > 0 && cluster == 0) {
             strongest = heldPending;
-            wheelTarget = strongest < 64 ? 1.0 : 0.0;
             if (strongest >= kFullVelocity) {
                 sustainTarget = 0.0;
             } else {
@@ -121,7 +115,6 @@ struct Touch {
         }
     }
     double Effort() const { return amount * (0.30 * gesture + sustain); }
-    double SwellUp() const { return amount * wheelAim; }
 };
 
 } // namespace respira
