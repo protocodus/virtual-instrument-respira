@@ -49,13 +49,14 @@ constexpr double kValveBreath = 0.0196;
 constexpr double kHandCatchUp = 25.0;       // 1/s: how fast the hand closes on the wheel position
 // Auto's hand holds 400 Pa with the wheel at rest, the pressure the demo
 // phrases' ordinary strokes are fitted to (Tools/write_preset_midi.py), and
-// slows the bellows to kAutoSoftShare of that with the wheel at the top, so
-// the wheel softens and swells a held note across the reeds' dynamic range,
-// at every velocity: the wheel is Auto's volume (owner, 2026-11-04). 0.1.12
-// to 0.1.14 swelled notes struck under 64 instead, by only 3-8 dB.
+// the wheel scales whatever pressure the velocity asks, down to
+// kAutoSoftShare of it at the top, so it softens and swells a held note by
+// the same share at every velocity: the wheel is Auto's volume (owner,
+// 2026-11-04). 0.1.12 to 0.1.14 swelled notes struck under 64 instead, by
+// only 3-8 dB, and 0.1.15 brought every velocity to one 60 Pa at the top.
 // Voiced, not measured.
 constexpr double kAutoPressure = 400.0;     // Pa
-constexpr double kAutoSoftShare = 0.15;     // 60 Pa with the wheel at the top
+constexpr double kAutoSoftShare = 0.15;     // of the velocity's pressure with the wheel at the top
 // An otherwise undefined controller sets who moves the bellows on the engine's
 // own MIDI: below 64 the wheel, from 64 Auto's hand. The demo phrases send it
 // at their start, since they play the bellows on the wheel.
@@ -616,14 +617,8 @@ void Engine::StepPlayer(double dt) {
     // stroke it can yield as the wheel eases so a held note softens at once.
     const double closing = player.swinging ? dt : kReaction;
     // Life continues on held notes; Touch sets both initial accent and
-    // sustained velocity speed. Raising the wheel slows the bellows down to
-    // kAutoSoftShare (60 Pa) from whatever speed the velocity set.
-    double steady = 1.0 + player.level + wanderScale * player.wanderB;
-    if (life.amount != 0.0)
-        steady = Clamp(steady + 0.22 * life.amount * life.effort, 0.65, 1.45);
-    const double wheelZero = kAutoPressure * PlayerEffort();
-    const double wheelFull = kAutoPressure * kAutoSoftShare * steady;
-    const double targetSize = (1.0 - hand.wheel) * wheelZero + hand.wheel * wheelFull;
+    // sustained velocity speed, and the wheel scales the lot.
+    const double targetSize = kAutoPressure * PlayerEffort() * (1.0 - (1.0 - kAutoSoftShare) * hand.wheel);
     const double meant = pulling ? -targetSize : targetSize;
     const double flow = air + (meant - coming) / (kBellowsStiffness * closing);
     const double wanted = -flow / perWheel;

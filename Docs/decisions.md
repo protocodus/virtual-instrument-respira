@@ -2000,3 +2000,13 @@ what the velocity sets: the accent and the sustaining speed the wheel starts
 from. This is a playing-interface choice, not a measurement.
 `VelocityAndWheelTransitionBothWays` now requires the soft note to fade by more
 than 8 dB.
+
+Later the same day the owner specified it: the mod wheel is a scale, whatever
+velocity is playing (0.1.16). The wheel now multiplies the pressure the
+velocity and Touch ask for, down to `kAutoSoftShare` (15 %) of it at the top,
+where 0.1.15 brought every velocity to one 60 Pa. A held A4 on Init fades
+about 16 dB at velocity 1 and at 100. The softest notes reach 27 Pa at the
+top, under the high reeds' threshold, so there a note from E6 up stops at
+velocity 1, as one from C7 up does at velocity 100.
+`VelocityAndWheelTransitionBothWays` now requires the soft and the strong
+note to fade within 3 dB of each other.

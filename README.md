@@ -34,6 +34,12 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
+### 0.1.16 — 2026-11-04 — the wheel scales Auto's level
+
+- Under **Auto**, the mod wheel scales the pressure the velocity asks for, down to 15 % of it at the top, so it fades a held note by the same amount however hard it was struck: about 16 dB on a held A4 on Init at velocity 1 and at 100. In 0.1.15 every velocity went to one 60 Pa at the top, only 9 dB down at velocity 1.
+- The softest notes now reach 27 Pa at the top, under what the high reeds need: at velocity 1 a held note from E6 (MIDI 88) up stops there, as one from C7 (MIDI 96) up already did at velocity 100.
+- The wheel mode is unchanged: the eight demos render bit for bit as in 0.1.15.
+
 ### 0.1.15 — 2026-11-04 — the wheel is Auto's volume at every velocity
 
 - Under **Auto**, raising the mod wheel now slows the bellows down to 60 Pa at the top whatever the velocity: about 16 dB on a held A4 struck at 100 or harder and 9 dB at velocity 1, on Init. From 0.1.12 to 0.1.14 a note struck under 64 swelled instead, by only 3–8 dB, the opposite way from the Rack panel's volume pictures, and the owner heard the wheel do nothing in Reason.
@@ -214,8 +220,8 @@ stroke the player means and its mass shows only where the stroke changes, as
 a softer, slightly longer turn; and it closes on the pressure the arm will
 bring once it catches up, so the arm's lag is not in its loop. It wants 400 Pa, the pressure the demo phrases' ordinary
 strokes are fitted to and about −9 VU, whatever is played and whatever
-Bellows and Assist are set to; raising the wheel slows the bellows down to
-15 % of that (60 Pa at the top) and lets the arm yield to the lower pressure,
+Bellows and Assist are set to; raising the wheel scales that down to 15 %
+(60 Pa at the top on an ordinary note) and lets the arm yield to the lower pressure,
 so moving the wheel from its resting place at 0 softens and swells a held note
 by about 16 dB.
 A turn is planned rather than reacted to: at the keyswitch, expecting the
@@ -291,8 +297,8 @@ at full playing speed (`400 Pa` at `wheel = 0`), while softer presses hold a
 brief reed-catching floor (`35 ms`) for short staccato notes to catch at once
 and then glide over 80 ms down to a gentler sustaining bellows speed (`45 %` /
 `~180 Pa` at `velocity = 1`). Raising the mod wheel (`0 -> 127`) during a held
-note slows the bellows down from that speed to `60 Pa` (`15 %`) at every
-velocity, so the wheel is Auto's volume (0.1.15). A chord requests one
+note scales that speed down to `15 %` of it at the top, the same fade at
+every velocity, so the wheel is Auto's volume (0.1.16). A chord requests one
 shared gesture from its strongest key, and legato notes or key releases while
 other keys remain held smoothly transition the bellows speed in either
 direction. At zero the added velocity response is off. It never changes the

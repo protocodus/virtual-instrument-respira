@@ -200,10 +200,11 @@ void SoftStaccatoSpeaks() {
     }
 }
 void VelocityAndWheelTransitionBothWays() {
-    // 1. Raising the mod wheel (0 -> 1) slows the bellows down from the speed
-    // the velocity set, on a strong note from 400 Pa and on a soft one from
-    // the ~210 Pa velocity 16 sustains, both to 60 Pa: the wheel is Auto's
-    // volume at every velocity. 0.1.12-0.1.14 swelled the soft note instead.
+    // 1. Raising the mod wheel (0 -> 1) scales the pressure the velocity set
+    // down to 15 % of it, on a strong note from 400 Pa and on a soft one from
+    // the ~210 Pa velocity 16 sustains: the wheel is Auto's volume, the same
+    // fade at every velocity. 0.1.12-0.1.14 swelled the soft note instead, and
+    // 0.1.15 took both to 60 Pa, a smaller fade on the soft one.
     {
         auto loud = Make(1.0), soft = Make(1.0);
         Note(*loud, 69, 115); Note(*soft, 69, 16);
@@ -217,7 +218,8 @@ void VelocityAndWheelTransitionBothWays() {
         const double softFadeDb = 20.0 * std::log10(Rms(sl, 0.4, 0.9) / Rms(sl, 1.4, 1.9));
         std::printf("Touch wheel fades: strong %.2f dB, soft %.2f dB\n", loudToSoftDb, softFadeDb);
         Require(loudToSoftDb > 12.0, "raising the wheel on a strong note slows the bellows down");
-        Require(softFadeDb > 8.0, "raising the wheel on a soft note slows the bellows down too");
+        Require(softFadeDb > 12.0, "raising the wheel on a soft note slows the bellows down too");
+        Require(std::fabs(loudToSoftDb - softFadeDb) < 3.0, "the wheel fades a soft and a strong note alike");
     }
     // 2. Legato velocity transitions: soft held note -> loud note -> release
     // back to the held soft note.
