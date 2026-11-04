@@ -34,14 +34,19 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
-### Unreleased — 0.1.13 — Auto's endless bellows and keyswitch turns
+### 0.1.14 — 2026-11-04 — every key to C8 at its own pitch
+
+- The treble reeds go on to C8, a piano's top, past an accordion's C7: every key from C#7 up sounds at its own pitch, where C#7–C8 played an octave down. They speak at Auto's 400 Pa, need more air the higher they are (about 100 Pa at C#7, 270 at C8), and fall some 13 dB from C7 to C8 on Init. Touch's softest strokes do not start those from G#7 up.
+- Every key below C#7 is unchanged: its reeds and tuning are the same to the bit, and the eight demos render bit for bit as in 0.1.13.
+
+### 0.1.13 — 2026-11-03 — Auto's endless bellows and keyswitch turns
 
 - **Auto** no longer turns the bellows by itself. Its bellows are endless: the hand pulls for as long as keys are held, with no four-bar strokes, no early turn when the air runs short and no use of the host's tempo or song position. In 0.1.12 a held chord turned every 8 s at 120 in 4/4, wherever the phrase was, and every bar on a big chord with Assist at 0.
 - Two keyswitches on the treble channel turn them, with Auto on: **C0** (MIDI 12) latches pull and **C#0** (MIDI 13) push. A turn sounds as Auto's turns did; it starts at the keyswitch, so the pressure passes zero 10–35 ms later at the default Momentum. Played in rhythm, they give a bellows shake. With Auto off the two notes are the split keyboard's bass C and C# as before.
 - Under Auto, what followed how far the bellows were open (their stiffness, the folds' strain and, with Life, the bass end's position at the microphones) stays at mid-travel.
 - The wheel mode is unchanged: the eight demos render bit for bit as in 0.1.12. Front ends no longer pass the host's transport (`Engine::SetTransport` is gone).
 
-### Unreleased — 0.1.12 — Auto/manual bellows speed calibration and Life-scaled reed realism
+### 0.1.12 — 2026-11-03 — Auto/manual bellows speed calibration and Life-scaled reed realism
 
 - In **Auto**, with the mod wheel at `0`, note velocity (**Touch**) sets the bellows playing speed: normal/strong strikes (`velocity >= 100`) run at full playing speed (`400 Pa`, about −9 VU) with an initial attack accent, while softer strikes hold a brief reed-catching floor (`35 ms`) so short staccato notes speak immediately and then settle (`80 ms`) down to a gentler sustaining speed (`~180 Pa` at `velocity = 1`, about 8 dB softer so soft melodies stay warm and clearly audible). Legato velocity transitions smoothly speed up or slow down the bellows in both directions, and releasing a note while other keys remain held returns to the remaining keys' velocity.
 - Raising the mod wheel (`0 -> 127`) during a held note moves toward the opposite dynamic: on normal/strong notes (`velocity >= 64`) it slows the bellows down to `60 Pa` (`15 %`, about −16 dB fade), and on soft notes (`velocity < 64`) it swells the bellows up to full playing speed (`400 Pa`).
@@ -49,47 +54,51 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 - In **Manual** mode (`Auto = 0`), sub-reference wheel speeds (`< 0.095/s`) are shaped by $v^{0.48}$ with wrist slack take-up below `220 Pa` and arm relaxation when slowing down mid-note, preventing quadratic pressure collapse at slow wheel speeds so `pp` passages catch promptly and remain clearly audible.
 - **Life** now scales per-reed, per-side (push vs. pull), chamber, pallet-onset, and turbulent vortex-jet imperfections continuously via `ImperfectionScale(life) = 2 * life`: `0 %` is perfection (zero reed/chamber/pallet/vortex variation, push and pull identical), `50 %` (the new default on Init and every preset) models a standard well-made accordion in good shape, and `100 %` doubles all manufacturing and voicing tolerances.
 
-### Unreleased — 0.1.11 — fixes to the 0.1.10 mechanism and the folds' CPU
+### 0.1.11 — 2026-11-03 — fixes to the 0.1.10 mechanism and the folds' CPU
 
 - The bass strap's knock follows the bellows end's own speed (litres × hand speed over the 0.41 × 0.19 m section: a few mm/s to a few cm/s). 0.1.10 took the hand's speed in wheel ranges a second as m/s, so it hit about six times too hard at the default Bellows and ignored it.
 - The 6.5 Hz effort tremor of Life reaches the 12 % share it is written against; its filter was normalised to 0.40 RMS, not 1, so the control signal is 2.5 times what 0.1.10 gave. On a held Auto note the output does not measurably change (5–8 Hz level wobble 0.28 dB before and after).
 - Two bass or chord buttons an octave apart open the same reed. It now keeps sounding until the last of them is let go; it used to stop when the later one came up while the other was still held.
 - Each bellows panel steps its hinge once per host sample, not four times: 5–28 % less CPU on the eight demos (13 % in all). The demos null against 0.1.10 at −60 dB and no octave band moves by 0.05 dB; only the octave-apart bass reed is audible in a targeted clip (+1.6 dB for the 3.2 s the first button stays down, of a bass and chord held together), and none of it has been judged by ear. [Review and measurements](Docs/validation/review-2026-11-03.md); [CPU](Docs/benchmarks/folds-cpu-2026-11-03.md).
 
-### Unreleased — 0.1.9 and 0.1.10 — reed, chamber and mechanism physics, recorded after the fact
+### 0.1.10 — 2026-11-03 — Life's tremor and the bellows' mechanics, recorded after the fact
 
-- Six commits changed the reed and mechanism model without a ledger entry: the slot flow scaled by the tongue's profiled tip, damped duct standing waves, a finite tip thickness with a curved slot entry and slit loss, shared pallet-hole coupling between ranks with bellows compliance, keybed resonances with a pallet-opening chiff (0.1.9), and Life's tremor, off-axis microphone shading, fold distension, the bass strap, pull-valve slaps and jet-to-reed force (0.1.10). No listening verdict is recorded for them.
-- Measured on the eight demos against 0.1.8: whole-file RMS within 0.5 dB and peaks from 0.8 dB lower to 2.4 dB higher; octave bands between 700 Hz and 5.6 kHz from 0.7 dB lower to 3.7 dB higher (mostly 1–2 dB up), up to 2.4 dB lower under 700 Hz, and 4–7 dB lower above 11 kHz. Against the published accordion harmonics (`CompareHarmonics`) the 2nd moved from 8.4 to 4.7 dB under, the 9th–14th from −11.0 to −8.8 dB on average (measured −11.3) and the 15th–20th from −13.9 to −11.5 (measured −13.4).
+- One commit changed the model without a ledger entry: Life's tremor, off-axis microphone shading, fold distension, the bass strap, pull-valve slaps and jet-to-reed force. No listening verdict is recorded for them.
+- Measured on the eight demos, 0.1.9 and 0.1.10 together against 0.1.8: whole-file RMS within 0.5 dB and peaks from 0.8 dB lower to 2.4 dB higher; octave bands between 700 Hz and 5.6 kHz from 0.7 dB lower to 3.7 dB higher (mostly 1–2 dB up), up to 2.4 dB lower under 700 Hz, and 4–7 dB lower above 11 kHz. Against the published accordion harmonics (`CompareHarmonics`) the 2nd moved from 8.4 to 4.7 dB under, the 9th–14th from −11.0 to −8.8 dB on average (measured −11.3) and the 15th–20th from −13.9 to −11.5 (measured −13.4).
 
-### Unreleased — 0.1.8 — microphone colour during movement
+### 0.1.9 — 2026-11-02 — reed and chamber physics, recorded after the fact
+
+- Five commits changed the reed model without a ledger entry: the slot flow scaled by the tongue's profiled tip, damped duct standing waves, a finite tip thickness with a curved slot entry and slit loss, shared pallet-hole coupling between ranks with bellows compliance, and keybed resonances with a pallet-opening chiff. No listening verdict is recorded for them; their measurement is under 0.1.10.
+
+### 0.1.8 — 2026-11-02 — microphone colour during movement
 
 - Life movement now changes the low-frequency colour of the direct microphone pickup through the relative proximity response of the existing ideal cardioids. The owner chose B, **“B but tiny”**, in the level-matched comparison; this is a small preference by ear, not measured acoustic calibration.
 - Motion depth, the reference voicing, Room and reed behaviour retain their existing settings. Life zero remains exactly neutral. [Model and scope](Docs/research/microphone-motion-2026-11-02.md); [validation](Docs/validation/microphone-motion-2026-11-02.md).
 
-### Unreleased — 0.1.7 — lower CPU during sparse playing
+### 0.1.7 — 2026-11-02 — lower CPU during sparse playing
 
 - Reuses the active reed list within each callback. Same-input baseline and optimized renders remain byte-identical across dynamic controls, rates, quality modes and callback sizes.
 - Native M1 Max measurements show about 11.5% lower single-note thread CPU with the 0.1.8 microphone change present; dense-playing gains are small or variable. This is not Reason CPU evidence. [CPU-only measurements](Docs/benchmarks/active-cells-cpu-2026-11-02.md); [combined measurements](Docs/benchmarks/microphone-motion-cpu-2026-11-02.md#combined-with-the-separate-active-list-optimization).
 
-### Unreleased — 0.1.6 — short soft key presses
+### 0.1.6 — 2026-11-01 — short soft key presses
 
 - Restores bounded 12–3 ms key travel. The 0.1.5 inverse-velocity extension could keep the pallet almost closed throughout a short, very soft note (478 ms travel at velocity 1). Ordinary/fast velocities 64–127, Touch, Life and all factory settings are unchanged.
 - This corrects the low-MIDI-velocity regression. It **does not fix** the separate slow growth of fresh reeds at very low bellows pressure. Recording measurements, rejected physical-model candidates and their limits are in the [soft-start investigation](Docs/research/soft-starts-2026-11-01.md).
 
-### Unreleased — 0.1.5 — Touch and gentle key openings
+### 0.1.5 — 2026-11-01 — Touch and gentle key openings
 
 - **Touch** turns keyboard emphasis into a brief, shared Auto bellows gesture. The owner chose C (100%) in the level-matched comparison; Init and all presets use that setting. Manual bellows control is unchanged.
 - Deliberately soft velocities below 64 can open their pallets more slowly, changing the attack through the physical air/reed interaction. Ordinary and fast key travel is unchanged. No sustained velocity gain, tuning offset or brightness envelope was added.
 - Old patches acquire the Touch default. Set Touch to zero to remove its Auto emphasis; the soft-key mapping remains a behavior change. [Research, listening scope and remaining attack mismatch](Docs/research/touch-model-2026-11-01.md).
 
-### Unreleased — 0.1.4 — Life and prepared bellows turns
+### 0.1.4 — 2026-11-01 — Life and prepared bellows turns
 
 - **Life** controls irregular Auto bellows effort and source movement at the microphones, including long held notes. Init and all presets use 100 %, selected by the owner from a level-matched listening comparison.
 - Auto prepares a pending reversal during a short rest, so the next fast note has air; with Life, capacity planning can turn on beats when a full bar does not fit.
 - New Life properties default to 100 %, including when absent from an older patch. Zero removes the added effort and movement; the rest-turn correction remains.
 - Motion targets update at 200 Hz. This is a voiced virtual performer, not a fitted human-motion measurement. See [model and noise audit](Docs/research/life-model-2026-11-01.md).
 
-### Unreleased — 0.1.3 — less work for held aftertouch
+### 0.1.3 — 2026-11-01 — less work for held aftertouch
 
 - A settled held key skips an unused opening calculation. A native M1 Max
   test of 28 chambers with aftertouch used about 2.5 % less thread CPU;
@@ -97,7 +106,7 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
   sequences remained bit-identical across four rates and all quality modes.
   This is not a host CPU or deadline guarantee. [Measurement notes](Docs/benchmarks/aftertouch-cpu-2026-11-01.md).
 
-### Unreleased — 0.1.2 — room microphones and consistent bellows friction
+### 0.1.2 — 2026-11-01 — room microphones and consistent bellows friction
 
 - Room follows Width's virtual microphone angle, including mono at zero.
   Floor and ceiling reflections account for their elevation. The diffuse
@@ -111,7 +120,7 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
   separately. It documents the remaining soft-attack gap; reeds and their
   tuning are unchanged.
 
-### Unreleased — 0.1.1 — finer Room control
+### 0.1.1 — 2026-11-01 — finer Room control
 
 - Room uses a sigmoid response for finer adjustment near dry. Init and all
   eight factory presets use 0.005 wet (0.5 %), the owner's new default, and
@@ -121,159 +130,13 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
   use the new curve, changing their wet amount except at 0, 0.5 and 1.
   Physical Room values passed directly to the engine keep their meaning.
 
-### 0.1.0 — engine development history
+### 0.1.0 — 2026-10-27 — the accordion engine
 
-- The accordion engine from the prototype in its own repository: reed cells
-  with push and pull tongues, one bellows driven by the mod wheel, eight treble
-  registers, bass and chord buttons, and eight factory presets.
-- The output is dry: the prototype's room is gone.
-- New against the prototype: Assist, so a full chord does not need forty times
-  the hand travel of a single reed; a split keyboard (bass and chord buttons
-  below C3) for single-channel hosts such as Reason; an air button; a
-  reed-tuning table made offline, so a note-on does no simulation; a pitch
-  bend of two semitones each way; Momentum, so the hand trails the wheel and
-  the bellows reverse smoothly; Oversampling, 1×, 2× or 4× the engine's own
-  rate.
-- The jet through each reed's gap is turbulent, so a reed breathes a little
-  around its tone; the air button is an orifice whose rushing air is heard.
-- Channel pressure holds the keys part way down: at full pressure each
-  pallet stays open about 1 mm, at the opening where the model's C4 bends
-  with the bellows as a measured reed's does, so the note softens and bends
-  as a half-pressed key's does. The register switches reach held keys.
-- Ordinary playing reads about −9 on Reason's VU meter, and an output
-  compressor and peak limiter keep a chord at the arm's full pressure out of
-  the red, its peaks under −1 dBFS. The factory presets sit within 1 dB of
-  each other on one reference stroke.
-- Switching a register changes the colour, not the level: each register is
-  trimmed so the eight sit within 1 dB of each other.
-- The bass reeds sound through the bass box, a Helmholtz resonator at about
-  960 Hz behind the bass end cover's holes, in place of a plain 2.5 kHz
-  low-pass: a rounder, less buzzy bass. The air valve opens into it too, so
-  its hiss is a darker rush.
-- The reeds' breath has the spectrum of the eddies in their gaps, so the
-  estimated turbulence is heard rather than three quarters of it falling
-  above 24 kHz, at half the estimated level (chosen by ear).
-- From D6 up, Oboe and Master no longer double the 8' with the broken-back
-  4' in unison, which beat slowly and could almost cancel a held note; the
-  top octave holds a steady level.
-- The treble is much darker: the Grille's default falls from 9 kHz to 1 kHz,
-  fitted to two accordion sample libraries' held notes, which Respira
-  out-shone by 6–15 dB above 2 kHz (chosen by ear). The presets' grilles fall
-  in proportion and the range now reaches 500 Hz, so the old brightness is
-  still a turn away. Ordinary playing still reads about −9 VU; the bass side
-  and the keys, which do not pass the grille, sit about 2.5 dB higher against
-  the treble.
-- A key held while the bellows is pushed hard to the arm's full pressure no
-  longer stays silent: many notes from C3 to G#4 could, until the pressure
-  eased. Each tongue is now set far enough above its plate to stay short of
-  its slot at that pressure.
-- A half-pressed key keeps its share of Assist's air, so at a steady wheel the
-  pressure rises into the bend, as when the bellows is pushed harder: low notes
-  bend instead of fading (chosen by ear).
-- The mechanism sounds, with or without air: a key knocks as it lands on its
-  felt, harder and brighter for a faster stroke, and its pallet as the spring
-  seats it; bass and chord buttons, the register switches and the air button
-  knock too. **Mechanics** sets their level, which is estimated, not measured;
-  its default, 10 dB above the estimate, was chosen by ear.
-- The reed plates are half as thick again, so a low tongue played mezzo
-  forte no longer swings out past the far side of its plate: A#2–A3 get back
-  the 4th harmonic it nearly cancelled (chosen by ear).
-- The output compressor takes hold gently from −9 VU, 5:1 over a 6 dB knee,
-  so a harder stroke on the bellows still gets louder at the top (chosen by
-  ear); the hardest strokes still stay out of the red.
-- Each reed chamber is a duct as long as its reed instead of a single
-  resonance, so the tone is brighter above 2 kHz: the low notes' 15th–20th
-  harmonics sit on the one published measurement instead of 7 dB under it
-  (chosen by ear).
-- The low reeds carry lighter tip weights and are set higher above their
-  plates, so they speak sooner and bend further, and a half-pressed low note
-  at mezzo forte is about 12 dB quieter, as measured, instead of nearly
-  silent (chosen by ear).
-- The shortest tongues are filed thinner towards the tip, so from A5 up the
-  notes speak in 36–127 ms instead of 111–311, against the 50–100 measured
-  on a concert accordion (chosen by ear).
-- Low notes are in tune once they settle: the tuning was read before a low
-  reed's swing had finished growing, so C2–B2 sounded up to 3.5 cents sharp
-  at the tuning pressure, the bass buttons up to 2.7, and the 16' rank's
-  C1–B1 (Keyboard on every key) up to 17.
-- Each pallet hole radiates into the room as a hole in a board does, its air
-  meeting the room's resistance as well as its own mass: the reed chambers'
-  resonances ring at Q 26–48 instead of 70–370, and the demos are 0.6–1.5 dB
-  softer at 4–8 kHz and up to 2.4 dB above (chosen by ear).
-- A key let go no longer clicks: as a pallet's pad lands, the air leaving
-  through the thin film under its rim slows to rest instead of being cut off
-  when the pallet shuts (chosen by ear). A half-pressed key bends a little
-  further (9.1 cents instead of 8.6 at 70 dBA).
-- Each reed breathes through eddies the size of its own gap, widest near the
-  tongue's tip, instead of one 0.3 mm size for every reed: from G2 to C4 the
-  breath between the harmonics is 6–12 dB stronger below 1 kHz and 3–6 dB
-  weaker above 8 kHz, and D5 and A5 breathe 3–8 dB more from 0.5 to 8 kHz.
-  Against a bandoneon's held notes the breath is 7 dB RMS out across seven
-  notes and six octave bands, where it was 12 (chosen by ear).
-- The bass side is brighter: above 2 kHz the bass box lets out its own depth
-  modes, as a layer of air under the cover does, instead of falling 12 dB an
-  octave as one lumped resonator, and the bass reeds' chambers are simulated
-  as finely as the treble's. Against two sample libraries' bass buttons the
-  bass side read 11–44 dB too dark from 2 to 16 kHz; now it sits within
-  2.3 dB of both but for the Hohner's top octave. The demos with bass gain
-  1–16 dB from 4 to 16 kHz; the air button's hiss and the bass side's knocks
-  brighten with it.
-- The reeds are tuned as a played accordion's are, each a few cents off its
-  pitch (3 cents standard deviation, where it was under half a cent), as both
-  sample libraries' reeds sit: the octave ranks beat slowly against each
-  other, the musette beats a little faster or slower from note to note, and
-  a note's push and pull reeds differ by a few cents.
-- **Auto** plays the bellows for you: while a key is held the hand pulls
-  for four bars and pushes for the next four (turning sooner, on a bar line,
-  when the air runs short), in time with the host, holding an ordinary
-  playing pressure whatever is played; the wheel presses harder.
-- Changing register knocks twice: the switch pressed down, and the one it
-  pushes off springing back up.
-- The bellows sound: their folds flip with a soft rustle as the bellows turn
-  and their leather rubs while they move, at levels chosen by ear.
-- The musette's beat rises with pitch as a measured Hohner's does (f^0.51,
-  where it was f^0.7): at Init's 22 cents a C3 triad beats about a quarter
-  faster and a C6 a sixth slower, A4 unchanged.
-- Auto turns the bellows as a player plans a turn: the hand goes as fast as
-  it can until the pressure its arm will bring is the new one, so a held
-  chord falls more than 10 dB for 5–15 ms at a turn, where it fell for
-  125–190 ms and twice as deep.
-- The push reeds' valves slap shut on their plates as the bellows turn from
-  push to pull and as a pushed key is let go, harder for a faster turn and
-  heavier on the low reeds, at a level voiced very low.
-- The stereo output is a coincident pair of microphones 1 m in front of the
-  player, as five solo accordion recordings were made, in place of panning
-  each key by pitch: the treble and the bass side are each heard from one
-  place, the bass side about 2 dB to the left where it was 8–10 dB, and
-  **Width** turns the pair's axes apart.
-- **Auto** is on by default, on Init and every factory preset: just play,
-  and the hand keeps the bellows supplied. CC85 below 64 hands the bellows
-  to the wheel, as the demo phrases do first, so they sound as before.
-- The room's late field has sixteen slowly drifting delay lines in place of
-  eight fixed ones, so it no longer rings metallic on a held chord.
-- Auto's hand is a person's: the pressure it wants wanders a little and
-  each stroke takes its own level, so a held chord breathes rather than
-  sitting dead level.
-- **Room**, off by default, adds a room around the microphones: a living
-  room full of people, its 0.5 s diffuse field heard by each microphone on
-  its own, so at Room 1 the two channels correlate as little as the five
-  solo recordings' do. Init stays dry; the eight factory presets play at
-  Room 70 %, where the channels correlate 0.49 on Paris Musette, at the dry
-  end of the recordings.
-- Auto plays the same at any Momentum: the player leads their own arm, so
-  a heavy arm softens the turns but no longer starves the reeds. At Momentum
-  200 ms a held triad reached 360 Pa in 4.2 s and held 349; it now takes
-  0.5 s and holds 400, and the turn's dip below −10 dB is 110 ms where it
-  was 165.
-- A reset (the host's audio reset, before a bounce) plays as a new instance
-  does, to the bit: a new instance no longer glides its gains, the room's
-  above all, up from silence over its first notes, nor knocks the register
-  switch of the patch it was loaded with.
-- The room is a small hall with a hundred people in it, dark and warm:
-  1.0 s at 125 Hz falling to 0.56 s at 4 kHz, its reflections and late
-  field softened from 2-3 kHz up. Init and every factory preset play it at
-  Room 5 %, a touch of air with the instrument still close, where the
-  presets played at 70 % and Init dry. Init plays the Clarinet register.
+- The engine from the prototype: reed cells with push and pull tongues in
+  their chambers, one bellows, eight treble registers, bass and chord
+  buttons, a split keyboard, the mechanism's knocks, Auto, Room and eight
+  factory presets. Its development to 0.1.1 is in the
+  [engine development history](Docs/release/engine-development-0.1.0.md).
 
 ## Downloads
 
@@ -542,9 +405,14 @@ the oldest released chamber first.
 
 The treble has five ranks of reeds: L (16', an octave down), M (8'), M− and
 M+ (8', tuned below and above M for the tremolo) and H (4', an octave up,
-breaking back an octave at the top so that no reed sounds above C♯7; where M
-is open it stays shut there, since it would sound in unison with M a few
-cents apart and the two would beat slowly to near silence). The
+breaking back an octave above C♯7 to sound with the 8'; where M is open it
+stays shut there, since it would sound in unison with M a few cents apart and
+the two would beat slowly to near silence). Every key from C2 to C8 has its
+own reeds, a piano's top octave above an accordion's C7 included, so every
+key sounds at its own pitch; keys above C8 play an octave down. Those top
+reeds speak at Auto's 400 Pa but need more air the higher they are (Known
+gaps, The top octave needs mezzo forte to start), and from C7 to C8 a note
+falls some 13 dB on Init. The
 eight register switches combine them: Clarinet (M), Bassoon (L), Violin (M,
 M+), Musette (M−, M, M+), Bandoneon (L, M), Organ (L, H), Oboe (M, H) and
 Master (all five). A switch moves slides over the reed blocks, so it reaches
@@ -1066,6 +934,12 @@ a pitch wheel should do what it says.
   bellows at 730 Pa (18–20 ms from F5 to C6) and 7–11 ms at 1.8 kPa, faster
   than the bandoneon at either, though the pressure its staccato notes were
   played at is not known.
+  The reeds above C7, there since 0.1.14 so that every key to C8 has its
+  own, need more again: drawing steadily, they come within 20 dB of their
+  400 Pa level after 2 s from about 100 Pa at C♯7, 140 at D7 and 265–280 at
+  C8, where C7 needs 90 by the same measure (`ReedProbe.h`'s `Radiated`, each
+  treble rank), so Touch's softest strokes, about 180 Pa, do not start them
+  from G♯7 up. No accordion has reeds there to compare them with.
 - **Low reeds start late.** When the bellows reaches the arm's full pressure
   before a low reed swings, the tongue sits near the slot's mouth and its
   swing grows slowly: on Bassoon with the wheel swept in 1.5 s, C3–F#3 reach
