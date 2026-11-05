@@ -1238,13 +1238,18 @@ void Engine::Render(float* left, float* right, int frames) {
         left[i] = frame[0];
         right[i] = frame[1];
     }
+    // The mechanics' bodies, the bass box and the microphones' integrals sit
+    // silent through most of a phrase (no knock, no bass note, no movement),
+    // their states decaying into subnormals, which the processor computes
+    // tens of times slower. Each is cleared only once all its states are
+    // below 1e-30 (-600 dB), so one still sounding is never touched.
+    bassBox.FlushTiny();
+    for (auto& mic : trebleMicMotion) mic.FlushTiny();
+    for (auto& mic : bassMicMotion) mic.FlushTiny();
+    for (BodyHighPass* body : { &mechanicsTreble, &mechanicsBass }) body->FlushTiny();
     if (sounding == 0) {
         trebleSide.FlushTiny();
         bassSide.FlushTiny();
-        bassBox.FlushTiny();
-        for (auto& mic : trebleMicMotion) mic.FlushTiny();
-        for (auto& mic : bassMicMotion) mic.FlushTiny();
-        for (BodyHighPass* body : { &mechanicsTreble, &mechanicsBass }) body->FlushTiny();
         room.FlushTiny();
         if (Abs(grille) < 1.0e-30) grille = 0.0;
     }
