@@ -89,19 +89,18 @@ public:
     // and at Nyquist).
     void Set(double rt60, double trebleShare, double rate) {
         drift = kDriftSeconds * rate;
-        for (std::size_t i = 0; i < lines.size(); ++i) {
-            Line& line = lines[i];
-            line.length = Min(kLineSeconds[i] * rate, static_cast<double>(kMaxLine) - drift - 2.0);
-            const double seconds = line.length / rate;
+        for (std::size_t i = 0; i < kLines; ++i) {
+            lineLength[i] = Min(kLineSeconds[i] * rate, static_cast<double>(kMaxLine) - drift - 2.0);
+            const double seconds = lineLength[i] / rate;
             // The lines' drift rates interleave across their lengths, so
             // neighbours do not move together.
-            const double share = static_cast<double>((i * 7u) % lines.size()) / (lines.size() - 1);
+            const double share = static_cast<double>((i * 7u) % kLines) / (kLines - 1);
             const double step = 6.283185307179586 * (kSlowestDrift + share * (kFastestDrift - kSlowestDrift)) / rate;
-            line.turnCos = std::cos(step);
-            line.turnSin = std::sin(step);
+            turnCos[i] = std::cos(step);
+            turnSin[i] = std::sin(step);
             const double low = std::pow(10.0, -3.0 * seconds / rt60), high = std::pow(10.0, -3.0 * seconds / (rt60 * trebleShare));
-            line.pole = (low - high) / (low + high);
-            line.gain = low * (1.0 - line.pole);
+            linePole[i] = (low - high) / (low + high);
+            lineGain[i] = low * (1.0 - linePole[i]);
         }
         for (std::size_t i = 0; i < diffusers.size(); ++i)
             diffusers[i].length = static_cast<int>(Min(kDiffuserSeconds[i] * rate, static_cast<double>(kMaxDiffuser - 1)));
@@ -148,19 +147,16 @@ public:
     }
 
     void Clear() {
-        for (std::size_t i = 0; i < lines.size(); ++i) {
-            Line& line = lines[i];
-            line.buffer.fill(0.0f);
-            line.write = 0;
-            line.low = 0.0;
+        for (std::size_t i = 0; i < kLines; ++i) {
+            lineBuffer[i].fill(0.0f);
+            lineLow[i] = 0.0;
             // Each line starts its drift at its own phase.
-            line.cos = std::cos(2.399963229728653 * i);   // the golden angle apart
-            line.sin = std::sin(2.399963229728653 * i);
+            driftCos[i] = std::cos(2.399963229728653 * i);   // the golden angle apart
+            driftSin[i] = std::sin(2.399963229728653 * i);
         }
-        for (Diffuser& d : diffusers) {
-            d.buffer.fill(0.0f);
-            d.write = 0;
-        }
+        lineWrite = 0;
+        for (Diffuser& d : diffusers) d.buffer.fill(0.0f);
+        diffuserWrite = 0;
         earlyBuffer.fill(0.0f);
         earlyWrite = 0;
         earlyL = earlyR = 0.0;
@@ -189,7 +185,7 @@ public:
         // phasors here, the positions when the room wakes.
         if (resting) {
             if (left == 0.0 && right == 0.0) {
-                for (Line& line : lines) TurnDrift(line);
+                TurnDrift();
                 ++skipped;
                 roomLeft = roomRight = 0.0;
                 return;
@@ -198,16 +194,16 @@ public:
         }
         std::array<double, kLines> out {};
         double sum = 0.0;
-        for (std::size_t i = 0; i < lines.size(); ++i) {
-            Line& line = lines[i];
-            TurnDrift(line);
-            double read = line.write - line.length - drift * line.sin;
+        TurnDrift();
+        for (std::size_t i = 0; i < kLines; ++i) {
+            const auto& buffer = lineBuffer[i];
+            double read = lineWrite - lineLength[i] - drift * driftSin[i];
             if (read < 0.0) read += kMaxLine;
             const int at = static_cast<int>(read), next = at + 1 == kMaxLine ? 0 : at + 1;
             const double frac = read - at;
-            const double delayed = line.buffer[static_cast<std::size_t>(at)] + frac * (line.buffer[static_cast<std::size_t>(next)] - line.buffer[static_cast<std::size_t>(at)]);
-            line.low = line.gain * delayed + line.pole * line.low;
-            out[i] = line.low;
+            const double delayed = buffer[static_cast<std::size_t>(at)] + frac * (buffer[static_cast<std::size_t>(next)] - buffer[static_cast<std::size_t>(at)]);
+            lineLow[i] = lineGain[i] * delayed + linePole[i] * lineLow[i];
+            out[i] = lineLow[i];
             sum += out[i];
         }
         double input = 0.5 * (left + right);
@@ -226,14 +222,15 @@ public:
         late = input + latePole * (late - input);
         input = late;
         for (Diffuser& d : diffusers) {
-            int read = d.write - d.length;
+            int read = diffuserWrite - d.length;
             if (read < 0) read += kMaxDiffuser;
             const double delayed = d.buffer[static_cast<std::size_t>(read)];
             const double v = input + kDiffuserGain * delayed;
-            d.buffer[static_cast<std::size_t>(d.write)] = Settled(v);
-            if (++d.write == kMaxDiffuser) d.write = 0;
+            d.buffer[static_cast<std::size_t>(diffuserWrite)] = Settled(v);
             input = delayed - kDiffuserGain * v;
         }
+        const int diffuserWritten = diffuserWrite;
+        if (++diffuserWrite == kMaxDiffuser) diffuserWrite = 0;
         const double feedback = 2.0 / kLines * sum;
         // Preserve the network's established input normalization. The output
         // projections below preserve its former per-channel coefficient norm.
@@ -241,11 +238,9 @@ public:
         roomLeft = earlyL;
         roomRight = earlyR;
         double sideField = 0.0;
-        for (std::size_t i = 0; i < lines.size(); ++i) {
-            Line& line = lines[i];
+        for (std::size_t i = 0; i < kLines; ++i) {
             const double sign = (i & 2u) ? -1.0 : 1.0;
-            line.buffer[static_cast<std::size_t>(line.write)] = Settled(out[i] - feedback + sign * input);
-            if (++line.write == kMaxLine) line.write = 0;
+            lineBuffer[i][static_cast<std::size_t>(lineWrite)] = Settled(out[i] - feedback + sign * input);
             // Constant and parity-of-three-bits Hadamard rows: orthogonal
             // readouts, each also orthogonal to the alternating-pair input.
             // The finite FDN only approximates independent diffuse components;
@@ -253,6 +248,7 @@ public:
             const bool negative = ((i ^ (i >> 1u) ^ (i >> 2u)) & 1u) != 0u;
             sideField += negative ? -out[i] : out[i];
         }
+        if (++lineWrite == kMaxLine) lineWrite = 0;
         // Coefficient norm 16*(1/2)^2=4, as in each former eight-line output
         // (8*(1/sqrt(2))^2). No fitted gain or adaptive normalisation.
         const double mid = 0.5 * lateMid * sum, side = 0.5 * lateSide * sideField;
@@ -265,27 +261,27 @@ public:
             quietFor = 0;
             return;
         }
-        for (std::size_t i = 0; i < lines.size(); ++i)
+        for (std::size_t i = 0; i < kLines; ++i)
             if (out[i] != 0.0) {
                 quietFor = 0;
                 return;
             }
         for (const Diffuser& d : diffusers)
-            if (d.buffer[static_cast<std::size_t>(d.write == 0 ? kMaxDiffuser - 1 : d.write - 1)] != 0.0f) {
+            if (d.buffer[static_cast<std::size_t>(diffuserWritten)] != 0.0f) {
                 quietFor = 0;
                 return;
             }
         if (++quietFor >= kMaxLine) {
             resting = true;
             quietFor = 0;
-            for (Line& line : lines) line.low = 0.0;
+            lineLow.fill(0.0);
             earlyL = earlyR = late = 0.0;
         }
     }
 
     void FlushTiny() {
-        for (Line& line : lines)
-            if (Abs(line.low) < 1.0e-20) line.low = 0.0;
+        for (double& low : lineLow)
+            if (Abs(low) < 1.0e-20) low = 0.0;
         if (Abs(earlyL) < 1.0e-20) earlyL = 0.0;
         if (Abs(earlyR) < 1.0e-20) earlyR = 0.0;
         if (Abs(late) < 1.0e-20) late = 0.0;
@@ -297,20 +293,21 @@ private:
     // gains and circulate for ever, and the room would never rest.
     static constexpr double kSettled = 1.1754943508222875e-38;
     static float Settled(double x) { return Abs(x) < kSettled ? 0.0f : static_cast<float>(x); }
-    struct Line;
-    // The drift's phasor turns by one step; its length is kept at 1 by a
+    // The drifts' phasors turn by one step; their length is kept at 1 by a
     // first-order correction, so no libm call runs per sample.
-    static void TurnDrift(Line& line) {
-        const double c = line.cos * line.turnCos - line.sin * line.turnSin;
-        const double s = line.sin * line.turnCos + line.cos * line.turnSin;
-        const double norm = 1.5 - 0.5 * (c * c + s * s);
-        line.cos = c * norm;
-        line.sin = s * norm;
+    void TurnDrift() {
+        for (std::size_t i = 0; i < kLines; ++i) {
+            const double c = driftCos[i] * turnCos[i] - driftSin[i] * turnSin[i];
+            const double s = driftSin[i] * turnCos[i] + driftCos[i] * turnSin[i];
+            const double norm = 1.5 - 0.5 * (c * c + s * s);
+            driftCos[i] = c * norm;
+            driftSin[i] = s * norm;
+        }
     }
     // The write positions catch up with the samples spent at rest.
     void Wake() {
-        for (Line& line : lines) line.write = static_cast<int>((line.write + skipped) % kMaxLine);
-        for (Diffuser& d : diffusers) d.write = static_cast<int>((d.write + skipped) % kMaxDiffuser);
+        lineWrite = static_cast<int>((lineWrite + skipped) % kMaxLine);
+        diffuserWrite = static_cast<int>((diffuserWrite + skipped) % kMaxDiffuser);
         earlyWrite = static_cast<int>((earlyWrite + skipped) % kMaxEarly);
         resting = false;
         skipped = 0;
@@ -324,20 +321,25 @@ private:
         lateSide = lateSideTarget;
         widthRemaining = 0;
     }
-    struct Line {
-        std::array<float, kMaxLine> buffer {};
-        double length = 1.0;
-        int write = 0;
-        double gain = 0.0, pole = 0.0, low = 0.0;
-        double cos = 1.0, sin = 0.0, turnCos = 1.0, turnSin = 0.0;
-    };
-    std::array<Line, kLines> lines {};
+    // The lines, a quantity to an array, so that a pass over them reads
+    // neighbouring values rather than one value 64 kB from the next. Every
+    // line writes at the same place, as every diffuser does.
+    static constexpr std::array<double, kLines> Filled(double value) {
+        std::array<double, kLines> a {};
+        for (double& v : a) v = value;
+        return a;
+    }
+    std::array<std::array<float, kMaxLine>, kLines> lineBuffer {};
+    std::array<double, kLines> lineLength = Filled(1.0), lineGain {}, linePole {}, lineLow {};
+    std::array<double, kLines> driftCos = Filled(1.0), driftSin {}, turnCos = Filled(1.0), turnSin {};
+    int lineWrite = 0;
     double drift = 0.0;
     struct Diffuser {
         std::array<float, kMaxDiffuser> buffer {};
-        int length = 1, write = 0;
+        int length = 1;
     };
     std::array<Diffuser, 4> diffusers {};
+    int diffuserWrite = 0;
     struct Tap {
         int length = 1;
         double left = 0.0, right = 0.0;
