@@ -166,6 +166,9 @@ public:
         earlyL = earlyR = 0.0;
         late = 0.0;
         TakeWidthTargets();
+        // Every buffer holds silence: rest at once.
+        resting = true;
+        quietFor = skipped = 0;
     }
 
     // Takes the two microphones' direct sound and returns what the room adds
@@ -180,17 +183,24 @@ public:
             lateSide += widthSmoothing * (lateSideTarget - lateSide);
             if (--widthRemaining == 0) TakeWidthTargets();
         }
+        // At rest every buffer and state is zero, and zero in gives exactly
+        // zero out and zero back into every buffer, whatever the zeros' signs.
+        // Only the drift's phasors and the write positions move on: the
+        // phasors here, the positions when the room wakes.
+        if (resting) {
+            if (left == 0.0 && right == 0.0) {
+                for (Line& line : lines) TurnDrift(line);
+                ++skipped;
+                roomLeft = roomRight = 0.0;
+                return;
+            }
+            Wake();
+        }
         std::array<double, kLines> out {};
         double sum = 0.0;
         for (std::size_t i = 0; i < lines.size(); ++i) {
             Line& line = lines[i];
-            // The drift's phasor turns by one step; its length is kept at 1 by
-            // a first-order correction, so no libm call runs per sample.
-            const double c = line.cos * line.turnCos - line.sin * line.turnSin;
-            const double s = line.sin * line.turnCos + line.cos * line.turnSin;
-            const double norm = 1.5 - 0.5 * (c * c + s * s);
-            line.cos = c * norm;
-            line.sin = s * norm;
+            TurnDrift(line);
             double read = line.write - line.length - drift * line.sin;
             if (read < 0.0) read += kMaxLine;
             const int at = static_cast<int>(read), next = at + 1 == kMaxLine ? 0 : at + 1;
@@ -220,7 +230,7 @@ public:
             if (read < 0) read += kMaxDiffuser;
             const double delayed = d.buffer[static_cast<std::size_t>(read)];
             const double v = input + kDiffuserGain * delayed;
-            d.buffer[static_cast<std::size_t>(d.write)] = static_cast<float>(v);
+            d.buffer[static_cast<std::size_t>(d.write)] = Settled(v);
             if (++d.write == kMaxDiffuser) d.write = 0;
             input = delayed - kDiffuserGain * v;
         }
@@ -234,7 +244,7 @@ public:
         for (std::size_t i = 0; i < lines.size(); ++i) {
             Line& line = lines[i];
             const double sign = (i & 2u) ? -1.0 : 1.0;
-            line.buffer[static_cast<std::size_t>(line.write)] = static_cast<float>(out[i] - feedback + sign * input);
+            line.buffer[static_cast<std::size_t>(line.write)] = Settled(out[i] - feedback + sign * input);
             if (++line.write == kMaxLine) line.write = 0;
             // Constant and parity-of-three-bits Hadamard rows: orthogonal
             // readouts, each also orthogonal to the alternating-pair input.
@@ -248,6 +258,29 @@ public:
         const double mid = 0.5 * lateMid * sum, side = 0.5 * lateSide * sideField;
         roomLeft += mid + side;
         roomRight += mid - side;
+        // Silence in and silence written everywhere (each line writes its
+        // out[i] - feedback + sign * input) for as long as the longest buffer
+        // takes to wrap means every buffer holds only zeros: rest.
+        if (left != 0.0 || right != 0.0 || input != 0.0 || late != 0.0 || earlyL != 0.0 || earlyR != 0.0) {
+            quietFor = 0;
+            return;
+        }
+        for (std::size_t i = 0; i < lines.size(); ++i)
+            if (out[i] != 0.0) {
+                quietFor = 0;
+                return;
+            }
+        for (const Diffuser& d : diffusers)
+            if (d.buffer[static_cast<std::size_t>(d.write == 0 ? kMaxDiffuser - 1 : d.write - 1)] != 0.0f) {
+                quietFor = 0;
+                return;
+            }
+        if (++quietFor >= kMaxLine) {
+            resting = true;
+            quietFor = 0;
+            for (Line& line : lines) line.low = 0.0;
+            earlyL = earlyR = late = 0.0;
+        }
     }
 
     void FlushTiny() {
@@ -259,6 +292,29 @@ public:
     }
 
 private:
+    // What a buffer stores: silence below the smallest normal float (-758
+    // dB). Subnormals would otherwise round back up through the feedback
+    // gains and circulate for ever, and the room would never rest.
+    static constexpr double kSettled = 1.1754943508222875e-38;
+    static float Settled(double x) { return Abs(x) < kSettled ? 0.0f : static_cast<float>(x); }
+    struct Line;
+    // The drift's phasor turns by one step; its length is kept at 1 by a
+    // first-order correction, so no libm call runs per sample.
+    static void TurnDrift(Line& line) {
+        const double c = line.cos * line.turnCos - line.sin * line.turnSin;
+        const double s = line.sin * line.turnCos + line.cos * line.turnSin;
+        const double norm = 1.5 - 0.5 * (c * c + s * s);
+        line.cos = c * norm;
+        line.sin = s * norm;
+    }
+    // The write positions catch up with the samples spent at rest.
+    void Wake() {
+        for (Line& line : lines) line.write = static_cast<int>((line.write + skipped) % kMaxLine);
+        for (Diffuser& d : diffusers) d.write = static_cast<int>((d.write + skipped) % kMaxDiffuser);
+        earlyWrite = static_cast<int>((earlyWrite + skipped) % kMaxEarly);
+        resting = false;
+        skipped = 0;
+    }
     void TakeWidthTargets() {
         for (Tap& tap : early) {
             tap.left = tap.leftTarget;
@@ -296,6 +352,9 @@ private:
     bool widthTargetsReady = false;
     int widthSettleSamples = 0, widthRemaining = 0;
     double lateMid = 0.0, lateSide = 0.0, lateMidTarget = 0.0, lateSideTarget = 0.0;
+    bool resting = false;
+    int quietFor = 0;             // samples of silence in and written everywhere
+    long long skipped = 0;        // samples spent resting, by which the writes catch up
 };
 
 } // namespace respira
