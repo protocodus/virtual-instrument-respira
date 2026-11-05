@@ -236,7 +236,17 @@ struct Pleat {
     // slows it and holds it still until the pressure on it passes
     // kPleatHold, so with the bellows vented the panels settle where they are.
     double Step(double p, double dt) {
+        const int steps = Steps(dt);
+        return Step(p, steps, dt / steps);
+    }
+    // The hinge's steps in a host sample of dt.
+    static int Steps(double dt) { return dt > kPleatMaxStep ? static_cast<int>(dt / kPleatMaxStep) + 1 : 1; }
+    // Step(p, dt) in `steps` steps of h, as Folds takes them for every panel.
+    double Step(double p, int steps, double h) {
         const double load = p * area, hold = kPleatHold * area;
+        // A panel already moving has its hinge's force from the step before
+        // at the same place and speed: contact is Hinge(x, v) to the bit.
+        const bool wasMoving = moving;
         if (!moving) {
             const bool loose = Abs(x) <= play;
             if (loose ? Abs(load) <= hold : load * x >= 0.0) {
@@ -247,10 +257,9 @@ struct Pleat {
             else x = (x > 0.0 ? 1.0 : -1.0) * (play + Compression(Abs(contact)));
             moving = true;
         }
-        const int steps = dt > kPleatMaxStep ? static_cast<int>(dt / kPleatMaxStep) + 1 : 1;
-        const double before = contact, h = dt / steps, slow = hold / mass * h;
+        const double before = contact, slow = hold / mass * h;
         for (int i = 0; i < steps; ++i) {
-            v += (load - Hinge(x, v)) / mass * h;
+            v += (load - (i == 0 && wasMoving ? contact : Hinge(x, v))) / mass * h;
             if (Abs(x) <= play) v = Abs(v) <= slow ? 0.0 : v - (v > 0.0 ? slow : -slow);
             x += v * h;
         }
@@ -318,13 +327,15 @@ struct Folds {
                 list[count++] = static_cast<std::uint8_t>(64 * w + LowestBit(step));
         }
         double flips = 0.0;
+        const int steps = Pleat::Steps(dt);
+        const double h = dt / steps;
         for (int i = 0; i < count; ++i) {
             // A copy, which the compiler keeps in registers through the step.
             Pleat pleat = pleats[list[i]];
             const int w = list[i] / 64;
             const std::uint64_t bit = std::uint64_t(1) << (list[i] % 64);
             if (!pleat.moving && !(fresh[w] & bit)) pleat.contact = last * pleat.area;
-            flips += pleat.Step(p, dt);
+            flips += pleat.Step(p, steps, h);
             pleats[list[i]] = pleat;
         }
         for (int w = 0; w < kWords; ++w) fresh[w] = 0;
