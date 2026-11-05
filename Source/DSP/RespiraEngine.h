@@ -262,6 +262,7 @@ private:
     int movingCount = 0;
     std::array<Knock, 32> knocks {};
     std::array<Knock, 48> slaps {};   // the check valves'
+    int knocksUsed = 0, slapsUsed = 0;   // one past the last active knock and slap: no later one need be visited
 
     Folds folds;
     Rustle rustle;

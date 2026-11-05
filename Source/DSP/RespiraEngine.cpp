@@ -353,6 +353,7 @@ void Engine::Reset() {
     movingCount = 0;
     knocks.fill(Knock {});
     slaps.fill(Knock {});
+    knocksUsed = slapsUsed = 0;
     // A quarter of the panels in each wall, two long and two short; each
     // panel's mass and play differ a little from its neighbours' (+-20 %,
     // fixed per instrument), so a turn's panels land one after another.
@@ -658,10 +659,12 @@ void Engine::MoveKey(int source) {
 // A part landing on its stop. When every knock is still sounding, a new one
 // in that crowd is dropped.
 void Engine::StartKnock(const Stop& stop, double speed, double massScale, bool bass) {
-    for (auto& k : knocks) {
+    for (int i = 0; i < static_cast<int>(knocks.size()); ++i) {
+        Knock& k = knocks[static_cast<std::size_t>(i)];
         if (k.active) continue;
         k.Start(stop, speed, massScale);
         k.bass = bass;
+        knocksUsed = static_cast<int>(Max(knocksUsed, i + 1));
         return;
     }
 }
@@ -669,10 +672,12 @@ void Engine::StartKnock(const Stop& stop, double speed, double massScale, bool b
 // A push valve landing on its plate; when every slap is still sounding, a
 // new one is dropped.
 void Engine::StartSlap(double mass, double speed, bool bass) {
-    for (auto& k : slaps) {
+    for (int i = 0; i < static_cast<int>(slaps.size()); ++i) {
+        Knock& k = slaps[static_cast<std::size_t>(i)];
         if (k.active) continue;
         k.Start(Stop { mass, kFlapLift, &kRestCloth }, speed, 1.0);
         k.bass = bass;
+        slapsUsed = static_cast<int>(Max(slapsUsed, i + 1));
         return;
     }
 }
@@ -1049,13 +1054,16 @@ void Engine::Render(float* left, float* right, int frames) {
                 draws[j * oversample + k] = Unit(noise);
             }
         }
-        for (int k = 0; k < oversample; ++k) {
+        // With no reed sounding the internal steps have nothing to do.
+        for (int k = 0; active > 0 && k < oversample; ++k) {
             // Ranks opened by one key share a single lifted pallet pad and
             // couple through the mutual acoustic radiation inertance at the
             // pallet mouth. Sum each key group's previous-step volume
             // acceleration (~2 mm acoustic transit at 192 kHz) so sibling
             // ranks hear each other symmetrically regardless of rank order.
-            double palletRad[kMaxCells] = {};
+            // Every group index is below groupCount, so only those are zeroed.
+            double palletRad[kMaxCells];
+            for (int g = 0; g < groupCount; ++g) palletRad[g] = 0.0;
             for (int j = 0; j < active; ++j) palletRad[groupOf[j]] += live[j]->radiated;
             // Ranks opened by one key usually share exactly the same travel.
             // Reuse only that identical raised-cosine result; each chamber
@@ -1156,11 +1164,15 @@ void Engine::Render(float* left, float* right, int frames) {
         mechanicsGain += smoothing * (mechanicsGainTarget - mechanicsGain);
         grilleCoeff += smoothing * (grilleCoeffTarget - grilleCoeff);
         double valveTreble = 0.0, valveBass = 0.0;
-        for (auto& k : slaps) {
+        int used = 0;
+        for (int n = 0; n < slapsUsed; ++n) {
+            Knock& k = slaps[static_cast<std::size_t>(n)];
             if (!k.active) continue;
             k.Step(dt);
             (k.bass ? valveBass : valveTreble) += k.force / kFlapDensity;
+            if (k.active) used = n + 1;
         }
+        slapsUsed = used;
         const double valves = mechanicsGain * (kValveVoicing / kForceToFlow);
         grille += grilleCoeff * (trebleSide.Process(t, stages) + valves * valveTreble - grille);
         gain += smoothing * (gainTarget - gain);
@@ -1174,11 +1186,15 @@ void Engine::Render(float* left, float* right, int frames) {
         foldsPanL += glide * (foldsPanLTarget - foldsPanL);
         foldsPanR += glide * (foldsPanRTarget - foldsPanR);
         double knockTreble = 0.0, knockBass = 0.0;
-        for (auto& k : knocks) {
+        used = 0;
+        for (int n = 0; n < knocksUsed; ++n) {
+            Knock& k = knocks[static_cast<std::size_t>(n)];
             if (!k.active) continue;
             const double change = k.Step(dt) * rate;
             (k.bass ? knockBass : knockTreble) += change;
+            if (k.active) used = n + 1;
         }
+        knocksUsed = used;
         // The folds sit between the halves and radiate straight to the air, not
         // through the body, as panels of their own size (kPleatToFlow).
         const double flips = folds.Step(pressure, dt);
