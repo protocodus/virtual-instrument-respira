@@ -122,24 +122,40 @@ struct BodyHighPass {
     }
 };
 
+// No two strokes of a finger land alike. Expert pianists striking one key
+// again and again at a target of MIDI velocity 75 scatter it by 4.1 (SD,
+// 1.2-7.5 per player; Tominaga et al., "Kinematic origins of motor
+// inconsistency in expert pianists", PLoS One 11(8), 2016, Results), 5.5 %
+// of the target. Each stroke's landing speed scatters by this much at Life
+// 0.5 (ImperfectionScale 1), none at Life 0. Applied as well to the spring's
+// return as the finger lets a key up, which no measurement covers: the
+// finger rides the key part of the way, by an amount that differs each time.
+inline constexpr double kStrokeScatter = 0.055;
+
 // One collision, stepped at the host rate. Semi-implicit steps, four a sample,
 // keep the stiffest landing (a hard key at 22 kHz) well inside stability.
 struct Knock {
     static constexpr int kSteps = 4;
     bool active = false, bass = false;
+    int wait = 0;   // host samples still in flight before the part lands
     double x = 0.0, v = 0.0, mass = 1.0, force = 0.0;
     const Felt* felt = &kKeyFelt;
 
-    void Start(const Stop& stop, double speed, double massScale) {
+    void Start(const Stop& stop, double speed, double massScale, int flightSamples = 0) {
         felt = stop.felt;
         mass = stop.mass * massScale;
         x = force = 0.0;
         v = speed;
+        wait = flightSamples;
         active = true;
     }
     // The change in contact force over one host sample, N. The part leaves
     // its felt (or comes to rest on it) once the felt has pushed it back out.
     double Step(double dt) {
+        if (wait > 0) {
+            --wait;
+            return 0.0;
+        }
         const double before = force, h = dt / kSteps;
         for (int i = 0; i < kSteps; ++i) {
             v -= felt->Force(x, v) / mass * h;
@@ -164,7 +180,13 @@ struct Knock {
 // d, drives it shut in t = (6 kFlapDensity d / R)^(1/3), landing at
 // R t^2 / (2 kFlapDensity): harder the faster the bellows turn. As a pushed
 // note ends, its own curl shuts it as the chamber fills, at d times its
-// natural frequency, its curl lifting it d at kFlapOpenPa. The pull reed's
+// natural frequency, its curl lifting it d at kFlapOpenPa. Either way it
+// lands its flight time after it lets go, not as it lets go: a quarter of its
+// natural period as its curl shuts it (10 ms), t as the bellows turn (about
+// 5 ms). Each valve's lift and curl differ from its neighbours' by up to
+// kFlapSpread, fixed per instrument as the keys' and the folds' panels are,
+// so a chord's valves land one after another over a few milliseconds, not
+// on one sample with one speed. The pull reed's
 // valve is on the bellows' side and is not heard. The flutter the reeds'
 // pulses shake into an open valve is left out, so their tone stays as it was
 // fitted. All of these are estimates from typical valves, not measurements,
@@ -183,13 +205,26 @@ inline constexpr double kFlapHold = 2.0;
 // valve's slap.
 inline constexpr double kPullValveShare = 0.35;
 
+inline constexpr double kFlapSpread = 0.2;
+
 inline double FlapArea(double length, double width) { return (length + kFlapMargin) * (width + kFlapMargin); }
-// Landing speed at a turn whose drop reverses at `rate` Pa/s, m/s.
-inline double FlapTurnSpeed(double rate) {
-    const double t = std::cbrt(6.0 * kFlapDensity * kFlapLift / Max(rate, 1.0));
-    return rate * t * t / (2.0 * kFlapDensity);
+// When (s after it lets go) and how fast (m/s) a valve lands.
+struct FlapLanding {
+    double delay, speed;
+};
+// At a turn whose drop reverses at `rate` Pa/s, from a lift of `lift` m.
+inline FlapLanding FlapTurn(double rate, double lift = kFlapLift) {
+    rate = Max(rate, 1.0);
+    const double t = std::cbrt(6.0 * kFlapDensity * lift / rate);
+    return { t, rate * t * t / (2.0 * kFlapDensity) };
 }
-// Landing speed as its curl shuts it: lift times sqrt(stiffness / mass).
+inline double FlapTurnSpeed(double rate) { return FlapTurn(rate).speed; }
+// As its curl shuts it: a quarter period of sqrt(stiffness / mass), landing
+// at lift times that, its curl lifting it `lift` at `openPa`.
+inline FlapLanding FlapCurl(double lift = kFlapLift, double openPa = kFlapOpenPa) {
+    const double w = Sqrt(openPa / (lift * kFlapDensity));
+    return { 1.5707963267948966 / w, lift * w };
+}
 inline constexpr double kFlapCurlSpeed = kFlapLift * 158.11388300841895;   // sqrt(kFlapOpenPa / (kFlapLift kFlapDensity))
 
 // The bellows' folds. Each fold's walls are card panels in cloth, hinged at

@@ -211,8 +211,9 @@ private:
     void TakeTargets();   // every glided gain to its target at once
     void SwitchRegister(int from, int to);
     void MoveKey(int source);
-    void StartKnock(const Stop& stop, double speed, double massScale, bool bass);
-    void StartSlap(double mass, double speed, bool bass);
+    void StartKnock(const Stop& stop, double speed, double massScale, bool bass, bool stroke = true);
+    void StartSlap(double mass, const FlapLanding& landing, bool bass);
+    FlapLanding ValveLanding(const Cell& c, bool pull, bool turn, double turnRate) const;
     void StepKeys(double seatScale);
 
     Controls controls;
@@ -261,8 +262,9 @@ private:
     std::array<std::uint16_t, 3 * 128> movingKeys {};   // the keys whose travel is changing
     int movingCount = 0;
     std::array<Knock, 32> knocks {};
-    std::array<Knock, 48> slaps {};   // the check valves'
-    int knocksUsed = 0, slapsUsed = 0;   // one past the last active knock and slap: no later one need be visited
+    std::array<Knock, 64> slaps {};   // the check valves'
+    int knocksUsed = 0, slapsUsed = 0;
+    std::uint32_t strokeLuck = 1u;   // each stroke's scatter (kStrokeScatter)   // one past the last active knock and slap: no later one need be visited
 
     Folds folds;
     Rustle rustle;

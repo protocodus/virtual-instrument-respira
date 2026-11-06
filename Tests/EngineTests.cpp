@@ -1388,6 +1388,20 @@ void ValveSlapsFollowTheTurn() {
     Expect(std::fabs(FlapTurnSpeed(128000.0) / v - 2.0) < 1.0e-9, "ValveSlapsFollowTheTurn", "eight times as quick, ratio", FlapTurnSpeed(128000.0) / v);
 }
 
+void ValvesLandAfterTheirFlight() {
+    // A valve lands its flight time after it lets go, not as it lets go: a
+    // quarter period of its curl, 9.93 ms, as a note ends, and t = (6 sigma
+    // d / R)^(1/3), 6.08 ms at 16 kPa/s, as the bellows turn. A valve lifted
+    // further lands later and harder, so a chord's valves land apart.
+    const FlapLanding curl = FlapCurl(), turn = FlapTurn(16000.0);
+    Expect(std::fabs(curl.delay - 0.009934) < 1.0e-5, "ValvesLandAfterTheirFlight", "curl flight, s", curl.delay);
+    Expect(std::fabs(curl.speed - kFlapCurlSpeed) < 1.0e-12, "ValvesLandAfterTheirFlight", "curl landing, m/s", curl.speed);
+    Expect(std::fabs(turn.delay - 0.006082) < 1.0e-5, "ValvesLandAfterTheirFlight", "turn flight at 16 kPa/s, s", turn.delay);
+    const FlapLanding higher = FlapTurn(16000.0, 1.2 * kFlapLift);
+    Expect(higher.delay > turn.delay && higher.speed > turn.speed, "ValvesLandAfterTheirFlight", "a valve lifted 20 % further, later by ms",
+           (higher.delay - turn.delay) * 1.0e3);
+}
+
 void StrapTakesUpAtTheBellowsSpeed() {
     // The strap meets the wrist at the speed the bass end moves, litres x
     // wheel ranges a second over the bellows' section (0.41 x 0.19 m): a hand
@@ -1577,6 +1591,7 @@ int main() {
     WidthGlides();
     MicrophonesHearTwoPlaces();
     ValveSlapsFollowTheTurn();
+    ValvesLandAfterTheirFlight();
     StrapTakesUpAtTheBellowsSpeed();
     RoomDecorrelatesAndRings();
     respira_room_tests::Run(Expect);

@@ -354,6 +354,7 @@ void Engine::Reset() {
     knocks.fill(Knock {});
     slaps.fill(Knock {});
     knocksUsed = slapsUsed = 0;
+    strokeLuck = 1u;
     // A quarter of the panels in each wall, two long and two short; each
     // panel's mass and play differ a little from its neighbours' (+-20 %,
     // fixed per instrument), so a turn's panels land one after another.
@@ -656,9 +657,15 @@ void Engine::MoveKey(int source) {
     movingKeys[static_cast<std::size_t>(movingCount++)] = static_cast<std::uint16_t>(source);
 }
 
-// A part landing on its stop. When every knock is still sounding, a new one
-// in that crowd is dropped.
-void Engine::StartKnock(const Stop& stop, double speed, double massScale, bool bass) {
+// A part landing on its stop. A finger's stroke (or the spring's return it
+// rides) lands a little faster or slower each time (kStrokeScatter); the
+// strap, taken up at the bellows' own speed, does not. When every knock is
+// still sounding, a new one in that crowd is dropped.
+void Engine::StartKnock(const Stop& stop, double speed, double massScale, bool bass, bool stroke) {
+    if (stroke) {
+        strokeLuck = strokeLuck * 1664525u + 1013904223u;
+        speed *= 1.0 + kStrokeScatter * ImperfectionScale(controls[kLife]) * 1.7320508075688772 * Unit(strokeLuck >> 8);
+    }
     for (int i = 0; i < static_cast<int>(knocks.size()); ++i) {
         Knock& k = knocks[static_cast<std::size_t>(i)];
         if (k.active) continue;
@@ -671,15 +678,24 @@ void Engine::StartKnock(const Stop& stop, double speed, double massScale, bool b
 
 // A push valve landing on its plate; when every slap is still sounding, a
 // new one is dropped.
-void Engine::StartSlap(double mass, double speed, bool bass) {
+void Engine::StartSlap(double mass, const FlapLanding& landing, bool bass) {
     for (int i = 0; i < static_cast<int>(slaps.size()); ++i) {
         Knock& k = slaps[static_cast<std::size_t>(i)];
         if (k.active) continue;
-        k.Start(Stop { mass, kFlapLift, &kRestCloth }, speed, 1.0);
+        k.Start(Stop { mass, kFlapLift, &kRestCloth }, landing.speed, 1.0, static_cast<int>(landing.delay * rate + 0.5));
         k.bass = bass;
         slapsUsed = static_cast<int>(Max(slapsUsed, i + 1));
         return;
     }
+}
+
+// How a cell's push or pull valve lands: driven shut by a turn reversing at
+// turnRate Pa/s, or else by its own curl. Its lift and curl are
+// its own (kFlapSpread), fixed per instrument.
+FlapLanding Engine::ValveLanding(const Cell& c, bool pull, bool turn, double turnRate) const {
+    const std::uint32_t h = Hash(11u, static_cast<std::uint32_t>(c.reed * 2 + (pull ? 1 : 0)));
+    const double lift = kFlapLift * (1.0 + kFlapSpread * Unit(h));
+    return turn ? FlapTurn(turnRate, lift) : FlapCurl(lift, kFlapOpenPa * (1.0 + kFlapSpread * Unit(Hash(h, 1))));
 }
 
 // The keys move as their pallets do (Render): down at the stroke's speed,
@@ -1011,7 +1027,7 @@ void Engine::Render(float* left, float* right, int frames) {
             const double slack = BellowsEndSpeed(litres, hand.velocity);
             if (slack > kFoldsStick) {
                 strapPushed = false;
-                StartKnock(kBassPallet, slack, 1.0, true);
+                StartKnock(kBassPallet, slack, 1.0, true, false);
             }
         }
         bend2 += bendSmoothing * (bend2Target - bend2);
@@ -1125,12 +1141,12 @@ void Engine::Render(float* left, float* right, int frames) {
             if (!c.valveOpen) c.valveOpen = drop > kFlapHold;
             else if (drop < -kFlapHold || (c.lift < 1.0 && drop < kFlapHold)) {
                 c.valveOpen = false;
-                StartSlap(c.valveMass, drop < -kFlapHold ? FlapTurnSpeed((pressureWas - pressure) / dt) : kFlapCurlSpeed, spec.bass);
+                StartSlap(c.valveMass, ValveLanding(c, false, drop < -kFlapHold, (pressureWas - pressure) / dt), spec.bass);
             }
             if (!c.pullValveOpen) c.pullValveOpen = drop < -kFlapHold;
             else if (drop > kFlapHold || (c.lift < 1.0 && drop > -kFlapHold)) {
                 c.pullValveOpen = false;
-                StartSlap(c.pullValveMass, drop > kFlapHold ? FlapTurnSpeed((pressure - pressureWas) / dt) : kFlapCurlSpeed, spec.bass);
+                StartSlap(c.pullValveMass, ValveLanding(c, true, drop > kFlapHold, (pressure - pressureWas) / dt), spec.bass);
             }
             // Assist counts a held key in full once its pallet is down, however
             // far channel pressure holds it: a half-open pallet passes 0.3-0.9

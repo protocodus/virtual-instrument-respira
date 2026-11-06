@@ -2010,3 +2010,51 @@ top, under the high reeds' threshold, so there a note from E6 up stops at
 velocity 1, as one from C7 up does at velocity 100.
 `VelocityAndWheelTransitionBothWays` now requires the soft and the strong
 note to fade within 3 dB of each other.
+
+## 2026-11-06 — the mechanism no longer clicks as one (reviewers; owner's rule)
+
+Reason Studios' reviewers, approving the Rack device, reported that at higher
+**Mechanics** settings the mechanical noise sounded like a bug. The owner
+asked that the model be checked against real behaviour, with enough variety
+to sound real. Renders at Mechanics +20 dB of the eight demos and of Auto
+playing staccato notes, block chords and chord stabs, with every knock and
+slap logged, found two defects:
+
+- **Valves slapped as one.** Every open valve whose drop crossed its
+  threshold slapped on that very sample at one speed: 0.237 m/s for every
+  curl closing, one turn speed for every valve at a turn. A released chord
+  on Master Tutti stacked 20 slaps on one sample, a bellows turn in the
+  Master Tutti demo 28, so the mechanism's loudest sound was a coherent
+  spike, +3 dBFS before the grille in that demo. The model had the flight
+  time (t = (6σd/R)^⅓) and used it only for the speed; a valve lands its
+  flight after it lets go, and it now does: a quarter period of its curl
+  (9.9 ms) as a note ends, t (about 5 ms) at a turn. Each valve's lift and
+  curl stiffness differ from its neighbours' by up to ±20 %, fixed per
+  instrument, the spread already estimated for the keys' masses and the
+  folds' panels; it is an estimate, not a measurement. No two now share a
+  sample in those renders, and the turn spikes fell 9–11 dB (1 ms peaks,
+  Master Tutti demo at +20 dB). The slap pool grows from 48 to 64 so the
+  longer flights are not dropped.
+- **Every stroke landed alike.** A key struck at one velocity landed at one
+  speed every time, and every pallet at nearly one. Expert pianists repeating
+  one key at a target of MIDI velocity 75 scatter it by 4.1 (SD; 1.2–7.5 per
+  player; Tominaga et al., PLoS One 11(8) e0161324, 2016), 5.5 %. Each
+  finger stroke's landing speed (keys, buttons, register switches, the air
+  button and the pallets' returns, which the finger rides) now scatters by
+  that at Life 0.5, scaled by Life as the reeds' imperfections are, none at
+  Life 0. Applying it to the returns is an assumption; the strap, taken up at
+  the bellows' speed, does not scatter.
+
+What was not changed: the knocks' level law and the Mechanics range, the
+folds (each turn's panels still land in one order, which their masses and
+play fix per instrument; varying that per turn would need a number nothing
+measures) and the reeds, which the mechanism never feeds: at Mechanics
+−40 dB the Paris Musette and Master Tutti demos differ from before by at most
+−86 and −74 dBFS (sample peak), the mechanism's own change.
+
+Listening test `2026-11-06-mechanics` (project files): Master Tutti at
+Mechanics +20 dB, `keys` (Auto: staccato notes, block chords, chord stabs,
+bass and chord buttons) and `shake` (the Master Tutti demo's bellows shake);
+A the engine before, B both changes; whole-file RMS matched (B trimmed
++0.003 and +0.001 dB). Shipped as B under the project's rule that the
+candidate wins unless the owner says otherwise; no listener verdict yet.

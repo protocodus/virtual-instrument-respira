@@ -34,6 +34,11 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
+### 0.1.17 — 2026-11-06 — the mechanism no longer clicks as one
+
+- Reason Studios' reviewers heard **Mechanics** at its higher settings as a bug. Two things made it so. Every reed valve of a chord, or of the whole bellows at a turn, slapped shut on the same sample at the same speed, so up to 28 slaps added into one spike, the loudest sound the mechanism made; and every stroke of a key landed exactly as the last. Now each valve lands its own flight time after it lets go (about 10 ms after a note ends, 5 ms into a turn), with its own lift and curl (±20 %, fixed per instrument), so a chord's valves patter over a few milliseconds and the turn's spike is about 10 dB lower at Mechanics +20 dB. Each key, button, pallet, register switch and air-button stroke lands a little faster or slower than the last, by the 5.5 % a pianist's repeated strokes scatter (at Life 0.5; none at Life 0).
+- Notes, bellows and the eight demos' reeds are unchanged; the demos change only in their mechanism.
+
 ### 0.1.16 — 2026-11-04 — the wheel scales Auto's level
 
 - Under **Auto**, the mod wheel scales the pressure the velocity asks for, down to 15 % of it at the top, so it fades a held note by the same amount however hard it was struck: about 16 dB on a held A4 on Init at velocity 1 and at 100. In 0.1.15 every velocity went to one 60 Pa at the top, only 9 dB down at velocity 1.
@@ -576,8 +581,13 @@ onto its stop in the time a pallet's spring takes; the air button lands like a b
 its pad like a bass pallet. A key let go before it lands, or held half
 down, does not knock until its pallet seats; one pressed again before its
 pallet seats does not knock on the way up. Each key's knock differs a little
-from its neighbours' (its mass ±20 %, fixed per instrument). Masses and
-travels are estimates from typical sizes.
+from its neighbours' (its mass ±20 %, fixed per instrument), and no two
+strokes land alike: each landing speed scatters by 5.5 % (standard
+deviation, at **Life** 0.5, scaling with it and none at Life 0), as expert
+pianists' repeated strokes at one loudness do (4.1 MIDI velocity at a target
+of 75; Tominaga et al., PLoS One 2016). The spring's return as a key is let go
+takes the same scatter, for the finger rides it part of the way; nothing
+measures that. Masses and travels are estimates from typical sizes.
 
 The felt stiffens as it is compressed, so a harder stroke lands not only
 louder but shorter and brighter: a soft key's knock lasts about 3.4 ms and
@@ -629,7 +639,13 @@ leather law: as the bellows turn from push to pull, driven shut by the
 reversing pressure, at (R t² / 2σ) with t = (6σd / R)^⅓ for a pressure
 turning at R (0.74 m/s at 16 kPa/s, slower for a slow turn); as a pushed
 key is let go, by its own curl as the chamber fills, at its lift times its
-natural frequency (0.24 m/s). Landing it stops the chamber air it moves, a
+natural frequency (0.24 m/s). Either way it lands its flight time after it
+lets go: a quarter of its natural period, 10 ms, as its curl shuts it, and
+t, about 5 ms, as the bellows turn. Each valve's lift and curl differ from its
+neighbours' by up to ±20 % (fixed per instrument, an estimate like the keys'
+masses), so the valves of a chord or a turn land one after another over a
+few milliseconds, each at its own speed, as a patter rather than one click.
+Landing it stops the chamber air it moves, a
 source of its area times its speed, so it radiates through the pallet hole
 and the grille, or the bass box, as the reeds do. Turning from pull to push the
 pull reeds' valves, on the bellows side of the plate, slap too; their sound
