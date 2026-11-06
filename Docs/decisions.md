@@ -2056,5 +2056,7 @@ Listening test `2026-11-06-mechanics` (project files): Master Tutti at
 Mechanics +20 dB, `keys` (Auto: staccato notes, block chords, chord stabs,
 bass and chord buttons) and `shake` (the Master Tutti demo's bellows shake);
 A the engine before, B both changes; whole-file RMS matched (B trimmed
-+0.003 and +0.001 dB). Shipped as B under the project's rule that the
-candidate wins unless the owner says otherwise; no listener verdict yet.
++0.003 and +0.001 dB). The owner listened
+and chose **B** by ear (2026-11-06: "candidate is great, let's go with
+it"). That choice licenses both changes as shipped in 0.1.17; it does not
+make the ±20 % valve spread a measurement.
