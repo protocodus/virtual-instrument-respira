@@ -69,9 +69,10 @@ inline constexpr std::array<ControlInfo, kControlCount> kControlInfo { {
     { "oversampling", "Oversampling", 0.0, 2.0, 0.0, 3, Curve::kStepped, "" },
     // Against an estimate, since the level is not measured (Mechanics.h); at
     // -40 dB the hardest key peaks at about 24 dB SPL at 1 m, all but silent.
-    // The default, +10 dB, was chosen by ear over the estimate and 10 dB
-    // under it (Docs/decisions.md).
-    { "mechanics", "Mechanics", -40.0, 20.0, 10.0, 0, Curve::kLinear, "dB" },
+    // The default was +10 dB, chosen by ear over the estimate and 10 dB under
+    // it; the owner then heard it too loud in the songs and set it to 60 % of
+    // that level, +5.6 dB (20 log10 0.6 = -4.4 dB; Docs/decisions.md).
+    { "mechanics", "Mechanics", -40.0, 20.0, 5.6, 0, Curve::kLinear, "dB" },
     // On by default, the owner's "just play": the hand keeps the bellows
     // supplied whatever is played, and the player never thinks about them.
     { "auto", "Auto", 0.0, 1.0, 1.0, 2, Curve::kStepped, "" },

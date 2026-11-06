@@ -1,6 +1,7 @@
 #include "DSP/RespiraEngine.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -146,6 +147,47 @@ void AKeyswitchInARestPreparesTheNextNote() {
         Require(energy / (80 * 48) > 1.0e-5, "the first 100 ms note after the turn remains audible");
     }
 }
+// A bass, a chord and a triad: open reeds that ask Assist for several times
+// one reed's air.
+void Chord(Engine& e, bool on) {
+    const std::uint8_t s = on ? 0x90 : 0x80;
+    for (const auto& n : { std::array<std::uint8_t, 2>{ s, 60 }, { s, 64 }, { s, 67 },
+                           { std::uint8_t(s | 1), 36 }, { std::uint8_t(s | 2), 48 } }) {
+        const std::uint8_t m[] = { n[0], n[1], 90 }; e.Midi(m, 3);
+    }
+}
+void ATurnInAShortRestArrivesAtItsPressure() {
+    // The chord is let go, C#0 turns the bellows 30 ms later and the chord
+    // comes back 30 ms after that, while the arm still swings. Assist once
+    // multiplied the swinging arm's motion by the chord's demand the moment
+    // its keys went down: 4.5 times the pressure it settled at (2 kPa).
+    auto e = Make(0.0);
+    Chord(*e, true);
+    float l[48], r[48]; double peak = 0.0, settled = 0.0;
+    for (int ms = 0; ms < 4200; ++ms) {
+        if (ms == 3000) Chord(*e, false);
+        if (ms == 3030) { const std::uint8_t push[] = { 0x90, 13, 100 }; e->Midi(push, 3); }
+        if (ms == 3060) Chord(*e, true);
+        e->Render(l, r, 48);
+        const double p = std::fabs(e->Diag().pressure);
+        if (ms >= 3060 && ms < 3460) peak = std::max(peak, p);
+        if (ms >= 3700) settled += p / 500.0;
+    }
+    std::printf("Life short-rest turn: peak %.0f Pa, settled %.0f Pa\n", peak, settled);
+    Require(peak < 1.3 * settled, "a turn in a short rest arrives at its pressure, not several times over it");
+}
+void AFirstNoteSpeaksAtOnce() {
+    // Auto's first stroke finds no pressure, and swings it up at the hand's
+    // full speed as a turn does; closing on it in a reaction time took 120 ms.
+    auto e = Make(0.0);
+    float l[48], r[48]; std::vector<double> p;
+    Note(*e, true);
+    for (int ms = 0; ms < 1500; ++ms) { e->Render(l, r, 48); p.push_back(std::fabs(e->Diag().pressure)); }
+    double steady = 0.0; for (int ms = 800; ms < 1500; ++ms) steady += p[ms] / 700.0;
+    int rise = 0; while (rise < 1500 && p[rise] < 0.9 * steady) ++rise;
+    std::printf("Life first note: 90 %% of its pressure in %d ms\n", rise);
+    Require(rise <= 40, "the first note's bellows reach its pressure within 40 ms");
+}
 void TheTremorHasUnitRms() {
     // Life.h scales the 6.5 Hz tremor to unit RMS before kTremorShare weights
     // it. Only the +-1.5 clamp takes a little off a unit-variance, nearly
@@ -166,5 +208,6 @@ int main() {
     LifeScalesReedAndChamberImperfections();
     SwellsNeverRunTheBellowsOut();
     AKeyswitchInARestPreparesTheNextNote();
+    ATurnInAShortRestArrivesAtItsPressure(); AFirstNoteSpeaksAtOnce();
     std::puts("PASS Life: held notes, deterministic blocks/reset, manual air, moving pickup, mono and silence");
 }

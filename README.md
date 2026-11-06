@@ -34,6 +34,12 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
+### 0.1.19 — 2026-11-06 — turns and first notes arrive at their pressure
+
+- Under Auto, a bellows turn in a short rest no longer comes in too loud. Assist multiplied the arm's motion by the open reeds' demand, so when a chord came back while the arm still swung at full speed, the pressure reached 2–6 times its level (2 kPa against 400 Pa) before settling. The arm now moves the bellows' own air and Assist only lets it go faster; the same turn arrives within 1.15 times its pressure.
+- The first note under Auto speaks at once. Its stroke found no pressure and closed on it in a reaction time, so for its first 100 ms it sounded 20–25 dB under itself. A stroke that finds less than half the pressure it wants is now swung up at full speed, as a turn is: 90 % of the pressure in about 20–35 ms instead of 120–220.
+- **Mechanics** defaults to +5.6 dB in Init and every factory preset, 60 % of the level of the +10 dB before (the owner heard the knocks too loud in songs). Saved patches keep their own setting.
+
 ### 0.1.18 — 2026-11-06 — no two strokes alike
 
 - The owner heard eight chord stabs at one velocity as nearly one sound (their waveforms matched 96–99 %). In 0.1.17 a finger's stroke-to-stroke scatter reached only the key's knock; now it moves the key itself. Each stroke's velocity scatters by the 5.5 % a pianist's repeated strokes do (at Life 0.5, none at Life 0), and through the velocity's bounded travel it sets how fast the key and its pallets open, so each note's attack differs a little: a few tenths of a millisecond of travel, the most on hard strokes. The same stabs now match 41–91 %.
@@ -246,8 +252,13 @@ did: at Momentum 100–200 ms a bass, chord and triad takes 0.1–0.6 s to pass
 zero. Playing the keyswitches in rhythm gives a bellows shake; at the default
 Momentum five turns a second still swing the pressure fully round. A
 keyswitch in a rest, once the hand has played, turns the pressure with the
-pallets closed, so the next note speaks the new way at once. From 0 to 200
-ms of Momentum a held triad reaches 360 Pa in 0.2–0.5 s and holds 400. Each
+pallets closed, so the next note speaks the new way at once. The arm moves
+the bellows' own air and the hand asks it for the air the reeds need, so a
+chord that comes back while the arm still swings arrives at its pressure (at
+most 1.15 times it). A stroke that finds less than half the pressure it
+wants, as the first note does, is swung up at full speed as a turn is: from
+0 to 200 ms of Momentum a held triad reaches 360 Pa in 10–360 ms and holds
+400. Each
 stroke starts from rest; let go of every key and the hand stops, the closed
 pallets keeping the bellows at their pressure, so the next note speaks at
 once. Nothing that depends on how far the bellows are open moves under
@@ -606,8 +617,9 @@ side's knocks leave through the bass box, as its reeds do. At 1 m, with
 **Mechanics** at 0 dB, a soft key peaks at 42 dB SPL, a moderate one at 46,
 a hard one at 64 and a pallet at 41, where ordinary playing reads 73 dB RMS:
 heard in quiet passages and between notes, as real mechanisms are. By ear
-the mechanism was chosen 10 dB above that estimate, so Mechanics defaults to
-+10 dB in Init and every factory preset.
+the mechanism was chosen 10 dB above that estimate; the owner later heard
+that too loud in songs and set it to 60 % of that level, so Mechanics
+defaults to +5.6 dB in Init and every factory preset.
 
 The bellows' folds sound too, and their levels are voiced by ear, not
 derived. Each fold's walls are card panels hinged in cloth and leather; the
@@ -694,7 +706,7 @@ strokes read −1.7 VU at most. Volume sets the level going into the stage.
 | Air | off, on | the air valve |
 | Momentum | 0–200 ms | how far the arm trails the wheel; 0 follows it exactly |
 | Oversampling | 1×, 2×, 4× | the reeds' time step: 1× is four times the host rate; 2× and 4× cost about two and four times the CPU |
-| Mechanics | −40 to +20 dB | the keys', pallets', buttons' and switches' knocks, the bellows' folds and the push valves' slaps, against the estimate (The mechanism); +10 dB by default, chosen by ear; at −40 dB they are all but silent |
+| Mechanics | −40 to +20 dB | the keys', pallets', buttons' and switches' knocks, the bellows' folds and the push valves' slaps, against the estimate (The mechanism); +5.6 dB by default, by ear; at −40 dB they are all but silent |
 | Auto | off, on | on by default: the hand plays endless bellows, turned by the C0 and C#0 keyswitches, and the wheel softens or swells it (Auto) |
 | Room | 0–1 wet | the hall around the microphones: 0 dry, 0.5 % by default, 1 as decorrelated as the solo recordings; sigmoid knob response, actual wet percentage displayed (The microphones) |
 

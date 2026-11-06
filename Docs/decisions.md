@@ -2095,3 +2095,42 @@ exactly the speed the velocity asked for.
 
 `RepeatedStrokesDiffer` checks that at Life 0 a repeated stroke is the same
 to the bit and at Life 0.5 is not.
+
+## 2026-11-06 — 0.1.19: Auto's turns and first notes, Mechanics at 60 % (owner)
+
+The owner heard the 2026-11-06 song renders and asked for three things:
+fix the turn that came in too loud, set the default Mechanics to 60 % of
+its level, and find why some first notes lacked attack.
+
+- **A turn in a short rest arrived several times over its pressure.**
+  Measured with Tango Bandoneon, a bass, chord and triad: let go, C#0 30 ms
+  later, the chord back 30 ms after that, so the arm still swings. The
+  pressure reached 2.0 kPa against the 400–460 Pa it settled at (4.5 times
+  over; 3.3 times in `ATurnInAShortRestArrivesAtItsPressure`, Init). In the
+  songs the next note came in 5–19 dB over its phrase. The cause was Assist
+  in Auto: the hand's air was the arm's motion times the open reeds'
+  demand, so the moment the chord's keys went down, the arm's full-speed
+  swing moved several times the air it had been moving. A turn after 0.3 s
+  or more was unaffected, because the swing had already ended.
+  **Fix (engineering):** Auto's arm moves the bellows' own air (the player
+  already asks it for the air the reeds need), and Assist only raises how
+  fast it may go (kAutoFastest times the same factor), so a held chord's
+  turn is as fast as before. Every measured case now arrives within
+  1.15 times its pressure. A first try that let the factor follow the arm at
+  its own rate left short rests at 1.05 but raised longer rests to 1.5,
+  because the player then asked for air against a factor the arm hadn't
+  reached. The wheel's hand (manual mode) keeps Assist as it was.
+- **First notes lacked attack.** Auto's first stroke found no pressure and
+  closed on its 400 Pa in the 0.1 s reaction time: 90 % in 120–220 ms, and
+  the note's first 100 ms 20–25 dB under itself, where the same note again
+  speaks at once. Velocity was not the cause (60, 90 and 120 all took
+  114–134 ms on Violin Folk). **Fix:** a stroke that finds less than half
+  the pressure it wants is swung up at full speed as a turn is, then closes
+  as before: 90 % in 20–35 ms, a held triad's 360 Pa in 10–360 ms from
+  Momentum 0 to 200 (167–499 before). The first stroke peaks 1.4 times its
+  hold, as a turn in a rest already did (548 Pa against 400 in
+  `AKeyswitchInARestPreparesTheNextNote`). `AFirstNoteSpeaksAtOnce`
+  requires 40 ms (221 before).
+- **Mechanics defaults to +5.6 dB** in Init and every factory preset: 60 %
+  of the +10 dB level (20 log10 0.6 = −4.4 dB), the owner's setting by ear
+  in songs. The +10 dB of 2026-10-28 was chosen on a pack of keys alone.

@@ -571,9 +571,14 @@ double Engine::Extension() const { return autoHand ? 0.5 : Clamp(hand.position, 
 
 // Runs before the hand's tick, from the keys the last sample held.
 void Engine::StepPlayer(double dt) {
+    // Auto's arm moves the bellows' own air: the player asks it for the air
+    // the reeds need, so Assist only lets the hand go faster for more open
+    // reeds. Multiplying the arm's motion by the open reeds' demand, as the
+    // wheel's hand does, made a turn in a rest arrive 2-6 times over its
+    // pressure when keys went down while the arm still swung at full speed.
     const double litres = controls[kBellows] * 1.0e-3;   // per wheel range
-    const double perWheel = litres * (1.0 + controls[kAssist] * (Max(demand, 1.0) - 1.0));
-    const double fastest = kAutoFastest / litres;
+    const double perWheel = litres;
+    const double fastest = kAutoFastest * (1.0 + controls[kAssist] * (Max(demand, 1.0) - 1.0)) / litres;
     const double momentum = controls[kMomentum];
     const double size = kAutoPressure * (1.0 - (1.0 - kAutoSoftShare) * hand.wheel);
     const bool pulling = player.pull;
@@ -592,7 +597,11 @@ void Engine::StepPlayer(double dt) {
         player.running = true;
         player.drive = hand.position;
         player.pulled = pulling;
-        player.swinging = player.ready && pressure * want < 0.0;
+        // A stroke that finds the bellows short of half the pressure it wants
+        // (the first note, or a turn's other side) is swung up at the hand's
+        // full speed, as a turn is: closing on it in a reaction time made a
+        // first note speak 20-25 dB under itself for its first 100 ms.
+        player.swinging = pressure * want < 0.5 * want * want;
         player.ready = true;
         NewStroke();
     }
@@ -1005,7 +1014,7 @@ void Engine::Render(float* left, float* right, int frames) {
                 }
             }
         }
-        double handFlow = -litres * effectiveHandVelocity * (1.0 + assist * (Max(demand, 1.0) - 1.0));
+        double handFlow = -litres * effectiveHandVelocity * (autoHand ? 1.0 : 1.0 + assist * (Max(demand, 1.0) - 1.0));
         if (!autoHand && heldCells > 0 && hand.velocity != 0.0) {
             constexpr double kManualRefSpeed = 0.095;
             const double speed = Abs(hand.velocity);
