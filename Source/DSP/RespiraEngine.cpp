@@ -355,6 +355,8 @@ void Engine::Reset() {
     slaps.fill(Knock {});
     knocksUsed = slapsUsed = 0;
     strokeLuck = 1u;
+    airHeld = false;
+    airStroke = 1.0;
     // A quarter of the panels in each wall, two long and two short; each
     // panel's mass and play differ a little from its neighbours' (+-20 %,
     // fixed per instrument), so a turn's panels land one after another.
@@ -432,12 +434,16 @@ void Engine::SetControls(const Controls& next) {
     // Until it first renders, the engine has made no sound: controls set then
     // (a patch loaded into a new instance) take hold at once, with no knock
     // and no glide, so a new instance plays as one after Reset() does.
-    if (reg != registerIndex) SwitchRegister(registerIndex, reg);
-    if (reg != registerIndex && !untouched) {
-        StartKnock(kRegisterSwitch, kRegisterSwitch.travel / kOpenSeconds, 1.0, false);
-        // The switch it pushes off springs back up onto its stop, in the time
-        // a pallet's spring takes.
-        StartKnock(kRegisterSwitch, kRegisterSwitch.travel / kCloseSeconds, 1.0, false);
+    if (reg != registerIndex) {
+        // The thumb's press moves the slides and lands the switch alike.
+        const double stroke = untouched ? 1.0 : Stroke();
+        SwitchRegister(registerIndex, reg, stroke);
+        if (!untouched) {
+            StartKnock(kRegisterSwitch, stroke * kRegisterSwitch.travel / kOpenSeconds, 1.0, false, false);
+            // The switch it pushes off springs back up onto its stop, in the
+            // time a pallet's spring takes.
+            StartKnock(kRegisterSwitch, kRegisterSwitch.travel / kCloseSeconds, 1.0, false);
+        }
     }
     registerIndex = reg;
     const bool nextAuto = controls[kAuto] >= 0.5;
@@ -657,15 +663,20 @@ void Engine::MoveKey(int source) {
     movingKeys[static_cast<std::size_t>(movingCount++)] = static_cast<std::uint16_t>(source);
 }
 
+// A finger stroke runs a little faster or slower each time (kStrokeScatter):
+// this one's velocity against the one asked for, uniform with that SD,
+// scaled by Life as the reeds' imperfections are.
+double Engine::Stroke() {
+    strokeLuck = strokeLuck * 1664525u + 1013904223u;
+    return 1.0 + kStrokeScatter * ImperfectionScale(controls[kLife]) * 1.7320508075688772 * Unit(strokeLuck >> 8);
+}
+
 // A part landing on its stop. A finger's stroke (or the spring's return it
-// rides) lands a little faster or slower each time (kStrokeScatter); the
-// strap, taken up at the bellows' own speed, does not. When every knock is
-// still sounding, a new one in that crowd is dropped.
+// rides) lands at its own speed (Stroke); a key's descent already carries its
+// stroke's (NoteOn), and the strap, taken up at the bellows' own speed, has
+// none. When every knock is still sounding, a new one in that crowd is dropped.
 void Engine::StartKnock(const Stop& stop, double speed, double massScale, bool bass, bool stroke) {
-    if (stroke) {
-        strokeLuck = strokeLuck * 1664525u + 1013904223u;
-        speed *= 1.0 + kStrokeScatter * ImperfectionScale(controls[kLife]) * 1.7320508075688772 * Unit(strokeLuck >> 8);
-    }
+    if (stroke) speed *= Stroke();
     for (int i = 0; i < static_cast<int>(knocks.size()); ++i) {
         Knock& k = knocks[static_cast<std::size_t>(i)];
         if (k.active) continue;
@@ -719,13 +730,14 @@ void Engine::StepKeys(double seatScale) {
                 speed = stop->travel * k.rate * rate;
             }
         } else {
-            k.travel = Max(k.target, k.travel - up);
+            k.travel = Max(k.target, k.travel - up * k.up);
             if (k.travel <= 0.0) {
                 stop = k.button ? &kBassPallet : &kTreblePallet;
-                speed = stop->travel * up * rate;
+                speed = stop->travel * up * k.up * rate;
             }
         }
-        if (stop) StartKnock(*stop, speed, 1.0 + 0.2 * Unit(Hash(2u, static_cast<std::uint32_t>(source))), k.button);
+        // Both landings already carry the stroke's speed (NoteOn, NoteOff).
+        if (stop) StartKnock(*stop, speed, 1.0 + 0.2 * Unit(Hash(2u, static_cast<std::uint32_t>(source))), k.button, false);
         if (k.travel == k.target) {
             k.listed = false;
             movingKeys[static_cast<std::size_t>(i)] = movingKeys[static_cast<std::size_t>(--movingCount)];
@@ -735,7 +747,7 @@ void Engine::StepKeys(double seatScale) {
     }
 }
 
-void Engine::StartCell(int rank, int key, int source, int velocity) {
+void Engine::StartCell(int rank, int key, int source, double openSeconds) {
     const int reed = rank * 128 + key;
     Cell* cell = nullptr;
     for (auto& c : cells)   // a releasing chamber of the same reed opens again
@@ -789,7 +801,8 @@ void Engine::StartCell(int rank, int key, int source, int velocity) {
     const double rankSkew = primaryRank
         ? 1.0
         : 1.0 + 0.16 * ImperfectionScale(controls[kLife]) * Unit(Hash(7u, static_cast<std::uint32_t>(reed)));
-    cell->openRate = rankSkew / (KeyOpeningSeconds(velocity) * internalRate);
+    cell->openRate = rankSkew / (openSeconds * internalRate);
+    cell->closeStroke = 1.0;
 }
 
 void Engine::NoteOn(int channel, int key, int velocity) {
@@ -797,21 +810,27 @@ void Engine::NoteOn(int channel, int key, int velocity) {
     const int source = channel * 128 + key;
     Key& k = keys[static_cast<std::size_t>(source)];
     k.target = channelDepth[static_cast<std::size_t>(channel)];
-    k.rate = 1.0 / (KeyOpeningSeconds(velocity) * rate);
+    // The stroke the finger actually makes (Stroke) moves the key and every
+    // pallet it lifts, within the mapping's bounded travel. The measured
+    // scatter is of MIDI velocity, so it goes through the same mapping: a few
+    // tenths of a millisecond either way, the most on the hardest strokes.
+    const double opening = KeyOpeningSeconds(Clamp(velocity * Stroke(), 1.0, 127.0));
+    k.rate = 1.0 / (opening * rate);
+    k.up = 1.0;
     k.velocity = static_cast<std::uint8_t>(velocity);
     k.button = group != kTreble;
     MoveKey(source);
     if (autoHand) touch.Press(velocity);
     if (group == kBassButtons) {
-        StartCell(kRankBass16, PitchClass(key), source, velocity);
-        StartCell(kRankBass8, PitchClass(key), source, velocity);
+        StartCell(kRankBass16, PitchClass(key), source, opening);
+        StartCell(kRankBass8, PitchClass(key), source, opening);
     } else if (group == kChordButtons) {
-        StartCell(kRankChord8, PitchClass(key), source, velocity);
-        StartCell(kRankChord4, PitchClass(key), source, velocity);
+        StartCell(kRankChord8, PitchClass(key), source, opening);
+        StartCell(kRankChord4, PitchClass(key), source, opening);
     } else {
         const Register& reg = kRegisters[static_cast<std::size_t>(controls[kRegister])];
         for (int rank = kRankL; rank <= kRankH; ++rank)
-            if (Sounds(reg, rank, TrebleKey(key))) StartCell(rank, TrebleKey(key), source, velocity);
+            if (Sounds(reg, rank, TrebleKey(key))) StartCell(rank, TrebleKey(key), source, opening);
         trebleHeld[static_cast<std::size_t>(key)] = static_cast<std::uint8_t>(velocity);
     }
 }
@@ -819,18 +838,22 @@ void Engine::NoteOn(int channel, int key, int velocity) {
 // The register switches move slides over the treble reed blocks, so a switch
 // pressed while keys are held reaches them: the ranks it opens start to speak
 // and the ones it shuts fall silent. A slide opens about as fast as the
-// softest key stroke lifts a pallet.
-void Engine::SwitchRegister(int from, int to) {
+// softest key stroke lifts a pallet, and closes as a pallet does, both at the
+// speed of this press (stroke).
+void Engine::SwitchRegister(int from, int to, double stroke) {
     const Register& before = kRegisters[static_cast<std::size_t>(from)];
     const Register& after = kRegisters[static_cast<std::size_t>(to)];
     for (int key = 0; key < 128; ++key) {
         if (trebleHeld[static_cast<std::size_t>(key)] == 0) continue;
         for (int rank = kRankL; rank <= kRankH; ++rank) {
             const bool was = Sounds(before, rank, TrebleKey(key)), is = Sounds(after, rank, TrebleKey(key));
-            if (is && !was) StartCell(rank, TrebleKey(key), key, 0);
+            if (is && !was) StartCell(rank, TrebleKey(key), key, KeyOpeningSeconds(0) / stroke);
             else if (was && !is)
                 for (auto& c : cells)
-                    if (c.active && c.held && c.source == key && c.rank == rank) c.held = false;
+                    if (c.active && c.held && c.source == key && c.rank == rank) {
+                        c.held = false;
+                        c.closeStroke = stroke;
+                    }
         }
     }
 }
@@ -848,10 +871,15 @@ void Engine::NoteOff(int channel, int key) {
             if (s != source && keys[static_cast<std::size_t>(s)].target > 0.0 && GroupOf(s / 128, s % 128, split) == group
                 && PitchClass(s % 128) == PitchClass(key))
                 other = s;
+    // The finger lets the key up a little faster or slower each time: it
+    // rides the spring's return part of the way (kStrokeScatter's note).
+    const double lift = Stroke();
     for (auto& c : cells)
         if (c.active && c.held && c.source == source) {
-            if (other < 0) c.held = false;
-            else {
+            if (other < 0) {
+                c.held = false;
+                c.closeStroke = lift;
+            } else {
                 c.source = other;
                 c.depth = channelDepth[static_cast<std::size_t>(other / 128)];
             }
@@ -860,6 +888,7 @@ void Engine::NoteOff(int channel, int key) {
     Key& released = keys[static_cast<std::size_t>(source)];
     released.target = 0.0;
     released.velocity = 0;
+    released.up = lift;
     MoveKey(source);
     if (autoHand) {
         int heldVelocity = 0;
@@ -918,8 +947,13 @@ void Engine::Render(float* left, float* right, int frames) {
     const double closeRate = 1.0 / (kCloseSeconds * internalRate);
     const double litres = controls[kBellows] * 1.0e-3, assist = controls[kAssist];
     const bool airValve = airPedal || controls[kAir] >= 0.5;
-    // The valve opens and closes in the time a pallet takes.
-    const double valveOpen = dt / kOpenSeconds, valveClose = dt / kCloseSeconds;
+    // The valve opens and closes in the time a pallet takes, at the speed of
+    // this press or release of the button.
+    if (airValve != airHeld) {
+        airHeld = airValve;
+        airStroke = Stroke();
+    }
+    const double valveOpen = airStroke * dt / kOpenSeconds, valveClose = airStroke * dt / kCloseSeconds;
     if (frames > 0) untouched = false;
     // Notes and register changes arrive between Render calls. Build this
     // ordered list once per callback; only a closing cell can leave it while
@@ -984,8 +1018,8 @@ void Engine::Render(float* left, float* right, int frames) {
         }
         const double valveWas = valve;
         valve = airValve ? Min(1.0, valve + valveOpen) : Max(0.0, valve - valveClose);
-        if (valve >= 1.0 && valveWas < 1.0) StartKnock(kButton, kButton.travel / kOpenSeconds, 1.0, true);
-        if (valve <= 0.0 && valveWas > 0.0) StartKnock(kBassPallet, kBassPallet.travel / kCloseSeconds, 1.0, true);
+        if (valve >= 1.0 && valveWas < 1.0) StartKnock(kButton, airStroke * kButton.travel / kOpenSeconds, 1.0, true, false);
+        if (valve <= 0.0 && valveWas > 0.0) StartKnock(kBassPallet, airStroke * kBassPallet.travel / kCloseSeconds, 1.0, true, false);
         // Suction on pull accelerates a closing pallet onto its seat; positive
         // chamber pressure on push cushions its landing. Zero pressure stays
         // exact at kCloseSeconds.
@@ -1092,7 +1126,7 @@ void Engine::Render(float* left, float* right, int frames) {
                 const CellSpec& spec = c.spec;
                 const bool palletMoving = c.open != travel[j];
                 if (palletMoving) {
-                    c.open = c.open < travel[j] ? Min(travel[j], c.open + c.openRate) : Max(travel[j], c.open - stepCloseRate);
+                    c.open = c.open < travel[j] ? Min(travel[j], c.open + c.openRate) : Max(travel[j], c.open - stepCloseRate * c.closeStroke);
                     // The pallet lifts off and settles smoothly: the hole area
                     // follows a raised cosine of the key travel, so the jet
                     // starts and stops without a step in the radiated flow.

@@ -113,6 +113,7 @@ private:
         int rank = 0;
         std::uint64_t order = 0;
         double open = 0.0, openRate = 0.0, closedFor = 0.0;   // key travel, 0 closed .. 1 down
+        double closeStroke = 1.0;   // this closing's speed against the spring's (Stroke)
         double depth = 1.0;      // travel the held key rests at (channel pressure)
         bool settled = false;    // the pallet has reached the held key's travel
         double lift = 0.0;       // pallet opening for `open`
@@ -201,16 +202,18 @@ private:
     // .. 1 down, which its pallets follow, and where it is headed.
     struct Key {
         double travel = 0.0, target = 0.0, rate = 0.0;   // rate: travel per sample going down
+        double up = 1.0;   // this release's return speed against the spring's (Stroke)
         std::uint8_t velocity = 0;
         bool button = false, listed = false;
     };
 
     void NoteOn(int channel, int key, int velocity);
     void NoteOff(int channel, int key);
-    void StartCell(int rank, int key, int source, int velocity);
+    void StartCell(int rank, int key, int source, double openSeconds);
     void TakeTargets();   // every glided gain to its target at once
-    void SwitchRegister(int from, int to);
+    void SwitchRegister(int from, int to, double stroke);
     void MoveKey(int source);
+    double Stroke();   // this finger stroke's velocity against the one asked for (kStrokeScatter)
     void StartKnock(const Stop& stop, double speed, double massScale, bool bass, bool stroke = true);
     void StartSlap(double mass, const FlapLanding& landing, bool bass);
     FlapLanding ValveLanding(const Cell& c, bool pull, bool turn, double turnRate) const;
@@ -263,8 +266,10 @@ private:
     int movingCount = 0;
     std::array<Knock, 32> knocks {};
     std::array<Knock, 64> slaps {};   // the check valves'
-    int knocksUsed = 0, slapsUsed = 0;
-    std::uint32_t strokeLuck = 1u;   // each stroke's scatter (kStrokeScatter)   // one past the last active knock and slap: no later one need be visited
+    int knocksUsed = 0, slapsUsed = 0;   // one past the last active knock and slap: no later one need be visited
+    std::uint32_t strokeLuck = 1u;   // each stroke's scatter (kStrokeScatter)
+    bool airHeld = false;      // the air button as last pressed or let go
+    double airStroke = 1.0;    // that press's or release's speed (Stroke)
 
     Folds folds;
     Rustle rustle;

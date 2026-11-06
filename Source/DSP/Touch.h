@@ -21,7 +21,7 @@ namespace respira {
 // is NOT a fit to the measured audio rise times. Velocity 64..127 and the
 // shared Touch bellows gesture are unchanged. Bellows pressure still governs
 // the reed's growth, colour, pitch and sustained level.
-inline double KeyOpeningSeconds(int velocity) {
+inline double KeyOpeningSeconds(double velocity) {
     // Velocity zero is the existing register-slide gesture, never a key-on.
     if (velocity <= 0) return 0.012;
     return 0.012 - 0.009 * velocity / 127.0;

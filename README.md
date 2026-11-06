@@ -34,6 +34,11 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
+### 0.1.18 — 2026-11-06 — no two strokes alike
+
+- The owner heard eight chord stabs at one velocity as nearly one sound (their waveforms matched 96–99 %). In 0.1.17 a finger's stroke-to-stroke scatter reached only the key's knock; now it moves the key itself. Each stroke's velocity scatters by the 5.5 % a pianist's repeated strokes do (at Life 0.5, none at Life 0), and through the velocity's bounded travel it sets how fast the key and its pallets open, so each note's attack differs a little: a few tenths of a millisecond of travel, the most on hard strokes. The same stabs now match 41–91 %.
+- Each release lets the key and its pallets close a little faster or slower, an assumption the knocks already made; each press of a register switch moves its slides, and each press of the air button its valve, at its own speed.
+
 ### 0.1.17 — 2026-11-06 — the mechanism no longer clicks as one
 
 - Reason Studios' reviewers heard **Mechanics** at its higher settings as a bug. Two things made it so. Every reed valve of a chord, or of the whole bellows at a turn, slapped shut on the same sample at the same speed, so up to 28 slaps added into one spike, the loudest sound the mechanism made; and every stroke of a key landed exactly as the last. Now each valve lands its own flight time after it lets go (about 10 ms after a note ends, 5 ms into a turn), with its own lift and curl (±20 %, fixed per instrument), so a chord's valves patter over a few milliseconds and the turn's spike is about 10 dB lower at Mechanics +20 dB. Each key, button, pallet, register switch and air-button stroke lands a little faster or slower than the last, by the 5.5 % a pianist's repeated strokes scatter (at Life 0.5; none at Life 0).

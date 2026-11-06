@@ -126,10 +126,14 @@ struct BodyHighPass {
 // again and again at a target of MIDI velocity 75 scatter it by 4.1 (SD,
 // 1.2-7.5 per player; Tominaga et al., "Kinematic origins of motor
 // inconsistency in expert pianists", PLoS One 11(8), 2016, Results), 5.5 %
-// of the target. Each stroke's landing speed scatters by this much at Life
-// 0.5 (ImperfectionScale 1), none at Life 0. Applied as well to the spring's
-// return as the finger lets a key up, which no measurement covers: the
-// finger rides the key part of the way, by an amount that differs each time.
+// of the target. Each stroke's velocity scatters by this much at Life 0.5
+// (ImperfectionScale 1), none at Life 0: through KeyOpeningSeconds the key's
+// descent, the pallets it lifts and so its note's attack, and its landing on
+// the felt; a register switch's and the air button's press and release, and so
+// their slides' and valve's speed, directly. Applied as well to a key's return
+// as the finger lets it up, so to how its note's pallets close, which no
+// measurement covers: the finger rides the key part of the way, by an amount
+// that differs each time.
 inline constexpr double kStrokeScatter = 0.055;
 
 // One collision, stepped at the host rate. Semi-implicit steps, four a sample,

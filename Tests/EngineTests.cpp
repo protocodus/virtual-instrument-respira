@@ -1402,6 +1402,31 @@ void ValvesLandAfterTheirFlight() {
            (higher.delay - turn.delay) * 1.0e3);
 }
 
+void RepeatedStrokesDiffer() {
+    // One key struck and let go twice at one velocity, with the bellows
+    // still so only the mechanism sounds: at Life 0 the two strokes are one
+    // stroke, sample for sample; at Life 0.5 the finger's scatter
+    // (kStrokeScatter) moves the key down and up at its own speed each time,
+    // so the knocks land at other moments and speeds.
+    const double rate = 48000.0;
+    const auto strokes = [rate](double life) {
+        auto e = Make(rate, 7, [life](Controls& c) { c[kLife] = life; c[kMechanics] = 20.0; });
+        const Take t = Play(*e, rate, 2.0, { { 0.0, { kOn, 69, 100 } }, { 0.3, { kOff, 69, 0 } },
+                                             { 1.0, { kOn, 69, 100 } }, { 1.3, { kOff, 69, 0 } } },
+                            [](double) { return 0.5; });
+        double difference = 0.0, level = 0.0;
+        for (std::size_t i = 0; i < static_cast<std::size_t>(0.6 * rate); ++i) {
+            const double a = t.left[i], b = t.left[i + static_cast<std::size_t>(rate)];
+            difference += (a - b) * (a - b);
+            level += a * a;
+        }
+        return Db(std::sqrt(difference / std::max(level, 1.0e-30)));
+    };
+    const double still = strokes(0.0), living = strokes(0.5);
+    Expect(still < -100.0, "RepeatedStrokesDiffer", "Life 0, second stroke against the first, dB", still);
+    Expect(living > -30.0, "RepeatedStrokesDiffer", "Life 0.5, second stroke against the first, dB", living);
+}
+
 void StrapTakesUpAtTheBellowsSpeed() {
     // The strap meets the wrist at the speed the bass end moves, litres x
     // wheel ranges a second over the bellows' section (0.41 x 0.19 m): a hand
@@ -1592,6 +1617,7 @@ int main() {
     MicrophonesHearTwoPlaces();
     ValveSlapsFollowTheTurn();
     ValvesLandAfterTheirFlight();
+    RepeatedStrokesDiffer();
     StrapTakesUpAtTheBellowsSpeed();
     RoomDecorrelatesAndRings();
     respira_room_tests::Run(Expect);

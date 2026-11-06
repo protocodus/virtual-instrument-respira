@@ -2060,3 +2060,38 @@ A the engine before, B both changes; whole-file RMS matched (B trimmed
 and chose **B** by ear (2026-11-06: "candidate is great, let's go with
 it"). That choice licenses both changes as shipped in 0.1.17; it does not
 make the ±20 % valve spread a measurement.
+
+## 2026-11-06 — no two strokes alike (owner)
+
+Listening to the `keys` take of the 2026-11-06 mechanism test, the owner
+asked whether eight C-major stabs at velocity 115, 200 ms apart (0:05–0:06),
+sounding nearly alike was a bug. Their waveforms matched 96–99 % (correlation
+of the first 150 ms with the stab before, Master Tutti). It was a gap in
+0.1.17: the finger's scatter (kStrokeScatter, Tominaga et al. 2016) reached
+the knock's landing speed only, while the key and its pallets opened at
+exactly the speed the velocity asked for.
+
+- **The stroke moves the key.** Each stroke's velocity scatters (uniform,
+  5.5 % SD at Life 0.5, scaled by Life) and passes through the existing
+  bounded 12–3 ms travel (`KeyOpeningSeconds`), clamped to velocity 1–127.
+  The measured quantity is velocity, so it goes through the same mapping. A
+  first try that scattered the opening *rate* by 5.5 % failed
+  `Respira.Touch` (a v16 staccato note fell from 0.0051 to 0.0013 RMS): it
+  moved a soft stroke's 11 ms travel by up to 2 ms where the measured
+  velocity scatter moves it by 0.1 ms, and a fresh soft reed's start is
+  sensitive to that (the open soft-start gap). Through the mapping the
+  test's figures are as before (0.0051 at v16). The same stabs now match
+  41–91 %.
+- **The release, the switches and the air button** (owner's choice from an
+  audit, 2026-11-06). A key's return, and so how its pallets close, takes
+  the release's own speed: the assumption the knocks already made, now also
+  in the note's ending; no measurement covers it. A register switch's press
+  moves its slides and lands the switch at one speed; the air button's press
+  or release moves its valve at its own.
+- **Left fixed, for want of data** (same audit): the speed of Auto's
+  bellows turns and the order of a turn's fold panels. Chord notes that
+  arrive together still sound together: timing is the MIDI's, and a live
+  player's already carries their own spread.
+
+`RepeatedStrokesDiffer` checks that at Life 0 a repeated stroke is the same
+to the bit and at Life 0.5 is not.
