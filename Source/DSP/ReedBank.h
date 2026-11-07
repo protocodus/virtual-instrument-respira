@@ -167,9 +167,9 @@ inline CellSpec MakeCell(int rank, int key, double musetteCents, const float* ra
     const double s = ImperfectionScale(life);
     spec.hz = NoteHz(RankNote(rank, key, musetteCents));
     spec.bass = !IsTreble(rank);
-    // Probe at 400 Pa (Tools/ProbeReed): 0.65 L/s at C2, 0.46 at C3, 0.23 at C4,
-    // 0.13 at A4, 0.06 at C6, 0.04 at C7 -- close to 0.13 L/s * 440 / f from C3
-    // up; C2 takes 20 % less.
+    // Probe at 400 Pa (Tools/ProbeReed): 0.64 L/s at C2, 0.47 at C3, 0.22 at C4,
+    // 0.125 at A4, 0.054 at C6, 0.036 at C7 -- close to 0.125 L/s * 440 / f from
+    // C3 up; C2 takes 20 % less.
     spec.airWeight = 440.0 / spec.hz;
     const std::uint32_t hc = Hash(1u, static_cast<std::uint32_t>(rank * 1000 + index * 2));
     spec.voiceGain = 1.0 + s * 0.07 * Unit(Hash(hc, 8));

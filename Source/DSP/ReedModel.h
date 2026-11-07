@@ -100,7 +100,19 @@ inline ReedSpec MakeReed(double f0, double q, double setScale = 1.0,
     // half-pressed key fell silent.
     const double basePlate = 0.0018 + 0.0225 * r.length;
     r.plate = basePlate * plateScale;
-    r.rest = -(0.0001 + 0.010 * r.length) * setScale;
+    // The set: the tip's rest height above the plate, growing with the
+    // tongue's length, 0.3 mm at C4 as Okada measured on one reed (Adachi et
+    // al., Forum Acusticum 2026). Set that low a reed speaks at once at
+    // pianissimo, and a sudden forte accent can blow a still tongue into its
+    // slot, where it chokes, as repairers report of reeds set low
+    // (accordionists.info, "reed doesn't sound at low volume";
+    // rec.music.makers.squeezebox): here a jab of about 1 kPa onto a held
+    // C3-G#4, while a tongue already swinging carries on to the arm's full
+    // pressure. The owner chose that voicing (Docs/decisions.md, 2026-11-07)
+    // over sets high enough that 2.5 kPa could not reach the slot, 0.8-0.9 mm
+    // from C2 to G#4, whose soft attacks were 1.5-2.4 times slower than
+    // Llanos-Vazquez et al. (2014) measured.
+    r.rest = -0.704 * (0.0001 + 0.010 * r.length) * setScale;
     r.clearArea = (2.0 * r.length + r.width) * clearance;
     // First cantilever mode: f = 0.1615 (t / L^2) sqrt(E / rho).
     const double thickness = f0 * r.length * r.length / (0.1615 * std::sqrt(kSteelE / kSteelDensity));
@@ -111,27 +123,21 @@ inline ReedSpec MakeReed(double f0, double q, double setScale = 1.0,
     const double w0 = 2.0 * kPi * f0;
     // Low reeds carry brass tip weights, which keep the tongue stiff enough not
     // to be blown statically through its slot: at most an eighth of the slot
-    // depth of static deflection at 1 kPa. A reed the bellows reaches the
-    // arm's full pressure on before it swings must still stop short of the
-    // slot by its clearance, or it sits at the slot's mouth and never speaks,
-    // as an accordion's reeds choke when set too low. Weighting the tongue for
-    // that made the low reeds rise more slowly; setting it higher instead was
-    // chosen by ear (Docs/decisions.md). At C4 that gives 0.32 mm/kPa of tip
-    // compliance and 2.3 Hz/kPa of pitch fall with the pallet open, where Okada
-    // measured 0.24 and 2.5 on one reed set 0.3 mm high (this one 0.8 mm;
-    // Adachi et al., Forum Acusticum 2026). The weight adds mass, not air
-    // loss, so the damping stays that of the bare tongue (and Q rises).
+    // depth of static deflection at 1 kPa. Weighting them further, so that
+    // the arm's full pressure could not reach the slot, made the low reeds
+    // rise more slowly (Docs/decisions.md). At C4 this gives 0.32 mm/kPa of
+    // tip compliance, where Okada measured 0.24 (Adachi et al., Forum
+    // Acusticum 2026). The weight adds mass, not air loss, so the damping
+    // stays that of the bare tongue (and Q rises).
     const double stiffness = std::fmax(tongueMass * w0 * w0, r.area * 1000.0 / (0.125 * basePlate));
     // A voiced tongue's finite distal thickness (profileMass * thickness) means
     // its upper face clears the bottom of the plate at r.exit = r.plate +
     // tipThickness, and its half-thickness camber sweeps upper-slot closure
-    // across [-r.arch, +r.arch] (GapArea), keeping dA/dx < 0 into the slot mouth
-    // so the 2.5 kPa choke clamp can sit 0.2 * r.arch closer to the plate.
+    // across [-r.arch, +r.arch] (GapArea), keeping dA/dx < 0 into the slot mouth.
     const double baseTip = profileMass * thickness;
     const double tipThickness = baseTip * profileScale;
     r.exit = r.plate + tipThickness;
     r.arch = 0.5 * tipThickness;
-    r.rest = std::fmin(r.rest, -(r.area * kMaxPressure / stiffness + std::fmax(clearance, kClearance) - 0.1 * baseTip));
     const double mass = stiffness / (w0 * w0);
     r.invMass = 1.0 / mass;
     r.omega2 = w0 * w0;
@@ -173,14 +179,11 @@ inline ReedSpec MakeReed(double f0, double q, double setScale = 1.0,
     return r;
 }
 
-// The same tongue retuned by `scale` at its root, then set as MakeReed sets
-// it: high enough that the arm's full pressure cannot blow it into its slot,
-// where a softened low reed choked (HardPushSpeaks at -100 cents). Rebuilding
+// The same tongue retuned by `scale` at its root, its set kept. Rebuilding
 // the reed at the new pitch instead changed its tip share, which left A4 1 cent
 // short of a 100-cent master tune.
 inline void Retune(ReedSpec& r, double scale) {
     r.omega2 *= scale * scale;
-    r.rest = std::fmin(r.rest, -(r.area * kMaxPressure * r.invMass / r.omega2 + kClearance - 0.2 * r.arch));
 }
 
 // Gap area for tip displacement x. The tongue bends as (s/L)^2 along its length,

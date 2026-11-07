@@ -34,6 +34,12 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
+### 0.1.20 — 2026-11-07 — reeds set low enough to speak at pianissimo
+
+- Every reed now sits as high above its plate as Okada measured one (0.3 mm at C4, from 0.8–0.9 mm across C2–G#4 before). Soft notes speak about twice as soon: A4 at 55 dBA rises from −50 to −5 dB in 147 ms (311 before) and A5 in 144 (305), against the 90 and 60 Llanos-Vázquez et al. measured on a real accordion. At mezzo forte A3–A5 take 66, 42 and 29 ms (105, 50, 35). The owner chose this voicing.
+- As on a real accordion voiced this way, a sudden hard accent can choke a held key: the bellows driven past about 1.3 kPa in 20 ms leaves most of D#3–G#4 silent. Accents up to 1 kPa, and crescendos to the arm's full 2.5 kPa over 0.6 s, speak.
+- The demo phrases' bellows strokes are refitted to the new reeds.
+
 ### 0.1.19 — 2026-11-06 — turns and first notes arrive at their pressure
 
 - Under Auto, a bellows turn in a short rest no longer comes in too loud. Assist multiplied the arm's motion by the open reeds' demand, so when a chord came back while the arm still swung at full speed, the pressure reached 2–6 times its level (2 kPa against 400 Pa) before settling. The arm now moves the bellows' own air and Assist only lets it go faster; the same turn arrives within 1.15 times its pressure.
@@ -360,9 +366,12 @@ Tongue length and width follow typical accordion reed sizes scaled with
 pitch, the thickness is whatever gives the pitch, and the low reeds carry
 brass tip weights, as real ones do, enough that 1 kPa bends a tongue no more
 than an eighth of its slot's depth. Every tongue is set far enough above its
-plate that the arm's full pressure, held still, leaves it at least its
-clearance short of the slot, so a bellows pushed hard before the reed swings
-cannot blow it shut and silent. Short treble tongues are filed thin towards
+set 0.3 mm above its plate at C4, as Okada measured one (more on longer
+tongues, less on shorter), low enough to speak at once at pianissimo. Set
+that low, a still tongue that a sudden forte accent drives into its slot
+chokes, as repairers say of reeds set low: here a held D#3–G#4 struck by
+the bellows past about 1.3 kPa in 20 ms. A tongue already swinging carries
+on through its slot to the arm's full pressure. Short treble tongues are filed thin towards
 the tip: from A5 up a tongue keeps 0.18 of a uniform one's tip mass, a linear
 taper to the 0.05 mm a repairer's guide gives the smallest (Accordion
 Revival), rising to 0.6 by E4.
@@ -379,12 +388,11 @@ standing waves ring at Q 26–48. A chamber whose resonance would fall near its 
 is made smaller, as reed makers do with wax in the top octaves. Against the
 one published harmonic measurement of an accordion's 8' reeds (A#2–A3, mezzo
 forte, 50 cm; `Tools/CompareHarmonics.cpp`), the 2nd–14th harmonics agree
-within 2.5 dB on average at its loudness, though the 2nd sits 4.7 dB under, and
-the 9th–14th average −8.8 dB against the measured −11.3 and the 15th–20th
-−11.5 against −13.4. The 2nd is low
-because, while the tongue seals its slot, the air it sweeps through arrives
-almost opposite the gap's own 2nd harmonic: at A3 the gap flow's 2nd is 7 dB
-under its fundamental, their sum's 22 dB. A lab measurement of real
+within 2.9 dB on average at its loudness, the 2nd 1.6 dB under, but the
+9th–14th average −6.9 dB against the measured −11.3 and the 15th–20th
+−12.0 against −13.4. While the tongue seals its slot, the air it sweeps
+through arrives almost opposite the gap's own 2nd harmonic, which holds the
+2nd down. A lab measurement of real
 accordion-type reed blocks on a tuning jig hears each reed's own flow, its
 chamber upstream (Pomberger et al., DAGA 2021: E3, G4 and E6, 26 cm away, at
 a pressure not given). Through the paper's processing, Respira's reed flow at
@@ -856,15 +864,14 @@ a pitch wheel should do what it says.
 - **How far a loud note's pitch falls rests on an unknown pressure.** Over
   the loudest 30 dB of a bandoneon's held notes its pitch rises 0.39 cents
   per dB softer on average, 0.34–0.62 from C2 to D3; Respira's 8' cells, with
-  the loudest at 1.5 kPa, rise 0.50, and 0.31–0.49 from C2 to D3
-  (`CompareBandoneon`). Over the loudest 15 dB they fall 0.97 cents per dB
+  the loudest at 1.5 kPa, rise 0.46, and 0.30–0.43 from C2 to D3
+  (`CompareBandoneon`). Over the loudest 15 dB they fall 0.88 cents per dB
   against the bandoneon's 0.47. Which pressure the bandoneon's loudest notes
   were played at is not known: with the loudest at 0.7 kPa the two agree
-  within 0.13 over the loudest 30 dB and 0.05 over the loudest 15. Okada's C4 reed (Adachi et al. 2026) falls 2.5 Hz per
-  kPa with its pallet open against Respira's 2.3; Respira's C4 bends 0.32 mm
-  per kPa at the tip against its 0.24, and is set 0.8 mm above its plate
-  against its 0.3, because a lower set lets a bellows slammed to full
-  pressure hold the tongue in its slot.
+  within 0.14 over the loudest 30 dB and 0.03 over the loudest 15. Okada's C4 reed (Adachi et al. 2026) falls 2.5 Hz per
+  kPa with its pallet open against Respira's 2.3 (from 0.4 to 1.4 kPa,
+  `ProbeReed`), and bends 0.24 mm per kPa at the tip against Respira's 0.32;
+  both are set 0.3 mm above the plate.
 - **A loud treble is not brighter.** Over the loudest 30 dB of the
   bandoneon's held notes from E4 to C6, its 9th–15th harmonics gain 1.4 dB
   per dB on the fundamental on average (0.9–2.1), so a forte note is much
@@ -895,8 +902,8 @@ a pitch wheel should do what it says.
   paper a player bent A#2–A3 by closing the pallet part way at a steady
   bellows pressure: 16 cents flat on average and 11 dB quieter (the mean
   over the first twenty harmonics). Respira's 8' cells at that loudness, with
-  the pallet opened 0.32 as full channel pressure holds it, fall 7.1 cents
-  and 14.7 dB (`CompareHarmonics`). The player found no bend possible from C6
+  the pallet opened 0.32 as full channel pressure holds it, fall 6.2 cents
+  and 13.5 dB (`CompareHarmonics`). The player found no bend possible from C6
   up, on tongues with no valves; Respira's all have valves, and a single cell
   from E5 to G6 bends 12–23 cents at 200 Pa and 22–28 at 400.
   At a steady wheel, Assist counts a held key in full however far channel

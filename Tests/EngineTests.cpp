@@ -493,7 +493,12 @@ void HalfPressedKeys() {
     };
     const Result open = push(0.2, 0, 9.0), half = push(0.2, 127, 9.0), gentle = push(0.1, 127, 9.0);
     Expect(Cents(half.hz, open.hz) < -20.0, "HalfPressedKeys", "full channel pressure on a strong push, cents", Cents(half.hz, open.hz));
-    Expect(open.db - half.db > 6.0, "HalfPressedKeys", "and quieter, dB", open.db - half.db);
+    // 5 dB, not the 6 that sat under the 7 the model gave on 2026-10-30: no
+    // measurement fixes C4's loss on a strong push, and the one that exists,
+    // A#2-A3 half-pressed at a steady 70 dBA (CompareHarmonics, 11.1 dB
+    // measured), the reeds set at Okada's height match better (13.5 dB) than
+    // the higher sets that gave C4 its 6.1 here (14.8). C4 now loses 5.8.
+    Expect(open.db - half.db > 5.0, "HalfPressedKeys", "and quieter, dB", open.db - half.db);
     Expect(half.db > -50.0, "HalfPressedKeys", "but still sounding, dBFS RMS", half.db);
     const double slope = (half.hz - gentle.hz) / ((half.pa - gentle.pa) * 1.0e-3);
     Expect(slope < -0.6 * 5.1 && slope > -1.6 * 5.1, "HalfPressedKeys",
@@ -1299,21 +1304,41 @@ void HardStrokesFit() {
 }
 
 void HardPushSpeaks() {
-    // A key held first, then the whole wheel swept in under half a second, on
-    // a pull and on a push: the bellows reaches the arm's full pressure before
-    // the reed swings. A tongue that pressure could blow into its slot would
-    // sit there silent (ReedModel.h, the set); C3-G#4 on Bassoon
-    // stayed at -61 to -68 dBFS so. Every one speaks within 0.45 s.
+    // A key held first, then the bellows driven on a pull and on a push by the
+    // wheel at full speed, the arm following it directly (Momentum 0), each
+    // time the pressure falls short of where the hand is taking it. The reeds
+    // are set low enough to speak at once at pianissimo, so a still tongue
+    // that a sudden forte accent blows into its slot chokes, as repairers
+    // report of an accordion voiced that way (ReedModel.h, the set; the
+    // owner's choice, Docs/decisions.md, 2026-11-07). What must speak: an
+    // accent that reaches 1 kPa in 20 ms (at 1.3 kPa most of D#3-G#4 choked,
+    // at -48 to -76 dBFS), and a crescendo to the arm's full 2.5 kPa over
+    // 0.6 s, which a tongue already swinging rides through its slot (over
+    // 0.3 s C3-F#3 choked at -67 to -69 dBFS). Before that voicing every key
+    // spoke on a sweep to 2.5 kPa in a tenth of a second.
     const double rate = 48000.0;
-    double quietest = 0.0;
-    for (int key = 48; key <= 68; ++key)
-        for (const double direction : { 1.0, -1.0 }) {
-            auto e = Make(rate, 1);
-            const Take t = Play(*e, rate, 0.45, { { 0.0, { kOn, static_cast<std::uint8_t>(key), 100 } } },
-                                [direction](double s) { return 0.5 - direction * (0.4 - 2.0 * s); });
-            quietest = std::min(quietest, Db(Rms(t.left, rate, 0.25, 0.45)));
-        }
-    Expect(quietest > -50.0, "HardPushSpeaks", "quietest held key on a hard pull or push, dBFS RMS", quietest);
+    struct Stroke { double pa, rise; };
+    for (const Stroke stroke : { Stroke { 1000.0, 0.0 }, Stroke { 2500.0, 0.6 } }) {
+        double quietest = 0.0;
+        for (int key = 48; key <= 68; ++key)
+            for (const double direction : { 1.0, -1.0 }) {
+                auto e = Make(rate, 1, [](Controls& c) { c[kMomentum] = 0.0; });
+                const Engine& engine = *e;
+                double hand = 0.5 - 0.4 * direction;
+                const double length = stroke.rise + 0.45;
+                const Take t = Play(*e, rate, length, { { 0.0, { kOn, static_cast<std::uint8_t>(key), 100 } } },
+                                    [&](double s) {
+                                        const double wanted = stroke.pa * (stroke.rise > 0.0 ? std::min(1.0, s / stroke.rise) : 1.0);
+                                        if (std::fabs(engine.Diag().pressure) < wanted) hand += 2.0 * direction / rate;
+                                        return hand;
+                                    });
+                quietest = std::min(quietest, Db(Rms(t.left, rate, length - 0.2, length)));
+            }
+        Expect(quietest > -50.0, "HardPushSpeaks",
+               stroke.rise > 0.0 ? "quietest held key, crescendo to 2.5 kPa in 0.6 s, dBFS RMS"
+                                 : "quietest held key, accent to 1 kPa in 20 ms, dBFS RMS",
+               quietest);
+    }
 }
 
 void LoudestCase() {

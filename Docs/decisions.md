@@ -2134,3 +2134,58 @@ its level, and find why some first notes lacked attack.
 - **Mechanics defaults to +5.6 dB** in Init and every factory preset: 60 %
   of the +10 dB level (20 log10 0.6 = −4.4 dB), the owner's setting by ear
   in songs. The +10 dB of 2026-10-28 was chosen on a pack of keys alone.
+
+## 2026-11-07 — 0.1.20: reeds set at Okada's height, choking on sudden accents accepted (owner)
+
+The owner asked that the attacks rest on measurements of real accordions,
+and chose to rework the air drive. Soft attacks were the gap: on 0.1.19,
+from −50 to −5 dB of the fundamental (`CompareAttacks`, Llanos-Vázquez et
+al. 2014 in brackets), A4 and A5 took 311 and 305 ms at 55 dBA (90, 60),
+5–9 times their mezzo forte, where the measurement differs by at most 1.5
+times. In the model's linear drive the upstream air's inertia is cut by
+1 + (ωτ)², τ growing with the reed's rest gap, so at low pressure the set
+decides how soon a reed speaks. Respira's C2–G#4 sets were 0.8–0.9 mm,
+raised so that the arm's full 2.5 kPa could not reach the slot; Okada
+measured 0.3 mm on a C4 reed (Adachi et al., Forum Acusticum 2026).
+
+Candidate B set every reed at Okada's height (0.704 of the old length rule,
+with no 2.5 kPa clamp), the tuning table regenerated. Listening set
+(2026-11-07, not committed): detached A2–A5 notes at piano and mezzo forte,
+the Uszodi csárdás opening played softly (mean 61 Pa) and as filmed
+(230 Pa); A the shipping engine, B the candidate; matched on whole-file
+RMS (B +0.46, −0.14 and +0.55 dB). The owner chose B, on the measurements
+and on the question below, before a verdict on the clips.
+
+B makes a still tongue that a sudden accent drives into its slot choke:
+a held D#3–G#4 on the bellows driven past about 1.3 kPa in 20 ms, and
+C3–F#3 on a crescendo to 2.5 kPa in 0.3 s. That was first read as a model
+gap (Misdariis et al. 2000 had a reed speak to 6 kPa), then found to be
+what repairers report of reeds set low: quick at pianissimo, choking on
+forte accents, cured by opening the gap (accordionists.info, "reed doesn't
+sound at low volume"; rec.music.makers.squeezebox). Misdariis's reed was
+simply set higher. Asked whether to voice the reeds so, accepting chokes on
+sudden hard accents, the owner said yes. `HardPushSpeaks` now requires every
+held key from C3 to G#4 to speak on an accent to 1 kPa in 20 ms and a
+crescendo to 2.5 kPa over 0.6 s, where it required a sweep to 2.5 kPa in a
+tenth of a second.
+
+What it licensed, measured against 0.1.19:
+
+- `CompareAttacks`, ms: A3 at 70 dBA 66 (105; measured 110), A4 at 55 dBA
+  147 (311; 90) and at 70 dBA 42 (50; 60), A5 at 55 dBA 144 (305; 60) and at
+  70 dBA 29 (35; 50). The mezzo forte attacks now run quicker than measured.
+- `CompareHarmonics`, A#2–A3 at 70 dBA: the 2nd–14th harmonics 2.9 dB from
+  the measurement on average (2.5), the 2nd 1.6 dB under (4.6), the 9th–14th
+  −6.9 against −11.3 (−8.8). Half-pressed: 6.2 cents and 13.5 dB down against
+  the player's 16.1 and 11.1 (7.2 and 14.8).
+- `CompareBandoneon`, loudest at 1.5 kPa: pitch over the loudest 15 dB falls
+  0.88 cents per dB (0.97; bandoneon 0.47); mean |error| over pitch and
+  harmonics 0.46 per dB (0.49).
+- C4 falls 2.3 Hz per kPa from 0.4 to 1.4 kPa with its pallet open
+  (`ProbeReed`; 2.8 by the same measure; Okada 2.5).
+- `HalfPressedKeys`' "and quieter" limit moves from 6 to 5 dB, its reason
+  beside it: C4 now loses 5.8 dB (6.1). The 6 sat under the 7 dB the model
+  gave on 2026-10-30, not under a measurement; the one measured half-press
+  is matched better.
+- The demo strokes made 9 % more pressure on median (up to 65 %), so the
+  bellows were refitted (`Tools/fit_bellows.py`): now within 3 %.
