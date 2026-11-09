@@ -105,9 +105,10 @@ constexpr std::array<double, 8> kRegisterTrimDb { { 2.34, 2.98, 1.08, 0.0, 0.48,
 // The output stage, which the owner asked for: no red on Reason's meters
 // however hard the bellows are pushed (OutputStage.h, shared by the newer
 // instruments). Its compressor follows the louder channel's power over 20 ms
-// and above -15 dBFS (-3 VU) brings it down 20:1 over a 4 dB knee, so
-// playing below about -5 VU passes untouched: chosen by ear over 10:1 from
-// -9 VU, which flattened a swell (Docs/decisions.md). It takes hold at once
+// and brings it down 5:1 above -18 dBFS (-6 VU) over a 6 dB knee, from -9 to
+// -3 VU, so it takes hold gently from where ordinary playing sits: chosen by
+// ear over 20:1 from -5 VU and 3.5:1 from -12 VU (Docs/decisions.md,
+// 2026-10-28). It takes hold at once
 // and lets go over 300 ms, slower than a musette's beating, so the beats keep
 // their depth. The plucked instruments' guard reads the meter's 300 ms over a knee
 // centred at -15 dBFS and 16 dB wide: the bellows reach the arm's full
