@@ -34,6 +34,12 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
+### 0.1.21 — 2026-11-09 — the mechanism knocks on wood, no longer pops
+
+- Reason Studios' reviewers still heard **Mechanics** as a bug in 0.1.20f2. It was the knock itself: every key, button, pallet, register switch and the air button radiated its landing as one cycle of about 500 Hz, 2 ms long, that started with a jump, a pop louder than the note it began. Now each landing rings the panel the part lands on, the treble keyboard's or the bass side's button board, as a plywood plate: its modes from 210 to 4000 Hz, ringing for about a quarter of a second, each key driving them by where along the panel it lands. The owner chose this panel, a little darker than the first one offered, by ear.
+- No two knocks ring alike: each landing moves the panel's modes by up to 4 % (at Life 0.5, scaling with it, none at Life 0). Eight landings of one key at one velocity now match about 72 % (98–100 % before). A harder stroke still knocks louder, by 18.5 dB from velocity 20 to 127.
+- The knocks carry the energy they did, spread over their ring, so a single knock peaks 5–8 dB lower; at Mechanics +20 dB the Init patch's mechanism peaks 7.8 dB lower and sits 1.3 dB lower in level. Notes, bellows, folds and valves are unchanged.
+
 ### 0.1.20 — 2026-11-07 — reeds set low enough to speak at pianissimo
 
 - Every reed now sits as high above its plate as Okada measured one (0.3 mm at C4, from 0.8–0.9 mm across C2–G#4 before). Soft notes speak about twice as soon: A4 at 55 dBA rises from −50 to −5 dB in 147 ms (311 before) and A5 in 144 (305), against the 90 and 60 Llanos-Vázquez et al. measured on a real accordion. At mezzo forte A3–A5 take 66, 42 and 29 ms (105, 50, 35). The owner chose this voicing.
@@ -615,15 +621,27 @@ measures that. Masses and travels are estimates from typical sizes.
 
 The felt stiffens as it is compressed, so a harder stroke lands not only
 louder but shorter and brighter: a soft key's knock lasts about 3.4 ms and
-peaks near 280 Hz, a hard key's 2.6 ms, near 550 Hz. The force radiates as the
-key does, a compact body of the key's size (20 mm by 100 mm) driven by it, as
-a dipole averaged over directions, and every part radiates through that one
-coupling; the body passes it only above its lowest panel modes, a 210 Hz
-high-pass, where a real accordion's mechanism sound begins (Niewczas, Łódź
-2019, Fig. 50, which spans 210 Hz–4 kHz with its peak at 300–500 Hz). The bass
-side's knocks leave through the bass box, as its reeds do. At 1 m, with
-**Mechanics** at 0 dB, a soft key peaks at 42 dB SPL, a moderate one at 46,
-a hard one at 64 and a pallet at 41, where ordinary playing reads 73 dB RMS:
+peaks near 280 Hz, a hard key's 2.6 ms, near 550 Hz. The force rings the
+panel the part lands on: the treble keyboard's, or the bass side's button
+board, each a simply supported plywood plate (4 mm, 8 GPa, 650 kg/m³; 0.42 and
+0.30 m long; Leissa, NASA SP-160, 1969), as deep as puts its lowest mode at
+210 Hz, where a real accordion's mechanism sound begins (Niewczas, Łódź 2019,
+Fig. 50, which spans 210 Hz–4 kHz with its peak at 300–500 Hz), with every
+mode to 4 kHz (ten on the treble side from 210, 323 and 513 Hz, seven on the
+bass) at a glued wooden box's loss (Q 25): a knock rings for about a quarter
+of a second. A part drives each mode by where along the panel it lands, the
+keys from the low end to the high, the buttons by their column. The panel's
+sizes and constants are estimates from typical instruments. Each landing
+moves the modes by up to 4 % (at Life 0.5, scaling with it, none at Life 0),
+for the force reaches the panel through key, guide pin, felt and the player's
+hold, never twice alike; nothing measures that spread, which the owner asked
+for so that no two knocks sound like one sample. Each panel carries the energy
+the key's own radiation would (a compact body of the key's size, 20 mm by
+100 mm, driven by the force as a dipole averaged over directions): that
+estimate sets the level of the whole mechanism. The bass side's knocks leave
+through the bass box, as its reeds do. At 1 m, with **Mechanics** at 0 dB, a
+soft key peaks at 36 dB SPL, a moderate one at 39, a hard one at 57 and a
+pallet at 33, where ordinary playing reads 73 dB RMS:
 heard in quiet passages and between notes, as real mechanisms are. By ear
 the mechanism was chosen 10 dB above that estimate; the owner later heard
 that too loud in songs and set it to 60 % of that level, so Mechanics
@@ -765,9 +783,9 @@ a pitch wheel should do what it says.
   the air through the keyboard and the body, which are not modelled. The felt
   laws are a piano's, and the masses and travels estimates. Against the one
   measured spectrum (Niewczas 2019, Fig. 50, about 10 dB under its peak at 3–4
-  kHz) the treble knocks are 13–19 dB darker there and the bass side's about 4
-  dB darker again through the bass box: no metal part, spring or panel rings
-  here. Pallets and keys stop on felt and never rattle against each other, and
+  kHz) the treble knocks are 14–20 dB darker there and the bass side's about 4
+  dB darker again through the bass box: the panels ring, but no metal part or
+  spring does, and the panels' sizes, plywood and loss are estimates. Pallets and keys stop on felt and never rattle against each other, and
   the bellows' folds' flip at a turn and their rustle while moving, and the
   push valves' slaps, are voiced by ear: no recording or measurement sets their level, and the
   folds' play, which decides how hard they land, is an estimate. The player

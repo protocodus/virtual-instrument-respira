@@ -160,13 +160,25 @@ std::pair<double, double> PeakIn(const Take& t, double rate, double from, double
     return { peak, at };
 }
 
+// When the output first reaches a tenth of its loudest between `from` and `to`.
+double OnsetIn(const Take& t, double rate, double from, double to) {
+    const double tenth = 0.1 * PeakIn(t, rate, from, to).first;
+    for (auto i = static_cast<std::size_t>(from * rate); i < std::min(t.left.size(), static_cast<std::size_t>(to * rate)); ++i)
+        if (std::max(std::fabs(static_cast<double>(t.left[i])), std::fabs(static_cast<double>(t.right[i]))) >= tenth)
+            return static_cast<double>(i) / rate;
+    return to;
+}
+
 void SilentWithoutMotion() {
-    // The key and the bass button knock as they land (MechanicsKnock); after
-    // that a still hand moves no air, so the reeds stay silent.
+    // The key and the bass button knock as they land (MechanicsKnock) and
+    // their panels ring on (KeyBed's T60 is about 0.26 s, so they pass
+    // -120 dBFS by about 0.3 s; the bare dipole before 0.1.21 was silent by
+    // 0.1 s, where this window started); after that a still hand moves no
+    // air, so the reeds stay silent.
     auto e = Make(48000.0, 3);
-    const Take t = Play(*e, 48000.0, 1.0, { { 0.0, { kOn, 69, 100 } }, { 0.0, { kOn, 24, 100 } } }, [](double) { return 0.5; });
-    const double peak = PeakIn(t, 48000.0, 0.1, 1.0).first;
-    Expect(peak < 1.0e-6, "SilentWithoutMotion", "a still hand moves no air: peak from 0.1 s below -120 dBFS", peak);
+    const Take t = Play(*e, 48000.0, 1.4, { { 0.0, { kOn, 69, 100 } }, { 0.0, { kOn, 24, 100 } } }, [](double) { return 0.5; });
+    const double peak = PeakIn(t, 48000.0, 0.5, 1.4).first;
+    Expect(peak < 1.0e-6, "SilentWithoutMotion", "a still hand moves no air: peak from 0.5 s below -120 dBFS", peak);
 }
 
 void MechanicsKnock() {
@@ -175,8 +187,9 @@ void MechanicsKnock() {
     // its pallet as the spring seats it 8 ms after it is let go, and a
     // faster stroke lands harder. A key let go before it lands, or held half
     // down by channel pressure, knocks only as its pallet seats. Mechanics
-    // sets the level in dB, and the knocks peak where a real accordion's
-    // mechanism does, 300-500 Hz (Niewczas 2019).
+    // sets the level in dB, and the knocks peak in the band a real
+    // accordion's mechanism sounds in, 210 Hz-4 kHz with its peak at
+    // 300-500 Hz (Niewczas 2019), checked from 210 to 600 Hz.
     const double rate = 48000.0;
     const auto key = [&](int velocity, double mechanics, double holdSeconds, int pressure) {
         auto e = Make(rate, 0, [mechanics](Controls& c) { c[kMechanics] = mechanics; });
@@ -185,15 +198,19 @@ void MechanicsKnock() {
                     [](double) { return 0.5; });
     };
     const Take soft = key(20, 0.0, 0.2, 0), hard = key(127, 0.0, 0.2, 0), quieter = key(20, -10.0, 0.2, 0);
-    const auto softPress = PeakIn(soft, rate, 0.05, 0.1), hardPress = PeakIn(hard, rate, 0.05, 0.1), softSeat = PeakIn(soft, rate, 0.25, 0.3);
+    const auto softPress = PeakIn(soft, rate, 0.05, 0.1), hardPress = PeakIn(hard, rate, 0.05, 0.1);
     // 0.1.6 restores the bounded pre-0.1.5 travel: v20 lands at 10.5827 ms.
     // This is the collision's predicted time, not a relaxed timing window;
-    // the 4 ms window and all level/spectrum limits remain unchanged.
+    // the 4 ms window and all level/spectrum limits remain unchanged. Since
+    // 0.1.21 a knock rings its panel (KeyBed), whose loudest sample comes a
+    // cycle or so of its 210 Hz mode after the collision, so a knock's time
+    // is its onset: where it first reaches a tenth of its peak.
     const double landing = 0.05 + 0.01058267716535433;
-    Expect(softPress.second > landing && softPress.second < landing + 0.004, "MechanicsKnock", "a key knocks as it lands: peak after its stroke, ms",
-           (softPress.second - landing) * 1.0e3);
-    Expect(softSeat.second > 0.258 && softSeat.second < 0.262, "MechanicsKnock", "its pallet knocks as it seats: peak after the key is let go, ms",
-           (softSeat.second - 0.25) * 1.0e3);
+    const double pressAt = OnsetIn(soft, rate, 0.05, 0.1), seatAt = OnsetIn(soft, rate, 0.25, 0.3);
+    Expect(pressAt > landing && pressAt < landing + 0.004, "MechanicsKnock", "a key knocks as it lands: onset after its stroke, ms",
+           (pressAt - landing) * 1.0e3);
+    Expect(seatAt > 0.258 && seatAt < 0.262, "MechanicsKnock", "its pallet knocks as it seats: onset after the key is let go, ms",
+           (seatAt - 0.25) * 1.0e3);
     Expect(Db(hardPress.first / softPress.first) > 10.0, "MechanicsKnock", "a hard stroke against a soft one, dB", Db(hardPress.first / softPress.first));
     const double trim = Db(PeakIn(quieter, rate, 0.05, 0.1).first / softPress.first);
     Expect(std::fabs(trim + 10.0) < 0.1, "MechanicsKnock", "Mechanics at -10 dB, dB", trim);
@@ -215,7 +232,43 @@ void MechanicsKnock() {
         }
         return at;
     }();
-    Expect(hz > 210.0 && hz < 600.0, "MechanicsKnock", "a soft key's knock peaks at, Hz", hz);
+    // A soft key's knock peaks at its panel's lowest mode, which the darker
+    // panel the owner chose (KeyBed, 2026-11-09) puts on the band's lower
+    // edge, 210 Hz. The band includes its edge, but this scan's 1 % steps read
+    // a mode there one step under it (208.8 Hz; a 0.05 % scan reads 209.9),
+    // so the lower limit is the edge less one step.
+    Expect(hz > 210.0 / 1.01 && hz < 600.0, "MechanicsKnock", "a soft key's knock peaks at, Hz", hz);
+    // Each side's panel (KeyBed) carries the energy the dipole estimate did
+    // through BodyHighPass, at every rate: a key or button struck in
+    // kKeyBedStroke, averaged over the places the engine lands them.
+    const auto energy = [](double at, bool bass, double place, bool dipole) {
+        const Stop& stop = bass ? kButton : kTrebleKey;
+        BodyHighPass body;
+        body.Set(at, bass);
+        KeyBed bed;
+        bed.Set(at, bass);
+        Knock k;
+        k.Start(stop, stop.travel / kKeyBedStroke, 1.0);
+        KeyBed::Couple(place, k.coupling);
+        double sum = 0.0, drive[kKeyBedModes];
+        for (int i = 0; i < static_cast<int>(at); ++i) {
+            const bool lands = k.active;
+            const double change = lands ? k.Step(1.0 / at) * at : 0.0;
+            for (int m = 0; m < kKeyBedModes; ++m) drive[m] = k.coupling[m] * change;
+            const double y = dipole ? body.Process(change) : bed.Process(drive, lands);
+            sum += y * y;
+        }
+        return sum;
+    };
+    for (const double at : { 44100.0, 48000.0, 96000.0 })
+        for (const bool bass : { false, true }) {
+            double mean = 0.0;
+            const int places = bass ? 12 : 61;
+            for (int i = 0; i < places; ++i)
+                mean += energy(at, bass, bass ? 0.1 + 0.8 * i / 11.0 : 0.08 + 0.84 * i / 60.0, false) / places;
+            const double db = 10.0 * std::log10(mean / energy(at, bass, 0.5, true));
+            Expect(std::fabs(db) < 0.1, "MechanicsKnock", bass ? "the button board against the dipole estimate, dB" : "the keyboard's panel against the dipole estimate, dB", db);
+        }
 }
 
 void AirFromMotion() {
@@ -940,13 +993,16 @@ void FoldsSoundWithTheBellows() {
     Expect(Db(Rms(closedStroke, rate, 0.3, 1.3)) > -120.0, "FoldsSoundWithTheBellows",
            "fold-wall distension rustle with closed keys, dBFS RMS", Db(Rms(closedStroke, rate, 0.3, 1.3)));
     // Vented to almost no pressure, the panels settle within their play and
-    // the device falls silent (they once drifted there for ever).
+    // the device falls silent (they once drifted there for ever). The air
+    // button's knock as it is let go (4.8 s) rings its panel (KeyBed) to the
+    // engine's 1e-30 floor in about 2.8 s, so silence is checked from 8 s;
+    // the bare dipole before 0.1.21 had rung out by 6 s, where it started.
     auto e = Make(rate, 0);
     const Take vented = Play(*e, rate, 10.0, { { 0.0, { kOn, 60, 100 } }, { 0.0, { kOn, 64, 100 } }, { 3.0, { kOff, 60, 0 } },
                                                { 3.0, { kOff, 64, 0 } }, { 4.5, { kCc, 64, 127 } }, { 4.8, { kCc, 64, 0 } } },
                              [](double s) { return 0.3 + 0.2 * std::sin(3.0 * std::min(s, 3.0)); });
-    Expect(Rms(vented.left, rate, 6.0, 10.0) == 0.0, "FoldsSoundWithTheBellows", "after the air button, dBFS RMS",
-           Db(Rms(vented.left, rate, 6.0, 10.0)));
+    Expect(Rms(vented.left, rate, 8.0, 10.0) == 0.0, "FoldsSoundWithTheBellows", "after the air button, dBFS RMS",
+           Db(Rms(vented.left, rate, 8.0, 10.0)));
 }
 
 void RustleKeepsItsBandPower() {

@@ -214,7 +214,7 @@ private:
     void SwitchRegister(int from, int to, double stroke);
     void MoveKey(int source);
     double Stroke();   // this finger stroke's velocity against the one asked for (kStrokeScatter)
-    void StartKnock(const Stop& stop, double speed, double massScale, bool bass, bool stroke = true);
+    void StartKnock(const Stop& stop, double speed, double massScale, bool bass, bool stroke, double place);
     void StartSlap(double mass, const FlapLanding& landing, bool bass);
     FlapLanding ValveLanding(const Cell& c, bool pull, bool turn, double turnRate) const;
     void StepKeys(double seatScale);
@@ -268,6 +268,7 @@ private:
     std::array<Knock, 64> slaps {};   // the check valves'
     int knocksUsed = 0, slapsUsed = 0;   // one past the last active knock and slap: no later one need be visited
     std::uint32_t strokeLuck = 1u;   // each stroke's scatter (kStrokeScatter)
+    std::uint32_t bedLuck = 1u;      // each landing's ring (kKeyBedScatter)
     bool airHeld = false;      // the air button as last pressed or let go
     double airStroke = 1.0;    // that press's or release's speed (Stroke)
 
@@ -275,7 +276,7 @@ private:
     Rustle rustle;
     double rustleForce = 0.0;
     bool strapPushed = false;
-    BodyHighPass mechanicsTreble, mechanicsBass;
+    KeyBed keyBedTreble, keyBedBass;
     double mechanicsGain = 0.0, mechanicsGainTarget = 0.0;
     Diagnostics diag;
 };

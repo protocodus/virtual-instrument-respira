@@ -201,6 +201,18 @@ Group GroupOf(int channel, int key, bool split) {
     return kTreble;
 }
 
+// Where a part lands along its side's key bed (KeyBed), 0..1: a treble key
+// by its place on the keyboard, C3 to C8 across the panel; a bass or chord
+// button by its column, the Stradella board's circle of fifths. The register
+// switches sit over the keyboard's top end, the air button at the bass
+// board's end and the strap across its middle; all estimates.
+constexpr double kSwitchPlace = 0.93, kAirButtonPlace = 0.9, kStrapPlace = 0.5;
+double KeyPlace(int source, bool button) {
+    const int key = source % 128;
+    if (button) return 0.1 + 0.8 * ((key * 7) % 12) / 11.0;
+    return 0.08 + 0.84 * Clamp((key - 48) / 60.0, 0.0, 1.0);
+}
+
 // Whether a register sounds `rank` for a (folded) treble key. Broken back
 // above C#7, the 4' would double the 8' in unison, a cent or so apart, and
 // the two would beat slowly down to near silence; where the 8' is open the
@@ -308,8 +320,6 @@ Engine::Engine() { Prepare(48000.0); }
 void Engine::Prepare(double sampleRate) {
     rate = sampleRate > 1000.0 && sampleRate < 1.0e6 ? sampleRate : 48000.0;
     bassBox.Set(kBassBoxDepth, kBassBoxOpen, kBassHoleLength, kClothRayl, kBassBoxAbsorbed, kBassBoxModes, rate);
-    mechanicsTreble.Set(rate, false);
-    mechanicsBass.Set(rate, true);
     rustle.Set(rate);
     smoothing = 1.0 - std::exp(-1.0 / (0.02 * rate));
     bendSmoothing = 1.0 - std::exp(-1.0 / (0.005 * rate));
@@ -355,6 +365,7 @@ void Engine::Reset() {
     slaps.fill(Knock {});
     knocksUsed = slapsUsed = 0;
     strokeLuck = 1u;
+    bedLuck = 1u;
     airHeld = false;
     airStroke = 1.0;
     // A quarter of the panels in each wall, two long and two short; each
@@ -373,7 +384,9 @@ void Engine::Reset() {
     rustle.Set(rate);
     rustleForce = 0.0;
     strapPushed = false;
-    for (BodyHighPass* body : { &mechanicsTreble, &mechanicsBass }) body->Clear();
+    // Afresh, as every landing's scatter moved their modes (KeyBed::Scatter).
+    keyBedTreble.Set(rate, false);
+    keyBedBass.Set(rate, true);
     UpdateMicrophones();
     TakeTargets();
     diag = Diagnostics {};
@@ -439,10 +452,10 @@ void Engine::SetControls(const Controls& next) {
         const double stroke = untouched ? 1.0 : Stroke();
         SwitchRegister(registerIndex, reg, stroke);
         if (!untouched) {
-            StartKnock(kRegisterSwitch, stroke * kRegisterSwitch.travel / kOpenSeconds, 1.0, false, false);
+            StartKnock(kRegisterSwitch, stroke * kRegisterSwitch.travel / kOpenSeconds, 1.0, false, false, kSwitchPlace);
             // The switch it pushes off springs back up onto its stop, in the
             // time a pallet's spring takes.
-            StartKnock(kRegisterSwitch, kRegisterSwitch.travel / kCloseSeconds, 1.0, false);
+            StartKnock(kRegisterSwitch, kRegisterSwitch.travel / kCloseSeconds, 1.0, false, true, kSwitchPlace);
         }
     }
     registerIndex = reg;
@@ -683,14 +696,18 @@ double Engine::Stroke() {
 // A part landing on its stop. A finger's stroke (or the spring's return it
 // rides) lands at its own speed (Stroke); a key's descent already carries its
 // stroke's (NoteOn), and the strap, taken up at the bellows' own speed, has
-// none. When every knock is still sounding, a new one in that crowd is dropped.
-void Engine::StartKnock(const Stop& stop, double speed, double massScale, bool bass, bool stroke) {
+// none. It lands at `place` along its side's key bed, which it rings
+// (KeyBed). When every knock is still sounding, a new one in that crowd is
+// dropped.
+void Engine::StartKnock(const Stop& stop, double speed, double massScale, bool bass, bool stroke, double place) {
     if (stroke) speed *= Stroke();
     for (int i = 0; i < static_cast<int>(knocks.size()); ++i) {
         Knock& k = knocks[static_cast<std::size_t>(i)];
         if (k.active) continue;
         k.Start(stop, speed, massScale);
         k.bass = bass;
+        KeyBed::Couple(place, k.coupling);
+        (bass ? keyBedBass : keyBedTreble).Scatter(kKeyBedScatter * ImperfectionScale(controls[kLife]), bedLuck);
         knocksUsed = static_cast<int>(Max(knocksUsed, i + 1));
         return;
     }
@@ -746,7 +763,7 @@ void Engine::StepKeys(double seatScale) {
             }
         }
         // Both landings already carry the stroke's speed (NoteOn, NoteOff).
-        if (stop) StartKnock(*stop, speed, 1.0 + 0.2 * Unit(Hash(2u, static_cast<std::uint32_t>(source))), k.button, false);
+        if (stop) StartKnock(*stop, speed, 1.0 + 0.2 * Unit(Hash(2u, static_cast<std::uint32_t>(source))), k.button, false, KeyPlace(source, k.button));
         if (k.travel == k.target) {
             k.listed = false;
             movingKeys[static_cast<std::size_t>(i)] = movingKeys[static_cast<std::size_t>(--movingCount)];
@@ -1027,8 +1044,8 @@ void Engine::Render(float* left, float* right, int frames) {
         }
         const double valveWas = valve;
         valve = airValve ? Min(1.0, valve + valveOpen) : Max(0.0, valve - valveClose);
-        if (valve >= 1.0 && valveWas < 1.0) StartKnock(kButton, airStroke * kButton.travel / kOpenSeconds, 1.0, true, false);
-        if (valve <= 0.0 && valveWas > 0.0) StartKnock(kBassPallet, airStroke * kBassPallet.travel / kCloseSeconds, 1.0, true, false);
+        if (valve >= 1.0 && valveWas < 1.0) StartKnock(kButton, airStroke * kButton.travel / kOpenSeconds, 1.0, true, false, kAirButtonPlace);
+        if (valve <= 0.0 && valveWas > 0.0) StartKnock(kBassPallet, airStroke * kBassPallet.travel / kCloseSeconds, 1.0, true, false, kAirButtonPlace);
         // Suction on pull accelerates a closing pallet onto its seat; positive
         // chamber pressure on push cushions its landing. Zero pressure stays
         // exact at kCloseSeconds.
@@ -1070,7 +1087,7 @@ void Engine::Render(float* left, float* right, int frames) {
             const double slack = BellowsEndSpeed(litres, hand.velocity);
             if (slack > kFoldsStick) {
                 strapPushed = false;
-                StartKnock(kBassPallet, slack, 1.0, true, false);
+                StartKnock(kBassPallet, slack, 1.0, true, false, kStrapPlace);
             }
         }
         bend2 += bendSmoothing * (bend2Target - bend2);
@@ -1244,13 +1261,16 @@ void Engine::Render(float* left, float* right, int frames) {
         bassPanR += glide * (bassPanRTarget - bassPanR);
         foldsPanL += glide * (foldsPanLTarget - foldsPanL);
         foldsPanR += glide * (foldsPanRTarget - foldsPanR);
-        double knockTreble = 0.0, knockBass = 0.0;
+        double knockTreble[kKeyBedModes] {}, knockBass[kKeyBedModes] {};
+        bool trebleLands = false, bassLands = false;
         used = 0;
         for (int n = 0; n < knocksUsed; ++n) {
             Knock& k = knocks[static_cast<std::size_t>(n)];
             if (!k.active) continue;
             const double change = k.Step(dt) * rate;
-            (k.bass ? knockBass : knockTreble) += change;
+            double* drive = k.bass ? knockBass : knockTreble;
+            for (int m = 0; m < kKeyBedModes; ++m) drive[m] += k.coupling[m] * change;
+            (k.bass ? bassLands : trebleLands) = true;
             if (k.active) used = n + 1;
         }
         knocksUsed = used;
@@ -1271,8 +1291,8 @@ void Engine::Render(float* left, float* right, int frames) {
         // The air valve and the bass mechanism sit in the bass box too: their
         // sound leaves through the bass end cover's holes with the bass reeds'.
         const double bass = bassBox.Process(bassSide.Process(b, stages) + hiss + valves * valveBass
-                                            + mechanicsGain * mechanicsBass.Process(knockBass)) * bassGain;
-        const double treble = grille * trebleGain + mechanicsGain * mechanicsTreble.Process(knockTreble);
+                                            + mechanicsGain * keyBedBass.Process(knockBass, bassLands)) * bassGain;
+        const double treble = grille * trebleGain + mechanicsGain * keyBedTreble.Process(knockTreble, trebleLands);
         double l = gain * (treble * treblePanL + mechanicsGain * foldsOut * foldsPanL + bass * bassPanL);
         double r = gain * (treble * treblePanR + mechanicsGain * foldsOut * foldsPanR + bass * bassPanR);
         if (roomGain != 0.0 || roomGainTarget != 0.0) {
@@ -1305,7 +1325,7 @@ void Engine::Render(float* left, float* right, int frames) {
     bassBox.FlushTiny();
     for (auto& mic : trebleMicMotion) mic.FlushTiny();
     for (auto& mic : bassMicMotion) mic.FlushTiny();
-    for (BodyHighPass* body : { &mechanicsTreble, &mechanicsBass }) body->FlushTiny();
+    for (KeyBed* bed : { &keyBedTreble, &keyBedBass }) bed->FlushTiny();
     if (sounding == 0) {
         trebleSide.FlushTiny();
         bassSide.FlushTiny();

@@ -2189,3 +2189,82 @@ What it licensed, measured against 0.1.19:
   is matched better.
 - The demo strokes made 9 % more pressure on median (up to 65 %), so the
   bellows were refitted (`Tools/fit_bellows.py`): now within 3 %.
+
+## 2026-11-09 — 0.1.21: the knocks ring a wooden panel (reviewers; owner by ear)
+
+Reason Studios' reviewers, testing 0.1.20f2, wrote that **Mechanics** "still
+sounds like a bug rather than an intended effect"; the owner took them to
+mean the popping. The pop was the knock itself. Every part radiated its
+landing as a bare dipole of the key (`kForceToFlow`) through
+`BodyHighPass`: one cycle of about 500 Hz, 2 ms long, that began with a jump,
+louder than the note it started (the Init key phrase at Mechanics +20 dB
+peaked at −4.0 dBFS in its mechanism alone). `BodyHighPass`'s two modes
+(850 and 2400 Hz on the treble side, 640 and 1850 Hz on the bass) came in
+c3b5c3d (2026-11-02) with no entry here, after the 2026-11-01 entry had found
+that Niewczas's Fig. 50 gives nothing to identify body modes from; they now
+serve only the folds' rustle, unchanged.
+
+Listening test `2026-11-09-mechanics` (project files): `keys-max` (Init,
+Mechanics +20 dB, a scale, staccato notes, chords, stabs and soft notes under
+Auto), `keys-default` (the same at +5.6 dB) and `song-max` (the Paris Musette
+demo at +20 dB). A the shipping engine; B the force ringing `BodyHighPass`'s
+two modes at a wooden structure's loss (Q 25), with no dipole; C a key bed: a
+simply supported 4 mm plywood plate per side (Leissa, NASA SP-160, 1969),
+0.42 × 0.12 m and 0.30 × 0.20 m, its n = 1 modes to 4 kHz from 501 and
+241 Hz at Q 25, each part driving them by where it lands. B and C carried A's
+mechanism energy over each phrase; whole-file RMS matched, trims 0.008 dB or
+less. The owner chose **C** by ear.
+
+The owner then asked for C "a bit darker? how a real key sounds?", with two
+recordings of a csárdás, in which no key noise could be isolated, so they
+measure nothing here. Round 2, `2026-11-09-mechanics-dark`: A shipping, B
+round 1's C, C the same plates made as deep as puts each lowest mode at
+210 Hz, the lower edge of the band Niewczas measured the mechanism in
+(0.42 × 0.197 m, ten modes from 210 Hz; 0.30 × 0.221 m, seven), same
+material, trims 0.002 dB or less. The owner chose **C** by ear.
+
+Last, the owner asked that every click be a little different, synthesized
+rather than one sample played, and accepted 60–75 % sameness. Each landing now
+moves every mode by up to `kKeyBedScatter` (4 %, uniform, scaled by Life as
+the reeds' imperfections are), never out of 210 Hz–4 kHz. Eight landings of
+C4 at velocity 100 (Mechanics +20 dB, landings 2–8, median waveform
+correlation at best lag) match 72 % as the key lands and 68 % as its pallet
+seats at Life 50 %, 52 % and 41 % at Life 100 %, 100 % at Life 0, where A
+matched 98–100 %; their level spread is 2.8 dB. Nothing measures this spread:
+it is set to the owner's requirement. The owner also asked that the knock
+follow velocity as a real key press does; it already did, and still does:
+velocity 127 knocks 18.5 dB over velocity 20.
+
+What the choices licensed, and what they did not:
+
+- The plate is a formulation chosen by ear. Its sizes, the plywood's 8 GPa
+  and 650 kg/m³, and the loss factor 0.04 are estimates from typical
+  instruments, not measurements; the choice does not measure them. The darker
+  panel's soft knock now peaks at its 210 Hz mode, the band's edge, under the
+  300–500 Hz where Niewczas's spectrum peaks.
+- The level is the estimate's, as before. Each side's `KeyBed` level makes a
+  treble key or bass button struck in 12 ms, averaged over the places parts
+  land, carry the energy it carried through the dipole and `BodyHighPass`,
+  the reference Mechanics' default was chosen by ear against (within 0.1 dB
+  at 44.1, 48 and 96 kHz, `MechanicsKnock`). The packs matched over their
+  phrases instead, so the shipped treble knocks sit 1.3 dB under the pack's C
+  and the bass 0.3 dB. At the same energy a ringing knock peaks 5–8 dB lower
+  (Mechanics 0 dB at 1 m: a soft key 36 dB SPL, a moderate one 39, a hard one
+  57, a pallet 33). At +20 dB the Init key phrase's mechanism peaks at
+  −11.8 dBFS (−4.0) and sits 1.3 dB lower in RMS.
+- Four test fixtures assumed the pulse's 2 ms life, and each now says so beside
+  it: `MechanicsKnock` times a knock by its onset (a tenth of its peak), not
+  its loudest sample, which a ringing panel reaches a cycle later, in the
+  same windows; its spectral check allows the band's edge less one step of
+  its 1 % scan, which reads a mode on the edge at 208.8 Hz (209.9 on a
+  0.05 % scan); `SilentWithoutMotion` looks for silence from 0.5 s, the panel's
+  T60 being about 0.26 s; and `FoldsSoundWithTheBellows` from 8 s, as a panel
+  takes about 2.8 s to ring down to the engine's 1e-30 floor. No other limit
+  moved.
+- CPU, development machine (Xeon 2.1 GHz, gcc 13.3, Release), the eight
+  demos three times each, alternating with 0.1.20: 0.0946× to 0.0959× real
+  time on mean (+1.4 %), −0.5 to +6.1 % per demo.
+
+Not changed: the first stroke after loading or Reset still thumps from the
+folds, all of whose panels start mid-play (−19 dBFS at +20 dB in silence);
+it is a separate fix, not yet asked for.

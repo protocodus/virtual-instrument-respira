@@ -64,14 +64,14 @@ inline constexpr Stop kRegisterSwitch { 0.030, 0.005, &kKeyFelt };
 // rho / (4 pi) turns into Pa at 1 m), per N/s of force change.
 inline constexpr double kForceToFlow = 3.14159265358979 * 0.01 * 0.01 * 0.1 / (kTrebleKey.mass * 343.0 * 1.7320508075688772);
 
-// The body radiates that force only above its lowest panel modes: a real
-// accordion's mechanism sound spans about 210 Hz to 4 kHz (K. Niewczas,
-// "Nagłośnienie i rejestracja akordeonu", Akademia Muzyczna w Łodzi 2019,
-// Fig. 50, DOI 10.5281/zenodo.20128891), with structural bending resonances
-// of the wooden keybed/soundboard (~850 Hz) and the aluminum key-rod/grille
-// frame (~2.4 kHz). A second-order Butterworth high-pass at 210 Hz followed
-// by two parallel bilinear-prewarped modal resonators, in transposed direct
-// form II.
+// The body radiates only above its lowest panel modes: a real accordion's
+// mechanism sound spans about 210 Hz to 4 kHz (K. Niewczas, "Nagłośnienie i
+// rejestracja akordeonu", Akademia Muzyczna w Łodzi 2019, Fig. 50, DOI
+// 10.5281/zenodo.20128891). The folds' rubbing (Rustle) reaches the air
+// through this: a second-order Butterworth high-pass at 210 Hz followed by two
+// parallel bilinear-prewarped modal resonators, in transposed direct form II,
+// voiced as the keybed/soundboard (~850 Hz) and the key-rod/grille frame
+// (~2.4 kHz). The knocks ring the panel they land on instead (KeyBed).
 struct BodyHighPass {
     static constexpr double kHz = 210.0;
     struct Mode {
@@ -136,6 +136,9 @@ struct BodyHighPass {
 // that differs each time.
 inline constexpr double kStrokeScatter = 0.055;
 
+// The most bending modes a key bed rings with (KeyBed).
+inline constexpr int kKeyBedModes = 10;
+
 // One collision, stepped at the host rate. Semi-implicit steps, four a sample,
 // keep the stiffest landing (a hard key at 22 kHz) well inside stability.
 struct Knock {
@@ -143,6 +146,7 @@ struct Knock {
     bool active = false, bass = false;
     int wait = 0;   // host samples still in flight before the part lands
     double x = 0.0, v = 0.0, mass = 1.0, force = 0.0;
+    double coupling[kKeyBedModes] {};   // how hard it drives each of its key bed's modes, from where it lands
     const Felt* felt = &kKeyFelt;
 
     void Start(const Stop& stop, double speed, double massScale, int flightSamples = 0) {
@@ -168,6 +172,114 @@ struct Knock {
         force = felt->Force(x, v);
         if (x <= 0.0 || (v <= 0.0 && force <= 0.0)) active = false;
         return force - before;
+    }
+};
+
+// The panel a part lands on, which rings and radiates its knock: the treble
+// keyboard's panel, or the bass side's button board. A bare dipole of the key
+// (kForceToFlow alone) radiated each landing as one cycle of about 500 Hz
+// that started with a jump, which Reason Studios' reviewers and the owner
+// heard as a pop (2026-11-09); a part landing on a wooden instrument rings
+// its panel. Each is a simply supported plywood plate, its bending modes
+// f = (pi/2) sqrt(D / rho h) ((m/a)^2 + (n/b)^2), D = E h^3 / (12 (1 - nu^2))
+// (A. W. Leissa, "Vibration of Plates", NASA SP-160, 1969, ch. 4). The parts
+// land along its middle, which leaves the n = 2 modes still, and only n = 1
+// is kept: n = 3 starts above 1.5 kHz, where little of a landing's force is.
+// It is as deep (b) as puts its lowest mode at 210 Hz, the lower edge of the
+// band above, chosen by ear over a shallower panel's 500 Hz (the owner,
+// 2026-11-09), and rings every mode to 4 kHz, the band's upper edge. A part
+// landing at x along it (0..1) drives mode m by sin(m pi x). Plywood 4 mm,
+// 8 GPa and 650 kg/m^3, the panels 0.42 and 0.30 m long and a loss factor of
+// 0.04 (Q 25, a glued wooden box under felt and leather) are estimates from
+// typical instruments, not measurements, as the masses and travels are.
+//
+// The landing's force reaches the panel through key, guide pin, felt and the
+// player's hold, never twice alike: each landing moves every mode by up to
+// kKeyBedScatter (uniform, scaled by Life as the reeds' imperfections are),
+// the owner's requirement that no two knocks sound like one sample played
+// (2026-11-09) and the 60-75 % sameness the owner accepted: eight landings
+// of one key at one velocity then match about 72 % as it lands and 68 % as
+// its pallet shuts (median waveform correlation, Life 50 %; 52 % and 41 % at
+// Life 100 %), where they matched 98-100 %. Nothing measured sets that
+// spread; at Life 0 every landing rings alike.
+inline constexpr double kKeyBedScatter = 0.04;
+// Each side's level, so a landing carries the energy the dipole estimate did
+// (kForceToFlow, through BodyHighPass, which Mechanics' default was chosen
+// by ear against): a treble key or bass button struck in kKeyBedStroke and
+// averaged over the panel's places, at 48 kHz (Respira.Engine,
+// MechanicsKnock, checks it from 44.1 to 96 kHz).
+inline constexpr double kKeyBedStroke = 0.012;
+inline constexpr double kKeyBedTrebleLevel = 3.128, kKeyBedBassLevel = 4.153;
+
+struct KeyBed {
+    static constexpr double kTop = 4000.0, kQ = 25.0;
+    BodyHighPass::Mode modes[kKeyBedModes];
+    double hz[kKeyBedModes] {};
+    int count = 0;
+    double level = 1.0, rate = 48000.0;
+    bool quiet = true;   // every mode at rest: nothing to step until a part lands
+
+    void Set(double hostRate, bool bassSide) {
+        rate = hostRate;
+        level = bassSide ? kKeyBedBassLevel : kKeyBedTrebleLevel;
+        const double length = bassSide ? 0.30 : 0.42, h = 0.004;
+        const double stiffness = 8.0e9 * h * h * h / (12.0 * (1.0 - 0.3 * 0.3));
+        const double c = 1.5707963267948966 * std::sqrt(stiffness / (650.0 * h));
+        const double across = BodyHighPass::kHz / c - 1.0 / (length * length);   // (1/b)^2
+        count = 0;
+        for (int m = 1; m <= kKeyBedModes; ++m) {
+            const double f = c * (m * m / (length * length) + across);
+            if (f > kTop || f > 0.45 * rate) break;
+            hz[count++] = f;
+        }
+        for (int m = 0; m < count; ++m) modes[m].Set(hz[m], kQ, 1.0, rate);
+        Clear();
+    }
+    // A part landing at `place` (0..1 along the panel) drives mode m by
+    // sin((m + 1) pi place), by the sines' recurrence.
+    static void Couple(double place, double* coupling) {
+        const double angle = 3.14159265358979 * place, twice = 2.0 * std::cos(angle);
+        double before = 0.0, now = std::sin(angle);
+        for (int m = 0; m < kKeyBedModes; ++m) {
+            coupling[m] = now;
+            const double next = twice * now - before;
+            before = now;
+            now = next;
+        }
+    }
+    // A landing moves every mode by up to `spread` of itself (kKeyBedScatter
+    // times Life's scale), drawing from `luck`, but never out of the band the
+    // mechanism's sound is measured in; a ringing mode keeps its state.
+    void Scatter(double spread, std::uint32_t& luck) {
+        if (spread <= 0.0) return;
+        for (int m = 0; m < count; ++m) {
+            luck = luck * 1664525u + 1013904223u;
+            const double z1 = modes[m].z1, z2 = modes[m].z2;
+            const double moved = hz[m] * (1.0 + spread * ((luck >> 8) / double(1u << 24) * 2.0 - 1.0));
+            modes[m].Set(Clamp(moved, BodyHighPass::kHz, kTop), kQ, 1.0, rate);
+            modes[m].z1 = z1;
+            modes[m].z2 = z2;
+        }
+    }
+    void Clear() {
+        for (auto& mode : modes) mode.Clear();
+        quiet = true;
+    }
+    // At a block's end: a panel that has rung out sleeps.
+    void FlushTiny() {
+        if (quiet) return;
+        for (int m = 0; m < count; ++m)
+            if (!modes[m].Tiny()) return;
+        Clear();
+    }
+    // The pressure's rate of change it radiates, in kForceToFlow's units, with
+    // `drive[m]` the force change on mode m this sample (N/s).
+    double Process(const double* drive, bool driven) {
+        if (quiet && !driven) return 0.0;
+        quiet = false;
+        double out = 0.0;
+        for (int m = 0; m < count; ++m) out += modes[m].Process(drive[m]);
+        return level * out;
     }
 };
 
