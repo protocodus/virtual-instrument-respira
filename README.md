@@ -383,7 +383,7 @@ seeds the tongue.
 Tongue length and width follow typical accordion reed sizes scaled with
 pitch, the thickness is whatever gives the pitch, and the low reeds carry
 brass tip weights, as real ones do, enough that 1 kPa bends a tongue no more
-than an eighth of its slot's depth. Every tongue is set far enough above its
+than an eighth of its slot's depth. Every tongue is
 set 0.3 mm above its plate at C4, as Okada measured one (more on longer
 tongues, less on shorter), low enough to speak at once at pianissimo. Set
 that low, a still tongue that a sudden forte accent drives into its slot
@@ -779,19 +779,30 @@ a pitch wheel should do what it says.
   phrases read −9 VU, not by a measured level. The Grille's default and the
   bass box's absorption are fitted to two sample libraries, but no recording
   of a real accordion is part of the model or its tests.
-- **CPU.** A full-register chord over bass and chords (28 chambers) takes
-  about a third of one core in the development container at 48 kHz (0.35×
-  realtime for the Master Tutti demo, 0.02× for the single clarinet reed),
-  and a chord change briefly doubles that while the released chambers close.
-  The reed chambers' ducts are about a quarter of it, and the rest is close
-  to what the model's arithmetic needs. Rewrites that kept the output bit
-  for bit (the cells stepped side by side, the push and pull reeds in two
-  lanes, the duct's loops two sections at a time or fused into one) gained
-  nothing measurable or ran slower, as did one reciprocal of the gap area per
-  reed step and the oversampled steps outside the chamber loop (within the
-  container's ±5 % timing noise). Treble sections of 7.5 or 10 mm would save
-  about 10–15 % but take 3–21 dB off 8–16 kHz, a cut made by the grid, not
-  the physics.
+- **CPU.** Respira does not meet the portfolio's ceiling of 10 % of one
+  core for any 256-frame block. In the development container at 48 kHz
+  (0.1.23, a plain x86-64 build) the demos' worst blocks take 10 % (Clarinet
+  Solo, one reed, at a bellows turn), 12–29 % (the six between) and 49–60 %
+  (Master Tutti, 44 chambers at once), and they average 2.5–19 % (0.19–0.22×
+  realtime for Master Tutti, 0.025× for the single clarinet reed);
+  `Respira.CpuBudget` fails the ceiling for every demo but Clarinet Solo. A
+  sounding chamber takes about 640 instructions per step at 192 kHz, a third
+  of them in its duct, and the processor already overlaps neighbouring
+  chambers' divisions and square roots, so the step is bound by how many
+  instructions it is. Rewrites that kept the output bit for bit (the cells
+  stepped side by side, the push and pull reeds in two lanes, two cells in the
+  two lanes of a vector, the duct's loops two sections at a time or fused into
+  one) gained nothing measurable or ran slower, as did one reciprocal of the
+  gap area per reed step and the oversampled steps outside the chamber loop
+  (within the container's ±5 % timing noise). Treble sections of 7.5 or 10 mm
+  would save about 10–15 % but take 3–21 dB off 8–16 kHz, a cut made by the
+  grid, not the physics. Stepping the reeds at twice the host rate in place of
+  four times takes 0.55 of the instructions and changes the sound only above
+  12 kHz on the highest reeds and at the top reeds' starting pressure: an
+  audible change, so it waits for the owner's ear, and even with it Master
+  Tutti's worst block stays near 30 %
+  ([evidence](Docs/benchmarks/cpu-consolidation-2026-11-09.md),
+  [plan](Docs/plans/cpu-ceiling-2026-11-09.md)).
 - **The mechanism's level and brightness.** No measurement of how loud an
   accordion's mechanism is against its reeds was found, so Mechanics is in dB
   against an estimate: the key's own radiation, while the force really reaches
@@ -966,25 +977,23 @@ a pitch wheel should do what it says.
 - **Soft notes speak late.** At the measured accordion's piano (about
   55 dBA at 50 cm), its finger attacks took 60–140 ms from −50 to −5 dB of
   the fundamental from A2 to B6 (Llanos-Vázquez et al. 2014). Respira's 8'
-  cells at the **inferred source** 55 dBA take about 1365/950/344/444 ms at
-  A2/A3/A4/A5 with `CompareAttacks`' 3 ms pallet and four-period tracker.
-  The free-field source estimate is not a calibration of the complete
-  accordion's body, microphone direction or room. A soft staccato note can
-  still end before the modeled reed speaks. The separate MIDI-velocity
-  delay was fixed in 0.1.6; see the [current investigation](Docs/research/soft-starts-2026-11-01.md).
-  Its reeds sit
-  2.7 times as high above their plates as Okada's measured C4 (0.8 mm
-  against 0.3, above), so that a key held while the bellows is slammed to
-  the arm's full pressure still speaks. With every set scaled to Okada's they
-  take 410, 155, 125 and 135 ms, and at 70 dBA an A2 165 ms instead of 240,
-  but then C3–C5 held through `HardPushSpeaks`' stroke bend into their slots
-  before they swing and stay silent, C3–G#3 even when its second stroke is
-  a crescendo over 1.6 s; sets 0.8 or 0.6 times today's choke on it too.
-  Repairers describe the same trade: a reed set close to its plate starts
-  well at low volume but chokes on an accent, one set far needs a harder
-  push to start (accordionists.info forum, 2022). Adding the gap's own air
-  mass (Adachi et al.) neither starts them nor keeps A#2–A3's 4th harmonic
-  (11 dB under the measurement). Underneath both
+  cells at the **inferred source** 55 dBA take 486/156/149/146 ms at
+  A2/A3/A4/A5 with `CompareAttacks`' 3 ms pallet and four-period tracker,
+  against the paper's 110/90/90/60, and at 70 dBA 190/66/44/30 ms against
+  80/110/60/50 (0.1.23). The free-field source estimate is not a calibration
+  of the complete accordion's body, microphone direction or room. A soft
+  staccato note can still end before the modeled reed speaks. The separate
+  MIDI-velocity delay was fixed in 0.1.6; see the
+  [investigation](Docs/research/soft-starts-2026-11-01.md).
+  Until 0.1.20 the reeds sat 2.7 times as high above their plates as Okada's
+  measured C4 (0.8 mm against 0.3), so that a key held while the bellows is
+  slammed to the arm's full pressure still spoke, and took 1365/950/344/444 ms
+  at 55 dBA. Set as Okada's they pay what repairers describe: a reed set close
+  to its plate starts well at low volume but chokes on an accent, one set far
+  needs a harder push to start (accordionists.info forum, 2022); here a held
+  D#3–G#4 struck by the bellows past about 1.3 kPa in 20 ms (Reed cells).
+  Adding the gap's own air mass (Adachi et al.) neither starts them nor keeps
+  A#2–A3's 4th harmonic (11 dB under the measurement). Underneath both
   is how slowly the low swings grow (Low reeds start late).
 - **The top octave needs mezzo forte to start.** With the bellows already at
   530 Pa, an A4 comes within 3 dB of its level about 38 ms after the key, a
