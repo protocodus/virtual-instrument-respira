@@ -453,11 +453,22 @@ struct Folds {
     std::array<Pleat, kPleats> pleats {};
     std::uint64_t moving[kWords] {}, out[kWords] {}, in[kWords] {};   // resting outwards, inwards
     std::uint64_t fresh[kWords] {};   // came to rest last sample, still holding the hinge's force
+    std::uint64_t unplaced[kWords] {};   // not yet anywhere in its play (Rest)
     double last = 0.0;                // the pressure the sample before
 
-    // The panels as set up, all resting in the middle of their play.
+    // The panels as set up. Where a panel stands in its play before the first
+    // stroke is not the model's to know, and a player's hold loads the bellows
+    // the way of that stroke before a key opens: so the first pressure past
+    // kPleatHold finds every panel already resting on the hinges it pushes
+    // them to, and the first stroke flips none. (Set up in the middle of
+    // their play, as they once were, all 144 flew half of it and landed on
+    // the first stroke after every load and Reset: a thump no later stroke
+    // the same way makes, 33 dB over the next stroke's folds.)
     void Rest() {
-        for (int w = 0; w < kWords; ++w) moving[w] = out[w] = in[w] = fresh[w] = 0;
+        for (int w = 0; w < kWords; ++w) {
+            moving[w] = out[w] = in[w] = fresh[w] = 0;
+            unplaced[w] = ~std::uint64_t(0);
+        }
         last = 0.0;
     }
 
@@ -489,6 +500,14 @@ struct Folds {
             Pleat pleat = pleats[list[i]];
             const int w = list[i] / 64;
             const std::uint64_t bit = std::uint64_t(1) << (list[i] % 64);
+            if ((unplaced[w] & bit) && Abs(p) > kPleatHold) {
+                // Its first load: at rest on that side's hinge, bearing it.
+                unplaced[w] &= ~bit;
+                pleat.contact = p * pleat.area;
+                pleat.x = (p > 0.0 ? 1.0 : -1.0) * (pleat.play + Pleat::Compression(Abs(pleat.contact)));
+                pleats[list[i]] = pleat;
+                continue;
+            }
             if (!pleat.moving && !(fresh[w] & bit)) pleat.contact = last * pleat.area;
             flips += pleat.Step(p, steps, h);
             pleats[list[i]] = pleat;

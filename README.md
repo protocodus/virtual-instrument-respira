@@ -34,6 +34,10 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
+### 0.1.22 — 2026-11-09 — the first stroke no longer thumps
+
+- The first stroke after a patch loads or the engine resets thumped: the bellows' 144 fold panels were all set up in the middle of their play and landed together on that stroke, 9 dB over the key's own knock on Auto's first note (−32 dBFS at the default Mechanics, −18 dBFS at +20 dB) and 33 dB over the folds of the next stroke the same way. The first pressure now finds every panel resting on the hinges it pushes them to, as a player's hold leaves them, so the first note sounds as the second does. A turn still flips the folds; notes and bellows are unchanged.
+
 ### 0.1.21 — 2026-11-09 — the mechanism knocks on wood, no longer pops
 
 - Reason Studios' reviewers still heard **Mechanics** as a bug in 0.1.20f2. It was the knock itself: every key, button, pallet, register switch and the air button radiated its landing as one cycle of about 500 Hz, 2 ms long, that started with a jump, a pop louder than the note it began. Now each landing rings the panel the part lands on, the treble keyboard's or the bass side's button board, as a plywood plate: its modes from 210 to 4000 Hz, ringing for about a quarter of a second, each key driving them by where along the panel it lands. The owner chose this panel, a little darker than the first one offered, by ear.
@@ -654,7 +658,9 @@ bellows turn each of the 144 panels of a full-size bellows (18 folds, 35 mm
 deep, on walls 410 and 190 mm long, about 1 kg/m²) crosses its hinges' play
 and lands the other way, one after another as their masses and play differ:
 a rustle at every turn, harder the faster the pressure turns, and silent
-between turns. The panels radiate as the keys do, strips of their own size.
+between turns. The first stroke after a load or a reset flips none: its
+pressure finds every panel on the hinges it pushes them to, as a player's
+hold leaves them. The panels radiate as the keys do, strips of their own size.
 How hard they land rests on the play, which nothing measures: from none to
 1 mm a turn goes from silent to as loud as the chord, so the play is taken
 as 0.5 mm and the folds' level set by ear. While the bellows move, their

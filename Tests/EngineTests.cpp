@@ -1005,6 +1005,40 @@ void FoldsSoundWithTheBellows() {
            Db(Rms(vented.left, rate, 8.0, 10.0)));
 }
 
+void FirstStrokeFlipsNoFolds() {
+    // The first stroke after a load or a Reset is a stroke like the next one
+    // the same way: its pressure finds the folds' panels on the hinges it
+    // pushes them to (Folds::Rest), so none flies. Set up in the middle of
+    // their play they all landed on it, 33 dB over the second stroke's folds
+    // on the wheel and 9 dB over the key's own knock on Auto's first note.
+    // The rustle's and the knock's own peaks differ by under 1 dB between the
+    // two strokes of each take.
+    const double rate = 48000.0;
+    const auto peak = [&](const std::vector<float>& x, double from) {
+        double loudest = 0.0;
+        for (auto i = static_cast<std::size_t>(from * rate); i < static_cast<std::size_t>((from + 0.3) * rate); ++i)
+            loudest = std::max(loudest, std::fabs(static_cast<double>(x[i])));
+        return loudest;
+    };
+    for (const double way : { 1.0, -1.0 }) {
+        // Two strokes the same way with closed keys, a rest between them.
+        const auto strokes = MechanismOf(0, 3.0, {}, [way](double s) {
+            return 0.45 + way * 0.25 * (std::min(s, 0.6) + std::clamp(s - 2.0, 0.0, 0.6));
+        });
+        Expect(peak(strokes, 2.0) > 1.0e-6 && Db(peak(strokes, 0.0)) - Db(peak(strokes, 2.0)) < 6.0, "FirstStrokeFlipsNoFolds",
+               way > 0.0 ? "drawing: the first stroke's mechanism against the second's, dB" : "pressing: the first stroke's mechanism against the second's, dB",
+               Db(peak(strokes, 0.0)) - Db(peak(strokes, 2.0)));
+    }
+    // On Auto, as the presets play: one key twice.
+    const std::vector<Note> notes { { 0.5, { kOn, 60, 90 } }, { 2.0, { kOff, 60, 0 } }, { 4.0, { kOn, 60, 90 } } };
+    auto loud = Make(rate, 0, [](Controls& c) { c[kAuto] = 1.0; }),
+         quiet = Make(rate, 0, [](Controls& c) { c[kAuto] = 1.0; c[kMechanics] = kControlInfo[kMechanics].min; });
+    Take a = Play(*loud, rate, 4.5, notes, {}), b = Play(*quiet, rate, 4.5, notes, {});
+    for (std::size_t i = 0; i < a.left.size(); ++i) a.left[i] -= b.left[i];
+    Expect(Db(peak(a.left, 0.5)) - Db(peak(a.left, 4.0)) < 3.0, "FirstStrokeFlipsNoFolds",
+           "Auto: the first note's mechanism against the second's, dB", Db(peak(a.left, 0.5)) - Db(peak(a.left, 4.0)));
+}
+
 void RustleKeepsItsBandPower() {
     // Isolate the actual rustle force and its engine-side differentiation at
     // a fixed 10 mm/s bellows speed. Two analysis-only 1 kHz bandpasses (Q=1)
@@ -1712,6 +1746,7 @@ int main() {
     AutoHandsBackToTheWheel();
     AutoLeadsTheArm();
     FoldsSoundWithTheBellows();
+    FirstStrokeFlipsNoFolds();
     std::printf("%d failure(s)\n", failures);
     return failures == 0 ? 0 : 1;
 }
