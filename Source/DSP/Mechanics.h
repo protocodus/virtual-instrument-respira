@@ -217,11 +217,15 @@ struct KeyBed {
     double hz[kKeyBedModes] {};
     int count = 0;
     double level = 1.0, rate = 48000.0;
+    // Each panel draws its own landings' scatter, so what lands on one never
+    // changes how the other rings.
+    std::uint32_t luck = 1u;
     bool quiet = true;   // every mode at rest: nothing to step until a part lands
 
     void Set(double hostRate, bool bassSide) {
         rate = hostRate;
         level = bassSide ? kKeyBedBassLevel : kKeyBedTrebleLevel;
+        luck = bassSide ? 2u : 1u;
         const double length = bassSide ? 0.30 : 0.42, h = 0.004;
         const double stiffness = 8.0e9 * h * h * h / (12.0 * (1.0 - 0.3 * 0.3));
         const double c = 1.5707963267948966 * std::sqrt(stiffness / (650.0 * h));
@@ -248,9 +252,9 @@ struct KeyBed {
         }
     }
     // A landing moves every mode by up to `spread` of itself (kKeyBedScatter
-    // times Life's scale), drawing from `luck`, but never out of the band the
-    // mechanism's sound is measured in; a ringing mode keeps its state.
-    void Scatter(double spread, std::uint32_t& luck) {
+    // times Life's scale), but never out of the band the mechanism's sound is
+    // measured in; a ringing mode keeps its state.
+    void Scatter(double spread) {
         if (spread <= 0.0) return;
         for (int m = 0; m < count; ++m) {
             luck = luck * 1664525u + 1013904223u;

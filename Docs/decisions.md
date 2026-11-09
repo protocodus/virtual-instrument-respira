@@ -2261,6 +2261,12 @@ What the choices licensed, and what they did not:
   T60 being about 0.26 s; and `FoldsSoundWithTheBellows` from 8 s, as a panel
   takes about 2.8 s to ring down to the engine's 1e-30 floor. No other limit
   moved.
+- A knock now keeps the output above Reason's silent threshold (−154 dBFS)
+  for up to 354 blocks of 64 at 48 kHz (0.47 s) where it did for 22: the Rack
+  adapter's wrapper contract waits that long before it requires silence.
+  Each panel draws its own landings' scatter, so a key landing on the
+  keyboard's panel never changes how the button board rings next: a released
+  key's later sounds stay those of an engine that never played it.
 - CPU, development machine (Xeon 2.1 GHz, gcc 13.3, Release), the eight
   demos three times each, alternating with 0.1.20: 0.0946× to 0.0959× real
   time on mean (+1.4 %), −0.5 to +6.1 % per demo.

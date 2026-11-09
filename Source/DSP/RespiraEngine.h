@@ -268,7 +268,6 @@ private:
     std::array<Knock, 64> slaps {};   // the check valves'
     int knocksUsed = 0, slapsUsed = 0;   // one past the last active knock and slap: no later one need be visited
     std::uint32_t strokeLuck = 1u;   // each stroke's scatter (kStrokeScatter)
-    std::uint32_t bedLuck = 1u;      // each landing's ring (kKeyBedScatter)
     bool airHeld = false;      // the air button as last pressed or let go
     double airStroke = 1.0;    // that press's or release's speed (Stroke)
 

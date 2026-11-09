@@ -365,7 +365,6 @@ void Engine::Reset() {
     slaps.fill(Knock {});
     knocksUsed = slapsUsed = 0;
     strokeLuck = 1u;
-    bedLuck = 1u;
     airHeld = false;
     airStroke = 1.0;
     // A quarter of the panels in each wall, two long and two short; each
@@ -384,7 +383,8 @@ void Engine::Reset() {
     rustle.Set(rate);
     rustleForce = 0.0;
     strapPushed = false;
-    // Afresh, as every landing's scatter moved their modes (KeyBed::Scatter).
+    // Afresh, as every landing's scatter moved their modes and drew on their
+    // luck (KeyBed::Scatter).
     keyBedTreble.Set(rate, false);
     keyBedBass.Set(rate, true);
     UpdateMicrophones();
@@ -707,7 +707,7 @@ void Engine::StartKnock(const Stop& stop, double speed, double massScale, bool b
         k.Start(stop, speed, massScale);
         k.bass = bass;
         KeyBed::Couple(place, k.coupling);
-        (bass ? keyBedBass : keyBedTreble).Scatter(kKeyBedScatter * ImperfectionScale(controls[kLife]), bedLuck);
+        (bass ? keyBedBass : keyBedTreble).Scatter(kKeyBedScatter * ImperfectionScale(controls[kLife]));
         knocksUsed = static_cast<int>(Max(knocksUsed, i + 1));
         return;
     }
