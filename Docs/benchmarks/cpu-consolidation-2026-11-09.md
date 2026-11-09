@@ -162,6 +162,33 @@ It is audible in principle and has more than one defensible outcome, so it
 is a listening set (`/mnt/project-files/consolidation-2026-11-09/respira/half-rate/`),
 not a commit. Even adopted, it leaves Master Tutti near 27–34 %.
 
+## `Respira.CpuBudget` on 0.1.24
+
+The perf tier's own run at the end of the pass (one run on the shared
+machine; realtime factor the median of three, worst block of 5.33 ms):
+
+| Preset | Demo: × realtime | worst block | Stress phrase: × realtime | worst block |
+| --- | --- | --- | --- | --- |
+| Clarinet Solo | 0.033 | 9.4 % | 0.085 | 18.4 % |
+| Bassoon Low | 0.057 | 13.7 % | 0.100 | 22.5 % |
+| Violin Folk | 0.060 | 14.6 % | 0.176 | 38.0 % |
+| Paris Musette | 0.063 | 15.6 % | 0.248 | 51.3 % |
+| Tango Bandoneon | 0.046 | 15.0 % | 0.164 | 34.8 % |
+| Organ Bellows | 0.155 | 25.2 % | 0.170 | 42.0 % |
+| Bright Oboe | 0.054 | 18.9 % | 0.148 | 33.6 % |
+| Master Tutti | 0.236 | 51.7 % | 0.373 | 75.1 % |
+
+It passes one row of sixteen (Clarinet Solo's demo) and fails the rest on the
+10 % ceiling.
+
+The stress phrase is the portfolio's default: sixteen keys under the sustain
+pedal. On Respira CC 64 is the air button, so the phrase plays its keys into
+vented bellows, and for five of the eight presets its worst block is the
+moment the pedal lifts and the keys rise (4.00 s). The shared renderer says a
+bellows instrument writes its own phrase; Respira has none yet. That belongs
+to the budget test's owner and was not changed here, and the phrase's cost
+with the bellows sealed was not measured.
+
 ## 0.1.24 costs nothing
 
 The step-rate stiffness (`StepStiffness`) is computed when a cell is

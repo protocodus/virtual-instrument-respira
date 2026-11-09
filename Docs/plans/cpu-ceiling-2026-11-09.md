@@ -71,8 +71,15 @@ at half rate it needs about 0.6 % of a core per cell and has 44.
 
 ## The budget test
 
-`Respira.CpuBudget` fails for every demo but Clarinet Solo, as it should
-while the ceiling is not met. It was not loosened. If the owner accepts a
-higher ceiling for the multi-rank registers, or adopts option 1, the
-ceiling's owner (the "Prevent stale parameters and CPU overruns" work) sets
-the ratchet from the worst-block column above, not from a loaded run.
+`Respira.CpuBudget` fails for every demo but Clarinet Solo and for every
+preset's stress phrase (18–75 %), as it should while the ceiling is not met.
+It was not loosened. Its stress phrase is the portfolio's default, which
+holds the sustain pedal: on Respira that is the air button, so the sixteen
+keys play into vented bellows. Respira needs a stress phrase of its own
+(keys and a bellows stroke, no CC 64) before the ratchet means what it
+says.
+
+If the owner accepts a higher ceiling for the multi-rank registers, or
+adopts option 1, the ceiling's owner (the "Prevent stale parameters and CPU
+overruns" work) sets the ratchet from the worst-block column above, not from
+a loaded run.

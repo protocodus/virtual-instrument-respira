@@ -168,6 +168,10 @@ No key was found where the model, rather than the instrument, is the cause.
   law.
 - **The folds at a bellows turn** cost up to 6–8 % of a core for one block
   and 3 % for 0.6–0.8 s after; a cheaper rule changes when panels click.
+- **The budget test's stress phrase holds the air button.** The portfolio's
+  default phrase keeps CC 64 down, which vents Respira's bellows; the shared
+  renderer says a bellows instrument writes its own phrase. Left to the
+  budget test's owner.
 - **No level tool**: levels are pinned by unit tests (`PresetsSitTogether`,
   `TypicalLevel`), not by a `--check/--write/--report` tool as Aculele has.
   Enough for one bank of eight; noted, not started.
@@ -187,6 +191,10 @@ needs the SDK and was not run.
 
 ## Tests
 
-`unit`, `audio` and `RespiraDSPCxx17` pass. `perf` (`Respira.CpuBudget`)
-fails on the 10 % ceiling for every demo but Clarinet Solo, as described
-above; it was not changed.
+On the final tree, with the other thread's update of the shared
+`Tests/ParameterMatrix.h` merged: the `unit` tier passes (8 of 8, among them
+`Respira.Engine`, `Respira.ReedTuning` and `Respira.ParameterReach`), the
+`audio` tier passes (`Respira.AudioDemos`) and `RespiraDSPCxx17` builds.
+`perf` (`Respira.CpuBudget`) fails on the 10 % ceiling for every demo but
+Clarinet Solo and for every stress phrase, as the CPU evidence lists; it was
+not changed.

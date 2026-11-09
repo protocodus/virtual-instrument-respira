@@ -785,7 +785,8 @@ a pitch wheel should do what it says.
   Solo, one reed, at a bellows turn), 12–29 % (the six between) and 49–60 %
   (Master Tutti, 44 chambers at once), and they average 2.5–19 % (0.19–0.22×
   realtime for Master Tutti, 0.025× for the single clarinet reed);
-  `Respira.CpuBudget` fails the ceiling for every demo but Clarinet Solo. A
+  `Respira.CpuBudget` fails the ceiling for every demo but Clarinet Solo and
+  for every preset's stress phrase (18–75 %). A
   sounding chamber takes about 640 instructions per step at 192 kHz, a third
   of them in its duct, and the processor already overlaps neighbouring
   chambers' divisions and square roots, so the step is bound by how many
