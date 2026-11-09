@@ -7,6 +7,7 @@
 //
 //   RespiraParameterMatrixTests [--jobs N] [--rotation] [--shard K/N]
 //                               [--case LABEL] [--count] [--list]
+//   RespiraParameterMatrixTests --reach [--jobs N] [--case PARAMETER]
 //
 // The limits below follow from Source/DSP/RespiraEngine.cpp; each one names
 // the mechanism it comes from.
@@ -19,6 +20,8 @@
 #include <cmath>
 #include <cstring>
 #include <memory>
+#include <utility>
+#include <vector>
 
 namespace {
 
@@ -62,19 +65,26 @@ public:
     // The phrase has no bellows of its own, so the device is also the hand: a
     // steady back-and-forth of the wheel, fast enough to sound a chord at the
     // smallest Bellows without Assist, placed at each block start as a host
-    // delivers controller values.
+    // delivers controller values. It moves while a key is down and rests,
+    // where it is, while none is, as a player's does: still moving, it would
+    // turn a closed bellows and the folds would flip (Mechanics.h), so no
+    // silence would be due. The reeds' silence under a moving hand is
+    // Respira.Engine's ReleaseAndAllNotesOff.
     void Process(float* left, float* right, int frames, const Event* events, int eventCount) override {
         int done = 0;
         for (int e = 0; e <= eventCount; ++e) {
             const int until = e < eventCount ? events[e].offset : frames;
             if (until > done) {
-                engine->SetHand(Hand(static_cast<double>(elapsed + done) / rate));
+                engine->SetHand(Hand(static_cast<double>(moving) / rate));
                 engine->Render(left + done, right + done, until - done);
+                if (keysDown > 0) moving += until - done;
                 done = until;
             }
-            if (e < eventCount) engine->Midi(events[e].bytes, events[e].size);
+            if (e < eventCount) {
+                Track(events[e]);
+                engine->Midi(events[e].bytes, events[e].size);
+            }
         }
-        elapsed += frames;
     }
 
     std::vector<std::uint8_t> SaveState() override {
@@ -99,13 +109,36 @@ public:
         return limits;
     }
 
+    protocodus::matrix::ReachRule ReachFor(std::size_t index, float) const override {
+        using protocodus::matrix::Reach;
+        const std::vector<std::pair<std::size_t, float>> manual { { kAuto, static_cast<float>(ToNormalized(kAuto, 0.0)) } };
+        switch (static_cast<int>(index)) {
+        // Engine::StartCell: a sounding cell keeps the reed it was built with.
+        case kMusette: return { Reach::NewNotes, "the tremolo reeds' tuning each new note is built with" };
+        // Auto's arm moves the air the reeds ask for whatever the bellows'
+        // size (StepPlayer), and Assist only lets it go faster; with the
+        // wheel as the hand both set the air each stroke moves.
+        case kBellows:
+        case kAssist: return { Reach::Held, "", manual };
+        // The phrase plays from G3 up on channel 1, all treble.
+        case kBass: return { Reach::Exempt, "the bass and chord side's level; the phrase plays the treble only" };
+        case kKeyboard: return { Reach::Exempt, "what the keys below C3 play; the phrase plays from G3 up" };
+        // What a finer internal rate changes sits above the default Grille's
+        // 1 kHz. The reeds' turbulence is drawn once per internal step, so a
+        // new rate also moves the noise sequence on (Engine::SetControls).
+        case kOversampling:
+            return { Reach::Held, "", { { kGrille, 1.0f } }, "the reeds' turbulence runs on in the sequence the old rate drew" };
+        case kMechanics: return { Reach::Exempt, "the knocks of the keys and buttons, far under the reeds while they sound" };
+        // Touch::Effort: a chord at full velocity keeps no sustained share of
+        // it once its accent has passed, so only new strikes carry it.
+        case kTouch: return { Reach::NewNotes, "the accent and effort each new strike's velocity asks of the arm" };
+        default: return {};
+        }
+    }
+
 private:
-    // The hand rests once the keys are up (the harness lets go at 0.8 s), as a
-    // player's does: still moving, it would turn a closed bellows and the
-    // folds would flip (Mechanics.h), so no silence would be due. The reeds'
-    // silence under a moving hand is Respira.Engine's ReleaseAndAllNotesOff.
+    // The hand's position after `seconds` of moving.
     static double Hand(double seconds) {
-        seconds = std::min(seconds, 0.8);
         const double phase = seconds - std::floor(seconds);   // one stroke each way per second
         return 0.5 + 0.6 * (phase < 0.5 ? phase : 1.0 - phase) - 0.15;
     }
@@ -117,10 +150,22 @@ private:
         engine->SetControls(controls);
     }
 
+    void Track(const Event& event) {
+        const int status = event.bytes[0] & 0xF0;
+        const std::size_t key = event.bytes[1] & 0x7F;
+        const bool on = status == 0x90 && event.bytes[2] > 0;
+        if ((on || status == 0x80 || status == 0x90) && down[key] != on) {
+            down[key] = on;
+            keysDown += on ? 1 : -1;
+        }
+    }
+
     std::unique_ptr<Engine> engine;
     std::array<float, kControlCount> normalised {};
     double rate = 48000.0;
-    long long elapsed = 0;
+    std::array<bool, 128> down {};
+    int keysDown = 0;
+    long long moving = 0; // frames the hand has moved
 };
 
 } // namespace

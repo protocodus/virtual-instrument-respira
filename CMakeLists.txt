@@ -178,6 +178,9 @@ if(BUILD_TESTING)
     target_compile_options(RespiraParameterMatrixTests PRIVATE ${RESPIRA_WARNINGS})
     add_test(NAME Respira.ParameterMatrix COMMAND RespiraParameterMatrixTests --rotation --jobs 4)
     set_tests_properties(Respira.ParameterMatrix PROPERTIES TIMEOUT 1800 LABELS fuzz)
+    # U11: every control reaches held and new notes after long play.
+    add_test(NAME Respira.ParameterReach COMMAND RespiraParameterMatrixTests --reach --jobs 4)
+    set_tests_properties(Respira.ParameterReach PROPERTIES TIMEOUT 1800 LABELS unit)
 
     if(Python3_Interpreter_FOUND)
         # The committed demo phrases are what the writer writes (G3a).
