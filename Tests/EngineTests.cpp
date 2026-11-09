@@ -15,11 +15,27 @@
 #include <utility>
 #include <vector>
 
+#if defined(__SSE2__) || defined(_M_X64)
+#include <xmmintrin.h>
+#else
+#include <cfenv>
+#endif
+
 namespace {
 
 using namespace respira;
 
 int failures = 0;
+
+// The processor's sticky flags for arithmetic on or into subnormal numbers:
+// on x86 the denormal-operand and underflow flags, elsewhere underflow alone.
+#if defined(__SSE2__) || defined(_M_X64)
+void ClearNumberFlags() { _mm_setcsr(_mm_getcsr() & ~0x3Fu); }
+bool SubnormalsSeen() { return (_mm_getcsr() & 0x12u) != 0; }
+#else
+void ClearNumberFlags() { std::feclearexcept(FE_ALL_EXCEPT); }
+bool SubnormalsSeen() { return std::fetestexcept(FE_UNDERFLOW) != 0; }
+#endif
 
 void Expect(bool ok, const char* test, const char* what, double value) {
     std::printf("%s %s: %s (%.4g)\n", ok ? "PASS" : "FAIL", test, what, value);
@@ -1039,6 +1055,42 @@ void FirstStrokeFlipsNoFolds() {
            "Auto: the first note's mechanism against the second's, dB", Db(peak(a.left, 0.5)) - Db(peak(a.left, 4.0)));
 }
 
+void NoSubnormalsWhilePlayingOrAtRest() {
+    // A host that does not flush subnormal numbers to zero computes on them
+    // tens of times slower, so no state may sit in them: not while notes are
+    // held (the key beds' upper modes once did from 1.4 s after every landing,
+    // waiting for the lowest mode to ring out) and not at rest (the air meter's
+    // smoothing and Life's share of movement once fell into them for good,
+    // 7 and 28 s after the last note). Master Tutti as it ships, Room and Life
+    // on, a chord for 3 s, then rest. Between the two the tail passes through
+    // single precision's smallest numbers on its way to silence, in the room's
+    // delay lines, the decimators and the shared output stage (its squares),
+    // for a few seconds once: that is not checked here.
+    const double rate = 48000.0;
+    auto e = std::make_unique<Engine>();
+    e->Prepare(rate);
+    e->SetControls(kPresets[7].ToControls());
+    e->Reset();
+    const std::uint8_t keys[] { 60, 64, 67, 40 };
+    std::vector<float> l(256), r(256);
+    int playing = 0, resting = 0;
+    for (int block = 0; block < static_cast<int>(40.0 * rate / 256.0); ++block) {
+        const double seconds = block * 256.0 / rate;
+        for (const std::uint8_t key : keys) {
+            const std::uint8_t on[3] { kOn, key, 100 }, off[3] { kOff, key, 0 };
+            if (block == 19) e->Midi(on, 3);
+            if (block == 562) e->Midi(off, 3);   // 3.0 s
+        }
+        ClearNumberFlags();
+        e->Render(l.data(), r.data(), 256);
+        if (!SubnormalsSeen()) continue;
+        if (seconds < 2.99) ++playing;
+        if (seconds >= 20.0) ++resting;
+    }
+    Expect(playing == 0, "NoSubnormalsWhilePlayingOrAtRest", "blocks with subnormal arithmetic while the chord is held", playing);
+    Expect(resting == 0, "NoSubnormalsWhilePlayingOrAtRest", "and from 17 s after it, at rest", resting);
+}
+
 void RustleKeepsItsBandPower() {
     // Isolate the actual rustle force and its engine-side differentiation at
     // a fixed 10 mm/s bellows speed. Two analysis-only 1 kHz bandpasses (Q=1)
@@ -1747,6 +1799,7 @@ int main() {
     AutoLeadsTheArm();
     FoldsSoundWithTheBellows();
     FirstStrokeFlipsNoFolds();
+    NoSubnormalsWhilePlayingOrAtRest();
     std::printf("%d failure(s)\n", failures);
     return failures == 0 ? 0 : 1;
 }

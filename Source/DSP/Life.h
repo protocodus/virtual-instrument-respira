@@ -94,6 +94,9 @@ struct Life {
         amount += glide * (target - amount);
         if (Abs(amount - target) < 1.0e-9) amount = target;
         active += glide * ((moving ? 1.0 : 0.0) - active);
+        // Stopped, it falls towards zero for ever and would reach the
+        // subnormal numbers 28 s on, for the microphones' geometry to square.
+        if (!moving && active < 1.0e-30) active = 0.0;
         const double effortDraw = Draw();
         effort = Clamp(effortDrift.Tick(effortDraw) + kTremorShare * effortTremor.Tick(effortDraw), -1.5, 1.5) * active;
         side = sideDrift.Tick(Draw()) * active;

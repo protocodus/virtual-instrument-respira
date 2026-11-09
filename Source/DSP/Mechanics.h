@@ -269,12 +269,18 @@ struct KeyBed {
         for (auto& mode : modes) mode.Clear();
         quiet = true;
     }
-    // At a block's end: a panel that has rung out sleeps.
+    // At a block's end: each mode that has rung out is stilled, and the panel
+    // sleeps once all have. Mode by mode, because they ring for as long as
+    // their periods: waiting for the lowest (210 Hz, 1e-30 after about 2.8 s)
+    // left the modes above 2 kHz in subnormal numbers from 1.4 s after every
+    // landing, which are slow in a host that does not flush them to zero.
     void FlushTiny() {
         if (quiet) return;
-        for (int m = 0; m < count; ++m)
-            if (!modes[m].Tiny()) return;
-        Clear();
+        quiet = true;
+        for (int m = 0; m < count; ++m) {
+            if (modes[m].Tiny()) modes[m].Clear();
+            else quiet = false;
+        }
     }
     // The pressure's rate of change it radiates, in kForceToFlow's units, with
     // `drive[m]` the force change on mode m this sample (N/s).

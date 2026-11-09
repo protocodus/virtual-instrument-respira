@@ -34,6 +34,10 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
+### 0.1.23 — 2026-11-09 — no state left in subnormal numbers
+
+- In a host that does not flush subnormal numbers to zero, three states sat in them, each costing 0.3–0.6 % of a core on the development machine: the key beds' modes above 2 kHz from 1.4 s after every landing until the panel's lowest mode had rung out (2.8 s), and at rest the air meter's smoothing (from 7 s after the last note) and Life's share of movement (from 28 s), both for good. Each is now zero below 1e-30. The eight demos are the same to the bit.
+
 ### 0.1.22 — 2026-11-09 — the first stroke no longer thumps
 
 - The first stroke after a patch loads or the engine resets thumped: the bellows' 144 fold panels were all set up in the middle of their play and landed together on that stroke, 9 dB over the key's own knock on Auto's first note (−32 dBFS at the default Mechanics, −18 dBFS at +20 dB) and 33 dB over the folds of the next stroke the same way. The first pressure now finds every panel resting on the hinges it pushes them to, as a player's hold leaves them, so the first note sounds as the second does. A turn still flips the folds; notes and bellows are unchanged.

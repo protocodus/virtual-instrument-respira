@@ -1326,6 +1326,8 @@ void Engine::Render(float* left, float* right, int frames) {
     for (auto& mic : trebleMicMotion) mic.FlushTiny();
     for (auto& mic : bassMicMotion) mic.FlushTiny();
     for (KeyBed* bed : { &keyBedTreble, &keyBedBass }) bed->FlushTiny();
+    // The air meter's smoothing falls for ever once the reeds stop.
+    if (Abs(airFlowSmoothed) < 1.0e-30) airFlowSmoothed = 0.0;
     if (sounding == 0) {
         trebleSide.FlushTiny();
         bassSide.FlushTiny();
