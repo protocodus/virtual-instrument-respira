@@ -363,6 +363,56 @@ double LargestStep(const std::vector<float>& x) {
     return step;
 }
 
+// PeakHz for a high note: a 1 Hz search for the peak, then a 0.01 Hz one
+// around it, where PeakHz's single fine search would take minutes.
+double FinePeakHz(const std::vector<float>& x, double rate, double from, double to, double near) {
+    const auto a = static_cast<std::size_t>(from * rate), n = static_cast<std::size_t>((to - from) * rate);
+    auto power = [&](double hz) {
+        double re = 0.0, im = 0.0;
+        const double w = 2.0 * kPi * hz / rate;
+        for (std::size_t i = 0; i < n; ++i) {
+            const double window = 0.5 - 0.5 * std::cos(2.0 * kPi * static_cast<double>(i) / static_cast<double>(n));
+            re += window * x[a + i] * std::cos(w * static_cast<double>(i));
+            im += window * x[a + i] * std::sin(w * static_cast<double>(i));
+        }
+        return re * re + im * im;
+    };
+    double best = 0.0, bestHz = near;
+    auto search = [&](double lo, double hi, double step) {
+        const double centre = bestHz;
+        best = 0.0;
+        for (double hz = centre + lo; hz <= centre + hi; hz += step) {
+            const double p = power(hz);
+            if (p > best) { best = p; bestHz = hz; }
+        }
+    };
+    search(-0.02 * near, 0.02 * near, 1.0);
+    search(-1.0, 1.0, 0.01);
+    return bestHz;
+}
+
+void TopOctaveKeepsItsPitchAtEveryStepRate() {
+    // The tongue's integrator plays sharp by (omega dt)^2 / 24, which the
+    // tuning table takes out at the rate it was made at, 192 kHz. Until 0.1.24
+    // the same table at another step rate left C8 1.0 cent flat at 96 kHz or
+    // Oversampling 2x and 1.3 flat at 4x; StepStiffness now corrects the
+    // tongue for its step. One 4186 Hz reed, the same pull every time.
+    const double c8 = 440.0 * std::pow(2.0, (108 - 69) / 12.0);
+    auto pitch = [c8](double rate, int oversampling) {
+        auto e = Make(rate, 0, [oversampling](Controls& c) { c[kOversampling] = oversampling; });
+        const Take t = Play(*e, rate, 1.6, { { 0.0, { kOn, 108, 100 } } }, [](double s) { return 0.3 + 0.2 * s; });
+        Expect(Db(Rms(t.left, rate, 1.0, 1.5)) > -60.0, "TopOctaveKeepsItsPitchAtEveryStepRate",
+               "C8 speaks, dBFS", Db(Rms(t.left, rate, 1.0, 1.5)));
+        return Cents(FinePeakHz(t.left, rate, 1.0, 1.5, c8), c8);
+    };
+    const double reference = pitch(48000.0, 0);
+    const double twice = pitch(48000.0, 1) - reference, four = pitch(48000.0, 2) - reference;
+    const double host96 = pitch(96000.0, 0) - reference;
+    Expect(std::fabs(twice) < 0.4, "TopOctaveKeepsItsPitchAtEveryStepRate", "C8 at Oversampling 2x against 1x, cents", twice);
+    Expect(std::fabs(four) < 0.4, "TopOctaveKeepsItsPitchAtEveryStepRate", "C8 at Oversampling 4x against 1x, cents", four);
+    Expect(std::fabs(host96) < 0.4, "TopOctaveKeepsItsPitchAtEveryStepRate", "C8 at 96 kHz against 48 kHz, cents", host96);
+}
+
 void OversamplingKeepsTheSound() {
     // Oversampling refines the reeds' time step, not the instrument: pitch and
     // level hold at every setting, and a change while a note sounds is
@@ -1753,6 +1803,7 @@ int main() {
     StillnessStopsTheSound();
     RatesKeepTheSound();
     OversamplingKeepsTheSound();
+    TopOctaveKeepsItsPitchAtEveryStepRate();
     MasterTune();
     PitchBend();
     MusetteBeat();

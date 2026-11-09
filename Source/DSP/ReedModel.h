@@ -55,6 +55,7 @@ struct ReedSpec {
     double clearArea = 0.0;                  // gap area while the tongue is inside the slot, m^2
     double area = 0.0, pistonArea = 0.0;     // effective pressure area and slot-sealing piston area, m^2
     double invMass = 0.0, omega2 = 0.0, damping = 0.0; // 1/m_eff, (2 pi f0)^2, omega0 / Q
+    double stepOmega2 = 0.0;                 // omega2 as the tongue's integrator needs it at its step rate (StepStiffness)
     double drag = 0.0;                       // quadratic air drag on the tongue / m_eff, 1/m
     double slotInertance = 0.0;              // rho * depth / slot area, kg/m^4
     double slitLaminar = 0.0;                // plane Poiseuille clearance-slit resistance, Pa s/m
@@ -141,6 +142,7 @@ inline ReedSpec MakeReed(double f0, double q, double setScale = 1.0,
     const double mass = stiffness / (w0 * w0);
     r.invMass = 1.0 / mass;
     r.omega2 = w0 * w0;
+    r.stepOmega2 = r.omega2;
     r.damping = tongueMass * w0 / q / mass;
     // Face-on drag of an oscillating plate, F = rho/2 * Cd * A * v|v|. At these
     // small excursion-to-width ratios Cd is several times the steady value of 2:
@@ -184,6 +186,27 @@ inline ReedSpec MakeReed(double f0, double q, double setScale = 1.0,
 // short of a 100-cent master tune.
 inline void Retune(ReedSpec& r, double scale) {
     r.omega2 *= scale * scale;
+    r.stepOmega2 = r.omega2;
+}
+
+// Rate the tuning table is made at (Tools/ReedProbe.h): the engine's internal
+// rate at 48 kHz.
+constexpr double kTuningRate = 192000.0;
+
+// omega2 as StepReed must use it when stepping at stepRate. StepReed updates
+// the speed, then the position with the new speed, so a tongue of stiffness
+// w^2 swings at W = 2 rate asin(w / (2 rate)), sharp of w by (w / rate)^2 / 24:
+// 1.35 cents at C8 at 192 kHz, which the tuning table, made at that rate,
+// takes out. At another rate the same table left the difference: by this
+// formula C8 0.25 cents sharp at 44.1 kHz, 1.0 flat at 96 kHz or Oversampling
+// 2x and 1.3 flat at 4x (1.1 and 1.5 measured through the engine), and four
+// times as much an octave higher, so octave ranks beat against each other.
+// This returns the stiffness that swings at the tuned W at stepRate.
+inline double StepStiffness(double omega2, double stepRate) {
+    if (stepRate == kTuningRate) return omega2;   // the table's own rate, to the bit
+    const double tuned = kTuningRate * std::asin(0.5 * std::sqrt(omega2) / kTuningRate);
+    const double w = 2.0 * stepRate * std::sin(tuned / stepRate);
+    return w * w;
 }
 
 // Gap area for tip displacement x. The tongue bends as (s/L)^2 along its length,
@@ -228,7 +251,7 @@ inline double StepReed(const ReedSpec& r, ReedState& s, double dp, double dt, do
         drop = dp - inertia * (pulsedFlow - s.flow);
     }
     s.flow = flow;
-    s.v += dt * ((r.area * drop + force) * r.invMass - r.omega2 * tune2 * (s.x - r.rest)
+    s.v += dt * ((r.area * drop + force) * r.invMass - r.stepOmega2 * tune2 * (s.x - r.rest)
                  - (r.damping + r.drag * Abs(s.v)) * s.v);
     s.x += dt * s.v;
     // The tongue only acts as a piston between the two sides while its profiled

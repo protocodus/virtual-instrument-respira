@@ -12,10 +12,10 @@
 
 namespace respira::probe {
 
-// Rate the tuning table is made at: the engine's internal rate at 48 kHz.
-// Pitch is rate-independent here (96, 192 and 768 kHz agree), so the table
-// serves every host rate.
-constexpr double kRate = 192000.0;
+// Rate the tuning table is made at: the engine's internal rate at 48 kHz. At
+// another rate the engine corrects the tongue's stiffness for its step
+// (StepStiffness), so the table serves every host rate and Oversampling.
+constexpr double kRate = kTuningRate;
 
 // Frequency of a push reed (with its chamber) speaking at bellows pressure p,
 // from the tongue's upward crossings of its mean once it has settled; 0 if it

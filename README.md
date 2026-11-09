@@ -34,6 +34,10 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
+### 0.1.24 — 2026-11-09 — the top octave keeps its pitch at every rate
+
+- The reeds' tuning table is made at the 192 kHz the cells run at in a 48 kHz session, where it takes out the small sharpness of the tongue's time step (1.35 cents at C8). At any other step rate the same table left a remainder that grows with the square of the pitch: C8 played 1.1 cents flat in a 96 kHz session or at Oversampling 2× and 1.5 flat at 4× (and, by the same arithmetic, a quarter of a cent sharp at 44.1 kHz), and a 4′ reed moved four times as far as the 8′ reed of the same key, so octave registers beat about 2 Hz faster at C7 and more above it. Each tongue's stiffness is now corrected for the step it is played at: C8 holds within 0.2 cents at every setting. A 48 kHz session at Oversampling 1× plays as before, and the eight demos are the same to the bit.
+
 ### 0.1.23 — 2026-11-09 — no state left in subnormal numbers
 
 - In a host that does not flush subnormal numbers to zero, three states sat in them, each costing 0.3–0.6 % of a core on the development machine: the key beds' modes above 2 kHz from 1.4 s after every landing until the panel's lowest mode had rung out (2.8 s), and at rest the air meter's smoothing (from 7 s after the last note) and Life's share of movement (from 28 s), both for good. Each is now zero below 1e-30. The eight demos are the same to the bit.
@@ -436,7 +440,8 @@ The cells run at four times the host rate (192 kHz at 48 kHz) and are
 decimated by two half-band allpass stages; Oversampling at 2× or 4× runs them
 at eight or sixteen times the host rate through three or four stages, with
 the gap turbulence scaled so its spectrum stays the same at every host rate
-and Oversampling. Key travel takes 12–3 ms across the MIDI velocity range,
+and Oversampling, and each tongue's stiffness corrected for its time step, so
+the tuning made at 192 kHz holds at every rate. Key travel takes 12–3 ms across the MIDI velocity range,
 with 7.46 ms at 64. The unbounded low-velocity extension in 0.1.5 was reverted:
 short soft strikes must still open their pallets. This is an authored MIDI
 mapping, not a measured key-speed calibration. Pallet area follows the existing raised

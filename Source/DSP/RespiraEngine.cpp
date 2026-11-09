@@ -427,6 +427,8 @@ void Engine::SetControls(const Controls& next) {
         for (auto& c : cells) {   // a lifting or closing pallet keeps its travel time
             c.openRate *= internalRate / nextRate;
             c.vent = MakeVent(c.spec.chamber, c.lift, nextRate);
+            c.spec.push.stepOmega2 = StepStiffness(c.spec.push.omega2, nextRate);
+            c.spec.pull.stepOmega2 = StepStiffness(c.spec.pull.omega2, nextRate);
         }
     oversample = kBaseOversample << index;
     stages = 2 + index;
@@ -442,6 +444,8 @@ void Engine::SetControls(const Controls& next) {
                 Retune(c.spec.push, scale);
                 Retune(c.spec.pull, scale);
             }
+            c.spec.push.stepOmega2 = StepStiffness(c.spec.push.omega2, internalRate);
+            c.spec.pull.stepOmega2 = StepStiffness(c.spec.pull.omega2, internalRate);
             c.vent = MakeVent(c.spec.chamber, c.lift, internalRate);
         }
     const int reg = static_cast<int>(controls[kRegister]);
@@ -797,6 +801,8 @@ void Engine::StartCell(int rank, int key, int source, double openSeconds) {
             Retune(cell->spec.push, scale);
             Retune(cell->spec.pull, scale);
         }
+        cell->spec.push.stepOmega2 = StepStiffness(cell->spec.push.omega2, internalRate);
+        cell->spec.pull.stepOmega2 = StepStiffness(cell->spec.pull.omega2, internalRate);
         cell->state = CellState {};
         cell->breathA = cell->breathB = 0.0;
         cell->state.push.x = cell->spec.push.rest;
