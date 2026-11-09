@@ -101,6 +101,12 @@ if(RESPIRA_BUILD_TOOLS)
     target_include_directories(CompareBandoneon PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Source")
     target_compile_options(CompareBandoneon PRIVATE ${RESPIRA_WARNINGS})
 
+    # Every key through every preset at three pressures, both ways: level,
+    # onset, tuning, brightness and speaking pressure.
+    add_executable(RespiraKeyboardSurvey Tools/RespiraKeyboardSurvey.cpp)
+    target_link_libraries(RespiraKeyboardSurvey PRIVATE RespiraDSP)
+    target_compile_options(RespiraKeyboardSurvey PRIVATE ${RESPIRA_WARNINGS})
+
     # One README demo per factory preset from Docs/audio/midi (Tools/
     # PresetDemoRenderer.h is the shared portfolio copy; do not edit it here).
     add_executable(RenderRespiraPresetDemos Tools/RenderPresetDemos.cpp)
