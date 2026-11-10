@@ -34,6 +34,12 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
+### 0.1.26 — 2026-11-10 — a key above C8 no longer cuts a held note
+
+- A treble key above C8 (or below C2 with the keyboard unsplit) plays the reed of the key an octave or more away. Letting it go while that other key stayed down shut the reed: with C♯7 held, pressing and releasing C♯8 silenced C♯7 under its finger. The reed now stays open until every key on it is up, as a bass button's reed already did.
+- The air meter smooths over 10 ms at every host rate. It took 500 samples at any rate, so in a 96 kHz session a low reed's meter shook 1.75 times as far.
+- Notes below C8 and the eight demos are the same to the bit as 0.1.25 ([audit](Docs/validation/fix-pass-2026-11-10.md)).
+
 ### 0.1.25 — 2026-11-10 — the reeds step twice per host sample
 
 - The reed cells step at twice the host rate (96 kHz in a 48 kHz session) through one half-band stage, where they stepped at four times through two: the owner chose it by ear against 0.1.23 ([decision](Docs/decisions.md), [figures](Docs/benchmarks/half-rate-2026-11-10.md)). It takes 0.56 of the instructions on Master Tutti and 0.85 on a single clarinet reed. The tuning table is remade at 96 kHz. The eight demos keep their level within 0.05 dB and every octave band under 8 kHz within 0.3 dB, and most gain 0.1–1.5 dB in the bands from 8 to 20 kHz. Every key of Clarinet Solo at 380 Pa stays within 0.4 dB and 0.15 cents; the bass reeds move by up to 3.5 cents with the new table; and a reed above C7 needs about 5 Pa more to start (C8 220 Pa against 215), so at 190 Pa B7 stays silent, as C8 already did.
@@ -402,9 +408,10 @@ Revival), rising to 0.6 by E4.
 The reed plates, and so the slots, are 2.0–3.5 mm deep, an estimate chosen by
 ear: at mezzo forte the low tongues swing inside them. Each chamber is a
 channel as long as its reed, closed under the tongue's tip and open at the
-root end to the pallet hole, simulated as a duct in sections of at most 5 mm
-(halving them moves the harmonics by under 1 dB below 8 kHz and 2.5 dB
-above); the gap's air enters, and its
+root end to the pallet hole, simulated as a duct in as many sections as fit
+it at 5 mm or more each, and at least 1.46 steps of sound's travel (5.2 mm
+at the 96 kHz steps of a 48 kHz session; halving them moves the harmonics
+by under 1 dB below 8 kHz and 2.5 dB above); the gap's air enters, and its
 pressure acts on the tongue, along the slot where the gap opens. The pallet
 hole's outer end radiates: its air mass works in parallel with the radiation
 resistance ρc/A, as a piston in a baffle does (Beranek), so the chambers'
@@ -795,7 +802,9 @@ a pitch wheel should do what it says.
   Folk and Paris Musette 8–9 %), three pass it (Tango Bandoneon 11 %, Bright
   Oboe 12 %, Organ Bellows 14 %) and Master Tutti, 44 chambers at once, takes
   27 %; the demos average 1.7–6.5 % and Master Tutti 10.5 % (0.105×
-  realtime).
+  realtime). The stress phrase, sixteen keys held through two bellows turns
+  (`Tools/StressPhrase.h`), averages 5–17 % from preset to preset with worst
+  blocks of 16–46 %.
   `Respira.CpuBudget` warns above the ceiling and fails only when a repeat
   differs or a demo's median passes 0.4× realtime. Stepping the reeds twice
   per host sample in place of four times (0.1.25) took 0.56 of Master Tutti's
@@ -1046,6 +1055,19 @@ a pitch wheel should do what it says.
   180 Pa, do not start B7 and C8. Until 0.1.25 this paragraph gave 100, 140
   and 265–280 Pa for C♯7, D7 and C8, figures from before 0.1.20 lowered the
   reeds' set. No accordion has reeds there to compare them with.
+- **A few reeds' pitch depends on the step rate.** The tuning table is made
+  at the 96 kHz steps of a 48 kHz session, where every treble tongue alone
+  sounds within 0.13 cents of its tuning at 400 Pa and every bass and chord
+  tongue within 0.25, but for the 16′ bass D pushed, which the tuner leaves
+  1.3 cents flat. Each tongue's own step error is corrected at other rates
+  (`StepStiffness`), its chamber's is not: at Oversampling 2× one low-tuned
+  8′ reed (A7 pushed) sounds 0.75 cents sharp and the 8′ bass A♯'s pull
+  tongue 5.4 sharp, a beat about every three seconds against the 16′ reed
+  under the same button. A 44.1 kHz session's chambers are also cut a little
+  coarser than a 48 kHz one's (sections of 5.7 mm or more against 5.2), which
+  leaves the tuning within the same 0.13 cents and moves the demos by up to
+  0.6 dB in an octave band under 12 kHz and 1.1 dB in 16–20 kHz
+  ([figures](Docs/benchmarks/half-rate-2026-11-10.md)).
 - **Low reeds start late.** When the bellows reaches the arm's full pressure
   before a low reed swings, the tongue sits near the slot's mouth and its
   swing grows slowly: on Bassoon with the wheel swept in 1.5 s, C3–F#3 reach

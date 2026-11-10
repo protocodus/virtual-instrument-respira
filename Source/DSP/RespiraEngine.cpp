@@ -335,6 +335,9 @@ void Engine::Prepare(double sampleRate) {
     bassBox.Set(kBassBoxDepth, kBassBoxOpen, kBassHoleLength, kClothRayl, kBassBoxAbsorbed, kBassBoxModes, rate);
     rustle.Set(rate);
     smoothing = 1.0 - std::exp(-1.0 / (0.02 * rate));
+    // 0.002 a sample at 48 kHz, as it was at every rate until 0.1.26: a
+    // 96 kHz session's meter then smoothed over 5 ms and shook twice as much.
+    airSmoothing = 0.002 * 48000.0 / rate;
     bendSmoothing = 1.0 - std::exp(-1.0 / (0.005 * rate));
     wanderStep = 1.0 - std::exp(-6.283185307179586 * kHandWanderHz / rate);
     wanderScale = kHandWander / std::sqrt(CascadeVariance(wanderStep));
@@ -907,15 +910,17 @@ void Engine::NoteOff(int channel, int key) {
     const int source = channel * 128 + key;
     // A bass or chord reed is one per pitch class, so buttons an octave apart
     // open the same chamber, which belongs to the latest of them. It keeps
-    // speaking, now for another button still down, until none is.
+    // speaking, now for another button still down, until none is. Treble keys
+    // outside C2-C8 fold onto the reeds inside it (TrebleKey) and share them
+    // the same way.
     int other = -1;
     const bool split = controls[kKeyboard] < 0.5;
     const Group group = GroupOf(channel, key, split);
-    if (group != kTreble)
-        for (int s = 0; s < 3 * 128 && other < 0; ++s)
-            if (s != source && keys[static_cast<std::size_t>(s)].target > 0.0 && GroupOf(s / 128, s % 128, split) == group
-                && PitchClass(s % 128) == PitchClass(key))
-                other = s;
+    const auto reedOf = [group](int k) { return group == kTreble ? TrebleKey(k) : PitchClass(k); };
+    for (int s = 0; s < 3 * 128 && other < 0; ++s)
+        if (s != source && keys[static_cast<std::size_t>(s)].target > 0.0 && GroupOf(s / 128, s % 128, split) == group
+            && reedOf(s % 128) == reedOf(key))
+            other = s;
     // The finger lets the key up a little faster or slower each time: it
     // rides the spring's return part of the way (kStrokeScatter's note).
     const double lift = Stroke();
@@ -1254,7 +1259,7 @@ void Engine::Render(float* left, float* right, int frames) {
         heldCells = held;
         demand = open;
         airFlow = drawn / oversample;
-        airFlowSmoothed += 0.002 * (airFlow - airFlowSmoothed);
+        airFlowSmoothed += airSmoothing * (airFlow - airFlowSmoothed);
 
         mechanicsGain += smoothing * (mechanicsGainTarget - mechanicsGain);
         grilleCoeff += smoothing * (grilleCoeffTarget - grilleCoeff);

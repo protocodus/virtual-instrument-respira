@@ -5,6 +5,7 @@
 #include "DSP/RespiraEngine.h"
 #include "DSP/RespiraPresets.h"
 #include "RoomMicrophoneTests.h"
+#include "../Tools/StressPhrase.h"
 
 #include <algorithm>
 #include <array>
@@ -977,6 +978,86 @@ void KeyswitchesTurnTheBellows() {
            static_cast<double>(wheel->Diag().cells));
 }
 
+void FoldedKeysShareAReed() {
+    // Keys above C8 fold down by octaves onto the top reeds (TrebleKey), so
+    // C#8 opens C#7's chamber. Until 0.1.26 the chamber belonged to the later
+    // key alone: letting that one go shut it under the key still down. The
+    // bass and chord buttons, one reed per pitch class, always shared theirs.
+    const double rate = 48000.0;
+    const auto cellsAfter = [rate](std::vector<Note> notes, double seconds) {
+        auto e = Make(rate, 0);
+        Play(*e, rate, seconds, notes, PullThenPush);
+        return e->Diag().cells;
+    };
+    const std::uint8_t low = 97, high = 109;   // C#7 and C#8
+    Expect(cellsAfter({ { 0.0, { kOn, low, 100 } }, { 0.1, { kOn, high, 100 } }, { 0.2, { kOff, high, 0 } } }, 0.4) == 1,
+           "FoldedKeysShareAReed", "C#7 held, C#8 pressed and let go: the reed stays open, cells", 0);
+    Expect(cellsAfter({ { 0.0, { kOn, high, 100 } }, { 0.1, { kOn, low, 100 } }, { 0.2, { kOff, high, 0 } } }, 0.4) == 1,
+           "FoldedKeysShareAReed", "C#8 first and let go under C#7: the reed stays open, cells", 0);
+    Expect(cellsAfter({ { 0.0, { kOn, low, 100 } }, { 0.1, { kOn, high, 100 } }, { 0.2, { kOff, high, 0 } }, { 0.25, { kOff, low, 0 } } }, 0.4) == 0,
+           "FoldedKeysShareAReed", "and shuts once both are up, cells", 0);
+}
+
+void AirMeterKeepsItsTimeAtEveryRate() {
+    // The air meter (Diag().airFlow) smooths the reeds' pulsing flow over
+    // 10 ms. Until 0.1.26 that was 500 samples at any rate, so at 96 kHz a
+    // low reed's meter rippled twice as far as at 48 kHz.
+    double ripple[2] = {};
+    const double rates[2] = { 48000.0, 96000.0 };
+    for (int i = 0; i < 2; ++i) {
+        auto e = Make(rates[i], 1);   // Bassoon Low: C3's reed sounds C2
+        const std::uint8_t on[3] = { kOn, 48, 100 };
+        e->Midi(on, 3);
+        const auto frames = static_cast<std::size_t>(2.0 * rates[i]);
+        double low = 1.0e30, high = -1.0e30, sum = 0.0;
+        std::size_t count = 0;
+        float l = 0.0f, r = 0.0f;
+        for (std::size_t n = 0; n < frames; ++n) {
+            e->SetHand(PullThenPush(static_cast<double>(n) / rates[i]));
+            e->Render(&l, &r, 1);
+            if (n < frames * 3 / 4) continue;
+            const double air = e->Diag().airFlow;
+            low = std::min(low, air);
+            high = std::max(high, air);
+            sum += air;
+            ++count;
+        }
+        ripple[i] = (high - low) / std::fabs(sum / static_cast<double>(count));
+    }
+    Expect(ripple[0] > 0.01, "AirMeterKeepsItsTimeAtEveryRate", "the meter shows a low reed's pulses, share of the flow", ripple[0]);
+    Expect(std::fabs(ripple[1] / ripple[0] - 1.0) < 0.25, "AirMeterKeepsItsTimeAtEveryRate",
+           "96 kHz against 48 kHz, ripple ratio", ripple[1] / ripple[0]);
+}
+
+void StressPhrasePlaysTheReeds() {
+    // The CPU measurement's stress phrase (Tools/StressPhrase.h) through
+    // Master Tutti as loaded. Until 0.1.25 it was the portfolio's default,
+    // which holds its chords under CC 64, Respira's air button: the hand
+    // emptied the bellows through the valve, they held 6-14 Pa where Auto
+    // asks 400, and the phrase timed sixteen keys of reeds at -50 dBFS. It
+    // holds the keys and turns the bellows twice instead.
+    const double rate = 48000.0;
+    auto e = std::make_unique<Engine>();
+    e->Prepare(rate);
+    e->SetControls(kPresets[7].ToControls());
+    e->Reset();
+    std::vector<Note> notes;
+    for (const StressEvent& s : StressPhrase()) notes.push_back({ s.seconds, { s.bytes[0], s.bytes[1], s.bytes[2] } });
+    const Take t = PlayAuto(*e, rate, 4.5, notes);
+    Expect(t.maxCells == Engine::kMaxCells, "StressPhrasePlaysTheReeds", "sixteen keys fill every cell, most cells",
+           static_cast<double>(t.maxCells));
+    Expect(MeanPressure(t, rate, 0.5, 1.4) < -250.0, "StressPhrasePlaysTheReeds",
+           "the first chord is pulled at the hand's pressure, Pa", MeanPressure(t, rate, 0.5, 1.4));
+    Expect(MeanPressure(t, rate, 2.25, 2.45) > 250.0, "StressPhrasePlaysTheReeds",
+           "pushed after the first keyswitch, Pa", MeanPressure(t, rate, 2.25, 2.45));
+    Expect(MeanPressure(t, rate, 3.4, 3.9) < -250.0, "StressPhrasePlaysTheReeds",
+           "and both chords pulled after the second, Pa", MeanPressure(t, rate, 3.4, 3.9));
+    Expect(Turns(t, rate, 0.5).size() == 2, "StressPhrasePlaysTheReeds", "two turns while keys are down",
+           static_cast<double>(Turns(t, rate, 0.5).size()));
+    Expect(Db(Rms(t.left, rate, 3.4, 3.9)) > -30.0, "StressPhrasePlaysTheReeds", "both chords sound, dBFS",
+           Db(Rms(t.left, rate, 3.4, 3.9)));
+}
+
 void AutoRestsWithTheKeys() {
     // Let go, the hand stops and the bellows keep their pressure, so the next
     // note speaks at once; after a long rest the hand starts again the way the
@@ -1880,6 +1961,9 @@ int main() {
     NonFiniteControls();
     AutoNeverTurnsByItself();
     KeyswitchesTurnTheBellows();
+    StressPhrasePlaysTheReeds();
+    AirMeterKeepsItsTimeAtEveryRate();
+    FoldedKeysShareAReed();
     AutoRestsWithTheKeys();
     AutoHoldsItsPressure();
     AutoHandsBackToTheWheel();

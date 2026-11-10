@@ -233,6 +233,7 @@ private:
     bool autoHand = false;
     int heldCells = 0;
     double pressure = 0.0, airFlow = 0.0, airFlowSmoothed = 0.0, demand = 0.0;
+    double airSmoothing = 0.002;   // the air meter's 10 ms, per sample (Prepare)
     bool airPedal = false;
     double valve = 0.0;   // air valve opening, 0..1
     double valveNoiseA = 0.0, valveNoiseB = 0.0, valveSound = 0.0;   // its jet's flow fluctuation

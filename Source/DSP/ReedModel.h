@@ -264,8 +264,10 @@ inline double StepReed(const ReedSpec& r, ReedState& s, double dp, double dt, do
     return flow * (1.0 + flowNoise) + r.pistonArea * s.v * (r.clearArea / area);
 }
 
-// The reed chamber as a duct in sections of at most kSectionLength: four or
-// more to a wavelength at 16 kHz. Half that length moves the harmonics by under
+// The reed chamber as a duct in as many sections as fit it at kSectionLength
+// or more each (four to a wavelength at 16 kHz), and at least 1.46 steps of
+// sound's travel, which is 5.2 mm at 96 kHz steps and 5.7 mm at the 88.2 kHz
+// of a 44.1 kHz session. Half that length moves the harmonics by under
 // 1 dB below 8 kHz and 2.5 dB above (Tools/CompareHarmonics, the demos). The
 // bass side once took 10 mm while its bass box took off what they change;
 // since the box passes its depth modes (RespiraEngine.cpp), 10 mm moves the

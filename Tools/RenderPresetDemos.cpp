@@ -5,6 +5,7 @@
 #include "DSP/RespiraEngine.h"
 #include "DSP/RespiraPresets.h"
 #include "PresetDemoRenderer.h"
+#include "StressPhrase.h"
 
 #include <memory>
 #include <stdexcept>
@@ -50,5 +51,8 @@ int main(int argc, char** argv) {
     // container (GCC 13, Release); 0.75 while the reeds stepped four times a
     // sample.
     instrument.cpuBudget = 0.4;
+    instrument.stress.clear();
+    for (const auto& e : respira::StressPhrase())
+        instrument.stress.push_back({ e.seconds, { e.bytes[0], e.bytes[1], e.bytes[2] }, 3 });
     return protocodus::demos::Main(argc, argv, instrument);
 }
