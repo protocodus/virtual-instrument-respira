@@ -2274,3 +2274,69 @@ What the choices licensed, and what they did not:
 Not changed: the first stroke after loading or Reset still thumps from the
 folds, all of whose panels start mid-play (−19 dBFS at +20 dB in silence);
 it is a separate fix, not yet asked for.
+
+## 2026-11-10 — 0.1.25: the reeds step twice per host sample (owner by ear)
+
+The 2026-11-09 CPU work found one change that took a large share of the
+instructions and changed the sound: stepping the reed cells at twice the host
+rate in place of four times. It was audible, so it waited for the owner.
+
+Listening test `consolidation-2026-11-09/respira/half-rate` (project files):
+three phrases half a second apart, `1-piccolo` (Bright Oboe, C7 held at
+velocity 127, then C6-G6-C7), `2-low-soft` (Bassoon Low at velocity 20: C3,
+then the bass button E) and `3-musette` (Paris Musette, C-E-G-C over a bass
+and a chord button), through `RenderRespira` at 48 kHz with the presets as
+shipped, Auto's bellows and the whole signal path. **A** the shipping engine
+(0.1.23, `0f2f71f`): cells stepped at four times the host rate (192 kHz), two
+half-band decimation stages. **B** cells stepped at twice the host rate
+(96 kHz), one stage, each tongue corrected for its step so that it sounds A's
+pitch. Whole-file RMS: A −23.81 dBFS, B −23.82; no trim was applied (by
+phrase B − A was −0.17, −0.01 and +0.05 dB).
+
+The owner answered the report that offered the set with "go with candidate"
+(2026-11-10), which selects **B**. It is the owner's selection, not a measured
+result: the measurements below describe what B changes, and none of them says
+the change cannot be heard.
+
+What the key measured, B against A: the octave bands of phrase 1 under 12 kHz
+within 0.25 dB, 12–16 kHz +1.9 dB and 16–20 kHz +5.8 dB (34 and 52 dB under
+its 2–4 kHz band); phrase 3's 8–12, 12–16 and 16–20 kHz bands +0.8, +1.5 and
++0.9 dB; phrase 2 within 0.2 dB in every band; no tone between the harmonics
+of the held C7 above the breath's floor in either; every key of Clarinet Solo
+at 380 Pa within 0.4 dB and 0.15 cents; B7 starts to speak at 230 Pa where it
+did at 213, and at 190 Pa is 8.5 dB quieter, counted silent; 0.55 of the
+instructions on a ten-key Master Tutti chord phrase.
+
+What the choice licensed, and what it did not:
+
+- The step rate: `baseOversample` is 2 from a 40 kHz host rate up, with one
+  half-band stage. **Oversampling**'s three steps keep their numbers and
+  multiply that, so they are now 2×, 4× and 8× the host rate: a session saved
+  at the lowest step plays B's sound, the middle step is the former lowest,
+  and the former highest (16×) is no longer reachable at these rates.
+- The tuning table and its probe at 96 kHz (`kTuningRate`,
+  `Source/DSP/ReedTuning.h`), which shipping B needs and the candidate did
+  not have: B as heard corrected each tongue from the 192 kHz table. With the
+  remade table every treble tongue sounds within 0.13 cents of its tuning at
+  96 and at 88.2 kHz steps (a 44.1 kHz session), and the bass tongues within
+  0.25 cents but one (the 16′ bass D on the push, 1.3 flat). Against 0.1.24
+  the bass reeds move by up to 3.5 cents at 400 Pa, because a few bass
+  tongues settle a few cents apart at different step rates and each table
+  takes that out only at its own rate. That is the table's doing, not
+  something the owner heard and chose.
+- As shipped, 0.1.25 against 0.1.24 at 48 kHz: the eight demos within
+  0.05 dB in level and 0.3 dB in every octave band under 8 kHz, −0.5 to
+  +1.5 dB from 8 to 20 kHz; Clarinet Solo's keys at 380 Pa within 0.4 dB and
+  0.15 cents; a top reed alone needs about 5 Pa more to start (C8 220 Pa
+  against 215, B7 200 against 195, `ReedProbe.h`'s `Radiated`), so in the
+  instrument at 190 Pa B7 and C8 stay silent where only C8 did.
+- Not chosen by ear: a host rate under 40 kHz keeps four steps per sample.
+  The set was heard at 48 kHz only, and at a 22.05 kHz host the half rate's
+  44.1 kHz steps were not tried by ear; at an 8 or 11.025 kHz host they are
+  not stable (the chamber and the pallet hole's flow step in turn, and the
+  top chambers resonate from 5.9 kHz), so the rule is the stability's, with a
+  margin (`LowHostRatesHold`).
+- The CPU it buys, in instructions: Master Tutti's demo 20.82 G before,
+  11.70 G after (×0.56). `Docs/benchmarks/half-rate-2026-11-10.md` has the
+  rest. The demo renderer's median budget goes from 0.75× to 0.4× realtime
+  with it.

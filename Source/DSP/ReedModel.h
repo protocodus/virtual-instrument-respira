@@ -191,17 +191,17 @@ inline void Retune(ReedSpec& r, double scale) {
 
 // Rate the tuning table is made at (Tools/ReedProbe.h): the engine's internal
 // rate at 48 kHz.
-constexpr double kTuningRate = 192000.0;
+constexpr double kTuningRate = 96000.0;
 
 // omega2 as StepReed must use it when stepping at stepRate. StepReed updates
 // the speed, then the position with the new speed, so a tongue of stiffness
 // w^2 swings at W = 2 rate asin(w / (2 rate)), sharp of w by (w / rate)^2 / 24:
-// 1.35 cents at C8 at 192 kHz, which the tuning table, made at that rate,
-// takes out. At another rate the same table left the difference: by this
-// formula C8 0.25 cents sharp at 44.1 kHz, 1.0 flat at 96 kHz or Oversampling
-// 2x and 1.3 flat at 4x (1.1 and 1.5 measured through the engine), and four
-// times as much an octave higher, so octave ranks beat against each other.
-// This returns the stiffness that swings at the tuned W at stepRate.
+// 5.4 cents at C8 on 96 kHz steps, which the tuning table, made at that
+// rate, takes out. At another rate the same table would leave the difference:
+// by this formula C8 1.0 cent sharp in a 44.1 kHz session, 4.1 flat in a
+// 96 kHz session or at Oversampling 2x and 5.1 flat at 4x, and a quarter as
+// much an octave lower, so octave ranks would beat against each other. This
+// returns the stiffness that swings at the tuned W at stepRate.
 inline double StepStiffness(double omega2, double stepRate) {
     if (stepRate == kTuningRate) return omega2;   // the table's own rate, to the bit
     const double tuned = kTuningRate * std::asin(0.5 * std::sqrt(omega2) / kTuningRate);

@@ -164,6 +164,17 @@ constexpr double kQuietSeconds = 0.02;      // a closed chamber is let go after 
 constexpr double kHalfPressed = 0.38278;    // acos(1 - 2 * 0.32) / pi
 constexpr double kTurbulence = 2.0e-3;      // gap turbulence force per Pa of bellows pressure and m^2
 constexpr double kNoiseRate = 192000.0;     // internal rate the turbulence levels are set at
+// The reeds step twice per host sample (four times until 0.1.25: the owner's
+// choice by ear, Docs/decisions.md, 2026-11-10), and four times still at a
+// host rate too low for that. The chamber's pressure and the pallet hole's
+// flow step in turn, which holds only while the step is shorter than 1 / pi
+// of their resonance's period, and the top chambers are made to resonate from
+// 1.4 times their reed up (MakeChamber): 5.9 kHz at C8, more with the duct
+// and the gap. At 22.05 kHz steps A#7-C8 ran away and at 16 kHz most keys
+// did; at 32 kHz none does (Tests/EngineTests.cpp, LowHostRatesHold). So no
+// reed steps under 32 kHz: a host rate under kLowestRate is not one.
+constexpr double kHalfRateFrom = 40000.0;   // Hz: host rates from here step the reeds twice a sample
+constexpr double kLowestRate = 8000.0;      // Hz
 // The gap jet's flow fluctuation (ReedModel.h, breath) has the spectrum of its
 // eddies, the size of the gap near the tongue's tip as it opens and closes:
 // flat up to their rate U / (2 pi l), with U the jet's speed sqrt(2 p / rho),
@@ -319,7 +330,8 @@ void Engine::Hand::Tick(double dt, double momentum, const double* drive, double 
 Engine::Engine() { Prepare(48000.0); }
 
 void Engine::Prepare(double sampleRate) {
-    rate = sampleRate > 1000.0 && sampleRate < 1.0e6 ? sampleRate : 48000.0;
+    rate = sampleRate >= kLowestRate && sampleRate < 1.0e6 ? sampleRate : 48000.0;
+    baseOversample = rate < kHalfRateFrom ? 4 : 2;
     bassBox.Set(kBassBoxDepth, kBassBoxOpen, kBassHoleLength, kClothRayl, kBassBoxAbsorbed, kBassBoxModes, rate);
     rustle.Set(rate);
     smoothing = 1.0 - std::exp(-1.0 / (0.02 * rate));
@@ -422,7 +434,7 @@ void Engine::SetControls(const Controls& next) {
     grilleCoeffBase = 1.0 - std::exp(-2.0 * kPi * Min(controls[kGrille], 0.45 * rate) / rate);
     grilleCoeffTarget = grilleCoeffBase;
     const int index = static_cast<int>(controls[kOversampling]);
-    const double nextRate = rate * (kBaseOversample << index);
+    const double nextRate = rate * (baseOversample << index);
     if (nextRate != internalRate)
         for (auto& c : cells) {   // a lifting or closing pallet keeps its travel time
             c.openRate *= internalRate / nextRate;
@@ -430,15 +442,15 @@ void Engine::SetControls(const Controls& next) {
             c.spec.push.stepOmega2 = StepStiffness(c.spec.push.omega2, nextRate);
             c.spec.pull.stepOmega2 = StepStiffness(c.spec.pull.omega2, nextRate);
         }
-    oversample = kBaseOversample << index;
-    stages = 2 + index;
+    oversample = baseOversample << index;
+    stages = (baseOversample == 2 ? 1 : 2) + index;
     internalRate = nextRate;
     if (controls[kLife] != prevLife)
         for (auto& c : cells) {
             if (!c.active) continue;
             const int r = c.rank, k = c.reed - r * 128;
             const int idx = TuningIndex(r, k);
-            c.spec = MakeCell(r, k, controls[kMusette], kReedTuning[r][idx], rate * kBaseOversample, controls[kLife]);
+            c.spec = MakeCell(r, k, controls[kMusette], kReedTuning[r][idx], rate * baseOversample, controls[kLife]);
             if (masterTune != 0.0) {
                 const double scale = std::pow(2.0, masterTune / 1200.0);
                 Retune(c.spec.push, scale);
@@ -795,7 +807,7 @@ void Engine::StartCell(int rank, int key, int source, double openSeconds) {
     if (!cell->active) {
         const int index = TuningIndex(rank, key);
         // Musette, master tune and Life changes reach the reeds at their next note.
-        cell->spec = MakeCell(rank, key, controls[kMusette], kReedTuning[rank][index], rate * kBaseOversample, controls[kLife]);
+        cell->spec = MakeCell(rank, key, controls[kMusette], kReedTuning[rank][index], rate * baseOversample, controls[kLife]);
         if (masterTune != 0.0) {
             const double scale = std::pow(2.0, masterTune / 1200.0);
             Retune(cell->spec.push, scale);
@@ -1142,7 +1154,7 @@ void Engine::Render(float* left, float* right, int frames) {
             // Ranks opened by one key share a single lifted pallet pad and
             // couple through the mutual acoustic radiation inertance at the
             // pallet mouth. Sum each key group's previous-step volume
-            // acceleration (~2 mm acoustic transit at 192 kHz) so sibling
+            // acceleration (~4 mm acoustic transit at 96 kHz) so sibling
             // ranks hear each other symmetrically regardless of rank order.
             // Every group index is below groupCount, so only those are zeroed.
             double palletRad[kMaxCells];

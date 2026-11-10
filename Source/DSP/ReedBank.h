@@ -25,9 +25,11 @@ inline bool IsTreble(int rank) { return rank <= kRankH; }
 // same reed design to a piano's top, so that every key to C8 sounds at its own
 // pitch (the owner's rule for every Rack instrument). Tuned and played alone,
 // those reeds come within 20 dB of their 400 Pa level after 2 s from about
-// 100 Pa at C#7, 140 at D7 and 265-280 at C8, where C7 needs 90 (ReedProbe's
-// Radiated, each treble rank): Auto's 400 Pa speaks them all, Touch's softest
-// strokes (about 180 Pa) not those from G#7 up.
+// 80 Pa at C#7, 145 at G#7, 175 at A#7, 200 at B7 and 220 at C8, where C7
+// needs 70 (ReedProbe's Radiated at the tuning rate; the 8' ranks and the 4',
+// which sounds with them there; the 16' rank's reeds an octave down need
+// 40-70): Auto's 400 Pa speaks them all, Touch's softest strokes (about
+// 180 Pa) not B7 and C8.
 constexpr int kTrebleLow = 36, kTrebleHigh = 108;
 constexpr int kTrebleKeys = kTrebleHigh - kTrebleLow + 1;
 
@@ -168,7 +170,7 @@ inline CellSpec MakeCell(int rank, int key, double musetteCents, const float* ra
     spec.hz = NoteHz(RankNote(rank, key, musetteCents));
     spec.bass = !IsTreble(rank);
     // Probe at 400 Pa (Tools/ProbeReed): 0.64 L/s at C2, 0.47 at C3, 0.22 at C4,
-    // 0.125 at A4, 0.054 at C6, 0.036 at C7 -- close to 0.125 L/s * 440 / f from
+    // 0.125 at A4, 0.054 at C6, 0.035 at C7 -- close to 0.125 L/s * 440 / f from
     // C3 up; C2 takes 20 % less.
     spec.airWeight = 440.0 / spec.hz;
     const std::uint32_t hc = Hash(1u, static_cast<std::uint32_t>(rank * 1000 + index * 2));

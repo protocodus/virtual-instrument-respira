@@ -34,6 +34,12 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
+### 0.1.25 — 2026-11-10 — the reeds step twice per host sample
+
+- The reed cells step at twice the host rate (96 kHz in a 48 kHz session) through one half-band stage, where they stepped at four times through two: the owner chose it by ear against 0.1.23 ([decision](Docs/decisions.md), [figures](Docs/benchmarks/half-rate-2026-11-10.md)). It takes 0.56 of the instructions on Master Tutti and 0.85 on a single clarinet reed. The tuning table is remade at 96 kHz. The eight demos keep their level within 0.05 dB and every octave band under 8 kHz within 0.3 dB, and most gain 0.1–1.5 dB in the bands from 8 to 20 kHz. Every key of Clarinet Solo at 380 Pa stays within 0.4 dB and 0.15 cents; the bass reeds move by up to 3.5 cents with the new table; and a reed above C7 needs about 5 Pa more to start (C8 220 Pa against 215), so at 190 Pa B7 stays silent, as C8 already did.
+- **Oversampling** now steps the reeds at 2×, 4× and 8× the host rate, where it stepped them at 4×, 8× and 16×. A session saved at 1× plays the new sound; 2× is what 1× was, but for the new table (most reeds within 0.2 cents of it, one bass tongue 5.4); what 4× was is gone.
+- A host rate under 40 kHz still steps the reeds four times a sample, because the smallest chambers do not hold on steps slower than 32 kHz, and a rate under 8 kHz is taken for 48 kHz. In 0.1.24 a 2–6 kHz host rate gave non-finite output.
+
 ### 0.1.24 — 2026-11-09 — the top octave keeps its pitch at every rate
 
 - The reeds' tuning table is made at the 192 kHz the cells run at in a 48 kHz session, where it takes out the small sharpness of the tongue's time step (1.35 cents at C8). At any other step rate the same table left a remainder that grows with the square of the pitch: C8 played 1.1 cents flat in a 96 kHz session or at Oversampling 2× and 1.5 flat at 4× (and, by the same arithmetic, a quarter of a cent sharp at 44.1 kHz), and a 4′ reed moved four times as far as the 8′ reed of the same key, so octave registers beat about 2 Hz faster at C7 and more above it. Each tongue's stiffness is now corrected for the step it is played at: C8 holds within 0.2 cents at every setting. A 48 kHz session at Oversampling 1× plays as before, and the eight demos are the same to the bit.
@@ -436,12 +442,15 @@ dB on the fundamental against its 0.64–0.80. Over the loudest 15 dB they fall
 twice as far, and from E4 up their 9th–15th harmonics hardly grow at all
 (Known gaps).
 
-The cells run at four times the host rate (192 kHz at 48 kHz) and are
-decimated by two half-band allpass stages; Oversampling at 2× or 4× runs them
-at eight or sixteen times the host rate through three or four stages, with
-the gap turbulence scaled so its spectrum stays the same at every host rate
-and Oversampling, and each tongue's stiffness corrected for its time step, so
-the tuning made at 192 kHz holds at every rate. Key travel takes 12–3 ms across the MIDI velocity range,
+The cells run at twice the host rate (96 kHz at 48 kHz) and are decimated
+by one half-band allpass stage; Oversampling at 2× or 4× runs them at four or
+eight times the host rate through two or three stages, with the gap
+turbulence scaled so its spectrum stays the same at every host rate and
+Oversampling, and each tongue's stiffness corrected for its time step, so
+the tuning made at 96 kHz holds at every rate. Until 0.1.25 they ran at four
+times the host rate, which is now Oversampling 2×; under a 40 kHz host rate
+they still do, because the smallest chambers are not stable on steps slower
+than 32 kHz. Key travel takes 12–3 ms across the MIDI velocity range,
 with 7.46 ms at 64. The unbounded low-velocity extension in 0.1.5 was reverted:
 short soft strikes must still open their pallets. This is an authored MIDI
 mapping, not a measured key-speed calibration. Pallet area follows the existing raised
@@ -746,7 +755,7 @@ strokes read −1.7 VU at most. Volume sets the level going into the stage.
 | Keyboard | split, full | split: C1–B1 bass buttons, C2–B2 chord buttons, C3 up treble |
 | Air | off, on | the air valve |
 | Momentum | 0–200 ms | how far the arm trails the wheel; 0 follows it exactly |
-| Oversampling | 1×, 2×, 4× | the reeds' time step: 1× is four times the host rate; 2× and 4× cost about two and four times the CPU |
+| Oversampling | 1×, 2×, 4× | the reeds' time step: 1× is twice the host rate, 2× four times (1× until 0.1.25) and 4× eight times; 2× and 4× cost about two and four times the CPU |
 | Mechanics | −40 to +20 dB | the keys', pallets', buttons' and switches' knocks, the bellows' folds and the push valves' slaps, against the estimate (The mechanism); +5.6 dB by default, by ear; at −40 dB they are all but silent |
 | Auto | off, on | on by default: the hand plays endless bellows, turned by the C0 and C#0 keyswitches, and the wheel softens or swells it (Auto) |
 | Room | 0–1 wet | the hall around the microphones: 0 dry, 0.5 % by default, 1 as decorrelated as the solo recordings; sigmoid knob response, actual wet percentage displayed (The microphones) |
@@ -781,13 +790,17 @@ a pitch wheel should do what it says.
   of a real accordion is part of the model or its tests.
 - **CPU.** Respira does not meet the portfolio's ceiling of 10 % of one
   core for any 256-frame block. In the development container at 48 kHz
-  (0.1.23, a plain x86-64 build) the demos' worst blocks take 10 % (Clarinet
-  Solo, one reed, at a bellows turn), 12–29 % (the six between) and 49–60 %
-  (Master Tutti, 44 chambers at once), and they average 2.5–19 % (0.19–0.22×
-  realtime for Master Tutti, 0.025× for the single clarinet reed);
-  `Respira.CpuBudget` fails the ceiling for every demo but Clarinet Solo and
-  for every preset's stress phrase (18–75 %). A
-  sounding chamber takes about 640 instructions per step at 192 kHz, a third
+  (0.1.25, a plain x86-64 build, the best of nine runs of each block) four
+  demos' worst blocks stay under it (Clarinet Solo 7 %, Bassoon Low, Violin
+  Folk and Paris Musette 8–9 %), three pass it (Tango Bandoneon 11 %, Bright
+  Oboe 12 %, Organ Bellows 14 %) and Master Tutti, 44 chambers at once, takes
+  27 %; the demos average 1.7–6.5 % and Master Tutti 10.5 % (0.105×
+  realtime).
+  `Respira.CpuBudget` warns above the ceiling and fails only when a repeat
+  differs or a demo's median passes 0.4× realtime. Stepping the reeds twice
+  per host sample in place of four times (0.1.25) took 0.56 of Master Tutti's
+  instructions; before it the demos' worst blocks took 10 %, 12–29 % and
+  49–60 %. A sounding chamber takes about 640 instructions per step, a third
   of them in its duct, and the processor already overlaps neighbouring
   chambers' divisions and square roots, so the step is bound by how many
   instructions it is. Rewrites that kept the output bit for bit (the cells
@@ -797,12 +810,9 @@ a pitch wheel should do what it says.
   gap area per reed step and the oversampled steps outside the chamber loop
   (within the container's ±5 % timing noise). Treble sections of 7.5 or 10 mm
   would save about 10–15 % but take 3–21 dB off 8–16 kHz, a cut made by the
-  grid, not the physics. Stepping the reeds at twice the host rate in place of
-  four times takes 0.55 of the instructions and changes the sound only above
-  12 kHz on the highest reeds and at the top reeds' starting pressure: an
-  audible change, so it waits for the owner's ear, and even with it Master
-  Tutti's worst block stays near 30 %
-  ([evidence](Docs/benchmarks/cpu-consolidation-2026-11-09.md),
+  grid, not the physics
+  ([half rate](Docs/benchmarks/half-rate-2026-11-10.md),
+  [evidence](Docs/benchmarks/cpu-consolidation-2026-11-09.md),
   [plan](Docs/plans/cpu-ceiling-2026-11-09.md)).
 - **The mechanism's level and brightness.** No measurement of how loud an
   accordion's mechanism is against its reeds was found, so Mechanics is in dB
@@ -1029,10 +1039,13 @@ a pitch wheel should do what it says.
   played at is not known.
   The reeds above C7, there since 0.1.14 so that every key to C8 has its
   own, need more again: drawing steadily, they come within 20 dB of their
-  400 Pa level after 2 s from about 100 Pa at C♯7, 140 at D7 and 265–280 at
-  C8, where C7 needs 90 by the same measure (`ReedProbe.h`'s `Radiated`, each
-  treble rank), so Touch's softest strokes, about 180 Pa, do not start them
-  from G♯7 up. No accordion has reeds there to compare them with.
+  400 Pa level after 2 s from about 80 Pa at C♯7, 145 at G♯7, 175 at A♯7,
+  200 at B7 and 220 at C8, where C7 needs 70 by the same measure
+  (`ReedProbe.h`'s `Radiated` at 96 kHz steps with Life at 0; at Life 0.5 C8
+  needs 210–250 from rank to rank), so Touch's softest strokes, about
+  180 Pa, do not start B7 and C8. Until 0.1.25 this paragraph gave 100, 140
+  and 265–280 Pa for C♯7, D7 and C8, figures from before 0.1.20 lowered the
+  reeds' set. No accordion has reeds there to compare them with.
 - **Low reeds start late.** When the bellows reaches the arm's full pressure
   before a low reed swings, the tongue sits near the slot's mouth and its
   swing grows slowly: on Bassoon with the wheel swept in 1.5 s, C3–F#3 reach

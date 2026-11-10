@@ -45,9 +45,10 @@ int main(int argc, char** argv) {
         // The turbulence generator has a fixed seed, so the engine takes none.
         return std::make_unique<RespiraVoice>(respira::kPresets[preset], sampleRate);
     };
-    // About three times the slowest demo's median, 0.25x realtime (Master
-    // Tutti), measured 2026-10-27 in the development container (GCC 13,
-    // Release); re-set it from the first ci.yml dsp-tests run.
-    instrument.cpuBudget = 0.75;
+    // About three times the slowest demo's median, 0.13x realtime (Master
+    // Tutti at the half rate), measured 2026-11-10 in the development
+    // container (GCC 13, Release); 0.75 while the reeds stepped four times a
+    // sample.
+    instrument.cpuBudget = 0.4;
     return protocodus::demos::Main(argc, argv, instrument);
 }

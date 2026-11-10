@@ -356,6 +356,40 @@ void RatesKeepTheSound() {
     Expect(std::fabs(level[2] - level[1]) < 0.5, "RatesKeepTheSound", "96 kHz against 48 kHz, dB", level[2] - level[1]);
 }
 
+void LowHostRatesHold() {
+    // The chamber and its pallet hole are stepped in turn, which runs away
+    // when the step is longer than 1 / pi of their resonance's period. At
+    // twice the host rate A#7-C8 went non-finite at 11.025 kHz and most keys
+    // at 8 kHz, so under 40 kHz the reeds still step four times a sample, and
+    // a rate under 8 kHz, where that ran away too, is taken for 48 kHz as any
+    // other nonsense rate is. A hard pull, then a hard push.
+    const auto stroke = [](double s) { return s < 0.6 ? s / 0.6 : 1.0 - (s - 0.6) / 0.6; };
+    for (const double rate : { 8000.0, 11025.0, 16000.0, 22050.0, 32000.0 }) {
+        bool finite = true;
+        double peak = 0.0;
+        for (const int key : { 60, 96, 106, 108 }) {
+            auto e = Make(rate, 6);   // Bright Oboe: the 8' and 4' reeds
+            const Take t = Play(*e, rate, 1.2, { { 0.0, { kOn, static_cast<std::uint8_t>(key), 127 } } }, stroke);
+            for (const float v : t.left) finite = finite && std::isfinite(v);
+            for (const double p : t.pressure) finite = finite && std::isfinite(p);
+            peak = std::max(peak, Peak(t));
+        }
+        char what[96];
+        std::snprintf(what, sizeof what, "%.5g Hz: C4, C7, A#7 and C8 stay finite and under full scale, peak", rate);
+        Expect(finite && peak > 0.0 && peak < 1.0, "LowHostRatesHold", what, peak);
+    }
+    auto e = std::make_unique<Engine>();
+    e->Prepare(4000.0);
+    Controls controls = kPresets[0].ToControls();
+    controls[kRoom] = 0.0;
+    controls[kAuto] = 0.0;
+    e->SetControls(controls);
+    e->Reset();
+    const Take t = Play(*e, 48000.0, 2.0, { { 0.0, { kOn, 69, 100 } } }, PullThenPush);
+    const double cents = Cents(PeakHz(t.left, 48000.0, 0.8, 1.8, 440.0), 440.0);
+    Expect(std::fabs(cents) < 3.0, "LowHostRatesHold", "prepared at 4 kHz it plays as at 48 kHz: A4, cents", cents);
+}
+
 // The largest change between neighbouring samples of the left channel.
 double LargestStep(const std::vector<float>& x) {
     double step = 0.0;
@@ -393,10 +427,11 @@ double FinePeakHz(const std::vector<float>& x, double rate, double from, double 
 
 void TopOctaveKeepsItsPitchAtEveryStepRate() {
     // The tongue's integrator plays sharp by (omega dt)^2 / 24, which the
-    // tuning table takes out at the rate it was made at, 192 kHz. Until 0.1.24
-    // the same table at another step rate left C8 1.0 cent flat at 96 kHz or
-    // Oversampling 2x and 1.3 flat at 4x; StepStiffness now corrects the
-    // tongue for its step. One 4186 Hz reed, the same pull every time.
+    // tuning table takes out at the rate it was made at, 96 kHz. The same
+    // table at another step rate would leave C8 4.1 cents flat at 96 kHz or
+    // Oversampling 2x and 5.1 flat at 4x (1.0 and 1.3 until 0.1.24, with the
+    // table then made at 192 kHz); StepStiffness corrects the tongue for its
+    // step. One 4186 Hz reed, the same pull every time.
     const double c8 = 440.0 * std::pow(2.0, (108 - 69) / 12.0);
     auto pitch = [c8](double rate, int oversampling) {
         auto e = Make(rate, 0, [oversampling](Controls& c) { c[kOversampling] = oversampling; });
@@ -1802,6 +1837,7 @@ int main() {
     TurnWithoutClick();
     StillnessStopsTheSound();
     RatesKeepTheSound();
+    LowHostRatesHold();
     OversamplingKeepsTheSound();
     TopOctaveKeepsItsPitchAtEveryStepRate();
     MasterTune();

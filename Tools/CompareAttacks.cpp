@@ -17,7 +17,7 @@
 // at least 15 takes were made. The paper does not specify the temporal FFT
 // window/overlap, so an exact replication of its estimator is not possible.
 //
-// This tool uses the current tuned M cell, at 192 kHz, with fixed negative
+// This tool uses the current tuned M cell, at the tuning rate, with fixed negative
 // bellows pressure, its chamber initially at that pressure (Engine::StartCell),
 // no turbulence, and the engine's raised-cosine pallet opening. The default
 // 3 ms is the engine's fastest stroke (velocity 127), not a measured pallet
@@ -303,8 +303,8 @@ int main(int argc, char** argv) {
         const Options options = Parse(argc, argv);
         if (options.selfTest) { SelfTest(); return 0; }
         if (!options.traceDir.empty()) std::filesystem::create_directories(options.traceDir);
-        std::fprintf(stderr, "Bare pulled M cell, 192 kHz, %.1f s, %.1f ms pallet, harmonic source SPL at 0.5 m.\n"
-            "Centered Hann; apparent key latencies include window smear. Reference precision 10 ms.\n", options.seconds, options.palletMs);
+        std::fprintf(stderr, "Bare pulled M cell, %.0f kHz, %.1f s, %.1f ms pallet, harmonic source SPL at 0.5 m.\n"
+            "Centered Hann; apparent key latencies include window smear. Reference precision 10 ms.\n", probe::kRate / 1000.0, options.seconds, options.palletMs);
         std::printf("note,midi,target_dba,pressure_pa,source_dba,settling_db,f0_hz,seconds,pallet_ms,window_cycles,window_ms,first_minus50_ms,last_minus50_ms,first_minus5_ms,first_rise_ms,last_rise_ms,crossings_minus50,paper_finger_ms,first_difference_ms,last_difference_ms\n");
         for (const Reference& ref : kReferences) {
             if (!options.note.empty() && options.note != ref.name) continue;
