@@ -46,11 +46,11 @@ int main(int argc, char** argv) {
         // The turbulence generator has a fixed seed, so the engine takes none.
         return std::make_unique<RespiraVoice>(respira::kPresets[preset], sampleRate);
     };
-    // About three times the slowest demo's median, 0.13x realtime (Master
+    // About four times the slowest demo's median, 0.11-0.13x realtime (Master
     // Tutti at the half rate), measured 2026-11-10 in the development
-    // container (GCC 13, Release); 0.75 while the reeds stepped four times a
-    // sample.
-    instrument.cpuBudget = 0.4;
+    // container (GCC 13, Release); with five other sessions building there it
+    // read 0.35x. 0.75 while the reeds stepped four times a sample.
+    instrument.cpuBudget = 0.5;
     instrument.stress.clear();
     for (const auto& e : respira::StressPhrase())
         instrument.stress.push_back({ e.seconds, { e.bytes[0], e.bytes[1], e.bytes[2] }, 3 });

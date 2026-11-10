@@ -34,6 +34,10 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
+### 0.1.27 — 2026-11-10 — less work in the folds and the room
+
+- The bellows' moving panels are stepped and sorted back into their sets in one pass, and the room's sixteen lines take their signs from two tables. The sound is the same to the bit: the eight demos and the eight stress phrases render as on 0.1.26. Instructions fall by 9 % on a single clarinet reed's demo, 3 % on Paris Musette and 1.6 % on Master Tutti; built with the Rack's compiler flags, by 3 %, 1 % and 0.5 % ([figures](Docs/benchmarks/half-rate-2026-11-10.md)).
+
 ### 0.1.26 — 2026-11-10 — a key above C8 no longer cuts a held note
 
 - A treble key above C8 (or below C2 with the keyboard unsplit) plays the reed of the key an octave or more away. Letting it go while that other key stayed down shut the reed: with C♯7 held, pressing and releasing C♯8 silenced C♯7 under its finger. The reed now stays open until every key on it is up, as a bass button's reed already did.
@@ -806,7 +810,7 @@ a pitch wheel should do what it says.
   (`Tools/StressPhrase.h`), averages 5–17 % from preset to preset with worst
   blocks of 16–46 %.
   `Respira.CpuBudget` warns above the ceiling and fails only when a repeat
-  differs or a demo's median passes 0.4× realtime. Stepping the reeds twice
+  differs or a demo's median passes 0.5× realtime. Stepping the reeds twice
   per host sample in place of four times (0.1.25) took 0.56 of Master Tutti's
   instructions; before it the demos' worst blocks took 10 %, 12–29 % and
   49–60 %. A sounding chamber takes about 640 instructions per step, a third

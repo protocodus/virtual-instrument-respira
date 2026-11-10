@@ -33,6 +33,11 @@ public:
         0.023396, 0.025354, 0.027646, 0.030146, 0.032729, 0.035604, 0.038771, 0.042229,
         0.045896, 0.049854, 0.054354, 0.059021, 0.064229, 0.069979, 0.076229, 0.083104 } };
     static constexpr int kMaxLine = 16384;   // 83 ms at 192 kHz, plus the drift
+    // Each line's sign of the input, (i & 2) ? -1 : 1, and of its share of
+    // the side readout, the parity of i's three low bits: tables, so the
+    // lines' loop has no bit tests in it.
+    static constexpr std::array<double, kLines> kInputSign { { 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, -1, -1 } };
+    static constexpr std::array<double, kLines> kSideSign { { 1, -1, -1, 1, -1, 1, 1, -1, 1, -1, -1, 1, -1, 1, 1, -1 } };
     // The drift: 0.125 ms each way, at rates from 0.13 to 0.97 Hz spread over
     // the lines; a held note's tail moves by under a cent.
     static constexpr double kDriftSeconds = 0.000125, kSlowestDrift = 0.13, kFastestDrift = 0.97;
@@ -238,15 +243,14 @@ public:
         roomLeft = earlyL;
         roomRight = earlyR;
         double sideField = 0.0;
+        // Constant and parity-of-three-bits Hadamard rows: orthogonal
+        // readouts, each also orthogonal to the alternating-pair input
+        // (kInputSign, kSideSign). The finite FDN only approximates
+        // independent diffuse components; impulse/noise-tail covariance is
+        // checked across sample rates.
         for (std::size_t i = 0; i < kLines; ++i) {
-            const double sign = (i & 2u) ? -1.0 : 1.0;
-            lineBuffer[i][static_cast<std::size_t>(lineWrite)] = Settled(out[i] - feedback + sign * input);
-            // Constant and parity-of-three-bits Hadamard rows: orthogonal
-            // readouts, each also orthogonal to the alternating-pair input.
-            // The finite FDN only approximates independent diffuse components;
-            // impulse/noise-tail covariance is checked across sample rates.
-            const bool negative = ((i ^ (i >> 1u) ^ (i >> 2u)) & 1u) != 0u;
-            sideField += negative ? -out[i] : out[i];
+            lineBuffer[i][static_cast<std::size_t>(lineWrite)] = Settled(out[i] - feedback + kInputSign[i] * input);
+            sideField += kSideSign[i] * out[i];
         }
         if (++lineWrite == kMaxLine) lineWrite = 0;
         // Coefficient norm 16*(1/2)^2=4, as in each former eight-line output

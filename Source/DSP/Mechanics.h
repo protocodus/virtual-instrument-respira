@@ -484,57 +484,55 @@ struct Folds {
         // Under 1e-200 Pa a resting panel's load times its place could round
         // to zero, which Pleat::Step reads as resting; every one is asked then.
         const bool tiny = p != 0.0 && Abs(p) < 1.0e-200;
-        // The panels to step, in order: listed first, so that stepping them
-        // is one plain loop.
-        std::uint8_t list[kPleats];
-        int count = 0;
-        for (int w = 0; w < kWords; ++w) {
-            const int size = kPleats - 64 * w < 64 ? kPleats - 64 * w : 64;
-            const std::uint64_t all = size == 64 ? ~std::uint64_t(0) : (std::uint64_t(1) << size) - 1;
-            const std::uint64_t resting = all & ~moving[w];
-            // Those within their play (in neither set) move only above kPleatHold.
-            const std::uint64_t held = Abs(p) > kPleatHold ? all : out[w] | in[w];
-            const std::uint64_t against = p == 0.0 ? 0 : tiny ? resting : resting & ~(p > 0.0 ? out[w] : in[w]) & held;
-            for (std::uint64_t step = moving[w] | against; step != 0; step &= step - 1)
-                list[count++] = static_cast<std::uint8_t>(64 * w + LowestBit(step));
-        }
+        const bool firm = Abs(p) > kPleatHold;
         double flips = 0.0;
         const int steps = Pleat::Steps(dt);
         const double h = dt / steps;
-        for (int i = 0; i < count; ++i) {
-            // A copy, which the compiler keeps in registers through the step.
-            Pleat pleat = pleats[list[i]];
-            const int w = list[i] / 64;
-            const std::uint64_t bit = std::uint64_t(1) << (list[i] % 64);
-            if ((unplaced[w] & bit) && Abs(p) > kPleatHold) {
-                // Its first load: at rest on that side's hinge, bearing it.
-                unplaced[w] &= ~bit;
-                pleat.contact = p * pleat.area;
-                pleat.x = (p > 0.0 ? 1.0 : -1.0) * (pleat.play + Pleat::Compression(Abs(pleat.contact)));
-                pleats[list[i]] = pleat;
-                continue;
+        for (int w = 0; w < kWords; ++w) {
+            const int size = kPleats - 64 * w < 64 ? kPleats - 64 * w : 64;
+            const std::uint64_t all = size == 64 ? ~std::uint64_t(0) : (std::uint64_t(1) << size) - 1;
+            // A panel reads and writes only its own bit of each set, so the
+            // word's sets stay in registers while its panels step.
+            std::uint64_t nowMoving = moving[w], nowOut = out[w], nowIn = in[w], nowFresh = 0;
+            const std::uint64_t resting = all & ~nowMoving;
+            // Those within their play (in neither set) move only above kPleatHold.
+            const std::uint64_t held = firm ? all : nowOut | nowIn;
+            const std::uint64_t against = p == 0.0 ? 0 : tiny ? resting : resting & ~(p > 0.0 ? nowOut : nowIn) & held;
+            for (std::uint64_t step = nowMoving | against; step != 0; step &= step - 1) {
+                const std::uint64_t bit = step & (~step + 1);
+                Pleat& stored = pleats[static_cast<std::size_t>(64 * w + LowestBit(step))];
+                // A copy, which the compiler keeps in registers through the step.
+                Pleat pleat = stored;
+                if ((unplaced[w] & bit) && firm) {
+                    // Its first load: at rest on that side's hinge, bearing it.
+                    unplaced[w] &= ~bit;
+                    pleat.contact = p * pleat.area;
+                    pleat.x = (p > 0.0 ? 1.0 : -1.0) * (pleat.play + Pleat::Compression(Abs(pleat.contact)));
+                } else {
+                    if (!pleat.moving && !(fresh[w] & bit)) pleat.contact = last * pleat.area;
+                    flips += pleat.Step(p, steps, h);
+                    stored.v = pleat.v;
+                    stored.moving = pleat.moving;
+                }
+                stored.x = pleat.x;
+                stored.contact = pleat.contact;
+                const bool was = nowMoving & bit;
+                nowMoving &= ~bit;
+                nowOut &= ~bit;
+                nowIn &= ~bit;
+                if (pleat.moving) nowMoving |= bit;
+                else {
+                    // One resting within its play is in neither set: any
+                    // pressure may move it, and Pleat::Step holds it below kPleatHold.
+                    if (pleat.x > pleat.play) nowOut |= bit;
+                    else if (pleat.x < -pleat.play) nowIn |= bit;
+                    if (was) nowFresh |= bit;
+                }
             }
-            if (!pleat.moving && !(fresh[w] & bit)) pleat.contact = last * pleat.area;
-            flips += pleat.Step(p, steps, h);
-            pleats[list[i]] = pleat;
-        }
-        for (int w = 0; w < kWords; ++w) fresh[w] = 0;
-        for (int i = 0; i < count; ++i) {
-            const Pleat& pleat = pleats[list[i]];
-            const int w = list[i] / 64;
-            const std::uint64_t bit = std::uint64_t(1) << (list[i] % 64);
-            const bool was = moving[w] & bit;
-            out[w] &= ~bit;
-            in[w] &= ~bit;
-            moving[w] &= ~bit;
-            if (pleat.moving) moving[w] |= bit;
-            else {
-                // One resting within its play is in neither set: any
-                // pressure may move it, and Pleat::Step holds it below kPleatHold.
-                if (pleat.x > pleat.play) out[w] |= bit;
-                else if (pleat.x < -pleat.play) in[w] |= bit;
-                if (was) fresh[w] |= bit;
-            }
+            moving[w] = nowMoving;
+            out[w] = nowOut;
+            in[w] = nowIn;
+            fresh[w] = nowFresh;
         }
         last = p;
         return flips;

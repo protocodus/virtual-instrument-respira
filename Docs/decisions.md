@@ -2338,5 +2338,5 @@ What the choice licensed, and what it did not:
   margin (`LowHostRatesHold`).
 - The CPU it buys, in instructions: Master Tutti's demo 20.82 G before,
   11.70 G after (×0.56). `Docs/benchmarks/half-rate-2026-11-10.md` has the
-  rest. The demo renderer's median budget goes from 0.75× to 0.4× realtime
+  rest. The demo renderer's median budget goes from 0.75× to 0.5× realtime
   with it.
