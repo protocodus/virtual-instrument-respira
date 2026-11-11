@@ -36,5 +36,6 @@ node thumbs.mjs out/thumbs
 `promo.mjs` needs `@napi-rs/canvas`, Inter in `/usr/share/fonts/opentype/inter/`,
 and in `../assets/` the Playfair Display 700 and 800 italics as TTF and the
 Protocodus logo (`reason-rack-extensions/Examples/Respira/Design/Brand/Protocodus-logo.png`);
-`thumbs.mjs` also needs `accordion-open.png` from `Design/Pictures/` there.
+`thumbs.mjs` also needs the Codex hero art `landscape.png` and `portrait.png` there
+(project files `respira/promo-fast-2026-11-11/thumbs/codex-art/`, with their prompts).
 `promo_audio.py` needs NumPy, SciPy, soundfile, pyloudnorm and mido.
