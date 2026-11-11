@@ -5,7 +5,10 @@
 // 60 Hz trace). The reeds are illustrative: their swing follows the measured
 // bellows pressure (sign = push/pull), their length the pitch; their visible rate
 // is not the pitch.
-// usage: node promo.mjs <timeline.json> <audio.wav> <out.mp4> [--still t1 t2 ...]
+// usage: node promo.mjs <timeline.json> <audio.wav> <out.mp4> [--portrait] [--still t1 t2 ...]
+// --portrait draws a 1080x1920 short, every word inside the project's TikTok
+// safe box (x 130-821, y 307-1190); the roll and progress bar are artwork and
+// run below and behind it.
 import fs from 'node:fs';
 import path from 'node:path';
 import {spawn} from 'node:child_process';
@@ -20,8 +23,9 @@ GlobalFonts.registerFromPath('/usr/share/fonts/opentype/inter/Inter-Medium.otf',
 GlobalFonts.registerFromPath('/usr/share/fonts/opentype/inter/Inter-SemiBold.otf', 'InterS');
 const logo = await loadImage(`${A}/logo.png`);
 
-const [timelinePath, audioPath, outPath, ...rest] = process.argv.slice(2);
-const W = 1920, H = 1080;
+let [timelinePath, audioPath, outPath, ...rest] = process.argv.slice(2);
+const P = rest[0] === '--portrait'; if (P) rest = rest.slice(1);
+const W = P ? 1080 : 1920, H = P ? 1920 : 1080, MX = 475;   // MX: the safe box's centre line
 const still = rest[0] === '--still' ? rest.slice(1).map(Number) : null;
 const T = JSON.parse(fs.readFileSync(timelinePath));
 const fps = T.fps, dur = T.duration, frames = Math.ceil(dur * fps), SEG = T.segments;
@@ -41,7 +45,8 @@ const XF = 0.35;
 SEG.forEach((s, i) => { s.in = i ? (s.start + SEG[i - 1].end) / 2 : s.start; s.out = i < SEG.length - 1 ? (s.end + SEG[i + 1].start) / 2 : Infinity; });
 const segAlpha = (s, t) => ease((t - s.in) / XF) * ease((s.out - t) / XF);
 const final = SEG[SEG.length - 1], OUT0 = final.last - 0.4;   // the end card rises with the last chord's release
-const R = {x0: 990, x1: 1784, y0: 150, y1: 905, play: 1290}, PPS = 160;
+const R = P ? {x0: 40, x1: 1040, y0: 840, y1: 1640, play: 400} : {x0: 990, x1: 1784, y0: 150, y1: 905, play: 1290};
+const PPS = P ? 170 : 160;
 
 function spaced(ctx, str, x, y, sp, align = 'left') {
   let w = 0; for (const ch of str) w += ctx.measureText(ch).width + sp; w -= sp;
@@ -114,27 +119,35 @@ function scene(ctx, s, u, a) {
     }
   });
   // the piece, its players and the register switch
-  text(ctx, s.title, 136, 632, '112px PlayB', '#f4e8d2', 'left', ['rgba(255,200,140,0.25)', 26]);
-  text(ctx, s.sub, 140, 694, '38px InterS', '#ebb853');
-  const cols = s.parts.length === 2 ? [140, 520] : [140];
-  s.parts.forEach((part, k) => {
-    const c = colourOf(s, k), x = cols[k], y0 = 788;
-    const reg = registerAt(part, u)[1].toUpperCase();
-    const air = traceAt(part, 'air', u), cells = traceAt(part, 'cells', u), P = traceAt(part, 'pressure', u);
-    const way = cells > 0 && Math.abs(P) > 20 ? (P > 0 ? ' · push' : ' · pull') : '';
-    text(ctx, part.label, x, y0, '23px InterS', rgba(c, 1), 'left', null, 4);
-    text(ctx, reg, x, y0 + 42, '31px InterS', '#f2e7d7', 'left', null, 2);
-    text(ctx, `${air.toFixed(2)} L/s air · ${cells} reeds${way}`, x, y0 + 80, '23px InterR', '#dccdb9');
-  });
+  if (P) {
+    text(ctx, s.title, MX, 692, '92px PlayB', '#f4e8d2', 'center', ['rgba(255,200,140,0.25)', 26]);
+    text(ctx, s.sub, MX, 744, '32px InterS', '#ebb853', 'center');
+    const who = s.parts.map((part, k) => `${part.label} ${registerAt(part, u)[1].toUpperCase()}`).join('  ·  ');
+    text(ctx, who, MX, 790, '24px InterS', '#e6d8c4', 'center', null, 2);
+  } else {
+    text(ctx, s.title, 136, 632, '112px PlayB', '#f4e8d2', 'left', ['rgba(255,200,140,0.25)', 26]);
+    text(ctx, s.sub, 140, 694, '38px InterS', '#ebb853');
+    const cols = s.parts.length === 2 ? [140, 520] : [140];
+    s.parts.forEach((part, k) => {
+      const c = colourOf(s, k), x = cols[k], y0 = 788;
+      const reg = registerAt(part, u)[1].toUpperCase();
+      const air = traceAt(part, 'air', u), cells = traceAt(part, 'cells', u), Pa = traceAt(part, 'pressure', u);
+      const way = cells > 0 && Math.abs(Pa) > 20 ? (Pa > 0 ? ' · push' : ' · pull') : '';
+      text(ctx, part.label, x, y0, '23px InterS', rgba(c, 1), 'left', null, 4);
+      text(ctx, reg, x, y0 + 42, '31px InterS', '#f2e7d7', 'left', null, 2);
+      text(ctx, `${air.toFixed(2)} L/s air · ${cells} reeds${way}`, x, y0 + 80, '23px InterR', '#dccdb9');
+    });
+  }
   for (const part of s.parts) for (const [rt, name] of part.registers.slice(1)) {
     if (rt < s.src0 || rt > s.src0 + span) continue;
     const ca = ease((u - rt) / 0.3) * ease((rt + 3.6 - u) / 0.6);
     if (ca <= 0) continue;
     ctx.save(); ctx.globalAlpha *= ca; ctx.font = '26px InterM';
     const label = `Register switch: ${name}`, tw = ctx.measureText(label).width;
-    round(ctx, 136, 458, tw + 44, 48, 24); ctx.fillStyle = 'rgba(40,10,12,0.55)'; ctx.fill();
+    const bx = P ? MX - (tw + 44) / 2 : 136, by = P ? 860 : 458;
+    round(ctx, bx, by, tw + 44, 48, 24); ctx.fillStyle = 'rgba(40,10,12,0.8)'; ctx.fill();
     ctx.strokeStyle = 'rgba(232,178,84,0.75)'; ctx.lineWidth = 1.5; ctx.stroke();
-    ctx.fillStyle = '#f2e7d7'; ctx.fillText(label, 158, 491); ctx.restore();
+    ctx.fillStyle = '#f2e7d7'; ctx.fillText(label, bx + 22, by + 33); ctx.restore();
   }
   ctx.restore();
 }
@@ -148,8 +161,8 @@ function draw(ctx, t) {
   g.addColorStop(0, '#180407'); g.addColorStop(0.5, '#2a080d'); g.addColorStop(1, '#100305');
   ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
   const airAll = live.reduce((sum, [s, a]) => sum + a * s.parts.reduce((q, p) => q + traceAt(p, 'air', t - s.start + s.src0), 0), 0);
-  const cx = (R.x0 + R.x1) / 2 + 60, cy = (R.y0 + R.y1) / 2;
-  const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, 760);
+  const cx = (R.x0 + R.x1) / 2 + (P ? 0 : 60), cy = (R.y0 + R.y1) / 2;
+  const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, P ? 640 : 760);
   glow.addColorStop(0, `rgba(150,36,40,${(0.30 + 0.10 * clamp(airAll / 1.5)) * fade})`);
   glow.addColorStop(0.6, 'rgba(90,16,22,0.10)'); glow.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
@@ -165,24 +178,32 @@ function draw(ctx, t) {
 
   // the end card, in the roll's place
   if (endA > 0) {
-    ctx.save(); ctx.globalAlpha = endA * fade; const mx = (R.x0 + R.x1) / 2;
-    text(ctx, 'Every note,', mx, 470, '96px PlayB', '#f4e8d2', 'center', ['rgba(255,200,140,0.25)', 26]);
-    text(ctx, 'air from the bellows.', mx, 580, '96px PlayB', '#f4e8d2', 'center', ['rgba(255,200,140,0.25)', 26]);
-    text(ctx, 'Three dances · one physical model', mx, 668, '36px InterS', '#ebb853', 'center');
+    ctx.save(); ctx.globalAlpha = endA * fade; const mx = P ? MX : (R.x0 + R.x1) / 2, f = P ? 64 : 96;
+    const y = P ? 1000 : 470, dy = P ? 76 : 110;
+    text(ctx, 'Every note,', mx, y, `${f}px PlayB`, '#f4e8d2', 'center', ['rgba(255,200,140,0.25)', 26]);
+    text(ctx, 'air from the bellows.', mx, y + dy, `${f}px PlayB`, '#f4e8d2', 'center', ['rgba(255,200,140,0.25)', 26]);
+    if (!P) text(ctx, 'Three dances · one physical model', mx, 668, '36px InterS', '#ebb853', 'center');
     ctx.restore();
   }
 
   // identity: on every frame, never faded
-  ctx.drawImage(logo, 140, 108, 88, 88); text(ctx, 'PROTOCODUS', 248, 164, '30px InterS', '#efe4d4', 'left', null, 9);
-  ctx.save(); ctx.font = '152px PlayX';
-  const gg = ctx.createLinearGradient(0, 322 - 152 * 0.8, 0, 322 + 152 * 0.15);
+  if (P) {
+    ctx.font = '28px InterS'; let pw = 0; for (const ch of 'PROTOCODUS') pw += ctx.measureText(ch).width + 8; pw -= 8;
+    const lx = MX - (72 + 18 + pw) / 2;
+    ctx.drawImage(logo, lx, 320, 72, 72); text(ctx, 'PROTOCODUS', lx + 90, 367, '28px InterS', '#efe4d4', 'left', null, 8);
+  } else {
+    ctx.drawImage(logo, 140, 108, 88, 88); text(ctx, 'PROTOCODUS', 248, 164, '30px InterS', '#efe4d4', 'left', null, 9);
+  }
+  const rx = P ? MX : 136, ry = P ? 490 : 322, rs = P ? 118 : 152;
+  ctx.save(); ctx.font = `${rs}px PlayX`; ctx.textAlign = P ? 'center' : 'left';
+  const gg = ctx.createLinearGradient(0, ry - rs * 0.8, 0, ry + rs * 0.15);
   gg.addColorStop(0, '#f8dc96'); gg.addColorStop(0.55, '#e9b45c'); gg.addColorStop(1, '#c98a33');
-  ctx.shadowColor = 'rgba(255,186,90,0.38)'; ctx.shadowBlur = 34; ctx.fillStyle = gg; ctx.fillText('Respira', 136, 322); ctx.restore();
-  text(ctx, 'physically modelled accordion', 140, 382, '34px InterM', '#eadfd0', 'left', null, 1.2);
-  text(ctx, `Reason Rack Extension · ${T.version}`, 140, 428, '25px InterM', 'rgba(222,186,120,0.92)', 'left', null, 0.6);
+  ctx.shadowColor = 'rgba(255,186,90,0.38)'; ctx.shadowBlur = 34; ctx.fillStyle = gg; ctx.fillText('Respira', rx, ry); ctx.restore();
+  text(ctx, 'physically modelled accordion', P ? MX : 140, P ? 538 : 382, `${P ? 28 : 34}px InterM`, '#eadfd0', P ? 'center' : 'left', null, 1.2);
+  text(ctx, `Reason Rack Extension · ${T.version}`, P ? MX : 140, P ? 574 : 428, `${P ? 22 : 25}px InterM`, 'rgba(222,186,120,0.92)', P ? 'center' : 'left', null, 0.6);
 
   // progress across the whole film, one track per piece
-  const px0 = 140, px1 = 1784, py = 985, gap = 14;
+  const [px0, px1, py] = P ? [140, 940, 1690] : [140, 1784, 985], gap = 14;
   const bounds = SEG.map((s, i) => [i ? s.in : 0, Math.min(s.out, dur)]);
   ctx.save(); ctx.globalAlpha = fade;
   for (const [b0, b1] of bounds) {

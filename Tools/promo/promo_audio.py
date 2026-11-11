@@ -7,23 +7,30 @@ hall run over the whole piece so an excerpt starts with its true tail. Each
 excerpt fades in over 40 ms ending on its first downbeat and out over its last
 0.9 s of hall; excerpts are matched on integrated BS.1770 loudness, overlapped by
 0.35 s, then the whole is mastered to -16 LUFS with true peak <= -1.15 dBTP (4x)
-by mix.py's look-ahead limiter. Writes promo.wav, promo-dry.wav, timeline.json."""
-import json, numpy as np, soundfile as sf, pyloudnorm as pyln
+by mix.py's look-ahead limiter. Writes out/<set>/<set>.wav, <set>-dry.wav,
+timeline.json and report.json; <set> is the film (promo) or one short."""
+import os, json, numpy as np, soundfile as sf, pyloudnorm as pyln
 from scipy.signal import fftconvolve, butter, sosfilt, resample_poly
 from scipy.ndimage import minimum_filter1d
 from dump import load
 sr = 48000; meter = pyln.Meter(sr)
 REG = ['Clarinet', 'Bassoon', 'Violin', 'Musette', 'Bandoneon', 'Organ', 'Oboe', 'Master']
 # piece dir, parts (file stem, label, preset/register at start, gain dB), excerpt [s0, s1] in piece seconds
-SEGMENTS = [
- dict(song='tarantella', title='Tarantella', sub='Tarantella napoletana · Traditional',
-      parts=[('solo', 'SOLO', 2, 0.0)], s0=33.40, s1=57.4),
- dict(song='csardas-iii', title='Uszodi csárdás', sub='The friss · Hungarian traditional',
-      parts=[('cut', 'SOLO', 6, 0.0)], s0=43.97, s1=67.5),
- dict(song='csardas', title='Csárdás', sub='The friss · Hungarian traditional',
-      parts=[('lead', 'LEAD', 2, 0.0), ('second', 'SECOND', 4, -8.78)], s0=86.38, s1=130.6),
-]
-LEAD_IN, OVERLAP, FADE_IN, FADE_OUT, TAIL = 0.6, 0.35, 0.04, 0.9, 1.2
+import sys
+TAR = dict(song='tarantella', title='Tarantella', sub='Tarantella napoletana · Traditional', parts=[('solo', 'SOLO', 2, 0.0)])
+USZ = dict(song='csardas-iii', title='Uszodi csárdás', sub='The friss · Hungarian traditional', parts=[('cut', 'SOLO', 6, 0.0)])
+CSA = dict(song='csardas', title='Csárdás', sub='The friss · Hungarian traditional',
+           parts=[('lead', 'LEAD', 2, 0.0), ('second', 'SECOND', 4, -8.78)])
+# name -> (excerpts, lead-in s); a short is one excerpt under 30 s, starting at once
+SETS = {
+ 'promo': ([dict(TAR, s0=33.40, s1=57.4), dict(USZ, s0=43.97, s1=67.5), dict(CSA, s0=86.38, s1=130.6)], 0.6),
+ 'short-tarantella': ([dict(TAR, s0=33.40, s1=57.4)], 0.1),
+ 'short-uszodi': ([dict(USZ, s0=43.97, s1=67.5)], 0.1),
+ 'short-csardas': ([dict(CSA, s0=100.66, s1=130.3)], 0.1),   # the Master reprise to the end
+}
+NAME = sys.argv[1] if len(sys.argv) > 1 else 'promo'
+SEGMENTS, LEAD_IN = SETS[NAME]
+OVERLAP, FADE_IN, FADE_OUT, TAIL = 0.35, 0.04, 0.9, 1.2
 L = int(2.6 * sr); tt = np.arange(L) / sr
 def ir(seed):   # mix.py's hall
     r = np.random.default_rng(seed).standard_normal(L)
@@ -54,7 +61,8 @@ for seg in SEGMENTS:
     report['segments'].append(dict(title=seg['title'], piece_s=[seg['s0'], round(b / sr, 3)], promo_s=[round(at, 3), round(at + (b - a) / sr, 3)], match_gain_db=round(20 * np.log10(g), 2)))
     seg['start'], seg['end'] = at, at + (b - a) / sr
     at += (b - a) / sr - OVERLAP
-total = int((SEGMENTS[-1]['end'] + TAIL) * sr)
+os.makedirs(f'out/{NAME}', exist_ok=True)
+total = int((SEGMENTS[-1]['end'] + (TAIL if len(SEGMENTS) > 1 else 0.0)) * sr)
 mix, drym = np.zeros((total, 2)), np.zeros((total, 2))
 for (s, c), (_, dc) in zip(clips, dries):
     i = int(round(s * sr)); mix[i:i + len(c)] += c; drym[i:i + len(dc)] += dc
@@ -69,8 +77,8 @@ for i in range(total):
 mix *= gain[:, None]
 report.update(limiter_max_gr_db=round(float(-20 * np.log10(gain.min())), 2), lufs=round(float(meter.integrated_loudness(mix)), 2),
               true_peak=round(float(tp(mix)), 2), duration=round(total / sr, 3))
-sf.write('out/promo/promo.wav', mix, sr, subtype='PCM_24')
-sf.write('out/promo/promo-dry.wav', drym / np.abs(drym).max() * 0.89, sr, subtype='PCM_24')
+sf.write(f'out/{NAME}/{NAME}.wav', mix, sr, subtype='PCM_24')
+sf.write(f'out/{NAME}/{NAME}-dry.wav', drym / np.abs(drym).max() * 0.89, sr, subtype='PCM_24')
 
 # timeline for promo.mjs: each segment's notes, registers and 60 Hz trace in piece time
 tl = dict(duration=total / sr, fps=30, version='0.1.27f1', segments=[])
@@ -85,5 +93,5 @@ for seg in SEGMENTS:
         parts.append(dict(label=label, registers=regs, notes=notes, trace=dict(
             pressure=[round(float(v), 1) for v in trc['pressure']], air=[round(float(v), 3) for v in air], cells=[int(v) for v in trc['cells']])))
     tl['segments'].append(dict(title=seg['title'], sub=seg['sub'], start=seg['start'], end=seg['end'], src0=seg['s0'], parts=parts))
-json.dump(tl, open('out/promo/timeline.json', 'w'))
-json.dump(report, open('out/promo/report.json', 'w'), indent=1); print(json.dumps(report, indent=1))
+json.dump(tl, open(f'out/{NAME}/timeline.json', 'w'))
+json.dump(report, open(f'out/{NAME}/report.json', 'w'), indent=1); print(json.dumps(report, indent=1))
