@@ -34,6 +34,11 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
+### 0.3.0 — 2026-11-18 — Balkan, Italian and Finnish types
+
+- **Type** adds **Balkan**, **Italian** and **Finnish** ([Types](#types)), approximations read off a digital accordion's demo of those sets: Balkan about 15 cents of tremolo, Italian about 16, Finnish about 19 at the default Musette, and Balkan and Finnish sound their 16' and 8' ranks, tremolo reeds included, through the cassotto, darker above 2 kHz as those sets are.
+- Three factory presets play them: Balkan Kolo, Italian Liscio and Finnish Tango. Default and the six earlier types are unchanged.
+
 ### 0.2.0 — 2026-11-18 — six accordion types
 
 - A **Type** control chooses which kind of accordion the reeds are built as: Default, Bandoneon, Irish, German, French or Jazz ([Types](#types)). Each changes what its kind of instrument is known to do differently: the tremolo reeds' tuning (dry for Bandoneon and Jazz, about 7 cents for Irish, 14 for German, 28 for French at the default Musette), the reed plates, the tongues' set and loss, and for Jazz a cassotto, the tone chamber the 16' and 8' ranks sound through. A new Type reaches held notes too.
@@ -531,6 +536,21 @@ the physical model, not a filter on its output:
 | German | 14 cents | as Default | open |
 | French | 28 cents | lighter plates (0.9× the slot) | open |
 | Jazz | 3 cents, dry | hand-made: Q 1.15× | 16' and 8' in a cassotto |
+| Balkan | about 15 cents | as Default | 16' and the three 8' ranks in a cassotto |
+| Italian | about 16 cents | as Default | open |
+| Finnish | about 19 cents | as Default | 16' and the three 8' ranks in a cassotto |
+
+Balkan, Italian and Finnish are read off a comparison the owner shared, a
+digital accordion's demo of its French, Balkan, German, Italian, Finnish and
+Irish sets, about 11–17 s of busy playing each. The tremolo is the median
+beat of each set's sustained notes, from the side peaks round the strongest
+partial and from that partial's envelope, taken to A4 by the beat law
+above; the two readings spread by several cents (Balkan 9–18, Italian 10–19,
+Finnish 18–21), and German read 11–16 on the same ruler against the 14 its
+type already takes. Above 2 kHz the Balkan and Finnish sets sit about 8 dB
+under the French, German and Irish ones, which is what the cassotto takes,
+and the Italian about 3 dB under, which the plates' changes cannot place, so
+Italian stays open.
 
 The tremolo figures are tuners' published ones (Liberty Bellows' list and
 accordionists.info's tuning threads: swing 2–4 cents, modern Irish 5–7,
@@ -813,10 +833,10 @@ strokes read −1.7 VU at most. Volume sets the level going into the stage.
 | Mechanics | −40 to +20 dB | the keys', pallets', buttons' and switches' knocks, the bellows' folds and the push valves' slaps, against the estimate (The mechanism); +5.6 dB by default, by ear; at −40 dB they are all but silent |
 | Auto | off, on | on by default: the hand plays endless bellows, turned by the C0 and C#0 keyswitches, and the wheel softens or swells it (Auto) |
 | Room | 0–1 wet | the hall around the microphones: 0 dry, 0.5 % by default, 1 as decorrelated as the solo recordings; sigmoid knob response, actual wet percentage displayed (The microphones) |
-| Type | Default, Bandoneon, Irish, German, French, Jazz | the kind of accordion the reeds and chambers are built as (Types) |
+| Type | Default, Bandoneon, Irish, German, French, Jazz, Balkan, Italian, Finnish | the kind of accordion the reeds and chambers are built as (Types) |
 
 `Source/DSP/RespiraControls.h` holds these for every front end;
-`Source/DSP/RespiraPresets.h` holds the thirteen factory presets, one per
+`Source/DSP/RespiraPresets.h` holds the sixteen factory presets, one per
 register on the Default type, then one for each other type, each setting its Volume so it sits within 1 dB of Init on one
 reference stroke (a bass, a chord and a C major triad on a moderate 2 s pull
 and push), with its peak below −3 dBFS.
@@ -839,6 +859,9 @@ a pitch wheel should do what it says.
   the cassotto's size are estimates of each kind's construction, not
   measurements of an instrument. No recording of each type has been measured
   against them; a listening test chose them over Default (Docs/decisions.md).
+  Balkan, Italian and Finnish are read off a sampled instrument's demo, with
+  its arrangements in the way: their tremolo is known to a few cents, and
+  their cassotto stands for a darker sound measured only as a whole.
 
 - **No plug-in yet.** There is no JUCE VST3, AU, CLAP or standalone build,
   so there is no editor screenshot, no main-build or release workflow, no

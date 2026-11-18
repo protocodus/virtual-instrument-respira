@@ -82,7 +82,28 @@ inline double NoteHz(double note) { return 440.0 * std::pow(2.0, (note - 69.0) /
 //   - Jazz: dry, hand-made reeds (Q 1.15 times the default's) with the 16'
 //     and 8' ranks in a cassotto, the tone chamber whose bend attenuates the
 //     upper harmonics and reinforces the lows (Engine's cassotto, RespiraEngine.cpp).
-enum Type : int { kTypeDefault, kTypeBandoneon, kTypeIrish, kTypeGerman, kTypeFrench, kTypeJazz, kTypeCount };
+//
+// Balkan, Italian and Finnish (0.3.0) are read off one comparison the owner
+// shared (2026-11-18): a digital accordion's demo playing its French,
+// Balkan, German, Italian, Finnish and Irish sets in turn, about 11-17 s of
+// busy playing each. Their tremolo is the median beat of its sustained
+// notes, from the side peaks round the strongest partial (0.6 s windows) and
+// from the partial's envelope (0.8 s), taken to A4 by RankNote's f^0.51 law:
+// Balkan 9-18 cents (about 15), Italian 10-19 (about 16; one held E4 beat
+// 4.2 Hz, 19), Finnish 18-21 (about 19). On the same ruler German read 11-16,
+// against the 14 its build already takes. Above 2 kHz the Balkan and Finnish
+// sets sit about 8 dB under the French, German and Irish ones, and the
+// Italian about 3 dB under; the cassotto takes 4-8 dB there, so those two
+// play their 16' and 8' ranks through it, tremolo reeds included, as a
+// converter's cassotto holds them. The demo is a sampled instrument, not a
+// measured accordion, and its arrangements differ: approximations, listed
+// in README, Known gaps.
+//   - Balkan: about 15 cents, 16' and the three 8' ranks in the cassotto.
+//   - Italian: about 16 cents, open, otherwise as German.
+//   - Finnish: about 19 cents, 16' and the three 8' ranks in the cassotto.
+// Types are appended, never reordered: saved sessions recall them by number.
+enum Type : int { kTypeDefault, kTypeBandoneon, kTypeIrish, kTypeGerman, kTypeFrench, kTypeJazz,
+                  kTypeBalkan, kTypeItalian, kTypeFinnish, kTypeCount };
 
 struct Build {
     const char* name;
@@ -100,6 +121,9 @@ inline constexpr std::array<Build, kTypeCount> kBuilds { {
     { "German", 14.0 / 22.0, 1.0, 1.0, 1.0, { false, false, false, false, false } },
     { "French", 28.0 / 22.0, 0.9, 1.0, 1.0, { false, false, false, false, false } },
     { "Jazz", 3.0 / 22.0, 1.0, 1.15, 1.0, { true, true, false, false, false } },
+    { "Balkan", 15.0 / 22.0, 1.0, 1.0, 1.0, { true, true, true, true, false } },
+    { "Italian", 16.0 / 22.0, 1.0, 1.0, 1.0, { false, false, false, false, false } },
+    { "Finnish", 19.0 / 22.0, 1.0, 1.0, 1.0, { true, true, true, true, false } },
 } };
 
 inline const Build& BuildOf(int type) { return kBuilds[static_cast<std::size_t>(type < 0 ? 0 : type >= kTypeCount ? kTypeCount - 1 : type)]; }

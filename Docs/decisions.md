@@ -2369,3 +2369,34 @@ the project's standing rule that a candidate wins unless the owner says
 otherwise; not yet heard by the owner. What it licenses: the types as
 options beside Default. Default itself is unchanged, so no listening choice
 moved the shipping sound.
+
+## 2026-11-18 — 0.3.0: Balkan, Italian and Finnish types (owner's request and reference; candidates by the project's rule)
+
+The owner asked for three more types, "at least approximations", and shared
+a reference: a digital accordion's demo playing its French (0–17 s), Balkan
+(17–28 s), German (28–45 s), Italian (45–59 s), Finnish (59–70 s) and Irish
+(70–82 s) sets in turn. It is not committed or redistributed.
+
+What was measured on it: each set's tremolo, as the median beat of its
+sustained notes from the side peaks round the strongest partial (0.6 s
+Hann windows, symmetric triples) and from that partial's Hilbert envelope
+(0.8 s windows, autocorrelation), taken to A4 by RankNote's f^0.51 law.
+The two readings disagree by several cents, the first biased up on slow
+beats by its resolution, the second confused by chords: Balkan 18.4 / 8.9,
+Italian 18.6 / 10.3 (one held E4: 4.2 Hz, 19 cents), Finnish 21.2 / 18.1,
+and for the sets Respira already had, French 14.4 / 11.7, German 16.5 /
+11.1, Irish 13.7 / 10.6. And each set's octave bands over the 250–1000 Hz
+band: from 2 to 8 kHz Balkan and Finnish sit about 8 dB under French, German
+and Irish, Italian about 3 dB under.
+
+What was chosen, an approximation each: Balkan 15 cents, Italian 16,
+Finnish 19 at the default Musette; Balkan and Finnish sound the 16' and the
+three 8' ranks through the cassotto (which takes 4–8 dB off 2–8 kHz), Italian
+stays open since nothing in the model places a 3 dB shade alone. The demo's
+French reads drier than the French type's 28 cents; the earlier types were
+not moved on a sampled instrument's evidence and a ruler this coarse.
+
+Listening set (not committed): one A/B per new type, A the shipping engine
+(Default) and B the type, level-matched on whole-file RMS. Chosen: B for
+each, by the project's standing rule; not yet heard by the owner. What it
+licenses: the three types as options beside Default, which is unchanged.
