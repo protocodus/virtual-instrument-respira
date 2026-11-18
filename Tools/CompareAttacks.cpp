@@ -74,7 +74,7 @@ struct Options {
 
 std::vector<double> Play(int key, double pressure, const Options& options) {
     const CellSpec spec = MakeCell(kRankM, key, 0.0,
-        kReedTuning[kRankM][TuningIndex(kRankM, key)], probe::kRate);
+        kReedTuning[kTypeDefault][kRankM][TuningIndex(kRankM, key)], probe::kRate);
     CellState state;
     state.push.x = spec.push.rest;
     state.pull.x = spec.pull.rest;

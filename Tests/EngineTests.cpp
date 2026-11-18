@@ -1544,6 +1544,37 @@ void RegistersSitTogether() {
     Expect(worst < 1.0, "RegistersSitTogether", "largest register RMS apart from Musette, dB", worst);
 }
 
+void TypesSitTogether() {
+    // Switching the Type changes the instrument, not the level: on Init's
+    // controls and the reference stroke, a C3, a C4-E4-G4 triad and a C6
+    // through the Clarinet, Musette and Bandoneon registers average within
+    // 1 dB of the Default build's, with no trim: the output stage and the
+    // reeds' own air settle them there (0.14 dB apart at most when written).
+    const double rate = 48000.0;
+    const auto stroke = [](double t) {
+        const double s = t < 2.0 ? t / 2.0 : 1.0 - (t - 2.0) / 2.0;
+        return 0.41 + 0.18 * (0.5 - 0.5 * std::cos(kPi * s));
+    };
+    const std::vector<std::vector<int>> gestures { { 48 }, { 60, 64, 67 }, { 84 } };
+    std::array<double, kTypeCount> level {};
+    for (int type = 0; type < kTypeCount; ++type)
+        for (int reg : { 0, 3, 4 })
+            for (const auto& keys : gestures) {
+                auto e = Make(rate, 0, [type, reg](Controls& c) { c = Controls {}; c[kRegister] = reg; c[kType] = type; c[kAuto] = 0.0; });
+                std::vector<Note> notes;
+                for (int k : keys) notes.push_back({ 0.0, { kOn, static_cast<std::uint8_t>(k), 100 } });
+                const Take t = Play(*e, rate, 4.0, notes, stroke);
+                level[static_cast<std::size_t>(type)] += 0.5 * (Db(Rms(t.left, rate, 0.5, 4.0)) + Db(Rms(t.right, rate, 0.5, 4.0))) / 9.0;
+            }
+    double worst = 0.0;
+    for (int type = 0; type < kTypeCount; ++type) {
+        const double apart = level[static_cast<std::size_t>(type)] - level[0];
+        std::printf("     %-10s %+5.2f dB against Default\n", kBuilds[static_cast<std::size_t>(type)].name, apart);
+        worst = std::max(worst, std::fabs(apart));
+    }
+    Expect(worst < 1.0, "TypesSitTogether", "largest Type RMS apart from Default, dB", worst);
+}
+
 void TypicalLevel() {
     // The output reference puts ordinary playing at -9 on Reason's VU meter:
     // the demo phrases read -8.9 VU at their median while a reed sounds
@@ -1944,6 +1975,7 @@ int main() {
     VoiceLimit();
     PresetsSitTogether();
     RegistersSitTogether();
+    TypesSitTogether();
     TypicalLevel();
     HardStrokesFit();
     HardPushSpeaks();

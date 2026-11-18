@@ -2340,3 +2340,32 @@ What the choice licensed, and what it did not:
   11.70 G after (×0.56). `Docs/benchmarks/half-rate-2026-11-10.md` has the
   rest. The demo renderer's median budget goes from 0.75× to 0.5× realtime
   with it.
+
+## 2026-11-18 — 0.2.0: six accordion types (owner's request; candidates by the project's rule)
+
+The owner asked for selectable sound types, the current sound staying the
+default: Bandoneon, Irish, German, French and Jazz. Each is a build of the
+same physical model (`kBuilds`, `Source/DSP/ReedBank.h`; README, Types):
+the tremolo reeds' tuning, from tuners' published figures; the reed plates'
+slot depth, the tongues' set and loss, and for Jazz a cassotto compartment
+on the 16' and 8' ranks, all estimates of each kind's construction. The
+owner shared Korg's Fisa Suprema demo set for ideas; the SoundCloud page
+could not be read (it renders only in a browser), and Korg's specification
+page lists 45 accordion types without describing them, but confirms the
+mechanisms a type there is made of: reed combinations, per-note musette
+curves, reeds inside or outside the cassotto.
+
+What a measurement could say was measured: Default renders the eight demos
+the same to the bit; every type sits within 0.15 dB of Default on the
+reference stroke with no trim (`TypesSitTogether`); the cassotto takes 4–8 dB
+off 2–8 kHz on Clarinet Solo's phrase, and the plate and loss changes move
+the octave bands by under 1.5 dB.
+
+Listening set (not committed): one A/B per type, A the shipping engine
+(Default) and B the type, on Paris Musette's phrase for Irish, German and
+French and Tango Bandoneon's for Bandoneon and Jazz, level-matched on
+whole-file RMS (B trimmed −0.05 to −0.35 dB). Chosen: B for every type, by
+the project's standing rule that a candidate wins unless the owner says
+otherwise; not yet heard by the owner. What it licenses: the types as
+options beside Default. Default itself is unchanged, so no listening choice
+moved the shipping sound.

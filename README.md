@@ -34,6 +34,12 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
+### 0.2.0 — 2026-11-18 — six accordion types
+
+- A **Type** control chooses which kind of accordion the reeds are built as: Default, Bandoneon, Irish, German, French or Jazz ([Types](#types)). Each changes what its kind of instrument is known to do differently: the tremolo reeds' tuning (dry for Bandoneon and Jazz, about 7 cents for Irish, 14 for German, 28 for French at the default Musette), the reed plates, the tongues' set and loss, and for Jazz a cassotto, the tone chamber the 16' and 8' ranks sound through. A new Type reaches held notes too.
+- Default stays the default and is the instrument as it was: the eight demos render the same to the bit as on 0.1.27.
+- Five factory presets play the new types: Zinc Bandoneon, Irish Button Box, German Club, French Musette and Jazz Cassotto.
+
 ### 0.1.27 — 2026-11-10 — less work in the folds and the room
 
 - The bellows' moving panels are stepped and sorted back into their sets in one pass, and the room's sixteen lines take their signs from two tables. The sound is the same to the bit: the eight demos and the eight stress phrases render as on 0.1.26. Instructions fall by 9 % on a single clarinet reed's demo, 3 % on Paris Musette and 1.6 % on Master Tutti; built with the Rack's compiler flags, by 3 %, 1 % and 0.5 % ([figures](Docs/benchmarks/half-rate-2026-11-10.md)).
@@ -509,6 +515,43 @@ have them: against A4, a C3 beats 0.54 times as fast and a C6 1.56 times.
 With each reed's own tuning (above), Respira's beats scatter 22–25 % about
 their law from C4 to C6.
 
+### Types
+
+**Type** chooses the kind of accordion the reeds and the treble's chambers
+are built as (`kBuilds`, `Source/DSP/ReedBank.h`). The keys, the bellows, the
+registers and the microphones stay the same; each type changes only what its
+kind of instrument is known to do differently, and every change is a part of
+the physical model, not a filter on its output:
+
+| Type | Tremolo at the default Musette | Reeds | Chambers |
+| --- | --- | --- | --- |
+| Default | 22 cents | as above | open |
+| Bandoneon | about 1 cent, dry | zinc plates: slots 1.25× as deep, tongues losing 1/1.3 as much | open |
+| Irish | 7 cents | small button-box plates (0.8× the slot), set low (0.85×) | open |
+| German | 14 cents | as Default | open |
+| French | 28 cents | lighter plates (0.9× the slot) | open |
+| Jazz | 3 cents, dry | hand-made: Q 1.15× | 16' and 8' in a cassotto |
+
+The tremolo figures are tuners' published ones (Liberty Bellows' list and
+accordionists.info's tuning threads: swing 2–4 cents, modern Irish 5–7,
+German 14–15, French 18–22 and the old Paris musette wetter still): a type
+tunes its M− and M+ reeds at that share of the **Musette** knob, so the knob
+reads cents for Default and scales every other type's tremolo. A bandoneon
+sounds two reeds an octave apart, which is the Bandoneon register (L and M);
+the type builds its reeds on zinc plates, which players credit with the
+bandoneon's deep sound. The cassotto is a wooden channel the reed blocks
+stand in: their sound turns out of its open top before it reaches the
+grille, which damps the upper harmonics and reinforces the lows. It is
+modelled as a compartment like the bass box (30 mm deep, a fifth open: 1.4
+kHz at Q 1.3, its depth modes from 2.8 kHz), and the effect fades out above
+about C6, where the notes' fundamentals reach its roll-off, as players
+report. On the Clarinet Solo demo it takes 4–8 dB off 2–8 kHz against the
+whole spectrum; the plate and loss changes move the octave bands by under
+1.5 dB. Every type sits within 0.15 dB of Default on the reference stroke
+(`TypesSitTogether`) with no trim. Each type's reeds are tuned for its own
+plates (`Source/DSP/ReedTuning.h` holds a table per type). Changing Type
+rebuilds the sounding reeds where they swing, as Life does.
+
 A bass button sounds two reeds, a 16' (E1–D♯2) and an 8' (E2–D♯3); a chord
 button sounds one pitch class on an 8' (F♯3–F4) and a 4' (F♯4–F5), so any
 chord can be built from chord buttons. The bass reeds sit behind larger
@@ -770,10 +813,11 @@ strokes read −1.7 VU at most. Volume sets the level going into the stage.
 | Mechanics | −40 to +20 dB | the keys', pallets', buttons' and switches' knocks, the bellows' folds and the push valves' slaps, against the estimate (The mechanism); +5.6 dB by default, by ear; at −40 dB they are all but silent |
 | Auto | off, on | on by default: the hand plays endless bellows, turned by the C0 and C#0 keyswitches, and the wheel softens or swells it (Auto) |
 | Room | 0–1 wet | the hall around the microphones: 0 dry, 0.5 % by default, 1 as decorrelated as the solo recordings; sigmoid knob response, actual wet percentage displayed (The microphones) |
+| Type | Default, Bandoneon, Irish, German, French, Jazz | the kind of accordion the reeds and chambers are built as (Types) |
 
 `Source/DSP/RespiraControls.h` holds these for every front end;
-`Source/DSP/RespiraPresets.h` holds the eight factory presets, one per
-register, each setting its Volume so it sits within 1 dB of Init on one
+`Source/DSP/RespiraPresets.h` holds the thirteen factory presets, one per
+register on the Default type, then one for each other type, each setting its Volume so it sits within 1 dB of Init on one
 reference stroke (a bass, a chord and a C major triad on a moderate 2 s pull
 and push), with its peak below −3 dBFS.
 
@@ -788,6 +832,13 @@ semitones each way, by scaling its stiffness; no real reed bends that far, but
 a pitch wheel should do what it says.
 
 ## Known gaps
+
+- **The types' builds are estimates.** Only their tremolo figures are
+  published (and those approximately); the bandoneon's zinc plates, the Irish
+  box's plates and set, the French plates, the hand-made jazz reeds' loss and
+  the cassotto's size are estimates of each kind's construction, not
+  measurements of an instrument. No recording of each type has been measured
+  against them; a listening test chose them over Default (Docs/decisions.md).
 
 - **No plug-in yet.** There is no JUCE VST3, AU, CLAP or standalone build,
   so there is no editor screenshot, no main-build or release workflow, no

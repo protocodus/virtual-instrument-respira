@@ -76,7 +76,7 @@ struct State {
 };
 
 std::vector<State> Sweep(int key, double top) {
-    const CellSpec spec = MakeCell(kRankM, key, 0.0, kReedTuning[kRankM][TuningIndex(kRankM, key)], probe::kRate);
+    const CellSpec spec = MakeCell(kRankM, key, 0.0, kReedTuning[kTypeDefault][kRankM][TuningIndex(kRankM, key)], probe::kRate);
     const double analysed = std::fmax(0.25, 30.0 / spec.hz);
     std::vector<State> states;
     for (double p = 25.0; p <= top * 1.001; p *= std::pow(2.0, 0.25)) {
@@ -113,7 +113,7 @@ double Slope(const std::vector<State>& states, double span, Y y) {
 // The attack's cents off the line `cents = a * level + b` where it first comes
 // within 10 and 3 dB of its loudest 100 ms frame (frames every 10 ms).
 std::array<double, 2> Onset(int key, double top, double rise, double a, double b) {
-    const CellSpec spec = MakeCell(kRankM, key, 0.0, kReedTuning[kRankM][TuningIndex(kRankM, key)], probe::kRate);
+    const CellSpec spec = MakeCell(kRankM, key, 0.0, kReedTuning[kTypeDefault][kRankM][TuningIndex(kRankM, key)], probe::kRate);
     const double rate = probe::kRate, dt = 1.0 / rate;
     CellState s;
     s.push.x = spec.push.rest;

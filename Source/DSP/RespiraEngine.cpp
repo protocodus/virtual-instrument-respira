@@ -148,6 +148,17 @@ constexpr protocodus::CompressorSettings kBellowsGuard { -18.0, 6.0, 5.0, 0.02, 
 // open with 3.6 mm slots, its lumped resonance would fall at k depth = 1.7,
 // and as a layer, averaged over its plausible depths (25-45 mm), it passes the
 // reeds within 3 dB up to 16 kHz.
+// The cassotto: the reed blocks of a build's tone-chamber ranks stand in a
+// wooden channel and their sound turns out of it through its open top before
+// it reaches the grille, which attenuates the upper harmonics and reinforces
+// the lows (Wikipedia, "Cassotto"; players report the effect fading out near
+// C6, where the fundamental itself reaches the attenuated band:
+// accordionists.info, "What does cassotto actually sound like"). As a
+// compartment (Compartment::Set), all estimates: 30 mm deep, opening over a
+// fifth of its length through a 10 mm lip (with end corrections), no cloth,
+// 6 % absorbed on a round trip: 1.4 kHz at Q 1.3, its depth modes from 2.8 kHz.
+constexpr double kCassottoDepth = 0.03, kCassottoOpen = 0.2, kCassottoNeck = 0.01;
+constexpr double kCassottoAbsorbed = 0.06, kCassottoModes = 2800.0;
 constexpr double kBassBoxDepth = 0.04, kBassBoxOpen = 0.10, kBassHoleLength = 0.0081, kClothRayl = 30.0;
 constexpr double kBassBoxAbsorbed = 0.04, kBassBoxModes = 2000.0;
 constexpr double kOpenSeconds = 0.012;     // register slide / air button; key strokes: Touch.h
@@ -333,6 +344,7 @@ void Engine::Prepare(double sampleRate) {
     rate = sampleRate >= kLowestRate && sampleRate < 1.0e6 ? sampleRate : 48000.0;
     baseOversample = rate < kHalfRateFrom ? 4 : 2;
     bassBox.Set(kBassBoxDepth, kBassBoxOpen, kBassHoleLength, kClothRayl, kBassBoxAbsorbed, kBassBoxModes, rate);
+    cassottoBox.Set(kCassottoDepth, kCassottoOpen, kCassottoNeck, 0.0, kCassottoAbsorbed, kCassottoModes, rate);
     rustle.Set(rate);
     smoothing = 1.0 - std::exp(-1.0 / (0.02 * rate));
     // 0.002 a sample at 48 kHz, as it was at every rate until 0.1.26: a
@@ -370,6 +382,10 @@ void Engine::Reset() {
     trebleSide.Reset();
     bassSide.Reset();
     bassBox.Clear();
+    cassottoSide.Reset();
+    cassottoBox.Clear();
+    cassottoRunning = false;
+    for (const bool chambered : BuildOf(static_cast<int>(controls[kType])).cassotto) cassottoRunning = cassottoRunning || chambered;
     grille = 0.0;
     output.Reset();
     room.Clear();
@@ -427,7 +443,7 @@ void Engine::TakeTargets() {
 }
 
 void Engine::SetControls(const Controls& next) {
-    const double prevLife = controls[kLife];
+    const double prevLife = controls[kLife], prevType = controls[kType];
     for (int i = 0; i < kControlCount; ++i) {
         const ControlInfo& info = kControlInfo[static_cast<std::size_t>(i)];
         const double v = next[i];
@@ -448,12 +464,16 @@ void Engine::SetControls(const Controls& next) {
     oversample = baseOversample << index;
     stages = (baseOversample == 2 ? 1 : 2) + index;
     internalRate = nextRate;
-    if (controls[kLife] != prevLife)
+    const int type = static_cast<int>(controls[kType]);
+    for (const bool chambered : BuildOf(type).cassotto) cassottoRunning = cassottoRunning || chambered;
+    // A new build reaches the sounding reeds too, as a new Life does: their
+    // tongues, plates and chambers are rebuilt where they swing.
+    if (controls[kLife] != prevLife || controls[kType] != prevType)
         for (auto& c : cells) {
             if (!c.active) continue;
             const int r = c.rank, k = c.reed - r * 128;
             const int idx = TuningIndex(r, k);
-            c.spec = MakeCell(r, k, controls[kMusette], kReedTuning[r][idx], rate * baseOversample, controls[kLife]);
+            c.spec = MakeCell(r, k, controls[kMusette], kReedTuning[type][r][idx], rate * baseOversample, controls[kLife], type);
             if (masterTune != 0.0) {
                 const double scale = std::pow(2.0, masterTune / 1200.0);
                 Retune(c.spec.push, scale);
@@ -810,7 +830,8 @@ void Engine::StartCell(int rank, int key, int source, double openSeconds) {
     if (!cell->active) {
         const int index = TuningIndex(rank, key);
         // Musette, master tune and Life changes reach the reeds at their next note.
-        cell->spec = MakeCell(rank, key, controls[kMusette], kReedTuning[rank][index], rate * baseOversample, controls[kLife]);
+        const int type = static_cast<int>(controls[kType]);
+        cell->spec = MakeCell(rank, key, controls[kMusette], kReedTuning[type][rank][index], rate * baseOversample, controls[kLife], type);
         if (masterTune != 0.0) {
             const double scale = std::pow(2.0, masterTune / 1200.0);
             Retune(cell->spec.push, scale);
@@ -1121,7 +1142,7 @@ void Engine::Render(float* left, float* right, int frames) {
         // passes zero.
         const double jetStep = Max(Sqrt(2.0 * Abs(pressure) / kRho), 1.0) * dtIn;
         const bool pushing = pressure >= 0.0;
-        float t[kMaxOversample] = {}, b[kMaxOversample] = {};
+        float t[kMaxOversample] = {}, b[kMaxOversample] = {}, z[kMaxOversample] = {};
         double drawn = 0.0, open = 0.0;
         const int active = liveCount;
         int held = 0;
@@ -1210,7 +1231,7 @@ void Engine::Render(float* left, float* right, int frames) {
                                             breath[j] * palletChiff * c.breathB, palletPressure, ventNoise);
                 c.radiated = out;
                 const float o = static_cast<float>(out * spec.voiceGain);
-                (spec.bass ? b : t)[k] += o;
+                (spec.bass ? b : spec.cassotto ? z : t)[k] += o;
             }
         }
         int nextLiveCount = 0;
@@ -1274,7 +1295,9 @@ void Engine::Render(float* left, float* right, int frames) {
         }
         slapsUsed = used;
         const double valves = mechanicsGain * (kValveVoicing / kForceToFlow);
-        grille += grilleCoeff * (trebleSide.Process(t, stages) + valves * valveTreble - grille);
+        double side = trebleSide.Process(t, stages);
+        if (cassottoRunning) side += cassottoBox.Process(cassottoSide.Process(z, stages));
+        grille += grilleCoeff * (side + valves * valveTreble - grille);
         gain += smoothing * (gainTarget - gain);
         bassGain += smoothing * (bassGainTarget - bassGain);
         trebleGain += smoothing * (trebleGainTarget - trebleGain);
@@ -1347,6 +1370,7 @@ void Engine::Render(float* left, float* right, int frames) {
     // tens of times slower. Each is cleared only once all its states are
     // below 1e-30 (-600 dB), so one still sounding is never touched.
     bassBox.FlushTiny();
+    cassottoBox.FlushTiny();
     for (auto& mic : trebleMicMotion) mic.FlushTiny();
     for (auto& mic : bassMicMotion) mic.FlushTiny();
     for (KeyBed* bed : { &keyBedTreble, &keyBedBass }) bed->FlushTiny();
@@ -1355,6 +1379,7 @@ void Engine::Render(float* left, float* right, int frames) {
     if (sounding == 0) {
         trebleSide.FlushTiny();
         bassSide.FlushTiny();
+        cassottoSide.FlushTiny();
         room.FlushTiny();
         if (Abs(grille) < 1.0e-30) grille = 0.0;
     }

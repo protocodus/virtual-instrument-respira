@@ -248,6 +248,12 @@ private:
     std::array<Cell, kMaxCells> cells {};
     Decimator trebleSide, bassSide;
     Compartment bassBox;   // under the bass end cover
+    // The tone chamber the cassotto ranks of a build sound into (Build), and
+    // whether it has been heard since Reset: a build without one never steps
+    // it, so the Default build renders as it did before builds existed.
+    Decimator cassottoSide;
+    Compartment cassottoBox;
+    bool cassottoRunning = false;
     double grilleCoeff = 0.0, grilleCoeffBase = 0.0, grilleCoeffTarget = 0.0;
     double grille = 0.0;
     double gain = 0.0, gainTarget = 0.0, bassGain = 0.0, bassGainTarget = 0.0, smoothing = 0.0;

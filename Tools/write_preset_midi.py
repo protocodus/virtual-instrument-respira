@@ -428,10 +428,14 @@ def phrase_file(slug, build, travels):
 def files():
     bank = [re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
             for name in re.findall(r'\{ "([^"]+)",', BANK.read_text(encoding="utf-8"))]
-    if [slug for slug, _ in PRESETS] != bank:
-        sys.exit(f"phrases {[slug for slug, _ in PRESETS]} do not match the bank {bank}")
+    # The README demos are a curated list of at most eight presets (the
+    # Type presets have none yet), in program order and numbered by it.
+    slugs = [slug for slug, _ in PRESETS]
+    if len(slugs) > 8 or any(slug not in bank for slug in slugs) or slugs != sorted(slugs, key=bank.index):
+        sys.exit(f"phrases {slugs} are not at most eight of the bank {bank} in its order")
     result = {}
-    for index, (slug, build) in enumerate(PRESETS, 1):
+    for slug, build in PRESETS:
+        index = bank.index(slug) + 1
         phrase, data = phrase_file(slug, build, TRAVELS.get(slug, []))
         end = max(phrase.seconds(), phrase.bellows.strokes[-1].b1 * 60 / phrase.bpm)
         if not 5.5 <= end <= 9.5:
