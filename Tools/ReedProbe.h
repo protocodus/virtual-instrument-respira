@@ -127,7 +127,7 @@ inline std::array<double, 2> TuneCell(int rank, int key, int type = kTypeDefault
     std::array<double, 2> ratios { 1.0, 1.0 };
     for (int side = 0; side < 2; ++side) {
         const ReedVariation v = Variation(rank, TuningIndex(rank, key), side, 0.5);
-        const double wanted = base.hz * std::pow(2.0, v.tuneCents / 1200.0);
+        const double wanted = base.hz * std::pow(2.0, TuneCents(rank, TuningIndex(rank, key), side, 0.5, type) / 1200.0);
         const double q = ReedQ(base.hz) * build.q * v.qScale;
         double natural = wanted;
         for (int pass = 0; pass < 3; ++pass) {

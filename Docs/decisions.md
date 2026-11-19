@@ -2460,3 +2460,36 @@ against Default on each type's preset and Paris Musette's phrase, octave bands
 Listening set (not committed): one file per changed type, Default then the
 type, same phrase. Chosen: the candidate, by the project's standing rule; not
 yet heard by the owner.
+
+## 2026-11-19 — the national types' octave reeds tuned dry (owner, by ear)
+
+The owner heard "phasing" in some of the types. Held C4, A4 and E5 on each
+type's preset (Auto bellows), the envelopes of their first four harmonics
+showed it in the presets that sound octave reeds: Zinc Bandoneon and Jazz
+Cassotto (16' and 8') beat at 0.3–1.3 Hz with a depth of 0.3–0.8 of the
+envelope, Balkan Kolo (LMM+H) the same under its tremolo. It is the reeds'
+own tuning errors (Variation, 3 cents each at Life 0.5, measured on La
+Melodiosa): the 16' reed's 2nd harmonic and the 8' reed's fundamental sit a
+few cents apart at about the same level. The musette presets beat only at
+their tremolo, 1.9–5 Hz at A4. Default's Tango Bandoneon and Master Tutti do
+the same as the types.
+
+- A: the shipping engine, every reed with its own error.
+- B: the 16' and 4' reeds take their key's 8' reed's error, as a tuner sets
+  octave reeds dry against the middle reed; nothing else changed.
+
+Material: those three presets, C4, A4, E5 held 2.5 s each and C4-E4-A4 3.5 s,
+RMS-matched (B trimmed −0.12, +0.11 and +0.04 dB). The owner chose B. It is
+applied to every build but Default, which stays bit for bit as before builds
+existed; the tuning table was regenerated for the builds' moved reeds. With B
+the slow octave beat falls to a depth under 0.15 on the held notes, except
+Zinc Bandoneon's C4 (0.3 Hz), where the zinc plates' loading still pulls the
+16' reed a little off its 8'.
+
+The comparison with the owner's reference clip (a digital accordion's six
+national sets) was measured at the same time: 2–8 kHz against French, the clip
+has Balkan 7–13 dB darker, Finnish 8–12, Italian 3–7, German 3–5, Irish 3 dB
+brighter at 2 kHz; Respira has Balkan 2–4 dB darker, Finnish 2–5, the others
+within 1 dB. The clip's phrases and instruments differ, so nothing was fitted
+to it.
+

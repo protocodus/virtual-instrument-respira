@@ -34,6 +34,11 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
+### 0.4.3 — 2026-11-19 — the national types' octaves tuned dry
+
+- Every type but Default tunes its 16' and 4' reeds dry against the 8' of their key, as a tuner sets octave reeds, so registers with octave reeds no longer phase: Zinc Bandoneon, Jazz Cassotto and Balkan Kolo held notes had octaves beating at 0.3–1.3 Hz. Chosen by ear (Docs/decisions.md).
+- Default is unchanged, to the bit.
+
 ### 0.4.2 — 2026-11-19 — the types' reed sets as their makers build them
 
 - **Irish** sounds LMM, the 16', the 8' at pitch and one 8' tuned sharp, as Irish three-voice boxes are built, instead of three 8'.

@@ -280,6 +280,18 @@ inline ReedVariation Variation(int rank, int index, int side, double life = 0.5)
     };
 }
 
+// A reed's pitch error in cents. The national builds' 16' and 4' reeds are
+// tuned dry against their key's 8' reed, as a tuner sets octave reeds, so
+// they share its error: with errors of their own (La Melodiosa's, above) the
+// octaves beat deeply at 0.3-1.3 Hz, which the owner heard
+// as phasing in Bandoneon, Jazz and Balkan and chose against by ear
+// (Docs/decisions.md, 2026-11-19). Default keeps its reeds' own errors, bit
+// for bit as before builds existed.
+inline double TuneCents(int rank, int index, int side, double life, int type) {
+    const bool dryOctave = type != kTypeDefault && (rank == kRankL || rank == kRankH);
+    return Variation(dryOctave ? kRankM : rank, index, side, life).tuneCents;
+}
+
 // The bare tongue's quality factor in air: a voicing estimate, inside the one
 // accordion measurement found. Impulse tests on three accordion reeds in
 // their plates (236, 633 and 743 Hz) gave first-mode Qs of 200-400
@@ -323,7 +335,7 @@ inline CellSpec MakeCell(int rank, int key, double musetteCents, const float* ra
     const double baseRatio = ratios ? 0.5 * (static_cast<double>(ratios[0]) + static_cast<double>(ratios[1])) : 1.0;
     for (int side = 0; side < 2; ++side) {
         const ReedVariation v = Variation(rank, index, side, life);
-        const double wanted = spec.hz * std::pow(2.0, v.tuneCents / 1200.0);
+        const double wanted = spec.hz * std::pow(2.0, TuneCents(rank, index, side, life, type) / 1200.0);
         if (side == 0) {
             const ReedSpec chamberReed = MakeReed(wanted, q * v.qScale, v.setScale * build.set, v.clearanceScale * build.clearance,
                                                   v.plateScale * build.plate, v.profileScale * build.profile, s);
