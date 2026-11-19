@@ -2530,3 +2530,57 @@ saving with little audible cost; its figures are in
 Docs/benchmarks/eco-rate-2026-11-19.md. The owner asked for it on the Rack
 device's back panel, saved with the song. It is off by default, so nothing
 that exists changes.
+
+## 2026-11-19 — 0.6.0: the types' grille box and the tremolo reeds' level (owner's direction; candidates by the project's rule)
+
+The owner heard the types as still too close to Default and still phasing,
+asked for another approach, and chose "blocks and bodies, Default too" from
+three: Default's beats may change with the types'.
+
+What the phasing is. Two-reed notes from C4 to C6 beat 0.91 deep at their
+fundamental (median; the envelope's 2nd to 98th percentile, (max − min) /
+(max + min)): the two reeds are all but equal, so they cancel at every beat,
+on every partial. The one recorded musette note found (Wikimedia Commons,
+"Accordion registers", public domain: a C5 held twice) beats 0.75 and 0.76
+deep on its first four partials. The earlier "0.38–0.86" read off that file
+mixed its single-reed registers in and is withdrawn. Summing the ranks at
+one point is not the cause (an earlier guess, tested and dropped): a
+delayed, shaded path for the inner blocks left the depth where it was. With
+the tremolo reeds 2 dB under the reed at pitch the median is 0.74, so that
+is their level (`kTremoloBlock`), in Default too. One note of one accordion
+in a room: a fit.
+
+What the similarity is. In thirds, every set of the comparison clip falls
+from 600 Hz to a dip at 2.5–3.2 kHz (15–25 dB under 500–1000 Hz) and comes
+back about 5 dB at 4–5 kHz; Default and every type but Bandoneon held level
+to 2.5 kHz, 10–20 dB over the sets there, so they shared one loud band and
+differed under it. That band's partials are the 5th and 6th of the middle
+notes, whose beats run five and six times as fast, which adds to the
+phasing. A box (the engine's Compartment) and a cover fitted freely to the
+French, German, Italian, Irish and Finnish sets landed on one box each time:
+31–40 mm deep, 25–29 % open, 3–4 mm, 30–53 rayl, the treble compartment the
+engine's own note describes, with a cloth. Shared (35 mm, 27 %, 3.5 mm, 45
+rayl, 15 % absorbed) with one cover each, the types read 2.0–3.2 dB from
+their sets (RMS, thirds 500 Hz–8 kHz, the melody at each set's median note)
+where they read 6–9 dB; with the cloth and absorption free as well, 1.8–3.0.
+Covers: French 3.4, Irish and Finnish 1.9, Italian 1.65, German 0.7, Balkan
+0.5. Jazz has no set and takes the Italian's.
+
+Default keeps its open treble. Its tone is a fit to two sample libraries'
+single reeds (2026-10-29), which put it 3–6 dB hot at 2–4 kHz against
+0.5–1 kHz, and the Commons recording 8 dB; the clip's sets are far darker
+than those. Giving Default the box would be a larger change than the owner
+agreed to, and would bring the types back beside it.
+
+Not chosen by ear yet: by the project's rule the candidate ships unless the
+owner says otherwise. Each type's demo plays the phrase on Default first,
+then on the type, and a lettered A/B (A = 0.5.0) went with it. This entry
+records two fits, one to one sampled instrument's sets through 64 kbit/s
+audio and one to a single recorded note, not measurements of a grille or of
+a reed block.
+
+Left open: Bandoneon's and Jazz's octave reeds drift 1–2 cents against each
+other on a held note (0.4–0.7 Hz at A4). It is not the tuning table and not
+the pallet coupling (the same with the coupling off): the reeds' pitch
+moves with the bellows pressure, the low reed's more, and the player's
+pressure is never exactly the tuning pressure.

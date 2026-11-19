@@ -100,8 +100,11 @@ constexpr double kPascalToFullScale = 1.5;
 // PresetsSitTogether), a C3, a C4-E4-G4 triad, a G4, a C5 and a C6 average the
 // Musette register's RMS. More reeds are louder on a real accordion too (the
 // Master register 1.9 dB, one reed 3.5-3.9 dB); the owner asked for registers
-// that change the colour, not the level (RegistersSitTogether).
-constexpr std::array<double, 8> kRegisterTrimDb { { 2.34, 2.98, 1.08, 0.0, 0.48, 0.78, 1.16, -1.90 } };
+// that change the colour, not the level (RegistersSitTogether). Violin,
+// Musette and Master rose 0.68, 1.15 and 0.55 dB in 0.6.0, when their tremolo
+// reeds went 2 dB under the reed at pitch (ReedBank.h, kTremoloBlock), which
+// keeps every register where it sat against the others.
+constexpr std::array<double, 8> kRegisterTrimDb { { 2.34, 2.98, 1.76, 1.15, 0.48, 0.78, 1.16, -1.35 } };
 // The output stage, which the owner asked for: no red on Reason's meters
 // however hard the bellows are pushed (OutputStage.h, shared by the newer
 // instruments). Its compressor follows the louder channel's power over 20 ms
@@ -148,6 +151,10 @@ constexpr protocodus::CompressorSettings kBellowsGuard { -18.0, 6.0, 5.0, 0.02, 
 // open with 3.6 mm slots, its lumped resonance would fall at k depth = 1.7,
 // and as a layer, averaged over its plausible depths (25-45 mm), it passes the
 // reeds within 3 dB up to 16 kHz.
+// The national accordions' sets in the owner's comparison say otherwise by
+// 10-20 dB at 2-2.5 kHz, and take a box of that very size with a cloth behind
+// its grille (ReedBank.h, kGrilleBox), fitted to them; Default keeps the
+// open treble this note describes.
 // The cassotto: the reed blocks of a build's tone-chamber ranks stand in a
 // wooden channel and their sound turns out of it through its open top before
 // it reaches the grille, which attenuates the upper harmonics and reinforces

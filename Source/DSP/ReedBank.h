@@ -74,18 +74,31 @@ inline double NoteHz(double note) { return 440.0 * std::pow(2.0, (note - 69.0) /
 // and Finnish sets sit about 8 dB under the French, German and Irish ones,
 // the Italian about 3 dB under.
 //
-// The cover: how much of the reeds' upper harmonics the treble cover lets
-// out, as a factor on the Grille knob's corner (RespiraControls.h, a voiced
-// one-pole, not a model of a grille). Read off the same comparison, each set
-// against its German one, the kind Default's reeds were fitted to, after
-// taking out what the sets' different pitches do in this model (the same
-// melody rendered at each set's median note): from 2 kHz up the French set
-// is 6-9 dB brighter, the Irish 4-7, the Italian 0-5 (2-4, 4-8 and 8-16 kHz
-// against 250-1000 Hz). Corners 2.2, 1.7 and 1.4 times the knob's give 4-5.5,
-// 2-5 and 2.5-3 dB on one phrase. They are a fit to one sampled instrument's
-// sets through 64 kbit/s audio, good to perhaps 3 dB, not a measured grille
-// (README, Known gaps); no maker's source says why those boxes are
-// brighter. The trim is the level that takes back, so that a type changes
+// The grille box and the cover. In the owner's comparison every set falls
+// steadily from 600 Hz to a dip at 2.5-3.2 kHz and comes back by about 5 dB
+// at 4-5 kHz; Default's treble holds level to 2.5 kHz and read 6-9 dB (RMS,
+// thirds from 500 Hz to 8 kHz, the same melody at each set's median note)
+// from every one of them, 10-20 dB over them at 2-2.5 kHz. Free fits of a
+// box (Engine::Compartment::Set) and a cover to each set landed on one box
+// five times out of five: 31-40 mm deep, 25-29 % open through 3-4 mm, cloth
+// of 30-53 rayl, which is the treble compartment under an accordion's
+// cloth-backed grille (RespiraEngine.cpp, the bass box's note, gives it 35
+// mm under a grille 30 % open with 3.6 mm slots). So the national
+// accordions share one, kGrilleBox: 35 mm, 27 % open, 3.5 mm, 45 rayl, 15 %
+// absorbed on a round trip, its depth modes from 2.3 kHz; with only the
+// cover left to each it reads 2.0-3.2 dB from the six sets (2.2 dB with the
+// cloth and the absorption free as well). It is a fit to one sampled
+// instrument's sets through 64 kbit/s audio, and the lumped box is used past
+// where it holds as a box (k depth = 1.6 at its resonance), so it is a
+// filter of that shape, not a measured grille (README, Known gaps). Default
+// keeps its open treble, as fitted to two sample libraries' single reeds
+// (RespiraControls.h, Grille).
+//
+// The cover is a factor on the Grille knob's corner (RespiraControls.h, a
+// voiced one-pole), fitted with the box: French 3.4, Irish and Finnish 1.9,
+// Italian 1.65, German 0.7, Balkan 0.5. Jazz has no set in the comparison
+// and takes the Italian's, the kind of box it is. The trim is the level that
+// takes back, so that a type changes
 // the instrument and not its loudness (TypesSitTogether).
 //
 // Besides the cover, only the ranks, the tremolo, the cassotto and the
@@ -120,11 +133,10 @@ inline double NoteHz(double note) { return 440.0 * std::pow(2.0, (note - 69.0) /
 //     and no 4' (McNeela's guide to Irish diatonic accordions), on small
 //     aluminium plates (0.8 of the slot) with tongues set low
 //     (0.85) and thin at the tip (0.9) for quick ornaments, in shallow blocks
-//     (0.7) behind small pallets (0.8). Its treble grille is no resonator, as
-//     the accordion's is not (RespiraEngine.cpp, the bass box's note).
+//     (0.7) behind small pallets (0.8).
 //   - German: a Hohner's tremolo; the default reeds were themselves fitted to
 //     a Hohner and an Italian instrument (RespiraControls.h, Grille), so
-//     nothing else changes.
+//     only the grille box and the cover change besides.
 //   - French: the musette's three middle reeds and no others, tuned as
 //     French musette is, wider on the sharp side: the flat reed a third of the
 //     sharp one's detune (tuners' -5/0/+15 and -6/0/+15 cents,
@@ -192,18 +204,19 @@ constexpr std::array<bool, 5> kLowAndSharp { true, true, false, true, false };  
 constexpr std::array<bool, 5> kFourVoice { true, true, false, true, true };     // L, M, M+, H
 constexpr std::array<bool, 5> kLowAndStraight { true, true, false, false, false }; // L, M
 constexpr Body kOpenTreble { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+constexpr Body kGrilleBox { 0.035, 0.27, 0.0035, 45.0, 0.15, 2343.0 };
 
 inline constexpr std::array<Build, kTypeCount> kBuilds { {
     { "Default", 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, kAllRanks, kNoRanks, kOpenTreble },
     { "Bandoneon", 0.05, 1.0, 1.25, 1.3, 1.0, 1.0, 1.2, 0.5, 1.5, 1.0, 0.0, { true, true, false, false, false }, kNoRanks,
       { 0.04, 0.10, 0.0081, 0.0, 0.04, 2000.0 } },
-    { "Irish", 7.0 / 22.0, 1.0, 0.8, 1.0, 0.85, 1.0, 0.9, 0.7, 0.8, 1.7, -0.6, kLowAndSharp, kNoRanks, kOpenTreble },
-    { "German", 14.0 / 22.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, kAllRanks, kNoRanks, kOpenTreble },
-    { "French", 28.0 / 22.0, 1.0 / 3.0, 0.9, 1.0, 1.0, 1.0, 0.9, 1.0, 1.0, 2.2, -1.7, kMiddleRanks, kNoRanks, kOpenTreble },
-    { "Jazz", 3.0 / 22.0, 1.0, 1.0, 1.15, 1.0, 0.8, 1.0, 1.0, 1.0, 1.0, 0.0, kAllRanks, kLowAndStraight, kOpenTreble },
-    { "Balkan", 15.0 / 22.0, 1.0, 1.0, 1.15, 1.0, 0.8, 1.0, 1.15, 1.0, 1.0, 0.0, kFourVoice, { true, true, false, true, false }, kOpenTreble },
-    { "Italian", 16.0 / 22.0, 1.0, 1.0, 1.15, 1.0, 0.8, 1.0, 1.15, 1.0, 1.4, -1.4, kFourVoice, kNoRanks, kOpenTreble },
-    { "Finnish", 19.0 / 22.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, kAllRanks, { true, true, true, true, false }, kOpenTreble },
+    { "Irish", 7.0 / 22.0, 1.0, 0.8, 1.0, 0.85, 1.0, 0.9, 0.7, 0.8, 1.87, 2.6, kLowAndSharp, kNoRanks, kGrilleBox },
+    { "German", 14.0 / 22.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.71, 5.2, kAllRanks, kNoRanks, kGrilleBox },
+    { "French", 28.0 / 22.0, 1.0 / 3.0, 0.9, 1.0, 1.0, 1.0, 0.9, 1.0, 1.0, 3.44, 1.0, kMiddleRanks, kNoRanks, kGrilleBox },
+    { "Jazz", 3.0 / 22.0, 1.0, 1.0, 1.15, 1.0, 0.8, 1.0, 1.0, 1.0, 1.65, 0.5, kAllRanks, kLowAndStraight, kGrilleBox },
+    { "Balkan", 15.0 / 22.0, 1.0, 1.0, 1.15, 1.0, 0.8, 1.0, 1.15, 1.0, 0.51, 5.0, kFourVoice, { true, true, false, true, false }, kGrilleBox },
+    { "Italian", 16.0 / 22.0, 1.0, 1.0, 1.15, 1.0, 0.8, 1.0, 1.15, 1.0, 1.65, 1.5, kFourVoice, kNoRanks, kGrilleBox },
+    { "Finnish", 19.0 / 22.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.87, 0.6, kAllRanks, { true, true, true, true, false }, kGrilleBox },
 } };
 
 inline const Build& BuildOf(int type) { return kBuilds[static_cast<std::size_t>(type < 0 ? 0 : type >= kTypeCount ? kTypeCount - 1 : type)]; }
@@ -305,8 +318,7 @@ inline ReedVariation Variation(int rank, int index, int side, double life = 0.5)
 // they share its error: with errors of their own (La Melodiosa's, above) the
 // octaves beat deeply at 0.3-1.3 Hz, which the owner heard
 // as phasing in Bandoneon, Jazz and Balkan and chose against by ear
-// (Docs/decisions.md, 2026-11-19). Default keeps its reeds' own errors, bit
-// for bit as before builds existed.
+// (Docs/decisions.md, 2026-11-19). Default keeps its reeds' own errors.
 inline double TuneCents(int rank, int index, int side, double life, int type) {
     const bool dryOctave = type != kTypeDefault && (rank == kRankL || rank == kRankH);
     return Variation(dryOctave ? kRankM : rank, index, side, life).tuneCents;
@@ -322,6 +334,17 @@ inline double ReedQ(double hz) { return 250.0 * std::pow(hz / 440.0, 0.3); }
 // A reed sounds below its natural frequency under its air load; the tuning
 // table holds natural / wanted for each reed at kTuningPressure.
 constexpr double kTuningPressure = 400.0;   // Pa, a moderate playing pressure
+
+// The tremolo reeds sound 2 dB under the reed at pitch they beat against.
+// Equal reeds cancel all but completely at every beat, which the owner heard
+// as phasing (Docs/decisions.md, 2026-11-19): two-reed notes from C4 to C6
+// beat 0.91 deep at their fundamental (median; the envelope's 2nd to 98th
+// percentile, (max - min) / (max + min)), where the one recorded musette
+// note found, a C5 held twice in Wikimedia Commons' "Accordion registers"
+// (public domain), beats 0.75 and 0.76 deep on its first four partials. At
+// -2 dB the median is 0.74. One note of one accordion in a room: a fit, not
+// a measured block (README, Known gaps).
+constexpr double kTremoloBlock = 0.7943282347242815;   // -2 dB
 
 struct CellSpec {
     ReedSpec push, pull;
@@ -350,7 +373,7 @@ inline CellSpec MakeCell(int rank, int key, double musetteCents, const float* ra
     // C3 up; C2 takes 20 % less.
     spec.airWeight = 440.0 / spec.hz;
     const std::uint32_t hc = Hash(1u, static_cast<std::uint32_t>(rank * 1000 + index * 2));
-    spec.voiceGain = 1.0 + s * 0.07 * Unit(Hash(hc, 8));
+    spec.voiceGain = (1.0 + s * 0.07 * Unit(Hash(hc, 8))) * (rank == kRankMMinus || rank == kRankMPlus ? kTremoloBlock : 1.0);
     const double q = ReedQ(spec.hz) * build.q;
     const double baseRatio = ratios ? 0.5 * (static_cast<double>(ratios[0]) + static_cast<double>(ratios[1])) : 1.0;
     for (int side = 0; side < 2; ++side) {

@@ -39,8 +39,14 @@ bandoneon's reeds are small beside an accordion's on their long plates
 (accordionists.info, "Bandoneon reeds and tuning"), reed makers give a width
 to length ratio of 8-10 to 1, and neither is a dimension for a pitch. Nor
 does any maker say why a French or Irish box sounds brighter than a German
-one; Respira's covers for them are a fit to the owner's comparison clip
+one; Respira's grille box and covers are a fit to the owner's comparison clip
 (README, Types).
+
+Beat depth: the one recorded musette note found, a C5 held twice in Wikimedia
+Commons' "Accordion registers" (public domain, a room recording), beats 0.75
+and 0.76 deep on its first four partials (the envelope's 2nd to 98th
+percentile, (max − min) / (max + min)); a single reed in the same recording
+reads 0.15–0.2 by the same measure. Two equal reeds would read about 0.9.
 
 ## Links
 

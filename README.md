@@ -34,6 +34,12 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
+### 0.6.0 — 2026-11-19 — the types' grille box, and beats that no longer cancel
+
+- **The national types sound like their own instruments, not like Default.** Irish, German, French, Jazz, Balkan, Italian and Finnish now sound through the treble compartment under a cloth-backed grille, fitted to the owner's comparison of national sets: every set there dips 15–25 dB at 2.5–3.2 kHz and comes back at 4–5 kHz, where Default holds level to 2.5 kHz. Each type keeps its own cover on top: French the most open, then Irish and Finnish, Italian, German, and Balkan the darkest. Against Default on one phrase they now sit 7–17 dB lower at 2–4 kHz, and up to 14 dB apart from each other at 4–8 kHz; against the comparison's sets they read 2.0–3.2 dB (thirds, 500 Hz–8 kHz) where they read 6–9 dB ([Types](#types)). A fit to that comparison, not a measured grille.
+- **Tremolo reeds sound 2 dB under the reed at pitch**, in every type and in Default: two equal reeds cancelled all but completely at each beat, which the owner heard as phasing. Two-reed notes from C4 to C6 now beat 0.74 deep at their fundamental (0.91 before), as the one recorded musette note found does (0.75). With far less of the 2–3 kHz harmonics, whose beats run five and six times as fast, the types' beating also sits lower in the sound.
+- **Default sounds different on registers with tremolo reeds** (Violin, Musette, Master): the same tone, shallower beats. Its registers keep their levels. Bandoneon is unchanged; saved sessions keep their Type numbers.
+
 ### 0.5.0 — 2026-11-19 — brighter French, Irish and Italian covers, and Eco
 
 - **French**, **Irish** and **Italian** no longer sound like Default with another tremolo: their treble covers let more of the reeds' upper harmonics out (the Grille's corner at 2.2, 1.7 and 1.4 times the knob's), 4–5.5, 2–5 and 2.5–3 dB more from 2 kHz up, as the owner's comparison of national sets has them against its German set ([Types](#types)). A fit to that comparison, not a measured grille. Their level is trimmed back to Default's.
@@ -558,47 +564,76 @@ their law from C4 to C6.
 sets the treble carries and the treble's body are built as (`kBuilds`,
 `Source/DSP/ReedBank.h`). The keys, the bellows, the bass side and the
 microphones stay the same; each type changes only what its kind of
-instrument is known to do differently. Every change is a part of the
-physical model but one: the cover, which moves the Grille's corner, the one
-voiced filter the treble side already had:
+instrument is known to do differently, and the national accordions sound
+through the grille box below, with a cover each on the Grille's corner, both
+fitted to a comparison of national sets:
 
 | Type | Tremolo at the default Musette | Treble reeds | Reeds and blocks | Chambers and body |
 | --- | --- | --- | --- | --- |
 | Default | 22 cents | all five ranks | as above | open |
 | Bandoneon | about 1 cent, dry | 16' and 8' only | zinc plates (slots 1.25× as deep, tongues losing 1/1.3 as much, tips 1.2× thicker); no blocks: half-depth cells, holes 1.5× | the wooden end board's holes, a box like the bass end |
-| Irish | 7 cents, sharp side only | 16', 8' and the sharp 8' (LMM) | small plates (0.8×), set low (0.85×), thin tips (0.9×), shallow blocks (0.7×), small holes (0.8×) | open, cover 1.7× |
-| German | 14 cents | all five | as Default | open |
-| French | 28 cents sharp, a third of it flat | the three 8' only | lighter plates (0.9×), thin tips (0.9×) | open, cover 2.2× |
-| Jazz | 3 cents, dry | all five | hand-made: Q 1.15×, 0.8× the clearance | 16' and 8' in a cassotto |
-| Balkan | about 15 cents, sharp side only | four: 16', 8', sharp 8', 4' (LMMH) | hand-made, deeper blocks (1.15×) | 16' and both 8' in a cassotto |
-| Italian | about 16 cents, sharp side only | four: 16', 8', sharp 8', 4' (LMMH) | hand-made, deeper blocks (1.15×) | open, cover 1.4× |
-| Finnish | about 19 cents | all five | as Default | 16' and the three 8' in a cassotto |
+| Irish | 7 cents, sharp side only | 16', 8' and the sharp 8' (LMM) | small plates (0.8×), set low (0.85×), thin tips (0.9×), shallow blocks (0.7×), small holes (0.8×) | the grille box, cover 1.9× |
+| German | 14 cents | all five | as Default | the grille box, cover 0.7× |
+| French | 28 cents sharp, a third of it flat | the three 8' only | lighter plates (0.9×), thin tips (0.9×) | the grille box, cover 3.4× |
+| Jazz | 3 cents, dry | all five | hand-made: Q 1.15×, 0.8× the clearance | 16' and 8' in a cassotto; the grille box, cover 1.65× |
+| Balkan | about 15 cents, sharp side only | four: 16', 8', sharp 8', 4' (LMMH) | hand-made, deeper blocks (1.15×) | 16' and both 8' in a cassotto; the grille box, cover 0.5× |
+| Italian | about 16 cents, sharp side only | four: 16', 8', sharp 8', 4' (LMMH) | hand-made, deeper blocks (1.15×) | the grille box, cover 1.65× |
+| Finnish | about 19 cents | all five | as Default | 16' and the three 8' in a cassotto; the grille box, cover 1.9× |
 
 A register that asks for a rank its type lacks sounds the ranks it has of
 those it asks for, or the 8' (the 16' on none) when it has none of them, at
 the trim of the register with just those ranks. What moves the steady sound
-in this model is which reeds sound, their tremolo, the cassotto and the
-bandoneon's end board: on each type's own preset and phrase, level-matched
-against Default, the cassotto and the end board take 4.5–7 dB off 2–4 kHz
-(Bandoneon 2.5 dB off 1–2 kHz too), while the reed, plate, block and hole
+in this model is which reeds sound, their tremolo, the cassotto, the
+bandoneon's end board and the grille box; the reed, plate, block and hole
 factors, pushed 40–60 % either way one at a time, move Paris Musette's octave
-bands by 0.1–2.8 dB, mostly in how the reeds speak. So German differs from
-Default only in its tremolo and its octave reeds tuned dry: Default's reeds
-were themselves fitted to a Hohner. French, Irish and Italian differ in
-their tremolo, their reed sets and their cover.
+bands by 0.1–2.8 dB, mostly in how the reeds speak.
 
-The cover is how much of the reeds' upper harmonics the treble cover lets
-out: a factor on the **Grille** knob's corner. It is read off the comparison
-below, each set against the German one after taking out what the sets'
-different pitches do in this model: from 2 kHz up the French set is 6–9 dB
-brighter, the Irish 4–7 and the Italian 0–5. Corners at 2.2, 1.7 and 1.4
-times the knob's give 4–5.5, 2–5 and 2.5–3 dB on one phrase, and the types'
-levels are trimmed back to Default's. It is a fit to one sampled
-instrument's sets, good to perhaps 3 dB, and no maker's source says why
-those boxes are brighter (Known gaps). A tongue's size for its pitch would
-move the tone as much, 5 dB at 2–4 kHz for a tongue 1.3 times as long, but
+The grille box is the treble compartment under a cloth-backed grille, which
+the seven national accordions share (`kGrilleBox`): 35 mm deep, 27 % open
+through 3.5 mm, a cloth of 45 rayl, 15 % absorbed on a round trip. It comes
+from the comparison below. Every set there falls steadily from 600 Hz to a
+dip at 2.5–3.2 kHz and comes back by about 5 dB at 4–5 kHz, the shape of a
+box and its depth modes, while Default's treble holds level to 2.5 kHz:
+10–20 dB over every set at 2–2.5 kHz, and 6–9 dB from each (RMS over the
+thirds from 500 Hz to 8 kHz, the same melody rendered at each set's median
+note). A box and a cover fitted freely to each set landed on the same box
+five times out of five (31–40 mm, 25–29 % open, 3–4 mm, 30–53 rayl), so the
+types share one and keep only a cover each. The cover is a factor on the
+**Grille** knob's corner, fitted with the box: French 3.4, Irish and Finnish
+1.9, Italian 1.65, German 0.7, Balkan 0.5; Jazz has no set there and takes
+the Italian's. With them the types read 2.0–3.2 dB from their sets, and on
+their own preset and phrase against Default, level-matched:
+
+| Type | 1–2 kHz | 2–4 kHz | 4–8 kHz | 8–16 kHz |
+| --- | --- | --- | --- | --- |
+| Bandoneon | −6.7 | −9.7 | −4.4 | −2.5 |
+| Irish | −2.3 | −10.2 | +3.0 | +6.9 |
+| German | −3.0 | −13.2 | −2.3 | +0.5 |
+| French | −0.6 | −7.0 | +6.4 | +10.1 |
+| Jazz | −0.9 | −16.5 | −3.0 | +0.1 |
+| Balkan | −1.7 | −16.9 | −7.3 | −3.0 |
+| Italian | −1.0 | −8.9 | +2.5 | +5.0 |
+| Finnish | −1.2 | −17.3 | −2.1 | +0.7 |
+
+The types' levels are trimmed back to Default's. It is a fit to one sampled
+instrument's sets through 64 kbit/s audio, the lumped box is used past where
+it holds as a box, and no maker's source says why those boxes differ (Known
+gaps). Default keeps its open treble: its tone was fitted to two sample
+libraries' single reeds (the Grille, above), which read 3–6 dB under it at
+2–4 kHz against 0.5–1 kHz, not 10–20. A tongue's size for its pitch would
+move the tone too, 5 dB at 2–4 kHz for a tongue 1.3 times as long, but
 no source gives tongue sizes by kind of instrument, so every type keeps
 Default's.
+
+The tremolo reeds (the flat and sharp 8') sound 2 dB under the reed at pitch
+in every type (`kTremoloBlock`). Equal reeds cancel all but completely at
+each beat: two-reed notes from C4 to C6 beat 0.91 deep at their fundamental
+(median; the envelope's 2nd to 98th percentile, (max − min) / (max + min)),
+which the owner heard as phasing. The one recorded musette note found, a C5
+held twice in Wikimedia Commons' "Accordion registers" (public domain),
+beats 0.75 and 0.76 deep on its first four partials; at −2 dB Respira's
+median is 0.74. The registers with tremolo reeds are trimmed up so that
+every register keeps its level.
 
 The reed sets and tremolo sides follow how each kind is built
 (Docs/research/accordion-construction-by-country-2026-11-19.md): Irish
@@ -933,15 +968,19 @@ a pitch wheel should do what it says.
   measurements of an instrument. No recording of each type has been measured
   against them; a listening test chose them over Default (Docs/decisions.md).
   The reed sets, the bandoneon's end board and every reed and block factor
-  are estimates of each kind's construction; in this model only the ranks,
-  the tremolo, the cassotto and the end board move the steady sound by more
-  than about 2 dB, so German stays close to Default apart from its tremolo.
-  French, Irish and Italian are brighter by their cover, a factor on the
-  Grille's corner fitted to the sampled instrument's demo below (through
-  64 kbit/s audio, different phrases, good to perhaps 3 dB), not a measured
-  grille or a sourced construction. A tongue's size for its pitch moves the
+  are estimates of each kind's construction. The national accordions' grille
+  box and their covers are a fit to the sampled instrument's demo below
+  (through 64 kbit/s audio, different phrases, 2.0–3.2 dB from its sets), not
+  a measured grille or a sourced construction: the lumped box is used past
+  where it holds as a box, Jazz borrows the Italian cover, and Default, fitted
+  to two sample libraries' single reeds, does not have it, so the types sit
+  7–17 dB under Default at 2–4 kHz where those libraries sit 3–6 dB under it.
+  The tremolo reeds' 2 dB under the reed at pitch is a fit to one recorded
+  note's beat depth, in a room. A tongue's size for its pitch moves the
   tone by 5 dB in this model, and no source gives it by kind of instrument,
-  so no type sets it.
+  so no type sets it. Bandoneon's and Jazz's octave reeds still drift
+  against each other at 0.4–0.7 Hz on a held note, 1–2 cents: the reeds'
+  pitch moves with the bellows pressure, the low reed's more.
   Balkan, Italian and Finnish are read off a sampled instrument's demo, with
   its arrangements in the way: their tremolo is known to a few cents, and
   their cassotto stands for a darker sound measured only as a whole.
