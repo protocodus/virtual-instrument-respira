@@ -1842,6 +1842,57 @@ void StrapTakesUpAtTheBellowsSpeed() {
     Expect(std::fabs(BellowsEndSpeed(4.0e-3, 1.0) / v - 2.0) < 1.0e-9, "StrapTakesUpAtTheBellowsSpeed", "twice the air, ratio", BellowsEndSpeed(4.0e-3, 1.0) / v);
 }
 
+void NearFieldBelongsToLife() {
+    // The bellows' own air and the reflections off the player (NearField.h)
+    // are departures from the ideal instrument, as Life's others are: at
+    // Life 0 there are none, whatever their level, and at Life 0.5 a held
+    // pair's partials no longer beat to one depth, at the level it had.
+    const double rate = 48000.0;
+    const auto take = [rate](double life, double level) {
+        auto e = Make(rate, 2, [life](Controls& c) { c[kLife] = life; c[kMechanics] = -40.0; });
+        e->SetNearField(level, level);
+        return Play(*e, rate, 4.0, { { 0.0, { kOn, 72, 100 } } }, [](double t) { return 0.3 + 0.1 * t; });
+    };
+    const Take ideal = take(0.0, 1.0), louder = take(0.0, 3.0), fitted = take(0.5, 1.0), without = take(0.5, 0.0);
+    double apart = 0.0;
+    for (std::size_t i = 0; i < ideal.left.size(); ++i)
+        apart = std::max({ apart, std::fabs(static_cast<double>(ideal.left[i]) - louder.left[i]),
+                           std::fabs(static_cast<double>(ideal.right[i]) - louder.right[i]) });
+    Expect(apart == 0.0, "NearFieldBelongsToLife", "at Life 0 its level changes nothing: largest difference", apart);
+    const double level = Db(Rms(fitted.left, rate, 1.0, 4.0)) - Db(Rms(without.left, rate, 1.0, 4.0));
+    Expect(std::fabs(level) < 1.0, "NearFieldBelongsToLife", "a held pair with it against without, dB", level);
+    // Each of the first four partials' beat depth: its level every 2.5 ms
+    // through a 60 Hz window, (p98 - p2) / (p98 + p2).
+    const auto spread = [rate](const Take& t) {
+        const double f0 = 440.0 * std::pow(2.0, 3.0 / 12.0);
+        double sum = 0.0, squares = 0.0;
+        for (int k = 1; k <= 4; ++k) {
+            std::vector<double> envelope;
+            const auto window = static_cast<std::size_t>(rate / 60.0), hop = static_cast<std::size_t>(rate / 400.0);
+            for (std::size_t from = static_cast<std::size_t>(1.0 * rate); from + window < t.left.size(); from += hop) {
+                double re = 0.0, im = 0.0;
+                for (std::size_t i = 0; i < window; ++i) {
+                    const double w = 0.5 - 0.5 * std::cos(2.0 * kPi * static_cast<double>(i) / static_cast<double>(window));
+                    const double phase = 2.0 * kPi * k * f0 * static_cast<double>(from + i) / rate;
+                    const double x = 0.5 * (static_cast<double>(t.left[from + i]) + t.right[from + i]);
+                    re += w * x * std::cos(phase);
+                    im -= w * x * std::sin(phase);
+                }
+                envelope.push_back(std::sqrt(re * re + im * im));
+            }
+            std::sort(envelope.begin(), envelope.end());
+            const double low = envelope[envelope.size() * 2 / 100], high = envelope[envelope.size() * 98 / 100];
+            const double depth = (high - low) / (high + low);
+            sum += depth;
+            squares += depth * depth;
+        }
+        return std::sqrt(std::max(0.0, squares / 4.0 - sum * sum / 16.0));
+    };
+    const double with = spread(fitted), bare = spread(without);
+    std::printf("     a C5 pair's first four partials' beat depths spread %.3f with the near field, %.3f without\n", with, bare);
+    Expect(with > bare + 0.01, "NearFieldBelongsToLife", "the partials' beat depths spread further apart with it", with - bare);
+}
+
 void RoomDecorrelatesAndRings() {
     // Off, the microphones hear only the instrument, the same sound in both
     // channels but for level; at Room 1 the room's field, which each
@@ -1863,7 +1914,10 @@ void RoomDecorrelatesAndRings() {
         return lr / std::sqrt(ll * rr);
     };
     const Take dry = take(0.0), wet = take(1.0);
-    Expect(likeness(dry) > 0.99, "RoomDecorrelatesAndRings", "dry, the channels' correlation", likeness(dry));
+    // Dry, the pair hears the reeds alike but for the reflections off the
+    // player and the bass half, each from its own side (NearField.h): 0.97
+    // where it was above 0.99 before them.
+    Expect(likeness(dry) > 0.95, "RoomDecorrelatesAndRings", "dry, the channels' correlation", likeness(dry));
     Expect(likeness(wet) < 0.9, "RoomDecorrelatesAndRings", "Room 1, the channels' correlation", likeness(wet));
     const double tail = Db(Rms(wet.left, rate, 1.3, 1.5)) - Db(Rms(dry.left, rate, 1.3, 1.5));
     Expect(tail > 20.0, "RoomDecorrelatesAndRings", "Room 1 against dry 0.3 s after the key, dB", tail);
@@ -2028,6 +2082,7 @@ int main() {
     ValvesLandAfterTheirFlight();
     RepeatedStrokesDiffer();
     StrapTakesUpAtTheBellowsSpeed();
+    NearFieldBelongsToLife();
     RoomDecorrelatesAndRings();
     respira_room_tests::Run(Expect);
     RoomTaperAndDefaults();

@@ -34,6 +34,13 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
+### 0.7.0 — 2026-11-19 — the bellows' own air, and the player around the instrument
+
+- **A reed no longer sounds in free air.** Its pulses also sound into the bellows, a box of air that rings along its length, across it and through its depth, which changes for as long as a note is played, and that sound leaves through the folds; and the treble reaches the microphones by way of the player's lap, the chest and arm behind the keyboard and the bass half beyond the bellows as well, each a little later, softer and from its own side. Every reed rank stands at its own place in both, so every rank has its own colour ([The bellows' air and the player](#the-bellows-air-and-the-player)).
+- What it changes is what the recordings have and the model lacked. On recorded single reeds the harmonics are uneven from key to key (5.9 dB about a straight fall) and move apart while a note is held (1.9 dB against the fundamental); Respira's were even (3.4 dB) and swelled together (0.35 dB), and are now 4.0 and 0.8 dB. Of a recorded tremolo pair each partial beats to its own depth (0.125 apart within a note on a Hohner), where Respira's pair beat to one depth on every partial (0.018 apart), as two detuned oscillators do; now 0.064. The two channels no longer carry one sound at two levels (their correlation on three test phrases 0.97–0.98, from 0.98–0.99).
+- The tone and the levels stay: against 0.6.2 the octave bands move by 1.6 dB at most on three test phrases, and each register's level over the keyboard stays within 0.15 dB (four register trims moved by 0.3–0.6 dB for that), while single keys sit up to 2 dB either side of where they were (1 dB standard deviation), as keys on a real instrument differ. It grows with **Life** and is gone at Life 0. It costs about 0.3 % of one core on the development machine, 3–10 % more work on the demos.
+- Lengths and places are a full-size instrument's on a seated player, estimated; the levels are fitted to those recorded figures, and chosen at the gentler of two by the project's rule, pending the owner's ear ([Docs/decisions.md](Docs/decisions.md)).
+
 ### 0.6.2 — 2026-11-19 — darker Balkan and Finnish, and a narrower Paris Musette
 
 - **Balkan** and **Finnish** are darker: their treble covers sit at 0.7 of the Grille knob's corner, 1 dB less at 1–2 kHz, 1.5–2 dB less at 2–4 kHz and 2–2.5 dB less above on one phrase, at the same level. Chosen by the owner's ear from three covers; the comparison of national sets did not ask for it ([Types](#types)).
@@ -722,6 +729,59 @@ where the lumped resonator alone read 11–44 dB under them
 (`Tools/compare_accordion_tone.py`). The air valve opens into the bass box as
 well, so its hiss leaves the same way.
 
+### The bellows' air and the player
+
+A recorded reed is not a reed in free air. On La Melodiosa's single reeds
+(24 held notes, D#4–C6, push and pull) the 2nd to 12th harmonics scatter
+4.2–8.3 dB about a straight fall, 5.9 at the median, and neighbouring keys
+differ by up to 20 dB on one harmonic, while the push and the pull reed of
+one key, two tongues behind one pallet, agree within 1–4 dB on most: the
+unevenness belongs to the way out, not to the tongue. Over a held note each
+harmonic moves 1.9 dB against the fundamental (standard deviation, median)
+and their levels correlate 0.19 with it. Of a tremolo pair each partial
+beats to its own depth: on a Hohner the first four differ by 0.125 within a
+note (standard deviation; 0.62, 0.28, 0.44 and 0.43 on one key), on La
+Melodiosa by 0.19 (`Tools/measure_partials.py`). Two parts of the
+instrument and its player do that, and `Source/DSP/NearField.h` adds them
+after the reeds, so the reeds, their tuning and the bellows play as before.
+
+**The bellows' air.** A reed's pulses of air leave the bellows as they enter
+its chamber, so the same flow sounds into the bellows with the other sign.
+The bellows are a box of air, 0.41 by 0.19 m and 0.15 to 0.23 m deep as they
+open, behind walls of card and cloth of about 1 kg/m², which by the mass law
+pass what is in the box almost whole at 220 Hz and 6 dB less each octave
+above. The air rings along the box (418 Hz and its multiples), across it
+(903 Hz) and through its depth (750–1140 Hz), which the hand moves: air only
+flows while the bellows open or close, so the box under a held note is never
+the same box twice. Three delay loops, one each way, exchange their sound at
+the walls and keep three quarters of it on each pass, less of the treble.
+Each rank's block stands at its own place in the box and drives the three
+ways by its own shares, the bass side's from the other end. Below its first
+mode the box is the spring the reeds already blow against, so what leaves is
+taken from 350 Hz up; it leaves through the folds, between the two halves.
+On Auto, whose bellows are endless, the stroke is folded out and back into
+the bellows' real travel.
+
+**The player and the instrument.** The treble also reaches the pair by the
+player's lap under the keyboard (0.30 m further than the direct sound, 0.30
+of its level), the chest and right arm behind it (0.12 m, 0.26) and the bass
+half beyond the bellows (0.42 m, 0.22, further as the bellows open), each
+duller above 3.5 kHz as cloth and leather reflect, each from its own side of
+the pair, and each moving with the player's sway (Life). The ranks' holes lie
+15 mm apart under one pallet, so each rank's reflections arrive a little
+apart. With one microphone (Width 0) they come from one place, as everything
+does.
+
+All of it is a departure from the ideal instrument, as Life's others are:
+none at Life 0, the figures above at 0.5 and twice the level at 1. On
+D#4–C6, held 6 s, the harmonics now scatter 4.0 dB (3.4 before) and move
+0.78 dB against the fundamental (0.35), correlating 0.82 with it (0.99); a
+pair's first four partials beat 0.064 apart (0.018), 0.81 deep at the median
+(0.85). The lengths and places are estimates of a full-size instrument on a
+seated player, and the levels are fitted to those figures, not measured on
+an accordion: at 1.6 times these levels the same rulers read 5.0 dB, 1.12
+dB, 0.66 and 0.090 (Known gaps).
+
 ### The microphones
 
 At Life zero, the output is what a coincident pair of cardioid microphones (XY) hears from
@@ -954,17 +1014,24 @@ a pitch wheel should do what it says.
 
 ## Known gaps
 
-- **A held note is smoother than a recorded one.** Against the one recorded
-  single-reed note found (the same public-domain recording, a C5 in a room),
-  the model's harmonics 2 to 5 are 5–6 dB under the fundamental and even,
-  where the recording's are 12–24 dB under it and jagged, and the model's
-  partials swell together with the bellows where the recording's move apart.
-  Both are what a body and a room do to a reed, and neither is modelled from a
-  measurement; 0.6.0's attempt at the first, a grille box fitted to a
-  comparison clip, was withdrawn by ear. The air's noise between the
-  harmonics and the hand's unevenness are not where the difference is: above
-  2 kHz the model has as much noise as the recording with its own floor, and
-  the hand's wander at Life 1 reaches the recording's 12 %.
+- **A held note is still smoother than a recorded one.** Against La
+  Melodiosa's single reeds, a held note's harmonics scatter 4.0 dB about a
+  straight fall where the recorded ones scatter 5.9, move 0.78 dB against
+  the fundamental where they move 1.9, and still mostly swell together
+  (0.82 against 0.19); a tremolo pair's partials beat 0.064 apart in depth
+  where a Hohner's beat 0.125 apart and La Melodiosa's 0.19
+  (`Tools/measure_partials.py`). The bellows' air and the player's
+  reflections (The bellows' air and the player) close about a third of each
+  gap at Life 0.5 and about half at 1.6 times their level; their lengths,
+  places and shares are estimates, their levels a fit to those figures, and
+  the recordings' own rooms, which the fit cannot tell from the instrument,
+  are in the rest. The model's 2nd to 5th harmonics also stand 5–9 dB under
+  the fundamental where the one recorded note in a room has them 12–24 dB
+  under it; 0.6.0's attempt at that, a grille box fitted to a comparison
+  clip, was withdrawn by ear. The air's noise between the harmonics and the
+  hand's unevenness are not where the difference is: above 2 kHz the model
+  has as much noise as the recording with its own floor, and the hand's
+  wander at Life 1 reaches the recording's 12 %.
 - **The types' builds are estimates.** Only their tremolo figures are
   published (and those approximately); the bandoneon's zinc plates, the Irish
   box's plates and set, the French plates, the hand-made jazz reeds' loss and

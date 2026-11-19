@@ -101,7 +101,13 @@ constexpr double kPascalToFullScale = 1.5;
 // Musette register's RMS. More reeds are louder on a real accordion too (the
 // Master register 1.9 dB, one reed 3.5-3.9 dB); the owner asked for registers
 // that change the colour, not the level (RegistersSitTogether).
-constexpr std::array<double, 8> kRegisterTrimDb { { 2.34, 2.98, 1.08, 0.0, 0.48, 0.78, 1.16, -1.90 } };
+// Re-trimmed where the near field (NearField.h) moved a register's level:
+// over fifteen keys from C3 to F6 the bellows' box adds 0.3-0.6 dB to the
+// registers with the 16' rank, which were 2.98, 0.48, 0.78 and -1.90, and
+// under 0.15 dB either way to the others. The three gestures below now find
+// the registers within 0.9 dB, since a key's level depends on where its
+// partials fall in the box; Bassoon gives 0.2 dB more to stay there.
+constexpr std::array<double, 8> kRegisterTrimDb { { 2.34, 2.18, 1.08, 0.0, -0.12, 0.38, 1.16, -2.17 } };
 // The output stage, which the owner asked for: no red on Reason's meters
 // however hard the bellows are pushed (OutputStage.h, shared by the newer
 // instruments). Its compressor follows the louder channel's power over 20 ms
@@ -359,7 +365,8 @@ Engine::Engine() { Prepare(48000.0); }
 void Engine::SetBody() {
     const Body& body = BuildOf(static_cast<int>(controls[kType])).body;
     trebleBoxRunning = body.depth > 0.0;
-    if (trebleBoxRunning) trebleBox.Set(body.depth, body.open, body.neck, body.rayl, body.absorbed, body.modes, rate);
+    if (trebleBoxRunning)
+        for (auto& box : trebleBox) box.Set(body.depth, body.open, body.neck, body.rayl, body.absorbed, body.modes, rate);
 }
 
 // Internal steps per host sample at an Oversampling setting. Eco halves the
@@ -374,7 +381,8 @@ void Engine::Prepare(double sampleRate) {
     baseOversample = rate < kHalfRateFrom ? 4 : 2;
     chamberRate = rate * StepsPerSample(static_cast<int>(controls[kOversampling]) == kOversamplingEco ? kOversamplingEco : 0);
     bassBox.Set(kBassBoxDepth, kBassBoxOpen, kBassHoleLength, kClothRayl, kBassBoxAbsorbed, kBassBoxModes, rate);
-    cassottoBox.Set(kCassottoDepth, kCassottoOpen, kCassottoNeck, 0.0, kCassottoAbsorbed, kCassottoModes, rate);
+    for (auto& box : cassottoBox) box.Set(kCassottoDepth, kCassottoOpen, kCassottoNeck, 0.0, kCassottoAbsorbed, kCassottoModes, rate);
+    nearField.Prepare(rate);
     SetBody();
     rustle.Set(rate);
     smoothing = 1.0 - std::exp(-1.0 / (0.02 * rate));
@@ -410,15 +418,17 @@ void Engine::Reset() {
     order = 0;
     noise = 1u;
     sounding = 0;
-    trebleSide.Reset();
+    for (auto& side : rankSide) side.Reset();
     bassSide.Reset();
     bassBox.Clear();
-    cassottoSide.Reset();
-    cassottoBox.Clear();
-    trebleBox.Clear();
+    for (auto& box : cassottoBox) box.Clear();
+    for (auto& box : trebleBox) box.Clear();
+    nearField.Move(0.5, 0.0, 0.0);
+    nearField.Clear();
+    nearFieldCount = 0;
     cassottoRunning = false;
     for (const bool chambered : BuildOf(static_cast<int>(controls[kType])).cassotto) cassottoRunning = cassottoRunning || chambered;
-    grille = 0.0;
+    grille.fill(0.0);
     output.Reset();
     room.Clear();
     for (auto& mic : trebleMicMotion) mic.Clear();
@@ -675,6 +685,16 @@ double Engine::PlayerEffort() const {
 // bellows are moves while it plays: they stay at mid-travel. The wheel's run
 // from 0 to 1 is the whole travel.
 double Engine::Extension() const { return autoHand ? 0.5 : Clamp(hand.position, 0.0, 1.0); }
+
+// Where the bellows stand for what hears them move (NearField.h): the
+// wheel's own place, or Auto's endless stroke folded into the bellows' real
+// travel, out and back, since air only flows while they move.
+double Engine::Travel() const {
+    if (!autoHand) return Clamp(hand.position, 0.0, 1.0);
+    const double turns = 0.5 + player.drive * controls[kBellows] * 1.0e-3 / kBellowsVolume;
+    const double fold = turns - 2.0 * std::floor(0.5 * turns);
+    return fold > 1.0 ? 2.0 - fold : fold;
+}
 
 // Runs before the hand's tick, from the keys the last sample held.
 void Engine::StepPlayer(double dt) {
@@ -1078,6 +1098,7 @@ void Engine::Render(float* left, float* right, int frames) {
     }
     const double valveOpen = airStroke * dt / kOpenSeconds, valveClose = airStroke * dt / kCloseSeconds;
     if (frames > 0) untouched = false;
+    const double nearAmount = ImperfectionScale(controls[kLife]);
     // Notes and register changes arrive between Render calls. Build this
     // ordered list once per callback; only a closing cell can leave it while
     // rendering. Preserve cell order for turbulence draws and summed airflow.
@@ -1194,7 +1215,7 @@ void Engine::Render(float* left, float* right, int frames) {
         // passes zero.
         const double jetStep = Max(Sqrt(2.0 * Abs(pressure) / kRho), 1.0) * dtIn;
         const bool pushing = pressure >= 0.0;
-        float t[kMaxOversample] = {}, b[kMaxOversample] = {}, z[kMaxOversample] = {};
+        float t[NearField::kRanks][kMaxOversample] = {}, b[kMaxOversample] = {};
         double drawn = 0.0, open = 0.0;
         const int active = liveCount;
         int held = 0;
@@ -1283,7 +1304,7 @@ void Engine::Render(float* left, float* right, int frames) {
                                             breath[j] * palletChiff * c.breathB, palletPressure, ventNoise);
                 c.radiated = out;
                 const float o = static_cast<float>(out * spec.voiceGain);
-                (spec.bass ? b : spec.cassotto ? z : t)[k] += o;
+                (spec.bass ? b : t[c.rank])[k] += o;
             }
         }
         int nextLiveCount = 0;
@@ -1347,10 +1368,32 @@ void Engine::Render(float* left, float* right, int frames) {
         }
         slapsUsed = used;
         const double valves = mechanicsGain * (kValveVoicing / kForceToFlow);
-        double side = trebleSide.Process(t, stages);
-        if (cassottoRunning) side += cassottoBox.Process(cassottoSide.Process(z, stages));
-        if (trebleBoxRunning) side = trebleBox.Process(side);
-        grille += grilleCoeff * (side + valves * valveTreble - grille);
+        // Each rank's sound at its holes, the direct sound of the open ranks
+        // and of the tone chamber's, and what reaches the pair by other ways.
+        const Build& build = BuildOf(static_cast<int>(controls[kType]));
+        double ranks[NearField::kRanks];
+        double direct = 0.0, chambered = 0.0;
+        for (int r = 0; r < NearField::kRanks; ++r) {
+            ranks[r] = rankSide[static_cast<std::size_t>(r)].Process(t[r], stages);
+            (build.cassotto[static_cast<std::size_t>(r)] ? chambered : direct) += ranks[r];
+        }
+        const double bassReeds = bassSide.Process(b, stages);
+        if (++nearFieldCount >= 32) {
+            nearFieldCount = 0;
+            const double sway = 0.05 * life.amount, lean = 0.08 * life.amount;
+            nearField.Move(Travel(), sway * Clamp((life.side + life.effort) / 3.0, -1.0, 1.0),
+                           lean * Clamp((life.depth + life.effort) / 3.0, -1.0, 1.0));
+        }
+        const NearField::Out near = nearField.Process(ranks, build.cassotto.data(), bassReeds * bassGain / Max(trebleGain, 1.0e-6), nearAmount,
+                                                      micSin * 1.4142135623730951);
+        const double sides[3] = { direct + valves * valveTreble, near.left, near.right };
+        const double insides[3] = { chambered, near.leftInside, near.rightInside };
+        for (std::size_t n = 0; n < 3; ++n) {
+            double side = sides[n];
+            if (cassottoRunning) side += cassottoBox[n].Process(insides[n]);
+            if (trebleBoxRunning) side = trebleBox[n].Process(side);
+            grille[n] += grilleCoeff * (side - grille[n]);
+        }
         gain += smoothing * (gainTarget - gain);
         bassGain += smoothing * (bassGainTarget - bassGain);
         trebleGain += smoothing * (trebleGainTarget - trebleGain);
@@ -1390,11 +1433,13 @@ void Engine::Render(float* left, float* right, int frames) {
         rustleForce = rubbing;
         // The air valve and the bass mechanism sit in the bass box too: their
         // sound leaves through the bass end cover's holes with the bass reeds'.
-        const double bass = bassBox.Process(bassSide.Process(b, stages) + hiss + valves * valveBass
+        const double bass = bassBox.Process(bassReeds + hiss + valves * valveBass
                                             + mechanicsGain * keyBedBass.Process(knockBass, bassLands)) * bassGain;
-        const double treble = grille * trebleGain + mechanicsGain * keyBedTreble.Process(knockTreble, trebleLands);
-        double l = gain * (treble * treblePanL + mechanicsGain * foldsOut * foldsPanL + bass * bassPanL);
-        double r = gain * (treble * treblePanR + mechanicsGain * foldsOut * foldsPanR + bass * bassPanR);
+        const double treble = grille[0] * trebleGain + mechanicsGain * keyBedTreble.Process(knockTreble, trebleLands);
+        // The bellows' own air leaves through the folds, between the halves.
+        const double bellowsAir = near.box * trebleGain;
+        double l = gain * ((treble + grille[1] * trebleGain) * treblePanL + (mechanicsGain * foldsOut + bellowsAir) * foldsPanL + bass * bassPanL);
+        double r = gain * ((treble + grille[2] * trebleGain) * treblePanR + (mechanicsGain * foldsOut + bellowsAir) * foldsPanR + bass * bassPanR);
         if (roomGain != 0.0 || roomGainTarget != 0.0) {
             roomGain += glide * (roomGainTarget - roomGain);
             if (Abs(roomGain - roomGainTarget) < 1.0e-6) roomGain = roomGainTarget;
@@ -1423,19 +1468,20 @@ void Engine::Render(float* left, float* right, int frames) {
     // tens of times slower. Each is cleared only once all its states are
     // below 1e-30 (-600 dB), so one still sounding is never touched.
     bassBox.FlushTiny();
-    cassottoBox.FlushTiny();
-    trebleBox.FlushTiny();
+    for (auto& box : cassottoBox) box.FlushTiny();
+    for (auto& box : trebleBox) box.FlushTiny();
     for (auto& mic : trebleMicMotion) mic.FlushTiny();
     for (auto& mic : bassMicMotion) mic.FlushTiny();
     for (KeyBed* bed : { &keyBedTreble, &keyBedBass }) bed->FlushTiny();
     // The air meter's smoothing falls for ever once the reeds stop.
     if (Abs(airFlowSmoothed) < 1.0e-30) airFlowSmoothed = 0.0;
     if (sounding == 0) {
-        trebleSide.FlushTiny();
+        for (auto& side : rankSide) side.FlushTiny();
         bassSide.FlushTiny();
-        cassottoSide.FlushTiny();
         room.FlushTiny();
-        if (Abs(grille) < 1.0e-30) grille = 0.0;
+        nearField.FlushTiny();
+        for (double& g : grille)
+            if (Abs(g) < 1.0e-30) g = 0.0;
     }
     diag.hand = hand.position;
     diag.handVelocity = hand.velocity;

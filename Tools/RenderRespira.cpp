@@ -1,10 +1,13 @@
 // Renders a MIDI file through one factory preset, with a trace of the hand
 // and the bellows. Tools/fit_bellows.py plays the demo phrases through it.
 //
-//   RenderRespira <preset> <in.mid> <out.wav> [trace.csv] [--set <control>=<value> ...]
+//   RenderRespira <preset> <in.mid> <out.wav> [trace.csv] [--set <control>=<value> ...] [--near <paths> <box>]
 //
 // --set overrides one of the preset's controls by id, in physical units
 // (RespiraControls.h), for experiments.
+// --near <paths> <box> plays the near field's reflections and the bellows'
+// box at those multiples of their fitted levels (NearField.h), for listening
+// tests.
 // The WAV is 48 kHz stereo 24-bit at the demo renderer's block size and runs
 // 2.5 s past the last event, uncut. The trace has, every 5 ms: hand position
 // (0..1), hand speed (wheel ranges per second), bellows pressure (Pa, > 0
@@ -32,7 +35,13 @@ int main(int argc, char** argv) {
     }
     respira::Controls controls = respira::kPresets[static_cast<std::size_t>(preset)].ToControls();
     std::string trace;
+    double nearPaths = 1.0, nearBox = 1.0;
     for (int i = 4; i < argc; ++i) {
+        if (std::strcmp(argv[i], "--near") == 0 && i + 2 < argc) {
+            nearPaths = std::atof(argv[++i]);
+            nearBox = std::atof(argv[++i]);
+            continue;
+        }
         if (std::strcmp(argv[i], "--set") != 0) {
             trace = argv[i];
             continue;
@@ -57,6 +66,7 @@ int main(int argc, char** argv) {
     engine->Prepare(demos::kSampleRate);
     engine->SetControls(controls);
     engine->Reset();
+    engine->SetNearField(nearPaths, nearBox);
 
     const auto frames = static_cast<std::size_t>((events.back().seconds + demos::kTailSeconds) * demos::kSampleRate);
     demos::detail::Demo demo;

@@ -41,6 +41,7 @@
 #include "Decimator.h"
 #include "Mechanics.h"
 #include "MicrophoneMotion.h"
+#include "NearField.h"
 #include "Life.h"
 #include "Touch.h"
 #include "OutputStage.h"
@@ -99,6 +100,8 @@ public:
     void Midi(const std::uint8_t* bytes, int size);
     void AllNotesOff();
     void Render(float* left, float* right, int frames);
+    // Candidates' levels over the fitted near field's, for listening tests.
+    void SetNearField(double paths, double box) { nearField.pathScale = paths; nearField.boxScale = box; }
     bool Sounding() const { return sounding > 0; }
     // The output stage's look-ahead, samples at the host rate: a front end
     // reports it to its host as latency.
@@ -248,20 +251,27 @@ private:
     std::uint32_t noise = 1u;
     int sounding = 0;
     std::array<Cell, kMaxCells> cells {};
-    Decimator trebleSide, bassSide;
+    // Each treble rank comes down to the host rate by itself, since each
+    // reaches the microphones by its own paths (NearField.h).
+    std::array<Decimator, NearField::kRanks> rankSide {};
+    Decimator bassSide;
     Compartment bassBox;   // under the bass end cover
     // The tone chamber the cassotto ranks of a build sound into (Build), and
     // whether it has been heard since Reset: a build without one never steps
     // it, so the Default build renders as it did before builds existed.
-    Decimator cassottoSide;
-    Compartment cassottoBox;
+    // [0] the direct sound, [1] and [2] its reflections to the left and
+    // right (NearField.h), here and in the treble box and the grille.
+    std::array<Compartment, 3> cassottoBox {};
     bool cassottoRunning = false;
     // The box a build's treble sounds out through (Build::body), if it has one.
-    Compartment trebleBox;
+    std::array<Compartment, 3> trebleBox {};
     bool trebleBoxRunning = false;
     void SetBody();
     double grilleCoeff = 0.0, grilleCoeffBase = 0.0, grilleCoeffTarget = 0.0;
-    double grille = 0.0;
+    std::array<double, 3> grille {};
+    NearField nearField;
+    int nearFieldCount = 0;   // samples since the near field was last told where things stand
+    double Travel() const;
     double gain = 0.0, gainTarget = 0.0, bassGain = 0.0, bassGainTarget = 0.0, smoothing = 0.0;
     double trebleGain = 1.0, trebleGainTarget = 1.0;   // the register's trim
     protocodus::OutputStage<2> output;

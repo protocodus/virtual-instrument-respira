@@ -2655,3 +2655,46 @@ engine's: Init's 22 cents and the Musette law stay.
 
 From this entry on listening sets are not blind (owner, 2026-11-19): the
 legend goes with the files.
+
+## 2026-11-19 — 0.7.0: the bellows' air and the player (owner's request; candidate by the project's rule)
+
+The owner asked for one more pass at realism, with real phenomena and
+irregularities welcome and no rewrite of the reeds. What a recording has and
+the model lacked was measured first (`Tools/measure_partials.py`): La
+Melodiosa's single reeds are uneven from key to key (their harmonics 5.9 dB
+about a straight fall, the model's 3.4), their partials move apart in a held
+note (1.9 dB against the fundamental, the model's 0.35; correlation 0.19
+against 0.99), and of a recorded pair each partial beats to its own depth
+(0.125 and 0.19 apart within a note on two instruments, the model's 0.018).
+The push and pull reeds of one key agree where neighbouring keys do not, so
+it is the way out of the instrument, not the tongue. Not where the gap is:
+the beat's own rate (2–5 % unsteady on the Hohner, 2–3 % in the model), the
+hand's unevenness (4–26 % on the recordings, 6–11 %) and the pitch, which is
+steadier on the recordings (0.1–0.2 cents) than in the model (0.5).
+
+Added (`Source/DSP/NearField.h`): the bellows' own air, a box of three ways
+that the bellows' travel retunes, driven by each rank from its own place and
+heard through the folds; and three reflections of the treble, off the lap,
+the chest and the bass half, each rank's a little apart. After the reeds:
+the reed model, the tuning table and the bellows are untouched. Four register
+trims fell by 0.3–0.6 dB (the box adds that to the registers with the 16'
+rank, over fifteen keys from C3 to F6), and the
+dry channels' correlation limit in `RoomDecorrelatesAndRings` fell from 0.99
+to 0.95, since the reflections come from different sides.
+
+Listening set, not blind, the legend sent with it: three phrases written for
+it with what the earlier ones lacked (velocities that vary, the wheel
+shaping each phrase, the bellows turned, a bass side), a waltz on Paris
+Musette, a slow tune on Clarinet Solo and held chords on Violin Folk, each
+RMS-matched to A over the whole file (trims −0.38 to +0.19 dB). A 0.6.2,
+B the near field at the levels in `NearField.h`, C at 1.6 times them. On
+the rulers above B reads 4.0 dB, 0.78 dB, 0.82 and 0.064, C 5.0, 1.12, 0.66
+and 0.090. B ships until the owner says otherwise: both are a fit of
+estimated lengths to those figures, not a measurement of an accordion, and B
+is the smaller departure from a sound the owner has accepted. C is
+`Engine::SetNearField(1.6, 1.6)`, which exists for this comparison.
+
+Looked at and left: Default's 1.3–2.5 kHz against the sample libraries
+(B and C take 0.6–1.6 and 0.4–2.7 dB off 1–2 kHz on the phrases, and
+nothing was voiced to take more: 0.6.0's box did that and was heard as
+synthetic); a wetter room (the owner's 0.5 %); more wander of the hand.
