@@ -85,7 +85,10 @@ inline double NoteHz(double note) { return 440.0 * std::pow(2.0, (note - 69.0) /
 // 2-5 and 2.5-3 dB on one phrase. They are a fit to one sampled instrument's
 // sets through 64 kbit/s audio, good to perhaps 3 dB, not a measured grille
 // (README, Known gaps); no maker's source says why those boxes are
-// brighter. The trim is the level that takes back, so that a type changes
+// brighter. Balkan and Finnish at 0.7 are the owner's ear (2026-11-19, B of
+// 1.0, 0.7 and 0.5; Docs/decisions.md), not that comparison, which has them
+// as dark against its German set as they already were: 1.5-2 dB less at
+// 2-4 kHz and 2-2.5 dB less above on one phrase. The trim is the level that takes back, so that a type changes
 // the instrument and not its loudness (TypesSitTogether).
 //
 // Besides the cover, only the ranks, the tremolo, the cassotto and the
@@ -201,9 +204,9 @@ inline constexpr std::array<Build, kTypeCount> kBuilds { {
     { "German", 14.0 / 22.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, kAllRanks, kNoRanks, kOpenTreble },
     { "French", 28.0 / 22.0, 1.0 / 3.0, 0.9, 1.0, 1.0, 1.0, 0.9, 1.0, 1.0, 2.2, -1.7, kMiddleRanks, kNoRanks, kOpenTreble },
     { "Jazz", 3.0 / 22.0, 1.0, 1.0, 1.15, 1.0, 0.8, 1.0, 1.0, 1.0, 1.0, 0.0, kAllRanks, kLowAndStraight, kOpenTreble },
-    { "Balkan", 15.0 / 22.0, 1.0, 1.0, 1.15, 1.0, 0.8, 1.0, 1.15, 1.0, 1.0, 0.0, kFourVoice, { true, true, false, true, false }, kOpenTreble },
+    { "Balkan", 15.0 / 22.0, 1.0, 1.0, 1.15, 1.0, 0.8, 1.0, 1.15, 1.0, 0.7, 0.7, kFourVoice, { true, true, false, true, false }, kOpenTreble },
     { "Italian", 16.0 / 22.0, 1.0, 1.0, 1.15, 1.0, 0.8, 1.0, 1.15, 1.0, 1.4, -1.4, kFourVoice, kNoRanks, kOpenTreble },
-    { "Finnish", 19.0 / 22.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, kAllRanks, { true, true, true, true, false }, kOpenTreble },
+    { "Finnish", 19.0 / 22.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.7, 0.7, kAllRanks, { true, true, true, true, false }, kOpenTreble },
 } };
 
 inline const Build& BuildOf(int type) { return kBuilds[static_cast<std::size_t>(type < 0 ? 0 : type >= kTypeCount ? kTypeCount - 1 : type)]; }

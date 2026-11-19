@@ -34,6 +34,12 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
+### 0.6.2 — 2026-11-19 — darker Balkan and Finnish, and a narrower Paris Musette
+
+- **Balkan** and **Finnish** are darker: their treble covers sit at 0.7 of the Grille knob's corner, 1 dB less at 1–2 kHz, 1.5–2 dB less at 2–4 kHz and 2–2.5 dB less above on one phrase, at the same level. Chosen by the owner's ear from three covers; the comparison of national sets did not ask for it ([Types](#types)).
+- The **Paris Musette** preset's Musette is 20 cents, from 28: the owner heard it as too detuned. A song that loaded the preset keeps the value it saved.
+- Every other type and preset is unchanged, to the bit.
+
 ### 0.6.1 — 2026-11-19 — back to 0.5.0's sound, and tremolo pairs that are no longer matched
 
 - **0.6.0's grille box and its tremolo reeds 2 dB down are withdrawn**: the owner heard them, Default included, as less real and more like a synthesizer. Every type and Default sound as in 0.5.0 again, with their own reed sets, tremolo, cassotto and covers.
@@ -592,9 +598,9 @@ voiced filter the treble side already had:
 | German | 14 cents | all five | as Default | open |
 | French | 28 cents sharp, a third of it flat | the three 8' only | lighter plates (0.9×), thin tips (0.9×) | open, cover 2.2× |
 | Jazz | 3 cents, dry | all five | hand-made: Q 1.15×, 0.8× the clearance | 16' and 8' in a cassotto |
-| Balkan | about 15 cents, sharp side only | four: 16', 8', sharp 8', 4' (LMMH) | hand-made, deeper blocks (1.15×) | 16' and both 8' in a cassotto |
+| Balkan | about 15 cents, sharp side only | four: 16', 8', sharp 8', 4' (LMMH) | hand-made, deeper blocks (1.15×) | 16' and both 8' in a cassotto, cover 0.7× |
 | Italian | about 16 cents, sharp side only | four: 16', 8', sharp 8', 4' (LMMH) | hand-made, deeper blocks (1.15×) | open, cover 1.4× |
-| Finnish | about 19 cents | all five | as Default | 16' and the three 8' in a cassotto |
+| Finnish | about 19 cents | all five | as Default | 16' and the three 8' in a cassotto, cover 0.7× |
 
 A register that asks for a rank its type lacks sounds the ranks it has of
 those it asks for, or the 8' (the 16' on none) when it has none of them, at

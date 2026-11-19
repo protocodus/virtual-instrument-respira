@@ -2632,3 +2632,26 @@ Looked for and not added, because nothing measured supports a number:
 What the recording does show and the model lacks is in README, Known gaps:
 weaker, uneven upper harmonics and partials that move apart, both the work of
 a body and a room.
+
+## 2026-11-19 — 0.6.2: Balkan and Finnish covers, Paris Musette's detune (owner, by ear)
+
+The owner on 0.6.1's files: the 4.5 dB tremolo spread "is ok" (B of A 0.5.0,
+B 4.5 dB, C 6 dB; it stays), "the last part is too detuned", and "the types
+sound good, but not very dark. I believe Finnish and Balkan should be darker?"
+
+Covers. One kolo-style phrase on Balkan Kolo and the waltz phrase on Finnish
+Tango, RMS-matched to A, the legend given with the files: A the cover at the
+Grille knob's corner (1.0, shipping), B 0.7, C 0.5. The owner chose **B**.
+This is the owner's ear and not the comparison clip: against its German set
+the clip's Balkan set is 3.5–6.6 dB down above 2 kHz and the model's was
+already 3.5–7.5; the clip's Finnish set is within 2 dB of German and the
+model's was already 3–9 dB down (its cassotto). 0.7 is a voiced value: 1.5–2 dB less at 2–4 kHz
+and 2–2.5 dB less above on those phrases. Each
+type's trim is +0.7 dB to keep its level (TypesSitTogether 0.55 dB).
+
+Paris Musette. The same waltz phrase, only Musette changed: A 28 cents
+(shipping), B 24, C 20. The owner chose **C**. A preset's value, not the
+engine's: Init's 22 cents and the Musette law stay.
+
+From this entry on listening sets are not blind (owner, 2026-11-19): the
+legend goes with the files.
