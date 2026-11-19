@@ -24,7 +24,7 @@ enum Control : int {
     kKeyboard,   // 0 split (bass and chord octaves below C3), 1 treble on every key
     kAir,        // air button: vents the bellows so the hand moves without sound
     kMomentum,   // the arm's lag behind the wheel, ms: 0 the wheel moves the bellows directly
-    kOversampling, // 0, 1, 2: 1x, 2x, 4x the engine's own internal rate (2x the host rate; 4x until 0.1.25)
+    kOversampling, // 0, 1, 2: 1x, 2x, 4x the engine's own internal rate (2x the host rate; 4x until 0.1.25); 3: Eco, half of it
     kMechanics,  // the keys', pallets', buttons' and register switches' knocks, the bellows' folds and the push valves, dB re the estimate (Mechanics.h)
     kAuto,       // 0 the wheel is the hand, 1 (the default) the hand plays endless bellows itself, turned by keyswitch, and the wheel slows it down
     kRoom,       // the room the microphones hear around the instrument: 0 none (dry) .. 1 as much as the owner's recordings' rooms (Room.h)
@@ -35,6 +35,8 @@ enum Control : int {
 };
 
 enum class Curve { kLinear, kLog, kStepped, kSigmoid };
+
+constexpr int kOversamplingEco = 3;
 
 struct ControlInfo {
     const char* id;        // stable parameter / property id
@@ -67,7 +69,10 @@ inline constexpr std::array<ControlInfo, kControlCount> kControlInfo { {
     // of the velocity swing, 3.36 time constants), and a bellows shake of four
     // full cycles a second keeps 72 % of its travel (1 / (1 + (2 pi f T)^2)).
     { "momentum", "Momentum", 0.0, 200.0, 25.0, 0, Curve::kLinear, "ms" },
-    { "oversampling", "Oversampling", 0.0, 2.0, 0.0, 3, Curve::kStepped, "" },
+    // Eco is appended after 4x, so saved sessions keep their setting: the
+    // reeds step once a host sample, for about 45 % less work and 6 dB less
+    // of the octave above 8 kHz (Docs/benchmarks/eco-rate-2026-11-19.md).
+    { "oversampling", "Oversampling", 0.0, 3.0, 0.0, 4, Curve::kStepped, "" },
     // Against an estimate, since the level is not measured (Mechanics.h); at
     // -40 dB the hardest key peaks at about 24 dB SPL at 1 m, all but silent.
     // The default was +10 dB, chosen by ear over the estimate and 10 dB under

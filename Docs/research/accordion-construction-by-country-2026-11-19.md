@@ -34,6 +34,14 @@ bending*, Acoustics in Practice 2021): 500-1000 Hz strengthened, above 1 kHz
 subdued (Wikipedia, Cassotto, unmeasured). It is usually described with the
 16' and the 8' at pitch inside and the tremolo 8' outside.
 
+No source gives the reed tongues' sizes by kind of instrument: players say a
+bandoneon's reeds are small beside an accordion's on their long plates
+(accordionists.info, "Bandoneon reeds and tuning"), reed makers give a width
+to length ratio of 8-10 to 1, and neither is a dimension for a pitch. Nor
+does any maker say why a French or Irish box sounds brighter than a German
+one; Respira's covers for them are a fit to the owner's comparison clip
+(README, Types).
+
 ## Links
 
 - https://pub.dega-akustik.de/DAGA_2021/data/articles/000550.pdf

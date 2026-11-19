@@ -74,8 +74,23 @@ inline double NoteHz(double note) { return 440.0 * std::pow(2.0, (note - 69.0) /
 // and Finnish sets sit about 8 dB under the French, German and Irish ones,
 // the Italian about 3 dB under.
 //
-// Only the ranks, the tremolo, the cassotto and the bandoneon's end board
-// move the steady sound by more than about 2 dB in any octave: in this
+// The cover: how much of the reeds' upper harmonics the treble cover lets
+// out, as a factor on the Grille knob's corner (RespiraControls.h, a voiced
+// one-pole, not a model of a grille). Read off the same comparison, each set
+// against its German one, the kind Default's reeds were fitted to, after
+// taking out what the sets' different pitches do in this model (the same
+// melody rendered at each set's median note): from 2 kHz up the French set
+// is 6-9 dB brighter, the Irish 4-7, the Italian 0-5 (2-4, 4-8 and 8-16 kHz
+// against 250-1000 Hz). Corners 2.2, 1.7 and 1.4 times the knob's give 4-5.5,
+// 2-5 and 2.5-3 dB on one phrase. They are a fit to one sampled instrument's
+// sets through 64 kbit/s audio, good to perhaps 3 dB, not a measured grille
+// (README, Known gaps); no maker's source says why those boxes are
+// brighter. The trim is the level that takes back, so that a type changes
+// the instrument and not its loudness (TypesSitTogether).
+//
+// Besides the cover, only the ranks, the tremolo, the cassotto and the
+// bandoneon's end board move the steady sound by more than about 2 dB in any
+// octave: in this
 // model the reed, plate, block and hole factors, pushed 40-60 % either way
 // one at a time, move Paris Musette's octave bands by 0.1-2.8 dB, mostly in
 // how the reeds speak. They are kept where the kind of instrument is known
@@ -83,7 +98,10 @@ inline double NoteHz(double note) { return 440.0 * std::pow(2.0, (note - 69.0) /
 //
 // The rest are estimates of each kind's construction, from makers' and
 // players' descriptions, not measurements of an instrument (README, Known
-// gaps):
+// gaps). A reed's size for its pitch is not among them: MakeReed fixes it,
+// and a tongue 1.3 times as long at the same pitch takes 5 dB off 2-4 kHz
+// and 8-16 kHz (Paris Musette's phrase), but no maker or study gives the
+// tongues' sizes by kind of instrument, so every build keeps Default's:
 //   - Bandoneon: two reeds an octave apart on every key (16' and 8', the L
 //     and M ranks) and no others, so every register sounds that pair; the
 //     reeds riveted to long zinc plates, thicker and much heavier than an
@@ -160,6 +178,8 @@ struct Build {
     double profile;    // the tongue's tip thickness and piston area over the default's
     double block;      // the reed block's chamber depth over the default's
     double hole;       // the pallet hole's area over the default's
+    double cover;      // the treble cover's corner over the Grille knob's
+    double trim;       // treble level, dB, that sets the build beside Default (TypesSitTogether)
     std::array<bool, 5> ranks;      // treble ranks kRankL .. kRankH the instrument carries
     std::array<bool, 5> cassotto;   // treble ranks that sound into the tone chamber
     Body body;
@@ -174,16 +194,16 @@ constexpr std::array<bool, 5> kLowAndStraight { true, true, false, false, false 
 constexpr Body kOpenTreble { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 
 inline constexpr std::array<Build, kTypeCount> kBuilds { {
-    { "Default", 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, kAllRanks, kNoRanks, kOpenTreble },
-    { "Bandoneon", 0.05, 1.0, 1.25, 1.3, 1.0, 1.0, 1.2, 0.5, 1.5, { true, true, false, false, false }, kNoRanks,
+    { "Default", 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, kAllRanks, kNoRanks, kOpenTreble },
+    { "Bandoneon", 0.05, 1.0, 1.25, 1.3, 1.0, 1.0, 1.2, 0.5, 1.5, 1.0, 0.0, { true, true, false, false, false }, kNoRanks,
       { 0.04, 0.10, 0.0081, 0.0, 0.04, 2000.0 } },
-    { "Irish", 7.0 / 22.0, 1.0, 0.8, 1.0, 0.85, 1.0, 0.9, 0.7, 0.8, kLowAndSharp, kNoRanks, kOpenTreble },
-    { "German", 14.0 / 22.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, kAllRanks, kNoRanks, kOpenTreble },
-    { "French", 28.0 / 22.0, 1.0 / 3.0, 0.9, 1.0, 1.0, 1.0, 0.9, 1.0, 1.0, kMiddleRanks, kNoRanks, kOpenTreble },
-    { "Jazz", 3.0 / 22.0, 1.0, 1.0, 1.15, 1.0, 0.8, 1.0, 1.0, 1.0, kAllRanks, kLowAndStraight, kOpenTreble },
-    { "Balkan", 15.0 / 22.0, 1.0, 1.0, 1.15, 1.0, 0.8, 1.0, 1.15, 1.0, kFourVoice, { true, true, false, true, false }, kOpenTreble },
-    { "Italian", 16.0 / 22.0, 1.0, 1.0, 1.15, 1.0, 0.8, 1.0, 1.15, 1.0, kFourVoice, kNoRanks, kOpenTreble },
-    { "Finnish", 19.0 / 22.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, kAllRanks, { true, true, true, true, false }, kOpenTreble },
+    { "Irish", 7.0 / 22.0, 1.0, 0.8, 1.0, 0.85, 1.0, 0.9, 0.7, 0.8, 1.7, -0.6, kLowAndSharp, kNoRanks, kOpenTreble },
+    { "German", 14.0 / 22.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, kAllRanks, kNoRanks, kOpenTreble },
+    { "French", 28.0 / 22.0, 1.0 / 3.0, 0.9, 1.0, 1.0, 1.0, 0.9, 1.0, 1.0, 2.2, -1.7, kMiddleRanks, kNoRanks, kOpenTreble },
+    { "Jazz", 3.0 / 22.0, 1.0, 1.0, 1.15, 1.0, 0.8, 1.0, 1.0, 1.0, 1.0, 0.0, kAllRanks, kLowAndStraight, kOpenTreble },
+    { "Balkan", 15.0 / 22.0, 1.0, 1.0, 1.15, 1.0, 0.8, 1.0, 1.15, 1.0, 1.0, 0.0, kFourVoice, { true, true, false, true, false }, kOpenTreble },
+    { "Italian", 16.0 / 22.0, 1.0, 1.0, 1.15, 1.0, 0.8, 1.0, 1.15, 1.0, 1.4, -1.4, kFourVoice, kNoRanks, kOpenTreble },
+    { "Finnish", 19.0 / 22.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, kAllRanks, { true, true, true, true, false }, kOpenTreble },
 } };
 
 inline const Build& BuildOf(int type) { return kBuilds[static_cast<std::size_t>(type < 0 ? 0 : type >= kTypeCount ? kTypeCount - 1 : type)]; }

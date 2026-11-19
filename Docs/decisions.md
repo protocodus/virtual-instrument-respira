@@ -2493,3 +2493,40 @@ brighter at 2 kHz; Respira has Balkan 2–4 dB darker, Finnish 2–5, the others
 within 1 dB. The clip's phrases and instruments differ, so nothing was fitted
 to it.
 
+## 2026-11-19 — the covers of French, Irish and Italian, and Eco
+
+The owner still heard the types as too close to Default. On one phrase and
+preset each, against Default: Bandoneon, Jazz, Balkan and Finnish already sat
+3–12 dB under it from 2 kHz up (the end board and the cassotto); Irish,
+German, French and Italian were within 1.3 dB in every octave.
+
+The reference clip was measured again, this time with the sets' pitches
+taken out: the same melody rendered through Default at each set's median
+note gives what pitch alone does to the octave bands in this model, and the
+clip's differences against its German set were corrected by it. From 2 kHz
+up (2–4, 4–8, 8–16 kHz against 250–1000 Hz) French is 6.0, 6.9 and 8.9 dB
+brighter than German, Irish 4.8, 4.3 and 7.1, Italian 5.4, 0.1 and 4.7;
+Balkan and Finnish 3–7 dB darker, which their cassotto already gives. A real
+accordion (Wikimedia Commons, "Accordion registers", public domain) and the
+clip both sit 5–8 dB under Default at 1–4 kHz; Default is frozen, so that
+stands.
+
+Two levers were found. A tongue's size for its pitch, which no build could
+set: 1.3 times as long takes 5 dB off 2–4 kHz. No maker or study gives
+tongue sizes by kind of instrument, so it was not used: any figure would be
+invented. And the treble cover, the Grille's corner: 2.2, 1.7 and 1.4 times
+the knob's for French, Irish and Italian reproduce the clip's differences to
+within its own uncertainty (4–5.5, 2–5 and 2.5–3 dB). That is a fit to one
+sampled instrument's sets through 64 kbit/s audio, not a measurement of a
+grille, and is recorded as such in the README's Known gaps.
+
+No lettered test was run: by the owner's standing rule for this project the
+candidate ships unless the owner says otherwise, and each type's demo plays
+the phrase on Default first, then on the type. This entry records a fit, not
+a choice by ear.
+
+Eco, the reeds at the host rate, is an option the owner asked for as a CPU
+saving with little audible cost; its figures are in
+Docs/benchmarks/eco-rate-2026-11-19.md. The owner asked for it on the Rack
+device's back panel, saved with the song. It is off by default, so nothing
+that exists changes.

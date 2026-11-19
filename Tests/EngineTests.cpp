@@ -380,6 +380,22 @@ void LowHostRatesHold() {
         std::snprintf(what, sizeof what, "%.5g Hz: C4, C7, A#7 and C8 stay finite and under full scale, peak", rate);
         Expect(finite && peak > 0.0 && peak < 1.0, "LowHostRatesHold", what, peak);
     }
+    // Eco halves the steps only where they stay at 32 kHz or faster: 8 kHz
+    // keeps its four a sample, 16 to 32 kHz take two and 44.1 and 48 kHz one.
+    for (const double rate : { 8000.0, 16000.0, 22050.0, 32000.0, 44100.0, 48000.0 }) {
+        bool finite = true;
+        double peak = 0.0;
+        for (const int key : { 60, 96, 106, 108 }) {
+            auto e = Make(rate, 6, [](Controls& c) { c[kOversampling] = kOversamplingEco; });
+            const Take t = Play(*e, rate, 1.2, { { 0.0, { kOn, static_cast<std::uint8_t>(key), 127 } } }, stroke);
+            for (const float v : t.left) finite = finite && std::isfinite(v);
+            for (const double p : t.pressure) finite = finite && std::isfinite(p);
+            peak = std::max(peak, Peak(t));
+        }
+        char what[96];
+        std::snprintf(what, sizeof what, "%.5g Hz at Eco: C4, C7, A#7 and C8 stay finite and under full scale, peak", rate);
+        Expect(finite && peak > 0.0 && peak < 1.0, "LowHostRatesHold", what, peak);
+    }
     auto e = std::make_unique<Engine>();
     e->Prepare(4000.0);
     Controls controls = kPresets[0].ToControls();
@@ -445,9 +461,14 @@ void TopOctaveKeepsItsPitchAtEveryStepRate() {
     const double reference = pitch(48000.0, 0);
     const double twice = pitch(48000.0, 1) - reference, four = pitch(48000.0, 2) - reference;
     const double host96 = pitch(96000.0, 0) - reference;
+    const double eco = pitch(48000.0, kOversamplingEco) - reference;
     Expect(std::fabs(twice) < 0.4, "TopOctaveKeepsItsPitchAtEveryStepRate", "C8 at Oversampling 2x against 1x, cents", twice);
     Expect(std::fabs(four) < 0.4, "TopOctaveKeepsItsPitchAtEveryStepRate", "C8 at Oversampling 4x against 1x, cents", four);
     Expect(std::fabs(host96) < 0.4, "TopOctaveKeepsItsPitchAtEveryStepRate", "C8 at 96 kHz against 48 kHz, cents", host96);
+    // Eco's 48 kHz step also coarsens the chamber and the pallet hole, which
+    // StepStiffness does not correct: half a cent at C8, under the 3 cents
+    // the reeds scatter by.
+    Expect(std::fabs(eco) < 1.0, "TopOctaveKeepsItsPitchAtEveryStepRate", "C8 at Oversampling Eco against 1x, cents", eco);
 }
 
 void OversamplingKeepsTheSound() {
@@ -455,27 +476,27 @@ void OversamplingKeepsTheSound() {
     // level hold at every setting, and a change while a note sounds is
     // continuous.
     const double rate = 48000.0;
-    double cents[3] = {}, level[3] = {};
+    double cents[4] = {}, level[4] = {};
     Take steady;
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < 4; ++i) {
         auto e = Make(rate, 0, [i](Controls& c) { c[kOversampling] = i; });
         const Take t = Play(*e, rate, 2.0, { { 0.0, { kOn, 69, 100 } } }, PullThenPush);
         cents[i] = Cents(PeakHz(t.left, rate, 0.8, 1.8, 440.0), 440.0);
         level[i] = Db(Rms(t.left, rate, 0.8, 1.8));
         if (i == 0) steady = t;
     }
-    for (int i = 1; i < 3; ++i) {
+    for (int i = 1; i < 4; ++i) {
         Expect(std::fabs(cents[i] - cents[0]) < 1.0, "OversamplingKeepsTheSound",
-               i == 1 ? "2x against 1x, cents" : "4x against 1x, cents", cents[i] - cents[0]);
+               i == 1 ? "2x against 1x, cents" : i == 2 ? "4x against 1x, cents" : "Eco against 1x, cents", cents[i] - cents[0]);
         Expect(std::fabs(level[i] - level[0]) < 0.5, "OversamplingKeepsTheSound",
-               i == 1 ? "2x against 1x, dB" : "4x against 1x, dB", level[i] - level[0]);
+               i == 1 ? "2x against 1x, dB" : i == 2 ? "4x against 1x, dB" : "Eco against 1x, dB", level[i] - level[0]);
     }
     struct Span { double from, to; int setting; };
     auto e = Make(rate, 0);
     Controls controls = e->GetControls();
     std::vector<Note> notes { { 0.0, { kOn, 69, 100 } } };
     Take changed;
-    for (const Span& span : { Span { 0.0, 0.9, 0 }, Span { 0.9, 1.3, 2 }, Span { 1.3, 1.6, 1 }, Span { 1.6, 2.0, 0 } }) {
+    for (const Span& span : { Span { 0.0, 0.5, 0 }, Span { 0.5, 0.9, 3 }, Span { 0.9, 1.3, 2 }, Span { 1.3, 1.6, 1 }, Span { 1.6, 2.0, 0 } }) {
         controls[kOversampling] = span.setting;
         e->SetControls(controls);
         const Take part = Play(*e, rate, span.to - span.from, notes, [&span](double s) { return PullThenPush(span.from + s); });
@@ -484,7 +505,7 @@ void OversamplingKeepsTheSound() {
     }
     const double step = LargestStep(changed.left) / LargestStep(steady.left);
     Expect(std::isfinite(step) && step < 1.25, "OversamplingKeepsTheSound",
-           "changed mid-note (1x, 4x, 2x, 1x): largest sample step against steady 1x", step);
+           "changed mid-note (1x, Eco, 4x, 2x, 1x): largest sample step against steady 1x", step);
 }
 
 void MasterTune() {
@@ -1557,7 +1578,7 @@ void TypesAreAppendOnly() {
     Expect(same, "TypesAreAppendOnly", "the shipped types keep their numbers, 1 if so", same ? 1.0 : 0.0);
     const Build& d = kBuilds[0];
     bool neutral = d.tremolo == 1.0 && d.flat == 1.0 && d.plate == 1.0 && d.q == 1.0 && d.set == 1.0 && d.clearance == 1.0 && d.profile == 1.0
-                   && d.block == 1.0 && d.hole == 1.0 && d.body.depth == 0.0;
+                   && d.block == 1.0 && d.hole == 1.0 && d.cover == 1.0 && d.trim == 0.0 && d.body.depth == 0.0;
     for (std::size_t r = 0; r < d.ranks.size(); ++r) neutral = neutral && d.ranks[r] && !d.cassotto[r];
     Expect(neutral, "TypesAreAppendOnly", "Default builds the instrument as before builds, 1 if so", neutral ? 1.0 : 0.0);
     Expect(kControlInfo[kType].initial == 0.0, "TypesAreAppendOnly", "Type's default is Default", kControlInfo[kType].initial);

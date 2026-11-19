@@ -186,6 +186,7 @@ constexpr double kNoiseRate = 192000.0;     // internal rate the turbulence leve
 // reed steps under 32 kHz: a host rate under kLowestRate is not one.
 constexpr double kHalfRateFrom = 40000.0;   // Hz: host rates from here step the reeds twice a sample
 constexpr double kLowestRate = 8000.0;      // Hz
+constexpr double kLowestStepRate = 32000.0; // Hz: no reed steps slower (above)
 // The gap jet's flow fluctuation (ReedModel.h, breath) has the spectrum of its
 // eddies, the size of the gap near the tongue's tip as it opens and closes:
 // flat up to their rate U / (2 pi l), with U the jet's speed sqrt(2 p / rho),
@@ -361,9 +362,17 @@ void Engine::SetBody() {
     if (trebleBoxRunning) trebleBox.Set(body.depth, body.open, body.neck, body.rayl, body.absorbed, body.modes, rate);
 }
 
+// Internal steps per host sample at an Oversampling setting. Eco halves the
+// 1x count where the step rate stays at or above kLowestStepRate.
+int Engine::StepsPerSample(int setting) const {
+    if (setting != kOversamplingEco) return baseOversample << setting;
+    return rate * (baseOversample / 2) >= kLowestStepRate ? baseOversample / 2 : baseOversample;
+}
+
 void Engine::Prepare(double sampleRate) {
     rate = sampleRate >= kLowestRate && sampleRate < 1.0e6 ? sampleRate : 48000.0;
     baseOversample = rate < kHalfRateFrom ? 4 : 2;
+    chamberRate = rate * StepsPerSample(static_cast<int>(controls[kOversampling]) == kOversamplingEco ? kOversamplingEco : 0);
     bassBox.Set(kBassBoxDepth, kBassBoxOpen, kBassHoleLength, kClothRayl, kBassBoxAbsorbed, kBassBoxModes, rate);
     cassottoBox.Set(kCassottoDepth, kCassottoOpen, kCassottoNeck, 0.0, kCassottoAbsorbed, kCassottoModes, rate);
     SetBody();
@@ -473,10 +482,14 @@ void Engine::SetControls(const Controls& next) {
         controls[i] = v == v ? Clamp(v, info.min, info.max) : info.initial;
         if (info.steps > 0) controls[i] = std::floor(controls[i] + 0.5);
     }
-    grilleCoeffBase = 1.0 - std::exp(-2.0 * kPi * Min(controls[kGrille], 0.45 * rate) / rate);
+    const int type = static_cast<int>(controls[kType]);
+    grilleCoeffBase = 1.0 - std::exp(-2.0 * kPi * Min(controls[kGrille] * BuildOf(type).cover, 0.45 * rate) / rate);
     grilleCoeffTarget = grilleCoeffBase;
-    const int index = static_cast<int>(controls[kOversampling]);
-    const double nextRate = rate * (baseOversample << index);
+    const int setting = static_cast<int>(controls[kOversampling]);
+    const int nextOversample = StepsPerSample(setting);
+    const double nextRate = rate * nextOversample;
+    const double prevChamberRate = chamberRate;
+    chamberRate = rate * StepsPerSample(setting == kOversamplingEco ? setting : 0);
     if (nextRate != internalRate)
         for (auto& c : cells) {   // a lifting or closing pallet keeps its travel time
             c.openRate *= internalRate / nextRate;
@@ -484,19 +497,20 @@ void Engine::SetControls(const Controls& next) {
             c.spec.push.stepOmega2 = StepStiffness(c.spec.push.omega2, nextRate);
             c.spec.pull.stepOmega2 = StepStiffness(c.spec.pull.omega2, nextRate);
         }
-    oversample = baseOversample << index;
-    stages = (baseOversample == 2 ? 1 : 2) + index;
+    oversample = nextOversample;
+    stages = 0;
+    while ((1 << stages) < oversample) ++stages;
     internalRate = nextRate;
-    const int type = static_cast<int>(controls[kType]);
     for (const bool chambered : BuildOf(type).cassotto) cassottoRunning = cassottoRunning || chambered;
     // A new build reaches the sounding reeds too, as a new Life does: their
-    // tongues, plates and chambers are rebuilt where they swing.
-    if (controls[kLife] != prevLife || controls[kType] != prevType)
+    // tongues, plates and chambers are rebuilt where they swing. So does Eco,
+    // whose longer step needs longer chamber sections.
+    if (controls[kLife] != prevLife || controls[kType] != prevType || chamberRate != prevChamberRate)
         for (auto& c : cells) {
             if (!c.active) continue;
             const int r = c.rank, k = c.reed - r * 128;
             const int idx = TuningIndex(r, k);
-            c.spec = MakeCell(r, k, controls[kMusette], kReedTuning[type][r][idx], rate * baseOversample, controls[kLife], type);
+            c.spec = MakeCell(r, k, controls[kMusette], kReedTuning[type][r][idx], chamberRate, controls[kLife], type);
             if (masterTune != 0.0) {
                 const double scale = std::pow(2.0, masterTune / 1200.0);
                 Retune(c.spec.push, scale);
@@ -558,7 +572,7 @@ void Engine::SetControls(const Controls& next) {
         trimDb += 10.0 * std::log10(static_cast<double>(count(kRegisters[static_cast<std::size_t>(reg)])) / count(sounding));
     for (std::size_t i = 0; i < kRegisters.size(); ++i)
         if (kRegisters[i].ranks == sounding.ranks) trimDb = kRegisterTrimDb[i];
-    trebleGainTarget = DbToGain(trimDb);
+    trebleGainTarget = DbToGain(trimDb + BuildOf(type).trim);
     mechanicsGainTarget = kForceToFlow * DbToGain(controls[kMechanics]);
     roomGainTarget = kRoomLevel * controls[kRoom];
     room.SetWidth(controls[kWidth], untouched || (roomGain == 0.0 && roomGainTarget == 0.0));
@@ -871,7 +885,7 @@ void Engine::StartCell(int rank, int key, int source, double openSeconds) {
         const int index = TuningIndex(rank, key);
         // Musette, master tune and Life changes reach the reeds at their next note.
         const int type = static_cast<int>(controls[kType]);
-        cell->spec = MakeCell(rank, key, controls[kMusette], kReedTuning[type][rank][index], rate * baseOversample, controls[kLife], type);
+        cell->spec = MakeCell(rank, key, controls[kMusette], kReedTuning[type][rank][index], chamberRate, controls[kLife], type);
         if (masterTune != 0.0) {
             const double scale = std::pow(2.0, masterTune / 1200.0);
             Retune(cell->spec.push, scale);

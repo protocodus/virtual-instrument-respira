@@ -34,6 +34,12 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
+### 0.5.0 — 2026-11-19 — brighter French, Irish and Italian covers, and Eco
+
+- **French**, **Irish** and **Italian** no longer sound like Default with another tremolo: their treble covers let more of the reeds' upper harmonics out (the Grille's corner at 2.2, 1.7 and 1.4 times the knob's), 4–5.5, 2–5 and 2.5–3 dB more from 2 kHz up, as the owner's comparison of national sets has them against its German set ([Types](#types)). A fit to that comparison, not a measured grille. Their level is trimmed back to Default's.
+- **Oversampling** gains **Eco**, after 4×: the reeds step once per host sample where 1× steps them twice. On full registers it takes about 45 % of the work away (Master Tutti's demo 12.8 % of a core to 7.2 %, its worst block 33 % to 18 %, development-machine figures), on a single reed rank 14–35 %. Pitch and level hold (0.5 cents at C8); under 4 kHz the octave bands move by 0.4 dB at most, 4–8 kHz falls 0.4–1.5 dB and the octave above 8 kHz, 31–36 dB under the whole sound, 6–12 dB ([figures](Docs/benchmarks/eco-rate-2026-11-19.md)). Off by default.
+- Default, 1×, 2×, 4× and the other types are unchanged, to the bit; saved sessions keep their Type and Oversampling numbers.
+
 ### 0.4.3 — 2026-11-19 — the national types' octaves tuned dry
 
 - Every type but Default tunes its 16' and 4' reeds dry against the 8' of their key, as a tuner sets octave reeds, so registers with octave reeds no longer phase: Zinc Bandoneon, Jazz Cassotto and Balkan Kolo held notes had octaves beating at 0.3–1.3 Hz. Chosen by ear (Docs/decisions.md).
@@ -491,7 +497,11 @@ by one half-band allpass stage; Oversampling at 2× or 4× runs them at four or
 eight times the host rate through two or three stages, with the gap
 turbulence scaled so its spectrum stays the same at every host rate and
 Oversampling, and each tongue's stiffness corrected for its time step, so
-the tuning made at 96 kHz holds at every rate. Until 0.1.25 they ran at four
+the tuning made at 96 kHz holds at every rate. **Eco** runs them at the host
+rate with no decimation, where that is 32 kHz or more: the chambers are then
+divided into sections of 10 mm where they were 5 (a section cannot be shorter
+than sound travels in a step), which is what takes 6–12 dB off the octave
+above 8 kHz. Until 0.1.25 they ran at four
 times the host rate, which is now Oversampling 2×; under a 40 kHz host rate
 they still do, because the smallest chambers are not stable on steps slower
 than 32 kHz. Key travel takes 12–3 ms across the MIDI velocity range,
@@ -548,19 +558,20 @@ their law from C4 to C6.
 sets the treble carries and the treble's body are built as (`kBuilds`,
 `Source/DSP/ReedBank.h`). The keys, the bellows, the bass side and the
 microphones stay the same; each type changes only what its kind of
-instrument is known to do differently, and every change is a part of the
-physical model, not a filter on its output:
+instrument is known to do differently. Every change is a part of the
+physical model but one: the cover, which moves the Grille's corner, the one
+voiced filter the treble side already had:
 
 | Type | Tremolo at the default Musette | Treble reeds | Reeds and blocks | Chambers and body |
 | --- | --- | --- | --- | --- |
 | Default | 22 cents | all five ranks | as above | open |
 | Bandoneon | about 1 cent, dry | 16' and 8' only | zinc plates (slots 1.25× as deep, tongues losing 1/1.3 as much, tips 1.2× thicker); no blocks: half-depth cells, holes 1.5× | the wooden end board's holes, a box like the bass end |
-| Irish | 7 cents, sharp side only | 16', 8' and the sharp 8' (LMM) | small plates (0.8×), set low (0.85×), thin tips (0.9×), shallow blocks (0.7×), small holes (0.8×) | open |
+| Irish | 7 cents, sharp side only | 16', 8' and the sharp 8' (LMM) | small plates (0.8×), set low (0.85×), thin tips (0.9×), shallow blocks (0.7×), small holes (0.8×) | open, cover 1.7× |
 | German | 14 cents | all five | as Default | open |
-| French | 28 cents sharp, a third of it flat | the three 8' only | lighter plates (0.9×), thin tips (0.9×) | open |
+| French | 28 cents sharp, a third of it flat | the three 8' only | lighter plates (0.9×), thin tips (0.9×) | open, cover 2.2× |
 | Jazz | 3 cents, dry | all five | hand-made: Q 1.15×, 0.8× the clearance | 16' and 8' in a cassotto |
 | Balkan | about 15 cents, sharp side only | four: 16', 8', sharp 8', 4' (LMMH) | hand-made, deeper blocks (1.15×) | 16' and both 8' in a cassotto |
-| Italian | about 16 cents, sharp side only | four: 16', 8', sharp 8', 4' (LMMH) | hand-made, deeper blocks (1.15×) | open |
+| Italian | about 16 cents, sharp side only | four: 16', 8', sharp 8', 4' (LMMH) | hand-made, deeper blocks (1.15×) | open, cover 1.4× |
 | Finnish | about 19 cents | all five | as Default | 16' and the three 8' in a cassotto |
 
 A register that asks for a rank its type lacks sounds the ranks it has of
@@ -571,10 +582,23 @@ bandoneon's end board: on each type's own preset and phrase, level-matched
 against Default, the cassotto and the end board take 4.5–7 dB off 2–4 kHz
 (Bandoneon 2.5 dB off 1–2 kHz too), while the reed, plate, block and hole
 factors, pushed 40–60 % either way one at a time, move Paris Musette's octave
-bands by 0.1–2.8 dB, mostly in how the reeds speak. So German, French, Irish
-and Italian differ from Default above all in their tremolo and, on the
-registers that need ranks they lack, their reed sets, as the comparison
-below found those sets to differ mostly in tremolo too.
+bands by 0.1–2.8 dB, mostly in how the reeds speak. So German differs from
+Default only in its tremolo and its octave reeds tuned dry: Default's reeds
+were themselves fitted to a Hohner. French, Irish and Italian differ in
+their tremolo, their reed sets and their cover.
+
+The cover is how much of the reeds' upper harmonics the treble cover lets
+out: a factor on the **Grille** knob's corner. It is read off the comparison
+below, each set against the German one after taking out what the sets'
+different pitches do in this model: from 2 kHz up the French set is 6–9 dB
+brighter, the Irish 4–7 and the Italian 0–5. Corners at 2.2, 1.7 and 1.4
+times the knob's give 4–5.5, 2–5 and 2.5–3 dB on one phrase, and the types'
+levels are trimmed back to Default's. It is a fit to one sampled
+instrument's sets, good to perhaps 3 dB, and no maker's source says why
+those boxes are brighter (Known gaps). A tongue's size for its pitch would
+move the tone as much, 5 dB at 2–4 kHz for a tongue 1.3 times as long, but
+no source gives tongue sizes by kind of instrument, so every type keeps
+Default's.
 
 The reed sets and tremolo sides follow how each kind is built
 (Docs/research/accordion-construction-by-country-2026-11-19.md): Irish
@@ -600,9 +624,7 @@ partial and from that partial's envelope, taken to A4 by the beat law
 above; the two readings spread by several cents (Balkan 9–18, Italian 10–19,
 Finnish 18–21), and German read 11–16 on the same ruler against the 14 its
 type already takes. Above 2 kHz the Balkan and Finnish sets sit about 8 dB
-under the French, German and Irish ones, which is what the cassotto takes,
-and the Italian about 3 dB under, which the plates' changes cannot place, so
-Italian stays open.
+under the French, German and Irish ones, which is what the cassotto takes.
 
 The tremolo figures are tuners' published ones (Liberty Bellows' list and
 accordionists.info's tuning threads: swing 2–4 cents, modern Irish 5–7,
@@ -880,7 +902,7 @@ strokes read −1.7 VU at most. Volume sets the level going into the stage.
 | Keyboard | split, full | split: C1–B1 bass buttons, C2–B2 chord buttons, C3 up treble |
 | Air | off, on | the air valve |
 | Momentum | 0–200 ms | how far the arm trails the wheel; 0 follows it exactly |
-| Oversampling | 1×, 2×, 4× | the reeds' time step: 1× is twice the host rate, 2× four times (1× until 0.1.25) and 4× eight times; 2× and 4× cost about two and four times the CPU |
+| Oversampling | 1×, 2×, 4×, Eco | the reeds' time step: 1× is twice the host rate, 2× four times (1× until 0.1.25) and 4× eight times; 2× and 4× cost about two and four times the CPU; Eco is the host rate, for about 45 % less work on full registers and 6–12 dB less above 8 kHz |
 | Mechanics | −40 to +20 dB | the keys', pallets', buttons' and switches' knocks, the bellows' folds and the push valves' slaps, against the estimate (The mechanism); +5.6 dB by default, by ear; at −40 dB they are all but silent |
 | Auto | off, on | on by default: the hand plays endless bellows, turned by the C0 and C#0 keyswitches, and the wheel softens or swells it (Auto) |
 | Room | 0–1 wet | the hall around the microphones: 0 dry, 0.5 % by default, 1 as decorrelated as the solo recordings; sigmoid knob response, actual wet percentage displayed (The microphones) |
@@ -913,8 +935,13 @@ a pitch wheel should do what it says.
   The reed sets, the bandoneon's end board and every reed and block factor
   are estimates of each kind's construction; in this model only the ranks,
   the tremolo, the cassotto and the end board move the steady sound by more
-  than about 2 dB, so German, French, Irish and Italian stay close to Default
-  apart from their tremolo.
+  than about 2 dB, so German stays close to Default apart from its tremolo.
+  French, Irish and Italian are brighter by their cover, a factor on the
+  Grille's corner fitted to the sampled instrument's demo below (through
+  64 kbit/s audio, different phrases, good to perhaps 3 dB), not a measured
+  grille or a sourced construction. A tongue's size for its pitch moves the
+  tone by 5 dB in this model, and no source gives it by kind of instrument,
+  so no type sets it.
   Balkan, Italian and Finnish are read off a sampled instrument's demo, with
   its arrangements in the way: their tremolo is known to a few cents, and
   their cassotto stands for a darker sound measured only as a whole.
