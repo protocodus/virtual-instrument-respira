@@ -2438,7 +2438,7 @@ al., DAGA 2021), and no measured study of zinc against aluminium plates was
 found. What differs is which reeds sound, how the tremolo reeds are tuned and
 which sit in a cassotto. So no reed-model change was made; the sourced
 corrections were applied instead, and the owner was asked to confirm the
-switch (decision card, pending).
+switch, which they did (decision card, 2026-11-19).
 
 - Irish sounds LMM (McNeela's guide), not three 8'.
 - French tunes its flat reed a third as far as its sharp one (tuners'
