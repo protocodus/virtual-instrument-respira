@@ -1570,8 +1570,8 @@ void TypesAreAppendOnly() {
     // Saved sessions and Rack patches store Type as its number, and every one
     // saved before Type existed loads 0. So the numbers never move (a new type
     // goes at the end), 0 stays Default, and Default builds the instrument
-    // with every factor 1, every rank, no tone chamber and no body round the
-    // treble (README, Types).
+    // as it was before builds existed: every factor 1, every rank, no tone
+    // chamber and no body round the treble (README, Types).
     const char* frozen[] = { "Default", "Bandoneon", "Irish", "German", "French", "Jazz", "Balkan", "Italian", "Finnish" };
     bool same = kTypeCount >= 9;
     for (int i = 0; i < 9 && same; ++i) same = std::strcmp(kBuilds[static_cast<std::size_t>(i)].name, frozen[i]) == 0;
@@ -1590,7 +1590,7 @@ void TypesSitTogether() {
     // through the Clarinet, Musette and Bandoneon registers average within
     // 1 dB of the Default build's, each register at the trim of the ranks
     // that sound: the output stage and the reeds' own air settle them there
-    // (0.35 dB apart at most when written, Bandoneon).
+    // (0.59 dB apart at most when written, Irish, with its three 8' only).
     const double rate = 48000.0;
     const auto stroke = [](double t) {
         const double s = t < 2.0 ? t / 2.0 : 1.0 - (t - 2.0) / 2.0;

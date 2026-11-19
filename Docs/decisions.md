@@ -2584,3 +2584,51 @@ other on a held note (0.4–0.7 Hz at A4). It is not the tuning table and not
 the pallet coupling (the same with the coupling off): the reeds' pitch
 moves with the bellows pressure, the low reed's more, and the player's
 pressure is never exactly the tuning pressure.
+
+## 2026-11-19 — 0.6.1: 0.6.0 withdrawn, and tremolo pairs that differ in level (owner, by ear; the addition by the project's rule)
+
+The owner, on 0.6.0: "is it just my feeling or the instrument (even default)
+sounds less realistic and more synth-like?", then "you can get back to prev
+engine where it was better, include some more variations and real phenomena
+and irregularities, air behaviour, turbulencies, rifts", and "keep the
+different types you introduced".
+
+Withdrawn, by the owner's ear: the grille box on the seven national types and
+the tremolo reeds' one level 2 dB under the reed at pitch. A (0.5.0) against B
+(0.6.0) was sent with 0.6.0 and B was assumed by the project's rule; the owner
+has now heard it and prefers A. Source, tests and level trims are 0.5.0's
+again. All nine types stay, with their reed sets, tremolo, cassotto and covers.
+
+Added: each tremolo reed (M−, M+) sits up to 4.5 dB either side of its key's
+reed at pitch at Life 0.5 (`kTremoloSpreadDb`, a hash of its place, scaled by
+Life as every other imperfection is). Reason: 0.6.0's uniform 2 dB made every
+key beat to the same depth, which is what an LFO does; a spread gives the
+recorded median without that. Two-reed notes C4 to C6, nine keys, Irish and
+German: 0.66–0.93 deep, median 0.81 and 0.80 (0.91 with matched reeds; 0.86
+at 3 dB, 0.74 at 6 dB). The recorded C5 beats 0.75 and 0.76. 4.5 dB was taken
+over 6 dB because the spread doubles at Life 1 and 12 dB would leave some
+keys with no tremolo to speak of; that choice between two defensible pinnings
+is mine, not the owner's ear, and 6 dB is the candidate if the beats still
+read as phasing. The median is fitted to one recorded key; the spread between
+keys is assumed, not measured. By the project's rule the candidate is assumed
+until the owner says otherwise (A = 0.5.0, B = 0.6.1 sent).
+
+Looked for and not added, because nothing measured supports a number:
+
+- Hand tremor at 8–12 Hz. The recorded single reed's envelope has 1–5 % of
+  its power from 6 to 13 Hz; its movement is at 0.5–6 Hz, where the hand's
+  wander already is. Moving the wander from 1.5 to 3 Hz was tried and the
+  one-second notes available cannot tell the two apart.
+- More wander. The recording's fundamental moves 10–15 % (sd), the model's
+  7.5 % at Life 0.5 and 12 % at Life 1: Life already covers it.
+- More turbulence. Four and twelve times `kTurbulence` left every partial's
+  envelope as it was: it is noise added to the tongue, not a modulation.
+- More air noise. Between the harmonics the model has −48 to −49 dB against
+  the fundamental from 2 to 10 kHz, the recording −48 to −50 dB with its own
+  noise floor in it (27 dB under the note). The recording cannot show that
+  the model lacks any.
+- Leaks ("rifts"). No recording or source found gives an audible leak a level.
+
+What the recording does show and the model lacks is in README, Known gaps:
+weaker, uneven upper harmonics and partials that move apart, both the work of
+a body and a room.
