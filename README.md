@@ -34,6 +34,11 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
+### 0.4.0 — 2026-11-19 — the types rebuilt
+
+- Each **Type** is now its own instrument, not the Default with another tremolo: the reed ranks it carries (the bandoneon's 16' and 8' pair, the Irish and French boxes' three middle reeds), its reeds, plates, blocks and pallet holes, and for the bandoneon the wooden end board its sound leaves through, darker from 1 kHz up. A register that asks for ranks a type lacks sounds the ones it has. Default is unchanged to the bit.
+- **Balkan Kolo** plays the full register, the five-voice converter's sound through its cassotto.
+
 ### 0.3.0 — 2026-11-18 — Balkan, Italian and Finnish types
 
 - **Type** adds **Balkan**, **Italian** and **Finnish** ([Types](#types)), approximations read off a digital accordion's demo of those sets: Balkan about 15 cents of tremolo, Italian about 16, Finnish about 19 at the default Musette, and Balkan and Finnish sound their 16' and 8' ranks, tremolo reeds included, through the cassotto, darker above 2 kHz as those sets are.
@@ -522,23 +527,37 @@ their law from C4 to C6.
 
 ### Types
 
-**Type** chooses the kind of accordion the reeds and the treble's chambers
-are built as (`kBuilds`, `Source/DSP/ReedBank.h`). The keys, the bellows, the
-registers and the microphones stay the same; each type changes only what its
-kind of instrument is known to do differently, and every change is a part of
-the physical model, not a filter on its output:
+**Type** chooses the kind of accordion the reeds, their chambers, the reed
+sets the treble carries and the treble's body are built as (`kBuilds`,
+`Source/DSP/ReedBank.h`). The keys, the bellows, the bass side and the
+microphones stay the same; each type changes only what its kind of
+instrument is known to do differently, and every change is a part of the
+physical model, not a filter on its output:
 
-| Type | Tremolo at the default Musette | Reeds | Chambers |
-| --- | --- | --- | --- |
-| Default | 22 cents | as above | open |
-| Bandoneon | about 1 cent, dry | zinc plates: slots 1.25× as deep, tongues losing 1/1.3 as much | open |
-| Irish | 7 cents | small button-box plates (0.8× the slot), set low (0.85×) | open |
-| German | 14 cents | as Default | open |
-| French | 28 cents | lighter plates (0.9× the slot) | open |
-| Jazz | 3 cents, dry | hand-made: Q 1.15× | 16' and 8' in a cassotto |
-| Balkan | about 15 cents | as Default | 16' and the three 8' ranks in a cassotto |
-| Italian | about 16 cents | as Default | open |
-| Finnish | about 19 cents | as Default | 16' and the three 8' ranks in a cassotto |
+| Type | Tremolo at the default Musette | Treble reeds | Reeds and blocks | Chambers and body |
+| --- | --- | --- | --- | --- |
+| Default | 22 cents | all five ranks | as above | open |
+| Bandoneon | about 1 cent, dry | 16' and 8' only | zinc plates (slots 1.25× as deep, tongues losing 1/1.3 as much, tips 1.2× thicker); no blocks: half-depth cells, holes 1.5× | the wooden end board's holes, a box like the bass end |
+| Irish | 7 cents | the three 8' only | small plates (0.8×), set low (0.85×), thin tips (0.9×), shallow blocks (0.7×), small holes (0.8×) | open |
+| German | 14 cents | all five | as Default | open |
+| French | 28 cents | the three 8' only | lighter plates (0.9×), thin tips (0.9×) | open |
+| Jazz | 3 cents, dry | all five | hand-made: Q 1.15×, 0.8× the clearance | 16' and 8' in a cassotto |
+| Balkan | about 15 cents | all five | hand-made, deeper blocks (1.15×) | 16' and the three 8' in a cassotto |
+| Italian | about 16 cents | all five | hand-made, deeper blocks (1.15×) | open |
+| Finnish | about 19 cents | all five | as Default | 16' and the three 8' in a cassotto |
+
+A register that asks for a rank its type lacks sounds the ranks it has of
+those it asks for, or the 8' (the 16' on none) when it has none of them, at
+the trim of the register with just those ranks. What moves the steady sound
+in this model is which reeds sound, their tremolo, the cassotto and the
+bandoneon's end board: on each type's own preset and phrase, level-matched
+against Default, the cassotto and the end board take 4.5–7 dB off 2–4 kHz
+(Bandoneon 2.5 dB off 1–2 kHz too), while the reed, plate, block and hole
+factors, pushed 40–60 % either way one at a time, move Paris Musette's octave
+bands by 0.1–2.8 dB, mostly in how the reeds speak. So German, French, Irish
+and Italian differ from Default above all in their tremolo and, on the
+registers that need ranks they lack, their reed sets, as the comparison
+below found those sets to differ mostly in tremolo too.
 
 Balkan, Italian and Finnish are read off a comparison the owner shared, a
 digital accordion's demo of its French, Balkan, German, Italian, Finnish and
@@ -566,9 +585,8 @@ modelled as a compartment like the bass box (30 mm deep, a fifth open: 1.4
 kHz at Q 1.3, its depth modes from 2.8 kHz), and the effect fades out above
 about C6, where the notes' fundamentals reach its roll-off, as players
 report. On the Clarinet Solo demo it takes 4–8 dB off 2–8 kHz against the
-whole spectrum; the plate and loss changes move the octave bands by under
-1.5 dB. Every type sits within 0.15 dB of Default on the reference stroke
-(`TypesSitTogether`) with no trim. Each type's reeds are tuned for its own
+whole spectrum. Every type sits within 0.6 dB of Default on the reference
+stroke (`TypesSitTogether`), with the sounding ranks' register trim. Each type's reeds are tuned for its own
 plates (`Source/DSP/ReedTuning.h` holds a table per type). Changing Type
 rebuilds the sounding reeds where they swing, as Life does.
 
@@ -859,6 +877,11 @@ a pitch wheel should do what it says.
   the cassotto's size are estimates of each kind's construction, not
   measurements of an instrument. No recording of each type has been measured
   against them; a listening test chose them over Default (Docs/decisions.md).
+  The reed sets, the bandoneon's end board and every reed and block factor
+  are estimates of each kind's construction; in this model only the ranks,
+  the tremolo, the cassotto and the end board move the steady sound by more
+  than about 2 dB, so German, French, Irish and Italian stay close to Default
+  apart from their tremolo.
   Balkan, Italian and Finnish are read off a sampled instrument's demo, with
   its arrangements in the way: their tremolo is known to a few cents, and
   their cassotto stands for a darker sound measured only as a whole.

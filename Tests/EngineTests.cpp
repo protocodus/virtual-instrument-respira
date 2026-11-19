@@ -1548,8 +1548,9 @@ void TypesSitTogether() {
     // Switching the Type changes the instrument, not the level: on Init's
     // controls and the reference stroke, a C3, a C4-E4-G4 triad and a C6
     // through the Clarinet, Musette and Bandoneon registers average within
-    // 1 dB of the Default build's, with no trim: the output stage and the
-    // reeds' own air settle them there (0.14 dB apart at most when written).
+    // 1 dB of the Default build's, each register at the trim of the ranks
+    // that sound: the output stage and the reeds' own air settle them there
+    // (0.59 dB apart at most when written, Irish, with its three 8' only).
     const double rate = 48000.0;
     const auto stroke = [](double t) {
         const double s = t < 2.0 ? t / 2.0 : 1.0 - (t - 2.0) / 2.0;

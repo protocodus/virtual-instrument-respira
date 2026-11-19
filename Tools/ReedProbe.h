@@ -131,7 +131,8 @@ inline std::array<double, 2> TuneCell(int rank, int key, int type = kTypeDefault
         const double q = ReedQ(base.hz) * build.q * v.qScale;
         double natural = wanted;
         for (int pass = 0; pass < 3; ++pass) {
-            const ReedSpec reed = MakeReed(natural, q, v.setScale * build.set, v.clearanceScale, v.plateScale * build.plate, v.profileScale, 1.0);
+            const ReedSpec reed = MakeReed(natural, q, v.setScale * build.set, v.clearanceScale * build.clearance, v.plateScale * build.plate,
+                                           v.profileScale * build.profile, 1.0);
             double sounding = SoundingHz(reed, base.chamber, natural, kTuningPressure);
             if (sounding <= 0.0) sounding = SoundingHz(reed, base.chamber, natural, 3.0 * kTuningPressure);
             if (sounding <= 0.0) break;

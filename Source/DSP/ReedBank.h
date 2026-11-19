@@ -50,11 +50,11 @@ inline int PitchClass(int key) { return ((key % 12) + 12) % 12; }
 inline double NoteHz(double note) { return 440.0 * std::pow(2.0, (note - 69.0) / 12.0); }
 
 // The instrument's build, the Type control: which kind of accordion the
-// reeds, their plates and the treble's chambers are made as. The keys,
-// bellows, registers and microphones stay the same; each build changes only
-// what its kind of instrument is known to do differently. Default is the
-// instrument as it was before builds existed and stays bit for bit so: every
-// factor is 1 and nothing sits in a tone chamber.
+// reeds, their plates, their chambers, the reed sets the treble carries and
+// the treble's body are made as. The keys, bellows, the bass side and the
+// microphones stay the same. Default is the instrument as it was before
+// builds existed and stays bit for bit so: every factor is 1, every rank is
+// there, nothing sits in a tone chamber and nothing encloses the treble.
 //
 // Tremolo is set by the Musette knob, in cents at A4, for Default; another
 // build tunes its tremolo reeds at its own share of that, the share its kind
@@ -62,68 +62,108 @@ inline double NoteHz(double note) { return 440.0 * std::pow(2.0, (note - 69.0) /
 // (ReedBank's RankNote). Tuners' published figures, all approximate (Liberty
 // Bellows' tuning list; accordionists.info's tuning threads): swing or
 // concert, a jazz box, 2-4 cents; modern Irish 5-7; German 14-15; Italian
-// about 15; French 18-22 and older French musette wetter still.
+// about 15; French 18-22 and older French musette wetter still. Balkan,
+// Italian and Finnish are read off one comparison the owner shared
+// (2026-11-18): a digital accordion's demo of its French, Balkan, German,
+// Italian, Finnish and Irish sets, about 11-17 s of busy playing each. Their
+// tremolo is the median beat of its sustained notes, from the side peaks
+// round the strongest partial (0.6 s windows) and from the partial's envelope
+// (0.8 s), taken to A4 by RankNote's f^0.51 law: Balkan 9-18 cents (about
+// 15), Italian 10-19 (about 16; one held E4 beat 4.2 Hz, 19), Finnish 18-21
+// (about 19); German read 11-16 on the same ruler. Above 2 kHz the Balkan
+// and Finnish sets sit about 8 dB under the French, German and Irish ones,
+// the Italian about 3 dB under.
 //
-// Everything else a build changes is an estimate of its construction, not a
-// measurement of an instrument; README, Known gaps lists them:
-//   - Bandoneon: tuned dry, octave pairs (the Bandoneon register's 16' and
-//     8'), its reeds riveted to long zinc plates, thicker and much heavier
-//     than an accordion's aluminium. Players and restorers credit the zinc's
-//     mass with the deep sound (bando-bando.de, "ELA Zink"); a plate that
-//     moves less takes less of the tongue's energy, so the tongues' loss is
-//     taken 1/1.3 of the default's and the slot 1.25 times as deep.
-//   - Irish: a button box's small aluminium plates (0.8 of the default slot
-//     depth) and tongues set low for quick ornaments (0.85 of the set).
-//   - German: a Hohner's tremolo; the default reeds were themselves fitted
-//     to a Hohner and an Italian instrument (RespiraControls.h, Grille), so
+// Only the ranks, the tremolo, the cassotto and the bandoneon's end board
+// move the steady sound by more than about 2 dB in any octave: in this
+// model the reed, plate, block and hole factors, pushed 40-60 % either way
+// one at a time, move Paris Musette's octave bands by 0.1-2.8 dB, mostly in
+// how the reeds speak. They are kept where the kind of instrument is known
+// to be built so.
+//
+// The rest are estimates of each kind's construction, from makers' and
+// players' descriptions, not measurements of an instrument (README, Known
+// gaps):
+//   - Bandoneon: two reeds an octave apart on every key (16' and 8', the L
+//     and M ranks) and no others, so every register sounds that pair; the
+//     reeds riveted to long zinc plates, thicker and much heavier than an
+//     accordion's aluminium, which players and restorers credit with the
+//     deep sound (bando-bando.de, "ELA Zink"): a plate that moves less takes
+//     less of the tongue's energy, so the tongues' loss is 1/1.3 of the
+//     default's and the slot 1.25 times as deep, the tongues thicker towards
+//     the tip (1.2). No reed blocks: the plates sit over short cells in the
+//     reed board (half the chamber depth) whose valves open wide (1.5 times
+//     the hole), and the sound leaves through the fretwork holes of the
+//     wooden end board: a box like the accordion's bass end (RespiraEngine.cpp,
+//     the bass box), 40 mm deep and a tenth open through 8 mm of wood, which
+//     rings about 1 kHz and rolls off above it.
+//   - Irish: a B/C button box's three middle reeds (M-, M, M+), no 16' and no
+//     4', on small aluminium plates (0.8 of the slot) with tongues set low
+//     (0.85) and thin at the tip (0.9) for quick ornaments, in shallow blocks
+//     (0.7) behind small pallets (0.8). Its treble grille is no resonator, as
+//     the accordion's is not (RespiraEngine.cpp, the bass box's note).
+//   - German: a Hohner's tremolo; the default reeds were themselves fitted to
+//     a Hohner and an Italian instrument (RespiraControls.h, Grille), so
 //     nothing else changes.
-//   - French: the wet musette, on the lighter plates of a bright,
-//     open-voiced box (0.9 of the slot depth).
-//   - Jazz: dry, hand-made reeds (Q 1.15 times the default's) with the 16'
-//     and 8' ranks in a cassotto, the tone chamber whose bend attenuates the
-//     upper harmonics and reinforces the lows (Engine's cassotto, RespiraEngine.cpp).
-//
-// Balkan, Italian and Finnish (0.3.0) are read off one comparison the owner
-// shared (2026-11-18): a digital accordion's demo playing its French,
-// Balkan, German, Italian, Finnish and Irish sets in turn, about 11-17 s of
-// busy playing each. Their tremolo is the median beat of its sustained
-// notes, from the side peaks round the strongest partial (0.6 s windows) and
-// from the partial's envelope (0.8 s), taken to A4 by RankNote's f^0.51 law:
-// Balkan 9-18 cents (about 15), Italian 10-19 (about 16; one held E4 beat
-// 4.2 Hz, 19), Finnish 18-21 (about 19). On the same ruler German read 11-16,
-// against the 14 its build already takes. Above 2 kHz the Balkan and Finnish
-// sets sit about 8 dB under the French, German and Irish ones, and the
-// Italian about 3 dB under; the cassotto takes 4-8 dB there, so those two
-// play their 16' and 8' ranks through it, tremolo reeds included, as a
-// converter's cassotto holds them. The demo is a sampled instrument, not a
-// measured accordion, and its arrangements differ: approximations, listed
-// in README, Known gaps.
-//   - Balkan: about 15 cents, 16' and the three 8' ranks in the cassotto.
-//   - Italian: about 16 cents, open, otherwise as German.
-//   - Finnish: about 19 cents, 16' and the three 8' ranks in the cassotto.
+//   - French: the musette's three middle reeds and no others, on the lighter
+//     plates (0.9 of the slot) and thinner tips (0.9) of a bright, open-voiced
+//     box.
+//   - Jazz: dry, hand-made reeds: their tongues lose less (Q 1.15 times the
+//     default's) and fit their slots closer (0.8 of the clearance), with the
+//     16' and 8' ranks in a cassotto, the tone chamber whose bend attenuates
+//     the upper harmonics and reinforces the lows (Engine's cassotto,
+//     RespiraEngine.cpp).
+//   - Balkan: a five-voice converter's hand-made reeds (as Jazz's) in deeper
+//     blocks (1.15), the 16' and the three 8' ranks in the cassotto, which
+//     takes the 4-8 dB above 2 kHz the comparison shows.
+//   - Italian: Castelfidardo hand-made reeds (as Jazz's) in deeper blocks
+//     (1.15), open, no cassotto.
+//   - Finnish: the wet tremolo, the 16' and the three 8' ranks in the
+//     cassotto, which takes the 4-8 dB above 2 kHz the comparison shows.
 // Types are appended, never reordered: saved sessions recall them by number.
 enum Type : int { kTypeDefault, kTypeBandoneon, kTypeIrish, kTypeGerman, kTypeFrench, kTypeJazz,
                   kTypeBalkan, kTypeItalian, kTypeFinnish, kTypeCount };
 
-struct Build {
-    const char* name;
-    double tremolo;   // the tremolo reeds' detune over the Musette knob's
-    double plate;     // reed plate thickness (slot depth) over the default's
-    double q;         // the tongue's quality factor over ReedQ's
-    double set;       // the tongue's set over the default's
-    std::array<bool, 5> cassotto;   // treble ranks kRankL .. kRankH that sound into the tone chamber
+// A box the treble's sound leaves through, as Engine::Compartment::Set takes
+// it: depth m, the cover's open fraction, the holes' effective length m, the
+// cloth behind them in rayl, the energy absorbed on a round trip and where
+// the depth modes take over, Hz. A depth of 0 is no box: the reeds radiate
+// straight to the grille.
+struct Body {
+    double depth, open, neck, rayl, absorbed, modes;
 };
 
+struct Build {
+    const char* name;
+    double tremolo;    // the tremolo reeds' detune over the Musette knob's
+    double plate;      // reed plate thickness (slot depth) over the default's
+    double q;          // the tongue's quality factor over ReedQ's
+    double set;        // the tongue's set over the default's
+    double clearance;  // the gap round the tongue over the default's
+    double profile;    // the tongue's tip thickness and piston area over the default's
+    double block;      // the reed block's chamber depth over the default's
+    double hole;       // the pallet hole's area over the default's
+    std::array<bool, 5> ranks;      // treble ranks kRankL .. kRankH the instrument carries
+    std::array<bool, 5> cassotto;   // treble ranks that sound into the tone chamber
+    Body body;
+};
+
+constexpr std::array<bool, 5> kAllRanks { true, true, true, true, true };
+constexpr std::array<bool, 5> kNoRanks { false, false, false, false, false };
+constexpr std::array<bool, 5> kMiddleRanks { false, true, true, true, false };   // M, M-, M+
+constexpr Body kOpenTreble { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+
 inline constexpr std::array<Build, kTypeCount> kBuilds { {
-    { "Default", 1.0, 1.0, 1.0, 1.0, { false, false, false, false, false } },
-    { "Bandoneon", 0.05, 1.25, 1.3, 1.0, { false, false, false, false, false } },
-    { "Irish", 7.0 / 22.0, 0.8, 1.0, 0.85, { false, false, false, false, false } },
-    { "German", 14.0 / 22.0, 1.0, 1.0, 1.0, { false, false, false, false, false } },
-    { "French", 28.0 / 22.0, 0.9, 1.0, 1.0, { false, false, false, false, false } },
-    { "Jazz", 3.0 / 22.0, 1.0, 1.15, 1.0, { true, true, false, false, false } },
-    { "Balkan", 15.0 / 22.0, 1.0, 1.0, 1.0, { true, true, true, true, false } },
-    { "Italian", 16.0 / 22.0, 1.0, 1.0, 1.0, { false, false, false, false, false } },
-    { "Finnish", 19.0 / 22.0, 1.0, 1.0, 1.0, { true, true, true, true, false } },
+    { "Default", 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, kAllRanks, kNoRanks, kOpenTreble },
+    { "Bandoneon", 0.05, 1.25, 1.3, 1.0, 1.0, 1.2, 0.5, 1.5, { true, true, false, false, false }, kNoRanks,
+      { 0.04, 0.10, 0.0081, 0.0, 0.04, 2000.0 } },
+    { "Irish", 7.0 / 22.0, 0.8, 1.0, 0.85, 1.0, 0.9, 0.7, 0.8, kMiddleRanks, kNoRanks, kOpenTreble },
+    { "German", 14.0 / 22.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, kAllRanks, kNoRanks, kOpenTreble },
+    { "French", 28.0 / 22.0, 0.9, 1.0, 1.0, 1.0, 0.9, 1.0, 1.0, kMiddleRanks, kNoRanks, kOpenTreble },
+    { "Jazz", 3.0 / 22.0, 1.0, 1.15, 1.0, 0.8, 1.0, 1.0, 1.0, kAllRanks, { true, true, false, false, false }, kOpenTreble },
+    { "Balkan", 15.0 / 22.0, 1.0, 1.15, 1.0, 0.8, 1.0, 1.15, 1.0, kAllRanks, { true, true, true, true, false }, kOpenTreble },
+    { "Italian", 16.0 / 22.0, 1.0, 1.15, 1.0, 0.8, 1.0, 1.15, 1.0, kAllRanks, kNoRanks, kOpenTreble },
+    { "Finnish", 19.0 / 22.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, kAllRanks, { true, true, true, true, false }, kOpenTreble },
 } };
 
 inline const Build& BuildOf(int type) { return kBuilds[static_cast<std::size_t>(type < 0 ? 0 : type >= kTypeCount ? kTypeCount - 1 : type)]; }
@@ -265,14 +305,15 @@ inline CellSpec MakeCell(int rank, int key, double musetteCents, const float* ra
         const ReedVariation v = Variation(rank, index, side, life);
         const double wanted = spec.hz * std::pow(2.0, v.tuneCents / 1200.0);
         if (side == 0) {
-            const ReedSpec chamberReed = MakeReed(wanted, q * v.qScale, v.setScale * build.set,
-                                                  v.clearanceScale, v.plateScale * build.plate, v.profileScale, s);
-            spec.chamber = MakeChamber(chamberReed, wanted, spec.bass, stepRate, v.chamberScale, v.ventScale);
+            const ReedSpec chamberReed = MakeReed(wanted, q * v.qScale, v.setScale * build.set, v.clearanceScale * build.clearance,
+                                                  v.plateScale * build.plate, v.profileScale * build.profile, s);
+            spec.chamber = MakeChamber(chamberReed, wanted, spec.bass, stepRate, v.chamberScale, v.ventScale,
+                                       spec.bass ? 1.0 : build.block, spec.bass ? 1.0 : build.hole);
         }
         const double ratio = ratios ? (baseRatio + s * (static_cast<double>(ratios[side]) - baseRatio)) : 1.0;
         const double natural = wanted * ratio;
-        (side == 0 ? spec.push : spec.pull) = MakeReed(natural, q * v.qScale, v.setScale * build.set,
-                                                       v.clearanceScale, v.plateScale * build.plate, v.profileScale, s);
+        (side == 0 ? spec.push : spec.pull) = MakeReed(natural, q * v.qScale, v.setScale * build.set, v.clearanceScale * build.clearance,
+                                                       v.plateScale * build.plate, v.profileScale * build.profile, s);
     }
     return spec;
 }

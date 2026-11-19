@@ -240,6 +240,21 @@ double KeyPlace(int source, bool button) {
 // above C#7, the 4' would double the 8' in unison, a cent or so apart, and
 // the two would beat slowly down to near silence; where the 8' is open the
 // 4' stays shut there instead.
+// The ranks a register sounds on a build: those it opens that the build
+// carries. A register that asks only for reeds the build lacks sounds its
+// 8' (M), or the 16' where there is no 8', as the nearest the instrument has.
+Register Effective(const Register& reg, const Build& build) {
+    Register out = reg;
+    bool any = false;
+    for (std::size_t i = 0; i < out.ranks.size(); ++i) any = (out.ranks[i] = reg.ranks[i] && build.ranks[i]) || any;
+    if (!any) out.ranks[build.ranks[kRankM] ? kRankM : kRankL] = true;
+    return out;
+}
+
+Register EffectiveRegister(double reg, double type) {
+    return Effective(kRegisters[static_cast<std::size_t>(reg)], BuildOf(static_cast<int>(type)));
+}
+
 bool Sounds(const Register& reg, int rank, int key) {
     if (!reg.ranks[static_cast<std::size_t>(rank)]) return false;
     return rank != kRankH || key + 12 <= kHighestReed || !reg.ranks[kRankM];
@@ -340,11 +355,18 @@ void Engine::Hand::Tick(double dt, double momentum, const double* drive, double 
 
 Engine::Engine() { Prepare(48000.0); }
 
+void Engine::SetBody() {
+    const Body& body = BuildOf(static_cast<int>(controls[kType])).body;
+    trebleBoxRunning = body.depth > 0.0;
+    if (trebleBoxRunning) trebleBox.Set(body.depth, body.open, body.neck, body.rayl, body.absorbed, body.modes, rate);
+}
+
 void Engine::Prepare(double sampleRate) {
     rate = sampleRate >= kLowestRate && sampleRate < 1.0e6 ? sampleRate : 48000.0;
     baseOversample = rate < kHalfRateFrom ? 4 : 2;
     bassBox.Set(kBassBoxDepth, kBassBoxOpen, kBassHoleLength, kClothRayl, kBassBoxAbsorbed, kBassBoxModes, rate);
     cassottoBox.Set(kCassottoDepth, kCassottoOpen, kCassottoNeck, 0.0, kCassottoAbsorbed, kCassottoModes, rate);
+    SetBody();
     rustle.Set(rate);
     smoothing = 1.0 - std::exp(-1.0 / (0.02 * rate));
     // 0.002 a sample at 48 kHz, as it was at every rate until 0.1.26: a
@@ -384,6 +406,7 @@ void Engine::Reset() {
     bassBox.Clear();
     cassottoSide.Reset();
     cassottoBox.Clear();
+    trebleBox.Clear();
     cassottoRunning = false;
     for (const bool chambered : BuildOf(static_cast<int>(controls[kType])).cassotto) cassottoRunning = cassottoRunning || chambered;
     grille = 0.0;
@@ -483,6 +506,12 @@ void Engine::SetControls(const Controls& next) {
             c.spec.pull.stepOmega2 = StepStiffness(c.spec.pull.omega2, internalRate);
             c.vent = MakeVent(c.spec.chamber, c.lift, internalRate);
         }
+    // A build that carries other ranks opens and shuts them under held keys,
+    // as a register switch does, but with no switch to knock.
+    if (controls[kType] != prevType) {
+        SetBody();
+        SwitchRegister(EffectiveRegister(registerIndex, prevType), EffectiveRegister(registerIndex, controls[kType]), 1.0);
+    }
     const int reg = static_cast<int>(controls[kRegister]);
     // Until it first renders, the engine has made no sound: controls set then
     // (a patch loaded into a new instance) take hold at once, with no knock
@@ -490,7 +519,7 @@ void Engine::SetControls(const Controls& next) {
     if (reg != registerIndex) {
         // The thumb's press moves the slides and lands the switch alike.
         const double stroke = untouched ? 1.0 : Stroke();
-        SwitchRegister(registerIndex, reg, stroke);
+        SwitchRegister(EffectiveRegister(registerIndex, controls[kType]), EffectiveRegister(reg, controls[kType]), stroke);
         if (!untouched) {
             StartKnock(kRegisterSwitch, stroke * kRegisterSwitch.travel / kOpenSeconds, 1.0, false, false, kSwitchPlace);
             // The switch it pushes off springs back up onto its stop, in the
@@ -518,7 +547,13 @@ void Engine::SetControls(const Controls& next) {
     turbulence = kTurbulence * noiseScale;
     gainTarget = kRho / (4.0 * kPi) * kPascalToFullScale * DbToGain(controls[kVolume]);
     bassGainTarget = DbToGain(controls[kBass]);
-    trebleGainTarget = DbToGain(kRegisterTrimDb[static_cast<std::size_t>(reg)]);
+    // The trim belongs to the ranks that sound: on a build that lacks some of
+    // the register's, the register with just those ranks lends its trim.
+    std::size_t trim = static_cast<std::size_t>(reg);
+    const Register sounding = EffectiveRegister(reg, controls[kType]);
+    for (std::size_t i = 0; i < kRegisters.size(); ++i)
+        if (kRegisters[i].ranks == sounding.ranks) trim = i;
+    trebleGainTarget = DbToGain(kRegisterTrimDb[trim]);
     mechanicsGainTarget = kForceToFlow * DbToGain(controls[kMechanics]);
     roomGainTarget = kRoomLevel * controls[kRoom];
     room.SetWidth(controls[kWidth], untouched || (roomGain == 0.0 && roomGainTarget == 0.0));
@@ -897,7 +932,7 @@ void Engine::NoteOn(int channel, int key, int velocity) {
         StartCell(kRankChord8, PitchClass(key), source, opening);
         StartCell(kRankChord4, PitchClass(key), source, opening);
     } else {
-        const Register& reg = kRegisters[static_cast<std::size_t>(controls[kRegister])];
+        const Register reg = EffectiveRegister(controls[kRegister], controls[kType]);
         for (int rank = kRankL; rank <= kRankH; ++rank)
             if (Sounds(reg, rank, TrebleKey(key))) StartCell(rank, TrebleKey(key), source, opening);
         trebleHeld[static_cast<std::size_t>(key)] = static_cast<std::uint8_t>(velocity);
@@ -909,9 +944,7 @@ void Engine::NoteOn(int channel, int key, int velocity) {
 // and the ones it shuts fall silent. A slide opens about as fast as the
 // softest key stroke lifts a pallet, and closes as a pallet does, both at the
 // speed of this press (stroke).
-void Engine::SwitchRegister(int from, int to, double stroke) {
-    const Register& before = kRegisters[static_cast<std::size_t>(from)];
-    const Register& after = kRegisters[static_cast<std::size_t>(to)];
+void Engine::SwitchRegister(const Register& before, const Register& after, double stroke) {
     for (int key = 0; key < 128; ++key) {
         if (trebleHeld[static_cast<std::size_t>(key)] == 0) continue;
         for (int rank = kRankL; rank <= kRankH; ++rank) {
@@ -1297,6 +1330,7 @@ void Engine::Render(float* left, float* right, int frames) {
         const double valves = mechanicsGain * (kValveVoicing / kForceToFlow);
         double side = trebleSide.Process(t, stages);
         if (cassottoRunning) side += cassottoBox.Process(cassottoSide.Process(z, stages));
+        if (trebleBoxRunning) side = trebleBox.Process(side);
         grille += grilleCoeff * (side + valves * valveTreble - grille);
         gain += smoothing * (gainTarget - gain);
         bassGain += smoothing * (bassGainTarget - bassGain);
@@ -1371,6 +1405,7 @@ void Engine::Render(float* left, float* right, int frames) {
     // below 1e-30 (-600 dB), so one still sounding is never touched.
     bassBox.FlushTiny();
     cassottoBox.FlushTiny();
+    trebleBox.FlushTiny();
     for (auto& mic : trebleMicMotion) mic.FlushTiny();
     for (auto& mic : bassMicMotion) mic.FlushTiny();
     for (KeyBed* bed : { &keyBedTreble, &keyBedBass }) bed->FlushTiny();

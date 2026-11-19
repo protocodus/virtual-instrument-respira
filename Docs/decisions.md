@@ -2400,3 +2400,29 @@ Listening set (not committed): one A/B per new type, A the shipping engine
 (Default) and B the type, level-matched on whole-file RMS. Chosen: B for
 each, by the project's standing rule; not yet heard by the owner. What it
 licenses: the three types as options beside Default, which is unchanged.
+
+## 2026-11-19 — 0.4.0: the types rebuilt (owner's choice; candidates by the project's rule)
+
+The owner heard the types as too close to Default and chose to rebuild each
+one's reeds, chambers and body (decision card, 2026-11-19). Each build now
+carries its own treble ranks (Bandoneon 16' and 8'; Irish and French the
+three 8'), reed clearance and tip profile, block depth and pallet-hole area,
+and Bandoneon the wooden end board its sound leaves through, modelled as the
+bass box is (README, Types). All are estimates of each kind's construction.
+
+What a measurement could say was measured. Default renders the eight demos
+the same to the bit as 0.3.0. One factor at a time, 40–60 % either way, the
+reed, plate, block and hole factors move Paris Musette's octave bands by
+0.1–2.8 dB, so they cannot make a type much different alone; a small
+treble box for the Irish button box was tried and dropped, as the engine's
+own analysis of the treble compartment says it is no resonator. On each
+type's own preset and phrase, level-matched against Default: Bandoneon −2.5
+and −4.8 dB at 1–2 and 2–4 kHz, Jazz −6.1, Balkan −4.5 and Finnish −7.1 at
+2–4 kHz, Irish −1.3, Italian +0.8 −1.1, German and French within 0.2 dB
+(their difference is the tremolo and the reed sets). Every type sits within
+0.6 dB of Default on the reference stroke, at the trim of the ranks that
+sound. Balkan Kolo moves to the full register.
+
+Listening set (not committed): one A/B per type, A the preset with Type
+Default, B as built, level-matched on whole-file RMS. Chosen: B for every
+type, by the project's standing rule; not yet heard by the owner.

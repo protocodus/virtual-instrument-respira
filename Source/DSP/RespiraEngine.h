@@ -211,7 +211,7 @@ private:
     void NoteOff(int channel, int key);
     void StartCell(int rank, int key, int source, double openSeconds);
     void TakeTargets();   // every glided gain to its target at once
-    void SwitchRegister(int from, int to, double stroke);
+    void SwitchRegister(const Register& before, const Register& after, double stroke);
     void MoveKey(int source);
     double Stroke();   // this finger stroke's velocity against the one asked for (kStrokeScatter)
     void StartKnock(const Stop& stop, double speed, double massScale, bool bass, bool stroke, double place);
@@ -254,6 +254,10 @@ private:
     Decimator cassottoSide;
     Compartment cassottoBox;
     bool cassottoRunning = false;
+    // The box a build's treble sounds out through (Build::body), if it has one.
+    Compartment trebleBox;
+    bool trebleBoxRunning = false;
+    void SetBody();
     double grilleCoeff = 0.0, grilleCoeffBase = 0.0, grilleCoeffTarget = 0.0;
     double grille = 0.0;
     double gain = 0.0, gainTarget = 0.0, bassGain = 0.0, bassGainTarget = 0.0, smoothing = 0.0;

@@ -318,12 +318,15 @@ struct ChamberSpec {
 // stepRate is the lowest rate the cell will be stepped at: sound must not
 // cross a section in less than a step, or the duct goes unstable.
 inline ChamberSpec MakeChamber(const ReedSpec& r, double f0, bool bassBox, double stepRate,
-                               double chamberScale = 1.0, double ventScale = 1.0) {
+                               double chamberScale = 1.0, double ventScale = 1.0, double depthScale = 1.0,
+                               double holeScale = 1.0) {
+    // depthScale and holeScale are the build's (ReedBank.h, Build): its reed
+    // blocks' chamber depth and its pallet holes' area over these.
     ChamberSpec c;
     const double width = r.width + 0.004, L = r.length;
-    double depth = 0.003 + 0.2 * L;
+    double depth = (0.003 + 0.2 * L) * depthScale;
     const double path = bassBox ? 2.0 : 1.0;
-    c.ventArea = 6.0e-5 * std::sqrt(L / 0.026) * (bassBox ? 1.7 : 1.0);
+    c.ventArea = 6.0e-5 * std::sqrt(L / 0.026) * (bassBox ? 1.7 : 1.0) * holeScale;
     c.palletInertance = path * kRho * (0.006 + 1.7 * std::sqrt(c.ventArea / kPi)) / c.ventArea;
     c.endInertance = kRho * 0.85 * std::sqrt(c.ventArea / kPi) / c.ventArea;
     const double rim = 2.0 * std::sqrt(kPi * c.ventArea);
