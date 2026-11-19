@@ -34,6 +34,13 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
+### 0.4.2 — 2026-11-19 — the types' reed sets as their makers build them
+
+- **Irish** sounds LMM, the 16', the 8' at pitch and one 8' tuned sharp, as Irish three-voice boxes are built, instead of three 8'.
+- **French** tunes its musette wider on the sharp side, the flat reed a third as far from pitch as the sharp one, as French tuners do (about −5/0/+15 cents).
+- **Italian** and **Balkan** are four-voice LMMH boxes with the tremolo on one side, the second 8' sharp and none flat. A register that asks for the flat 8' sounds the reeds it has, at their level.
+- Default and German, Bandoneon, Jazz and Finnish are unchanged; the research behind the changes is summarised under [Types](#types).
+
 ### 0.4.1 — 2026-11-19 — a second preset for every type
 
 - Eight more factory presets, each showing another side of a type: Bandoneon Solo, Irish Session, German Master, Old Paris Musette, Jazz Clarinet, Balkan Musette, Italian Master and Finnish Waltz. The first sixteen are unchanged.
@@ -543,12 +550,12 @@ physical model, not a filter on its output:
 | --- | --- | --- | --- | --- |
 | Default | 22 cents | all five ranks | as above | open |
 | Bandoneon | about 1 cent, dry | 16' and 8' only | zinc plates (slots 1.25× as deep, tongues losing 1/1.3 as much, tips 1.2× thicker); no blocks: half-depth cells, holes 1.5× | the wooden end board's holes, a box like the bass end |
-| Irish | 7 cents | the three 8' only | small plates (0.8×), set low (0.85×), thin tips (0.9×), shallow blocks (0.7×), small holes (0.8×) | open |
+| Irish | 7 cents, sharp side only | 16', 8' and the sharp 8' (LMM) | small plates (0.8×), set low (0.85×), thin tips (0.9×), shallow blocks (0.7×), small holes (0.8×) | open |
 | German | 14 cents | all five | as Default | open |
-| French | 28 cents | the three 8' only | lighter plates (0.9×), thin tips (0.9×) | open |
+| French | 28 cents sharp, a third of it flat | the three 8' only | lighter plates (0.9×), thin tips (0.9×) | open |
 | Jazz | 3 cents, dry | all five | hand-made: Q 1.15×, 0.8× the clearance | 16' and 8' in a cassotto |
-| Balkan | about 15 cents | all five | hand-made, deeper blocks (1.15×) | 16' and the three 8' in a cassotto |
-| Italian | about 16 cents | all five | hand-made, deeper blocks (1.15×) | open |
+| Balkan | about 15 cents, sharp side only | four: 16', 8', sharp 8', 4' (LMMH) | hand-made, deeper blocks (1.15×) | 16' and both 8' in a cassotto |
+| Italian | about 16 cents, sharp side only | four: 16', 8', sharp 8', 4' (LMMH) | hand-made, deeper blocks (1.15×) | open |
 | Finnish | about 19 cents | all five | as Default | 16' and the three 8' in a cassotto |
 
 A register that asks for a rank its type lacks sounds the ranks it has of
@@ -563,6 +570,22 @@ bands by 0.1–2.8 dB, mostly in how the reeds speak. So German, French, Irish
 and Italian differ from Default above all in their tremolo and, on the
 registers that need ranks they lack, their reed sets, as the comparison
 below found those sets to differ mostly in tremolo too.
+
+The reed sets and tremolo sides follow how each kind is built
+(Docs/research/accordion-construction-by-country-2026-11-19.md): Irish
+three-voice boxes are LMM, one 8' at pitch and one sharp (McNeela's guide);
+French musette is tuned wider sharp than flat, about −5/0/+15 cents (tuners
+on accordionists.info, Liberty Bellows); Italian and Balkan boxes are
+four-voice LMMH with a one-sided tremolo (four Italian boxes measured 0/+20
+three times and −5/+15 once; Bugari's Balkan DM). Where no register has just
+the ranks a type sounds, the register's trim rises by the power of the reeds
+it lacks. Cassotto boxes are usually described with only the 16' and the 8'
+at pitch inside; moved there, Balkan's and Finnish's tremolo reeds left them
+1.4 and 1.0 dB under Default at 2–4 kHz, against the comparison's 8 dB, so
+they keep all their 8' inside until a real box is measured. A measured study
+of reed blocks in seven materials found their sound within about 1 dB
+(Pomberger et al., DAGA 2021), which agrees with this model's small response
+to the reed and block factors.
 
 Balkan, Italian and Finnish are read off a comparison the owner shared, a
 digital accordion's demo of its French, Balkan, German, Italian, Finnish and
@@ -890,6 +913,10 @@ a pitch wheel should do what it says.
   Balkan, Italian and Finnish are read off a sampled instrument's demo, with
   its arrangements in the way: their tremolo is known to a few cents, and
   their cassotto stands for a darker sound measured only as a whole.
+  Balkan's and Finnish's tremolo reeds sit inside the cassotto, where cassotto
+  boxes are usually described with them outside, because only that matches
+  the demo's darkness; Liberty Bellows lists Balkan as dry where the demo
+  beats about 15 cents.
 
 - **No plug-in yet.** There is no JUCE VST3, AU, CLAP or standalone build,
   so there is no editor screenshot, no main-build or release workflow, no

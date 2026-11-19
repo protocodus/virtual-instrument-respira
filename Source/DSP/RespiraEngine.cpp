@@ -548,12 +548,17 @@ void Engine::SetControls(const Controls& next) {
     gainTarget = kRho / (4.0 * kPi) * kPascalToFullScale * DbToGain(controls[kVolume]);
     bassGainTarget = DbToGain(controls[kBass]);
     // The trim belongs to the ranks that sound: on a build that lacks some of
-    // the register's, the register with just those ranks lends its trim.
-    std::size_t trim = static_cast<std::size_t>(reg);
+    // the register's, the register with just those ranks lends its trim. When
+    // no register has just those, the chosen register's trim is raised by the
+    // power of the reeds missing from it, as unrelated reeds add in power.
     const Register sounding = EffectiveRegister(reg, controls[kType]);
+    const auto count = [](const Register& r) { int n = 0; for (bool on : r.ranks) n += on ? 1 : 0; return n; };
+    double trimDb = kRegisterTrimDb[static_cast<std::size_t>(reg)];
+    if (sounding.ranks != kRegisters[static_cast<std::size_t>(reg)].ranks)
+        trimDb += 10.0 * std::log10(static_cast<double>(count(kRegisters[static_cast<std::size_t>(reg)])) / count(sounding));
     for (std::size_t i = 0; i < kRegisters.size(); ++i)
-        if (kRegisters[i].ranks == sounding.ranks) trim = i;
-    trebleGainTarget = DbToGain(kRegisterTrimDb[trim]);
+        if (kRegisters[i].ranks == sounding.ranks) trimDb = kRegisterTrimDb[i];
+    trebleGainTarget = DbToGain(trimDb);
     mechanicsGainTarget = kForceToFlow * DbToGain(controls[kMechanics]);
     roomGainTarget = kRoomLevel * controls[kRoom];
     room.SetWidth(controls[kWidth], untouched || (roomGain == 0.0 && roomGainTarget == 0.0));

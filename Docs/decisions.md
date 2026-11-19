@@ -2426,3 +2426,37 @@ sound. Balkan Kolo moves to the full register.
 Listening set (not committed): one A/B per type, A the preset with Type
 Default, B as built, level-matched on whole-file RMS. Chosen: B for every
 type, by the project's standing rule; not yet heard by the owner.
+
+## 2026-11-19 — 0.4.2: the types' reed sets as their makers build them (owner's request for research; candidates by the project's rule)
+
+The owner heard the rebuilt types as still close to Default and chose to fix
+the reed model (decision card). Research into how each country builds its
+accordions (Docs/research/accordion-construction-by-country-2026-11-19.md)
+found the reed and block metal is not where national sounds differ: seven
+reed blocks in different materials sounded within about 1 dB (Pomberger et
+al., DAGA 2021), and no measured study of zinc against aluminium plates was
+found. What differs is which reeds sound, how the tremolo reeds are tuned and
+which sit in a cassotto. So no reed-model change was made; the sourced
+corrections were applied instead, and the owner was asked to confirm the
+switch (decision card, pending).
+
+- Irish sounds LMM (McNeela's guide), not three 8'.
+- French tunes its flat reed a third as far as its sharp one (tuners'
+  −5/0/+15 and −6/0/+15 cents).
+- Italian and Balkan are four-voice LMMH with a one-sided tremolo (four
+  Italian boxes 0/+20, 0/+20, 0/+20, −5/+15; Bugari's Balkan DM).
+- Moving Balkan's and Finnish's tremolo reeds out of the cassotto, as cassotto
+  boxes are usually described, was tried and rejected by measurement against
+  the owner's reference: 2–4 kHz under Default went from −4.5 to −1.4 dB
+  (Balkan) and −7.1 to −1.0 dB (Finnish), where the reference has them about
+  8 dB under. They keep all their 8' inside.
+
+Default renders the eight demos the same to the bit as 0.4.1. Level-matched
+against Default on each type's preset and Paris Musette's phrase, octave bands
+125 Hz–8 kHz: Irish +0.3 +1.2 +0.2 −0.3 −1.3 −0.1, French −0.2 −0.3 +0.2 −0.2
++0.0 −0.1, Balkan −0.6 +0.2 +0.2 +0.7 −4.1 −0.8, Italian −0.5 −0.0 −0.2 −0.2
++0.7 −1.0 dB: the changes are in the beating, not the spectrum.
+
+Listening set (not committed): one file per changed type, Default then the
+type, same phrase. Chosen: the candidate, by the project's standing rule; not
+yet heard by the owner.

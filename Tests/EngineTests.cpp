@@ -1556,7 +1556,7 @@ void TypesAreAppendOnly() {
     for (int i = 0; i < 9 && same; ++i) same = std::strcmp(kBuilds[static_cast<std::size_t>(i)].name, frozen[i]) == 0;
     Expect(same, "TypesAreAppendOnly", "the shipped types keep their numbers, 1 if so", same ? 1.0 : 0.0);
     const Build& d = kBuilds[0];
-    bool neutral = d.tremolo == 1.0 && d.plate == 1.0 && d.q == 1.0 && d.set == 1.0 && d.clearance == 1.0 && d.profile == 1.0
+    bool neutral = d.tremolo == 1.0 && d.flat == 1.0 && d.plate == 1.0 && d.q == 1.0 && d.set == 1.0 && d.clearance == 1.0 && d.profile == 1.0
                    && d.block == 1.0 && d.hole == 1.0 && d.body.depth == 0.0;
     for (std::size_t r = 0; r < d.ranks.size(); ++r) neutral = neutral && d.ranks[r] && !d.cassotto[r];
     Expect(neutral, "TypesAreAppendOnly", "Default builds the instrument as before builds, 1 if so", neutral ? 1.0 : 0.0);
