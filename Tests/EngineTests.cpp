@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstring>
 #include <cstdio>
 #include <functional>
 #include <memory>
@@ -1544,6 +1545,24 @@ void RegistersSitTogether() {
     Expect(worst < 1.0, "RegistersSitTogether", "largest register RMS apart from Musette, dB", worst);
 }
 
+void TypesAreAppendOnly() {
+    // Saved sessions and Rack patches store Type as its number, and every one
+    // saved before Type existed loads 0. So the numbers never move (a new type
+    // goes at the end), 0 stays Default, and Default builds the instrument
+    // as it was before builds existed: every factor 1, every rank, no tone
+    // chamber and no body round the treble (README, Types).
+    const char* frozen[] = { "Default", "Bandoneon", "Irish", "German", "French", "Jazz", "Balkan", "Italian", "Finnish" };
+    bool same = kTypeCount >= 9;
+    for (int i = 0; i < 9 && same; ++i) same = std::strcmp(kBuilds[static_cast<std::size_t>(i)].name, frozen[i]) == 0;
+    Expect(same, "TypesAreAppendOnly", "the shipped types keep their numbers, 1 if so", same ? 1.0 : 0.0);
+    const Build& d = kBuilds[0];
+    bool neutral = d.tremolo == 1.0 && d.plate == 1.0 && d.q == 1.0 && d.set == 1.0 && d.clearance == 1.0 && d.profile == 1.0
+                   && d.block == 1.0 && d.hole == 1.0 && d.body.depth == 0.0;
+    for (std::size_t r = 0; r < d.ranks.size(); ++r) neutral = neutral && d.ranks[r] && !d.cassotto[r];
+    Expect(neutral, "TypesAreAppendOnly", "Default builds the instrument as before builds, 1 if so", neutral ? 1.0 : 0.0);
+    Expect(kControlInfo[kType].initial == 0.0, "TypesAreAppendOnly", "Type's default is Default", kControlInfo[kType].initial);
+}
+
 void TypesSitTogether() {
     // Switching the Type changes the instrument, not the level: on Init's
     // controls and the reference stroke, a C3, a C4-E4-G4 triad and a C6
@@ -1976,6 +1995,7 @@ int main() {
     VoiceLimit();
     PresetsSitTogether();
     RegistersSitTogether();
+    TypesAreAppendOnly();
     TypesSitTogether();
     TypicalLevel();
     HardStrokesFit();

@@ -34,6 +34,11 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
+### 0.4.1 — 2026-11-19 — a second preset for every type
+
+- Eight more factory presets, each showing another side of a type: Bandoneon Solo, Irish Session, German Master, Old Paris Musette, Jazz Clarinet, Balkan Musette, Italian Master and Finnish Waltz. The first sixteen are unchanged.
+- Older sessions and patches, saved before Type existed, load Default and play as they did; the types keep their numbers, new ones go at the end (`TypesAreAppendOnly`).
+
 ### 0.4.0 — 2026-11-19 — the types rebuilt
 
 - Each **Type** is now its own instrument, not the Default with another tremolo: the reed ranks it carries (the bandoneon's 16' and 8' pair, the Irish and French boxes' three middle reeds), its reeds, plates, blocks and pallet holes, and for the bandoneon the wooden end board its sound leaves through, darker from 1 kHz up. A register that asks for ranks a type lacks sounds the ones it has. Default is unchanged to the bit.
@@ -854,8 +859,8 @@ strokes read −1.7 VU at most. Volume sets the level going into the stage.
 | Type | Default, Bandoneon, Irish, German, French, Jazz, Balkan, Italian, Finnish | the kind of accordion the reeds and chambers are built as (Types) |
 
 `Source/DSP/RespiraControls.h` holds these for every front end;
-`Source/DSP/RespiraPresets.h` holds the sixteen factory presets, one per
-register on the Default type, then one for each other type, each setting its Volume so it sits within 1 dB of Init on one
+`Source/DSP/RespiraPresets.h` holds the twenty-four factory presets, one per
+register on the Default type, then two for each other type, each setting its Volume so it sits within 1 dB of Init on one
 reference stroke (a bass, a chord and a C major triad on a moderate 2 s pull
 and push), with its peak below −3 dBFS.
 
