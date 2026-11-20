@@ -53,52 +53,52 @@ inline double NoteHz(double note) { return 440.0 * std::pow(2.0, (note - 69.0) /
 // reeds, their plates, their chambers, the reed sets the treble carries and
 // the treble's body are made as, at which size and on which keys (Frame).
 // The bellows' air and stiffness, the bass side and the microphones stay the
-// same. Default is the instrument as it was before
-// builds existed and stays bit for bit so: every factor is 1, every rank is
-// there, nothing sits in a tone chamber and nothing encloses the treble.
+// same. Default is the instrument as it was before builds existed: every
+// factor is 1, every rank is there, nothing sits in a tone chamber and
+// nothing encloses the treble.
+//
+// Three builds stand beside it since 0.8.0, the owner's choice (2026-11-20)
+// of the eight there were: Irish, German and Balkan. Bandoneon, French, Jazz,
+// Italian and Finnish were taken out; they had been in no released build
+// (Docs/decisions.md has what each was).
 //
 // Tremolo is set by the Musette knob, in cents at A4, for Default; another
 // build tunes its tremolo reeds at its own share of that, the share its kind
 // of instrument is tuned at against the 22 cents the default is fitted to
 // (ReedBank's RankNote). Tuners' published figures, all approximate (Liberty
-// Bellows' tuning list; accordionists.info's tuning threads): swing or
-// concert, a jazz box, 2-4 cents; modern Irish 5-7; German 14-15; Italian
-// about 15; French 18-22 and older French musette wetter still. Balkan,
-// Italian and Finnish are read off one comparison the owner shared
+// Bellows' tuning list; accordionists.info's tuning threads): modern Irish
+// 5-7 cents; German 14-15. Balkan is read off one comparison the owner shared
 // (2026-11-18): a digital accordion's demo of its French, Balkan, German,
-// Italian, Finnish and Irish sets, about 11-17 s of busy playing each. Their
-// tremolo is the median beat of its sustained notes, from the side peaks
-// round the strongest partial (0.6 s windows) and from the partial's envelope
-// (0.8 s), taken to A4 by RankNote's f^0.51 law: Balkan 9-18 cents (about
-// 15), Italian 10-19 (about 16; one held E4 beat 4.2 Hz, 19), Finnish 18-21
-// (about 19); German read 11-16 on the same ruler. Above 2 kHz the Balkan
-// and Finnish sets sit about 8 dB under the French, German and Irish ones,
-// the Italian about 3 dB under.
+// Italian, Finnish and Irish sets, about 11-17 s of busy playing each. Its
+// tremolo is the median beat of the set's sustained notes, from the side
+// peaks round the strongest partial (0.6 s windows) and from the partial's
+// envelope (0.8 s), taken to A4 by RankNote's f^0.51 law: 9-18 cents (about
+// 15); German read 11-16 on the same ruler. Above 2 kHz the Balkan set sits
+// about 8 dB under the German and Irish ones.
 //
 // The cover: how much of the reeds' upper harmonics the treble cover lets
 // out, as a factor on the Grille knob's corner (RespiraControls.h, a voiced
 // one-pole, not a model of a grille). Read off the same comparison, each set
 // against its German one, the kind Default's reeds were fitted to, after
 // taking out what the sets' different pitches do in this model (the same
-// melody rendered at each set's median note): from 2 kHz up the French set
-// is 6-9 dB brighter, the Irish 4-7, the Italian 0-5 (2-4, 4-8 and 8-16 kHz
-// against 250-1000 Hz). Corners 2.2, 1.7 and 1.4 times the knob's give 4-5.5,
-// 2-5 and 2.5-3 dB on one phrase. They are a fit to one sampled instrument's
-// sets through 64 kbit/s audio, good to perhaps 3 dB, not a measured grille
-// (README, Known gaps); no maker's source says why those boxes are
-// brighter. Balkan and Finnish at 0.7 are the owner's ear (2026-11-19, B of
-// 1.0, 0.7 and 0.5; Docs/decisions.md), not that comparison, which has them
-// as dark against its German set as they already were: 1.5-2 dB less at
-// 2-4 kHz and 2-2.5 dB less above on one phrase. The trim is the level that takes back, so that a type changes
-// the instrument and not its loudness (TypesSitTogether).
+// melody rendered at each set's median note): from 2 kHz up the Irish set is
+// 4-7 dB brighter (2-4, 4-8 and 8-16 kHz against 250-1000 Hz), and a corner
+// 1.7 times the knob's gives 2-5 dB on one phrase. A fit to one sampled
+// instrument's sets through 64 kbit/s audio, good to perhaps 3 dB, not a
+// measured grille (README, Known gaps); no maker's source says why that box
+// is brighter. Balkan at 0.7 is the owner's ear (2026-11-19, B of 1.0, 0.7
+// and 0.5; Docs/decisions.md), not that comparison, which has it as dark
+// against its German set as it already was: 1.5-2 dB less at 2-4 kHz and
+// 2-2.5 dB less above on one phrase. The trim is the level that takes back,
+// so that a type changes the instrument and not its loudness
+// (TypesSitTogether).
 //
-// Besides the cover, only the ranks, the tremolo, the cassotto and the
-// bandoneon's end board move the steady sound by more than about 2 dB in any
-// octave: in this
-// model the reed, plate, block and hole factors, pushed 40-60 % either way
-// one at a time, move Paris Musette's octave bands by 0.1-2.8 dB, mostly in
-// how the reeds speak. They are kept where the kind of instrument is known
-// to be built so.
+// Besides the cover, only the ranks, the tremolo and the cassotto move the
+// steady sound by more than about 2 dB in any octave: in this model the
+// reed, plate, block and hole factors, pushed 40-60 % either way one at a
+// time, move Paris Musette's octave bands by 0.1-2.8 dB, mostly in how the
+// reeds speak. They are kept where the kind of instrument is known to be
+// built so.
 //
 // The rest are estimates of each kind's construction, from makers' and
 // players' descriptions, not measurements of an instrument (README, Known
@@ -106,19 +106,6 @@ inline double NoteHz(double note) { return 440.0 * std::pow(2.0, (note - 69.0) /
 // and a tongue 1.3 times as long at the same pitch takes 5 dB off 2-4 kHz
 // and 8-16 kHz (Paris Musette's phrase), but no maker or study gives the
 // tongues' sizes by kind of instrument, so every build keeps Default's:
-//   - Bandoneon: two reeds an octave apart on every key (16' and 8', the L
-//     and M ranks) and no others, so every register sounds that pair; the
-//     reeds riveted to long zinc plates, thicker and much heavier than an
-//     accordion's aluminium, which players and restorers credit with the
-//     deep sound (bando-bando.de, "ELA Zink"): a plate that moves less takes
-//     less of the tongue's energy, so the tongues' loss is 1/1.3 of the
-//     default's and the slot 1.25 times as deep, the tongues thicker towards
-//     the tip (1.2). No reed blocks: the plates sit over short cells in the
-//     reed board (half the chamber depth) whose valves open wide (1.5 times
-//     the hole), and the sound leaves through the fretwork holes of the
-//     wooden end board: a box like the accordion's bass end (RespiraEngine.cpp,
-//     the bass box), 40 mm deep and a tenth open through 8 mm of wood, which
-//     rings about 1 kHz and rolls off above it.
 //   - Irish: a B/C button box's three voices as Irish makers build them,
 //     LMM: the 16', the 8' at pitch and one 8' tuned sharp (M+), no flat 8'
 //     and no 4' (McNeela's guide to Irish diatonic accordions), on small
@@ -128,45 +115,32 @@ inline double NoteHz(double note) { return 440.0 * std::pow(2.0, (note - 69.0) /
 //     the accordion's is not (RespiraEngine.cpp, the bass box's note).
 //   - German: a Hohner's tremolo; the default reeds were themselves fitted to
 //     a Hohner and an Italian instrument (RespiraControls.h, Grille), so
-//     nothing else changes.
-//   - French: the musette's three middle reeds and no others, tuned as
-//     French musette is, wider on the sharp side: the flat reed a third of the
-//     sharp one's detune (tuners' -5/0/+15 and -6/0/+15 cents,
-//     accordionists.info, and Liberty Bellows' 435/440/445 at the wide end),
-//     on the lighter plates (0.9 of the slot) and thinner tips (0.9) of a
-//     bright, open-voiced box.
-//   - Jazz: dry, hand-made reeds: their tongues lose less (Q 1.15 times the
-//     default's) and fit their slots closer (0.8 of the clearance), with the
-//     16' and 8' ranks in a cassotto, the tone chamber whose bend attenuates
-//     the upper harmonics and reinforces the lows (Engine's cassotto,
-//     RespiraEngine.cpp).
+//     only its size differs besides (Frame).
 //   - Balkan: a four-voice LMMH box with a double cassotto (Bugari's Balkan
-//     DM), hand-made reeds (as Jazz's) in deeper blocks (1.15), the 16' and
-//     both 8's in the cassotto, the 4' outside it.
-//   - Italian: Castelfidardo hand-made reeds (as Jazz's) in deeper blocks
-//     (1.15), open, no cassotto, four voices LMMH with the tremolo on one side
-//     only: the second 8' tuned sharp, none flat (four Italian boxes measured
-//     0/+20 three times and -5/+15 once, accordionists.info).
-//   - Finnish: the five-row C-system box Finnish players use, an Italian
-//     cassotto instrument (Bugari Finlandia Cassotto): the wet tremolo, the
-//     16' and the three 8's in the cassotto.
+//     DM), hand-made reeds (their tongues lose less, Q 1.15 times the
+//     default's, and fit their slots closer, 0.8 of the clearance) in deeper
+//     blocks (1.15), the 16' and both 8's in the cassotto, the tone chamber
+//     whose bend attenuates the upper harmonics and reinforces the lows
+//     (Engine's cassotto, RespiraEngine.cpp), the 4' outside it.
 //   Cassotto boxes are usually described with only the 16' and the 8' at
 //   pitch inside (Wikipedia, accordion reed ranks; a Bugari owner on
-//   accordionists.info). With the tremolo 8's outside, Balkan and Finnish sit
-//   only 1.4 and 1.0 dB under Default at 2-4 kHz (Paris Musette's phrase,
-//   level-matched), where the owner's comparison has them some 8 dB under the
-//   French, German and Irish sets; so they keep their tremolo reeds inside,
-//   the comparison's darkness standing until a real Balkan or Finnish box is
-//   measured (README, Known gaps).
-// Types are appended, never reordered: saved sessions recall them by number.
-enum Type : int { kTypeDefault, kTypeBandoneon, kTypeIrish, kTypeGerman, kTypeFrench, kTypeJazz,
-                  kTypeBalkan, kTypeItalian, kTypeFinnish, kTypeCount };
+//   accordionists.info). With the tremolo 8' outside, Balkan sits only 1.4 dB
+//   under Default at 2-4 kHz (Paris Musette's phrase, level-matched), where
+//   the owner's comparison has it some 8 dB under the German and Irish sets;
+//   so it keeps its tremolo reed inside, the comparison's darkness standing
+//   until a real Balkan box is measured (README, Known gaps).
+// From 0.8.0 on, types are appended, never reordered: saved sessions recall
+// them by number. The numbers of 0.2.0-0.7.4, which no released build
+// carried, were Default 0, Bandoneon 1, Irish 2, German 3, French 4, Jazz 5,
+// Balkan 6, Italian 7 and Finnish 8.
+enum Type : int { kTypeDefault, kTypeIrish, kTypeGerman, kTypeBalkan, kTypeCount };
 
 // A box the treble's sound leaves through, as Engine::Compartment::Set takes
 // it: depth m, the cover's open fraction, the holes' effective length m, the
 // cloth behind them in rayl, the energy absorbed on a round trip and where
 // the depth modes take over, Hz. A depth of 0 is no box: the reeds radiate
-// straight to the grille.
+// straight to the grille. No build has one since 0.8.0; the bandoneon's
+// wooden end board was the one that did.
 struct Body {
     double depth, open, neck, rayl, absorbed, modes;
 };
@@ -177,18 +151,11 @@ struct Body {
 // depth closed (m), how far the player's lap and the bass half lie from the
 // treble against Default's (reach), and what the right hand presses.
 // NearField.h rings the box these make and Mechanics.h lands the keys.
-//   - Default, Italian: a full-size 41-key piano accordion, 0.41 x 0.19 m.
-//   - Bandoneon: a square box, 0.235 x 0.225 m, on bellows in three sections
-//     that stand 0.20 m deep closed; wooden buttons on long levers, 6 mm of
-//     travel.
+//   - Default: a full-size 41-key piano accordion, 0.41 x 0.19 m.
 //   - Irish: a two-row B/C box, 0.29 x 0.16 m, on buttons.
 //   - German: a 41-key Hohner of the Morino's size, 0.44 x 0.20 m.
-//   - French: a chromatic button accordion, more compact than a piano
-//     accordion of its range, 0.36 x 0.18 m.
-//   - Jazz: a full-size cassotto piano accordion, 0.43 x 0.20 m.
 //   - Balkan: a six-row button accordion (dugmetara), 0.43 x 0.21 m.
-//   - Finnish: a five-row C-system button accordion, 0.42 x 0.20 m.
-enum Action : int { kPianoKeys, kButtons, kBandoneonButtons };
+enum Action : int { kPianoKeys, kButtons };
 struct Frame {
     double length, width, closed, reach;
     Action action;
@@ -216,32 +183,19 @@ struct Build {
 
 constexpr std::array<bool, 5> kAllRanks { true, true, true, true, true };
 constexpr std::array<bool, 5> kNoRanks { false, false, false, false, false };
-constexpr std::array<bool, 5> kMiddleRanks { false, true, true, true, false };   // M, M-, M+
 constexpr std::array<bool, 5> kLowAndSharp { true, true, false, true, false };   // L, M, M+
 constexpr std::array<bool, 5> kFourVoice { true, true, false, true, true };     // L, M, M+, H
-constexpr std::array<bool, 5> kLowAndStraight { true, true, false, false, false }; // L, M
 constexpr Body kOpenTreble { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 
 inline constexpr std::array<Build, kTypeCount> kBuilds { {
     { "Default", 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, kAllRanks, kNoRanks, kOpenTreble,
       kFullSize },
-    { "Bandoneon", 0.05, 1.0, 1.25, 1.3, 1.0, 1.0, 1.2, 0.5, 1.5, 1.0, 0.8, { true, true, false, false, false }, kNoRanks,
-      { 0.04, 0.10, 0.0081, 0.0, 0.04, 2000.0 },
-      { 0.235, 0.225, 0.20, 0.65, kBandoneonButtons } },
     { "Irish", 7.0 / 22.0, 1.0, 0.8, 1.0, 0.85, 1.0, 0.9, 0.7, 0.8, 1.7, -1.1, kLowAndSharp, kNoRanks, kOpenTreble,
       { 0.29, 0.16, 0.13, 0.72, kButtons } },
     { "German", 14.0 / 22.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, kAllRanks, kNoRanks, kOpenTreble,
       { 0.44, 0.20, 0.15, 1.06, kPianoKeys } },
-    { "French", 28.0 / 22.0, 1.0 / 3.0, 0.9, 1.0, 1.0, 1.0, 0.9, 1.0, 1.0, 2.2, -1.7, kMiddleRanks, kNoRanks, kOpenTreble,
-      { 0.36, 0.18, 0.14, 0.88, kButtons } },
-    { "Jazz", 3.0 / 22.0, 1.0, 1.0, 1.15, 1.0, 0.8, 1.0, 1.0, 1.0, 1.0, 0.35, kAllRanks, kLowAndStraight, kOpenTreble,
-      { 0.43, 0.20, 0.15, 1.04, kPianoKeys } },
     { "Balkan", 15.0 / 22.0, 1.0, 1.0, 1.15, 1.0, 0.8, 1.0, 1.15, 1.0, 0.7, 1.75, kFourVoice, { true, true, false, true, false }, kOpenTreble,
       { 0.43, 0.21, 0.16, 1.05, kButtons } },
-    { "Italian", 16.0 / 22.0, 1.0, 1.0, 1.15, 1.0, 0.8, 1.0, 1.15, 1.0, 1.4, -1.7, kFourVoice, kNoRanks, kOpenTreble,
-      kFullSize },
-    { "Finnish", 19.0 / 22.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.7, 1.7, kAllRanks, { true, true, true, true, false }, kOpenTreble,
-      { 0.42, 0.20, 0.15, 1.02, kButtons } },
 } };
 
 inline const Build& BuildOf(int type) { return kBuilds[static_cast<std::size_t>(type < 0 ? 0 : type >= kTypeCount ? kTypeCount - 1 : type)]; }
@@ -342,7 +296,7 @@ inline ReedVariation Variation(int rank, int index, int side, double life = 0.5)
 // tuned dry against their key's 8' reed, as a tuner sets octave reeds, so
 // they share its error: with errors of their own (La Melodiosa's, above) the
 // octaves beat deeply at 0.3-1.3 Hz, which the owner heard
-// as phasing in Bandoneon, Jazz and Balkan and chose against by ear
+// as phasing in Balkan and in two builds since taken out, and chose against by ear
 // (Docs/decisions.md, 2026-11-19). Default keeps its reeds' own errors, bit
 // for bit as before builds existed.
 inline double TuneCents(int rank, int index, int side, double life, int type) {

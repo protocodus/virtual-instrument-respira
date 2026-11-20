@@ -106,9 +106,9 @@ struct NearField {
     // the bellows' section and their depth closed, m, and how far the
     // player's lap and the bass half lie from the treble against the
     // Default's, since a smaller instrument sits closer to both. `flat` marks
-    // the ranks whose blocks lie flat in a tone chamber, or whose plates lie
-    // on the reed board with no block at all, turned a quarter against the
-    // standing blocks: they drive the box's ways in another order. Every
+    // the ranks whose blocks lie flat in a tone chamber, turned a quarter
+    // against the standing blocks: they drive the box's ways in another
+    // order. Every
     // build's bellows hold the same air over their travel (RespiraEngine.cpp,
     // kBellowsVolume), so a narrower section travels further.
     struct Frame {

@@ -34,6 +34,10 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
+### 0.8.0 — 2026-11-20 — four types: Default, Irish, German and Balkan
+
+**Type** now offers Default, Irish, German and Balkan; Bandoneon, French, Jazz, Italian and Finnish are gone, the owner's choice. The bank has fourteen presets: the eight registers on Default, then Irish Button Box, German Club, Balkan Kolo, Irish Session, German Master and Balkan Musette. The three that stay sound as in 0.7.4, and the Bandoneon register and its Tango Bandoneon preset, which are Default's, stay too. Type's numbers changed (Irish 1, German 2, Balkan 3): a song or patch saved with a type in a development build of 0.2.0–0.7.4 loads another type or the last one and wants setting again; no released build had types ([Types](#types)).
+
 ### 0.7.4 — 2026-11-20 — each type in its own size, on its own keys or buttons
 
 Each type is now built at its own kind's size, which rings its own box of bellows air and sits nearer to or further from the player's lap and the bass half: a bandoneon's square 0.235 × 0.225 m box on deep bellows, an Irish two-row box of 0.29 × 0.16 m, a French button accordion of 0.36 × 0.18 m, a Hohner of 0.44 × 0.20 m, and full-size Jazz, Balkan and Finnish instruments a little larger than Default. Reed blocks that lie flat in a tone chamber, and a bandoneon's plates on its reed board, drive that box another way round than standing blocks. Bandoneon, Irish, French, Balkan and Finnish are played on buttons, which land lighter and shorter than piano keys, a bandoneon's wooden ones harder. On each type's own preset and one phrase the types' spectra now lie 3.5 dB apart on average (third-octaves, 250 Hz–8 kHz), from 3.1; Irish, German and French moved furthest from Default (2.0, 1.4 and 2.1 dB, from 1.1, 0.6 and 1.6). Their reeds, tremolo, reed sets, tone chambers and covers are unchanged, and Default plays as in 0.7.3. The sizes are estimates from typical instruments ([Types](#types)).
@@ -610,114 +614,102 @@ sets the treble carries and the treble's body are built as (`kBuilds`,
 `Source/DSP/ReedBank.h`). The bellows' air and stiffness, the bass side
 and the microphones stay the same; each type changes only what its kind of
 instrument is known to do differently, its size and what the right hand
-presses among them (below). Every change is a part of the
-physical model but one: the cover, which moves the Grille's corner, the one
-voiced filter the treble side already had:
+presses among them (below). Every change is a part of the physical model
+but one: the cover, which moves the Grille's corner, the one voiced filter
+the treble side already had:
 
-| Type | Tremolo at the default Musette | Treble reeds | Reeds and blocks | Chambers and body |
-| --- | --- | --- | --- | --- |
-| Default | 22 cents | all five ranks | as above | open |
-| Bandoneon | about 1 cent, dry | 16' and 8' only | zinc plates (slots 1.25× as deep, tongues losing 1/1.3 as much, tips 1.2× thicker); no blocks: half-depth cells, holes 1.5× | the wooden end board's holes, a box like the bass end |
-| Irish | 7 cents, sharp side only | 16', 8' and the sharp 8' (LMM) | small plates (0.8×), set low (0.85×), thin tips (0.9×), shallow blocks (0.7×), small holes (0.8×) | open, cover 1.7× |
-| German | 14 cents | all five | as Default | open |
-| French | 28 cents sharp, a third of it flat | the three 8' only | lighter plates (0.9×), thin tips (0.9×) | open, cover 2.2× |
-| Jazz | 3 cents, dry | all five | hand-made: Q 1.15×, 0.8× the clearance | 16' and 8' in a cassotto |
-| Balkan | about 15 cents, sharp side only | four: 16', 8', sharp 8', 4' (LMMH) | hand-made, deeper blocks (1.15×) | 16' and both 8' in a cassotto, cover 0.7× |
-| Italian | about 16 cents, sharp side only | four: 16', 8', sharp 8', 4' (LMMH) | hand-made, deeper blocks (1.15×) | open, cover 1.4× |
-| Finnish | about 19 cents | all five | as Default | 16' and the three 8' in a cassotto, cover 0.7× |
+| Type | Tremolo at the default Musette | Treble reeds | Reeds and blocks | Chambers and body | Size and keys |
+| --- | --- | --- | --- | --- | --- |
+| Default | 22 cents | all five ranks | as above | open | 0.41 × 0.19 m, piano keys |
+| Irish | 7 cents, sharp side only | 16', 8' and the sharp 8' (LMM) | small plates (0.8×), set low (0.85×), thin tips (0.9×), shallow blocks (0.7×), small holes (0.8×) | open, cover 1.7× | 0.29 × 0.16 m, buttons |
+| German | 14 cents | all five | as Default | open | 0.44 × 0.20 m, piano keys |
+| Balkan | about 15 cents, sharp side only | four: 16', 8', sharp 8', 4' (LMMH) | hand-made (Q 1.15×, 0.8× the clearance), deeper blocks (1.15×) | 16' and both 8' in a cassotto, cover 0.7× | 0.43 × 0.21 m, buttons |
+
+There were eight types beside Default from 0.3.0 to 0.7.4, in development
+builds only; the owner kept these three (Docs/decisions.md, 2026-11-20).
 
 A register that asks for a rank its type lacks sounds the ranks it has of
 those it asks for, or the 8' (the 16' on none) when it has none of them, at
 the trim of the register with just those ranks. What moves the steady sound
-in this model is which reeds sound, their tremolo, the cassotto and the
-bandoneon's end board: on each type's own preset and phrase, level-matched
-against Default, the cassotto and the end board take 4.5–7 dB off 2–4 kHz
-(Bandoneon 2.5 dB off 1–2 kHz too), while the reed, plate, block and hole
-factors, pushed 40–60 % either way one at a time, move Paris Musette's octave
-bands by 0.1–2.8 dB, mostly in how the reeds speak. So German differs from
-Default only in its tremolo and its octave reeds tuned dry: Default's reeds
-were themselves fitted to a Hohner. French, Irish and Italian differ in
-their tremolo, their reed sets and their cover.
+in this model is which reeds sound, their tremolo and the cassotto: on its
+own preset and phrase, level-matched against Default, the cassotto takes
+4.5–7 dB off 2–4 kHz, while the reed, plate, block and hole factors, pushed
+40–60 % either way one at a time, move Paris Musette's octave bands by
+0.1–2.8 dB, mostly in how the reeds speak. So German differs from Default
+in its tremolo, its octave reeds tuned dry and its size: Default's reeds
+were themselves fitted to a Hohner. Irish differs in its tremolo, its reed
+set, its size and its cover.
 
 The cover is how much of the reeds' upper harmonics the treble cover lets
-out: a factor on the **Grille** knob's corner. It is read off the comparison
-below, each set against the German one after taking out what the sets'
-different pitches do in this model: from 2 kHz up the French set is 6–9 dB
-brighter, the Irish 4–7 and the Italian 0–5. Corners at 2.2, 1.7 and 1.4
-times the knob's give 4–5.5, 2–5 and 2.5–3 dB on one phrase, and the types'
-levels are trimmed back to Default's. It is a fit to one sampled
+out: a factor on the **Grille** knob's corner. Irish's is read off the
+comparison below, its set against the German one after taking out what the
+sets' different pitches do in this model: from 2 kHz up the Irish set is
+4–7 dB brighter, and a corner at 1.7 times the knob's gives 2–5 dB on one
+phrase, its level trimmed back to Default's. It is a fit to one sampled
 instrument's sets, good to perhaps 3 dB, and no maker's source says why
-those boxes are brighter (Known gaps). A tongue's size for its pitch would
-move the tone as much, 5 dB at 2–4 kHz for a tongue 1.3 times as long, but
-no source gives tongue sizes by kind of instrument, so every type keeps
-Default's.
+that box is brighter (Known gaps). Balkan's 0.7 is the owner's ear
+(2026-11-19): 1.5–2 dB less at 2–4 kHz and 2–2.5 dB less above. A tongue's
+size for its pitch would move the tone as much, 5 dB at 2–4 kHz for a
+tongue 1.3 times as long, but no source gives tongue sizes by kind of
+instrument, so every type keeps Default's.
 
 Each type has its own size, which the bellows' box and the reflections off
 the player take (The bellows' air and the player): the bellows' section,
 their depth closed, and how far the lap and the bass half lie from the
-treble against Default's. Default and Italian are a full-size piano
-accordion, 0.41 × 0.19 m; Bandoneon a square 0.235 × 0.225 m on bellows
-0.20 m deep closed (0.65 of the reach); Irish 0.29 × 0.16 m (0.72); French
-0.36 × 0.18 m (0.88); German 0.44 × 0.20 m, Jazz 0.43 × 0.20 m, Balkan
-0.43 × 0.21 m and Finnish 0.42 × 0.20 m (1.02–1.06). Every build's bellows
-hold the same air, so a narrower section travels further. A smaller box
-rings higher (an Irish box along its length at 590 Hz where Default's rings
-at 418) and a little louder, as one over its size. The blocks of a tone
-chamber's ranks lie flat, a quarter turned against the standing ones, and a
-bandoneon's plates lie on its reed board, so those ranks drive the box's
-three ways in another order. Bandoneon, Irish, French, Balkan and Finnish
-are played on buttons: 12 g with the fingertip over 4 mm, against a piano
-key's 20 g over 5 mm, and a bandoneon's wooden buttons on their long levers
-16 g over 6 mm, so their knocks differ (The mechanism). All of it is
+treble against Default's. Default is a full-size piano accordion, 0.41 ×
+0.19 m; Irish a two-row box of 0.29 × 0.16 m (0.72 of the reach); German a
+Hohner of the Morino's size, 0.44 × 0.20 m (1.06); Balkan a six-row button
+accordion, 0.43 × 0.21 m (1.05). Every build's bellows hold the same air,
+so a narrower section travels further. A smaller box rings higher (an Irish
+box along its length at 590 Hz where Default's rings at 418) and a little
+louder, as one over its size. The blocks of a tone chamber's ranks lie
+flat, a quarter turned against the standing ones, so Balkan's cassotto
+ranks drive the box's three ways in another order. Irish and Balkan are
+played on buttons: 12 g with the fingertip over 4 mm, against a piano key's
+20 g over 5 mm, so their knocks differ (The mechanism). All of it is
 estimated from typical instruments of each kind, not measured on one. On
-each type's own first preset and one four-bar phrase, the nine spectra lie
-3.5 dB apart on average over all pairs (third-octaves from 250 Hz to 8 kHz,
-RMS), from 3.1 before the sizes, and the closest pair 0.76 dB, from 0.65.
+one four-bar phrase and each type's first preset, Irish's, German's and
+Balkan's third-octave spectra (250 Hz to 8 kHz) lie 2.0, 1.4 and 4.1 dB
+from Default's, where they lay 1.1, 0.6 and 3.9 dB before the sizes.
 
 The reed sets and tremolo sides follow how each kind is built
 (Docs/research/accordion-construction-by-country-2026-11-19.md): Irish
 three-voice boxes are LMM, one 8' at pitch and one sharp (McNeela's guide);
-French musette is tuned wider sharp than flat, about −5/0/+15 cents (tuners
-on accordionists.info, Liberty Bellows); Italian and Balkan boxes are
-four-voice LMMH with a one-sided tremolo (four Italian boxes measured 0/+20
-three times and −5/+15 once; Bugari's Balkan DM). Where no register has just
-the ranks a type sounds, the register's trim rises by the power of the reeds
-it lacks. Cassotto boxes are usually described with only the 16' and the 8'
-at pitch inside; moved there, Balkan's and Finnish's tremolo reeds left them
-1.4 and 1.0 dB under Default at 2–4 kHz, against the comparison's 8 dB, so
-they keep all their 8' inside until a real box is measured. A measured study
-of reed blocks in seven materials found their sound within about 1 dB
-(Pomberger et al., DAGA 2021), which agrees with this model's small response
-to the reed and block factors.
+Balkan boxes are four-voice LMMH with a one-sided tremolo (Bugari's Balkan
+DM). Where no register has just the ranks a type sounds, the register's
+trim rises by the power of the reeds it lacks. Cassotto boxes are usually
+described with only the 16' and the 8' at pitch inside; moved there,
+Balkan's tremolo reed left it 1.4 dB under Default at 2–4 kHz, against the
+comparison's 8 dB, so it keeps both its 8' inside until a real box is
+measured. A measured study of reed blocks in seven materials found their
+sound within about 1 dB (Pomberger et al., DAGA 2021), which agrees with
+this model's small response to the reed and block factors.
 
-Balkan, Italian and Finnish are read off a comparison the owner shared, a
-digital accordion's demo of its French, Balkan, German, Italian, Finnish and
-Irish sets, about 11–17 s of busy playing each. The tremolo is the median
-beat of each set's sustained notes, from the side peaks round the strongest
-partial and from that partial's envelope, taken to A4 by the beat law
-above; the two readings spread by several cents (Balkan 9–18, Italian 10–19,
-Finnish 18–21), and German read 11–16 on the same ruler against the 14 its
-type already takes. Above 2 kHz the Balkan and Finnish sets sit about 8 dB
-under the French, German and Irish ones, which is what the cassotto takes.
+Balkan is read off a comparison the owner shared, a digital accordion's
+demo of its French, Balkan, German, Italian, Finnish and Irish sets, about
+11–17 s of busy playing each. The tremolo is the median beat of the set's
+sustained notes, from the side peaks round the strongest partial and from
+that partial's envelope, taken to A4 by the beat law above; the two
+readings spread by several cents (Balkan 9–18), and German read 11–16 on
+the same ruler against the 14 its type already takes. Above 2 kHz the
+Balkan set sits about 8 dB under the German and Irish ones, which is what
+the cassotto takes.
 
 The tremolo figures are tuners' published ones (Liberty Bellows' list and
-accordionists.info's tuning threads: swing 2–4 cents, modern Irish 5–7,
-German 14–15, French 18–22 and the old Paris musette wetter still): a type
-tunes its M− and M+ reeds at that share of the **Musette** knob, so the knob
-reads cents for Default and scales every other type's tremolo. A bandoneon
-sounds two reeds an octave apart, which is the Bandoneon register (L and M);
-the type builds its reeds on zinc plates, which players credit with the
-bandoneon's deep sound. The cassotto is a wooden channel the reed blocks
-stand in: their sound turns out of its open top before it reaches the
-grille, which damps the upper harmonics and reinforces the lows. It is
-modelled as a compartment like the bass box (30 mm deep, a fifth open: 1.4
-kHz at Q 1.3, its depth modes from 2.8 kHz), and the effect fades out above
-about C6, where the notes' fundamentals reach its roll-off, as players
-report. On the Clarinet Solo demo it takes 4–8 dB off 2–8 kHz against the
-whole spectrum. Every type sits within 0.6 dB of Default on the reference
-stroke (`TypesSitTogether`), with the sounding ranks' register trim. Each type's reeds are tuned for its own
-plates (`Source/DSP/ReedTuning.h` holds a table per type). Changing Type
-rebuilds the sounding reeds where they swing, as Life does.
+accordionists.info's tuning threads: modern Irish 5–7 cents, German
+14–15): a type tunes its M− and M+ reeds at that share of the **Musette**
+knob, so the knob reads cents for Default and scales every other type's
+tremolo. The cassotto is a wooden channel the reed blocks stand in: their
+sound turns out of its open top before it reaches the grille, which damps
+the upper harmonics and reinforces the lows. It is modelled as a
+compartment like the bass box (30 mm deep, a fifth open: 1.4 kHz at Q 1.3,
+its depth modes from 2.8 kHz), and the effect fades out above about C6,
+where the notes' fundamentals reach its roll-off, as players report. Every
+type sits within 1 dB of Default on the reference stroke
+(`TypesSitTogether`), with the sounding ranks' register trim. Each type's
+reeds are tuned for its own plates (`Source/DSP/ReedTuning.h` holds a table
+per type). Changing Type rebuilds the sounding reeds where they swing, as
+Life does.
 
 A bass button sounds two reeds, a 16' (E1–D♯2) and an 8' (E2–D♯3); a chord
 button sounds one pitch class on an 8' (F♯3–F4) and a 4' (F♯4–F5), so any
@@ -1033,10 +1025,10 @@ strokes read −1.7 VU at most. Volume sets the level going into the stage.
 | Mechanics | −40 to +20 dB | the keys', pallets', buttons' and switches' knocks, the bellows' folds and the push valves' slaps, against the estimate (The mechanism); +5.6 dB by default, by ear; at −40 dB they are all but silent |
 | Auto | off, on | on by default: the hand plays endless bellows, turned by the C0 and C#0 keyswitches, and the wheel softens or swells it (Auto) |
 | Room | 0–1 wet | the hall around the microphones: 0 dry, 0.5 % by default, 1 as decorrelated as the solo recordings; sigmoid knob response, actual wet percentage displayed (The microphones) |
-| Type | Default, Bandoneon, Irish, German, French, Jazz, Balkan, Italian, Finnish | the kind of accordion the reeds and chambers are built as (Types) |
+| Type | Default, Irish, German, Balkan | the kind of accordion the reeds and chambers are built as (Types) |
 
 `Source/DSP/RespiraControls.h` holds these for every front end;
-`Source/DSP/RespiraPresets.h` holds the twenty-four factory presets, one per
+`Source/DSP/RespiraPresets.h` holds the fourteen factory presets, one per
 register on the Default type, then two for each other type, each setting its Volume so it sits within 1 dB of Init on one
 reference stroke (a bass, a chord and a C major triad on a moderate 2 s pull
 and push), with its peak below −3 dBFS.
@@ -1072,28 +1064,23 @@ a pitch wheel should do what it says.
   has as much noise as the recording with its own floor, and the hand's
   wander at Life 1 reaches the recording's 12 %.
 - **The types' builds are estimates.** Only their tremolo figures are
-  published (and those approximately); the bandoneon's zinc plates, the Irish
-  box's plates and set, the French plates, the hand-made jazz reeds' loss and
-  the cassotto's size are estimates of each kind's construction, not
-  measurements of an instrument. No recording of each type has been measured
-  against them; a listening test chose them over Default (Docs/decisions.md).
-  The reed sets, the bandoneon's end board and every reed and block factor
-  are estimates of each kind's construction; in this model only the ranks,
-  the tremolo, the cassotto and the end board move the steady sound by more
-  than about 2 dB, so German stays close to Default apart from its tremolo.
-  French, Irish and Italian are brighter by their cover, a factor on the
-  Grille's corner fitted to the sampled instrument's demo below (through
-  64 kbit/s audio, different phrases, good to perhaps 3 dB), not a measured
-  grille or a sourced construction. A tongue's size for its pitch moves the
-  tone by 5 dB in this model, and no source gives it by kind of instrument,
-  so no type sets it.
-  Balkan, Italian and Finnish are read off a sampled instrument's demo, with
-  its arrangements in the way: their tremolo is known to a few cents, and
-  their cassotto stands for a darker sound measured only as a whole.
-  Balkan's and Finnish's tremolo reeds sit inside the cassotto, where cassotto
-  boxes are usually described with them outside, because only that matches
-  the demo's darkness; Liberty Bellows lists Balkan as dry where the demo
-  beats about 15 cents.
+  published (and those approximately); the Irish box's plates and set, the
+  Balkan box's hand-made reeds and the cassotto's size are estimates of each
+  kind's construction, not measurements of an instrument, and so are each
+  type's size and its buttons. No recording of each type has been measured
+  against them. In this model only the ranks, the tremolo and the cassotto
+  move the steady sound by more than about 2 dB, so German stays close to
+  Default apart from its tremolo and its size. Irish is brighter by its
+  cover, a factor on the Grille's corner fitted to a sampled instrument's
+  demo (through 64 kbit/s audio, different phrases, good to perhaps 3 dB),
+  not a measured grille or a sourced construction. A tongue's size for its
+  pitch moves the tone by 5 dB in this model, and no source gives it by
+  kind of instrument, so no type sets it. Balkan is read off the same demo,
+  with its arrangement in the way: its tremolo is known to a few cents, and
+  its cassotto stands for a darker sound measured only as a whole, with its
+  tremolo reed inside where cassotto boxes are usually described with it
+  outside, because only that matches the demo's darkness; Liberty Bellows
+  lists Balkan as dry where the demo beats about 15 cents.
 
 - **No plug-in yet.** There is no JUCE VST3, AU, CLAP or standalone build,
   so there is no editor screenshot, no main-build or release workflow, no

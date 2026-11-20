@@ -2747,3 +2747,35 @@ Italian +3.8 dB (B +4.7, +1.7 and +1.9), where the clip has 6–9, 4–7 and
 Finnish's covers, the owner's ear, are the same in every letter. B ships
 until the owner says otherwise; C is a fit to that one clip, as 0.5.0's
 covers were.
+
+## 2026-11-20 — 0.8.0: Type keeps Default, Irish, German and Balkan (owner)
+
+The owner, while the types were being made more distinct: "maybe lets only
+keep german, irish, balkan". Read as: Type offers Default and those three,
+and Bandoneon, French, Jazz, Italian and Finnish go, with their ten presets
+(Zinc Bandoneon, Bandoneon Solo, French Musette, Old Paris Musette, Jazz
+Cassotto, Jazz Clarinet, Italian Liscio, Italian Master, Finnish Tango,
+Finnish Waltz). Default's Bandoneon register and Tango Bandoneon stay: they
+are a register and a preset of Default, not the type. The "maybe" is the
+owner's; nothing is lost with it, since 0.7.4 (e088b8a) holds all nine.
+
+What each removed type was, for whoever brings one back: Bandoneon, the 16'
+and 8' only, on zinc plates, dry, through a wooden end board modelled as a
+box; French, the three 8' only, 28 cents sharp and a third of it flat, cover
+2.2; Jazz, all five ranks at 3 cents with the 16' and 8' in a cassotto;
+Italian, LMMH at about 16 cents on the sharp side, cover 1.4; Finnish, all
+five at about 19 cents with the 16' and the three 8' in a cassotto, cover
+0.7 by the owner's ear.
+
+Type's numbers changed, against the append-only rule: Irish 1, German 2 and
+Balkan 3, where they were 2, 3 and 6. The rule protects songs saved by a
+released build, and no released build has had types (the last release is
+0.1.27); a patch or song saved by a development build of 0.2.0–0.7.4 loads
+another type. Compacting was chosen over a menu with five dead numbers;
+that is engineering's choice, and the append-only rule holds again from
+here. `ReedTuning.h` lost the five tables and kept the other four to the
+digit.
+
+The three that stay sound as in 0.7.4. The listening set sent with 0.7.4
+still stands for them: B is what ships, C would brighten Irish's cover to
+2.1 and darken German's to 0.8.

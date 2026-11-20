@@ -389,14 +389,14 @@ void Engine::SetBody() {
     }
     // The build's own size rings its own box of bellows air (NearField.h).
     // Blocks in a tone chamber lie flat, a quarter turned against the
-    // standing ones, and a bandoneon's plates lie on the reed board itself.
+    // standing ones.
     const Build& build = BuildOf(static_cast<int>(controls[kType]));
     NearField::Frame frame;
     frame.length = build.frame.length;
     frame.width = build.frame.width;
     frame.closed = build.frame.closed;
     frame.reach = build.frame.reach;
-    for (std::size_t r = 0; r < frame.flat.size(); ++r) frame.flat[r] = build.cassotto[r] || build.frame.action == kBandoneonButtons;
+    for (std::size_t r = 0; r < frame.flat.size(); ++r) frame.flat[r] = build.cassotto[r];
     nearField.SetFrame(frame);
     if (untouched) nearField.TakeFrame();
 }

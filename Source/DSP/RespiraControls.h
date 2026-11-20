@@ -30,7 +30,7 @@ enum Control : int {
     kRoom,       // the room the microphones hear around the instrument: 0 none (dry) .. 1 as much as the owner's recordings' rooms (Room.h)
     kLife,       // added Auto bellows effort and source movement at the microphones; 0 preserves the earlier response
     kTouch,      // optional velocity emphasis in Auto's shared bellows effort; manual hand is unaffected
-    kType,       // the instrument's build (kBuilds, ReedBank.h): Default, Bandoneon, Irish, German, French, Jazz, Balkan, Italian, Finnish
+    kType,       // the instrument's build (kBuilds, ReedBank.h): Default, Irish, German, Balkan
     kControlCount
 };
 
@@ -98,7 +98,9 @@ inline constexpr std::array<ControlInfo, kControlCount> kControlInfo { {
     { "touch", "Touch", 0.0, 1.0, 1.0, 0, Curve::kLinear, "" },
     // Appended: the kind of accordion the reeds and their chambers are built
     // as. Default, the instrument as it always was, stays the default.
-    { "type", "Type", 0.0, 8.0, 0.0, 9, Curve::kStepped, "" },
+    // Four since 0.8.0 (ReedBank.h, Type): the nine of 0.2.0-0.7.4 were in no
+    // released build.
+    { "type", "Type", 0.0, 3.0, 0.0, 4, Curve::kStepped, "" },
 } };
 
 // Cubic rational S-curve, with exact dry, midpoint and full-wet endpoints.

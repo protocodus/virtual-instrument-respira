@@ -580,7 +580,7 @@ void NoteTuningLifetime() {
         e->SetControls(controls);
         switch (change) {
         case life: controls[kLife] = 0.8; break;
-        case type: controls[kType] = 4; break;
+        case type: controls[kType] = kTypeIrish; break;
         case eco: controls[kOversampling] = kOversamplingEco; break;
         case addRank: controls[kRegister] = 3; break;
         case retrigger:
@@ -1815,10 +1815,12 @@ void TypesAreAppendOnly() {
     // saved before Type existed loads 0. So the numbers never move (a new type
     // goes at the end), 0 stays Default, and Default builds the instrument
     // as it was before builds existed: every factor 1, every rank, no tone
-    // chamber and no body round the treble (README, Types).
-    const char* frozen[] = { "Default", "Bandoneon", "Irish", "German", "French", "Jazz", "Balkan", "Italian", "Finnish" };
-    bool same = kTypeCount >= 9;
-    for (int i = 0; i < 9 && same; ++i) same = std::strcmp(kBuilds[static_cast<std::size_t>(i)].name, frozen[i]) == 0;
+    // chamber and no body round the treble (README, Types). The list was
+    // nine long until 0.8.0, when the owner kept these four; the nine were in
+    // no released build, so their numbers bound no saved song.
+    const char* frozen[] = { "Default", "Irish", "German", "Balkan" };
+    bool same = kTypeCount >= 4;
+    for (int i = 0; i < 4 && same; ++i) same = std::strcmp(kBuilds[static_cast<std::size_t>(i)].name, frozen[i]) == 0;
     Expect(same, "TypesAreAppendOnly", "the shipped types keep their numbers, 1 if so", same ? 1.0 : 0.0);
     const Build& d = kBuilds[0];
     bool neutral = d.tremolo == 1.0 && d.flat == 1.0 && d.plate == 1.0 && d.q == 1.0 && d.set == 1.0 && d.clearance == 1.0 && d.profile == 1.0
@@ -2110,9 +2112,8 @@ void TypesHaveTheirOwnSize() {
            "TypesHaveTheirOwnSize", "an Irish box travels further and rings higher: travel, m", field.boxTravelTarget);
     const Stop* key = TrebleStop(kPianoKeys);
     const Stop* button = TrebleStop(kButtons);
-    const Stop* wooden = TrebleStop(kBandoneonButtons);
-    Expect(button->mass * button->travel < key->mass * key->travel && wooden->travel > key->travel,
-           "TypesHaveTheirOwnSize", "a button lands lighter than a key, a bandoneon's from further: its travel, m", wooden->travel);
+    Expect(button->mass * button->travel < key->mass * key->travel,
+           "TypesHaveTheirOwnSize", "a button lands lighter than a key: its travel, m", button->travel);
 }
 
 void NearFieldBelongsToLife() {
