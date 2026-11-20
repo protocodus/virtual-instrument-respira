@@ -2779,3 +2779,13 @@ digit.
 The three that stay sound as in 0.7.4. The listening set sent with 0.7.4
 still stands for them: B is what ships, C would brighten Irish's cover to
 2.1 and darken German's to 0.8.
+
+## 2026-11-20 — the types' covers stay: B chosen by ear (owner)
+
+The owner on 0.7.4's set (A 0.7.3, B each type at its own size and on its
+own keys or buttons, C the same with Irish's cover at 2.1 and German's at
+0.8; every type's first preset on one phrase, each segment RMS-matched to
+A's): "lets take b". B is what 0.7.4 and 0.8.0 carry, so nothing changes:
+Irish's cover stays 1.7, German's 1.0 and Balkan's 0.7. The sizes and the
+buttons are thereby chosen by ear over none; they remain estimates from
+typical instruments.
