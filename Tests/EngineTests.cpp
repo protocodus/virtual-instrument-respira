@@ -681,6 +681,40 @@ void BypassedFilterStartsSilent(Control control, double enabled, double bypassed
     Expect(after < 1e-8, name, "peak when the silent path is selected again", after);
 }
 
+// Eco uses fewer spatial sections along the reed chamber. A stationary
+// manual bellows leaves the held chamber quiet even when the grid grows back.
+void EcoDoesNotWakeHeldReed() {
+    auto e = Make(48000.0, 0, [](Controls& c) {
+        c[kAuto] = 0.0; c[kRoom] = 0.0; c[kLife] = 0.0; c[kMechanics] = -40.0;
+    });
+    const std::uint8_t on[] = { 0x90, 69, 125 };
+    e->Midi(on, 3);
+    std::array<float, 64> left {}, right {};
+    for (int b = 0; b < 450; ++b) {
+        e->SetHand(b / 600.0);
+        e->Render(left.data(), right.data(), 64);
+    }
+    auto c = e->GetControls();
+    c[kOversampling] = kOversamplingEco;
+    e->SetControls(c);
+    for (int b = 0; b < 6000; ++b) e->Render(left.data(), right.data(), 64);
+    const auto peak = [&] {
+        double result = 0.0;
+        for (int b = 0; b < 375; ++b) {
+            e->Render(left.data(), right.data(), 64);
+            for (std::size_t n = 0; n < left.size(); ++n)
+                result = std::max({ result, std::fabs(static_cast<double>(left[n])), std::fabs(static_cast<double>(right[n])) });
+        }
+        return result;
+    };
+    const double before = peak();
+    c[kOversampling] = 0;
+    e->SetControls(c);
+    const double after = peak();
+    Expect(e->Diag().cells == 1 && before < 1e-6, "EcoDoesNotWakeHeldReed", "held A4 has settled with the hand stopped", before);
+    Expect(after < 1e-6, "EcoDoesNotWakeHeldReed", "peak when the duct regains its normal section count", after);
+}
+
 void PitchBend() {
     // The wheel retunes reeds already sounding: bent fully up half a second
     // into the note, and fully down from before it, against an unbent take.
@@ -2260,6 +2294,7 @@ int main() {
     TopOctaveKeepsItsPitchAtEveryStepRate();
     MasterTune();
     NoteTuningLifetime();
+    EcoDoesNotWakeHeldReed();
     FoldedKeysKeepOneTuning();
     BypassedFilterStartsSilent(kType, 1, 0, "BandoneonBodyStartsSilent");
     BypassedFilterStartsSilent(kOversampling, 2, kOversamplingEco, "DecimationStagesStartSilent");

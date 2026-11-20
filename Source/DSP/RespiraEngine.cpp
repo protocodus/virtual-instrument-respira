@@ -2,6 +2,7 @@
 
 #include "ReedTuning.h"
 
+#include <algorithm>
 #include <cmath>
 #include <initializer_list>
 
@@ -277,6 +278,33 @@ void MicPair(double x, double width, float& left, float& right) {
     const double norm = 1.0 / std::sqrt(l * l + r * r);
     left = static_cast<float>(l * norm);
     right = static_cast<float>(r * norm);
+}
+
+// Repartition a sounding chamber on a new spatial grid. Pressure is a
+// section average, so integrate each old section over its overlap with the
+// new one. Flow lives at the section boundaries and is interpolated there.
+// Integer coordinates in units of 1 / (oldCount * newCount) avoid rounding
+// at a shared boundary. Every new section comes from the current active duct.
+void RegridChamber(CellState& state, int oldCount, int newCount) {
+    double pressure[kMaxSections], flow[kMaxSections + 1];
+    for (int i = 0; i < newCount; ++i) {
+        const int start = i * oldCount, end = start + oldCount;
+        double sum = 0.0;
+        for (int j = start / newCount; j * newCount < end; ++j) {
+            const int overlap = std::min(end, (j + 1) * newCount) - std::max(start, j * newCount);
+            sum += overlap * state.p[j];
+        }
+        pressure[i] = sum / oldCount;
+    }
+    flow[0] = 0.0;
+    for (int i = 1; i < newCount; ++i) {
+        const int at = i * oldCount, j = at / newCount;
+        const double fraction = static_cast<double>(at % newCount) / newCount;
+        flow[i] = state.u[j] + fraction * (state.u[j + 1] - state.u[j]);
+    }
+    flow[newCount] = state.vent;
+    for (int i = 0; i < newCount; ++i) state.p[i] = pressure[i];
+    for (int i = 0; i <= newCount; ++i) state.u[i] = flow[i];
 }
 
 } // namespace
@@ -873,8 +901,10 @@ void Engine::StepKeys(double seatScale) {
 // master tune or the player's Musette setting has moved in the meantime.
 void Engine::BuildReed(Cell& c) {
     const int type = static_cast<int>(controls[kType]), key = c.reed % 128;
+    const int oldSections = c.spec.chamber.sections;
     c.spec = MakeCell(c.rank, key, c.tuning.musette, kReedTuning[type][c.rank][TuningIndex(c.rank, key)],
                       chamberRate, controls[kLife], type);
+    if (c.active && c.spec.chamber.sections != oldSections) RegridChamber(c.state, oldSections, c.spec.chamber.sections);
     if (c.tuning.master != 0.0) {
         const double scale = std::pow(2.0, c.tuning.master / 1200.0);
         Retune(c.spec.push, scale);
