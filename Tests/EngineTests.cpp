@@ -2185,6 +2185,7 @@ int main() {
     MasterTune();
     NoteTuningLifetime();
     BypassedFilterStartsSilent(kType, 1, 0, "BandoneonBodyStartsSilent");
+    BypassedFilterStartsSilent(kOversampling, 2, kOversamplingEco, "DecimationStagesStartSilent");
     PitchBend();
     MusetteBeat();
     SplitKeyboardRouting();

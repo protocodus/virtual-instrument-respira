@@ -17,6 +17,12 @@ public:
 
     void Reset() { *this = Decimator {}; }
 
+    // On a downward rate change, retain the stages shared by both settings.
+    // A disconnected upper stage no longer receives input and must shed its history.
+    void KeepStages(int count) {
+        for (int s = count; s < kMaxStages; ++s) stage[s] = Halfband {};
+    }
+
     // Decimates the 2^stages samples in `in`, overwriting them. Stage 0 is the
     // last (to the output rate), so a change of `stages` keeps the state of the
     // stages both settings share; the ones added start empty.

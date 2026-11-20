@@ -495,9 +495,14 @@ void Engine::SetControls(const Controls& next) {
             c.spec.push.stepOmega2 = StepStiffness(c.spec.push.omega2, nextRate);
             c.spec.pull.stepOmega2 = StepStiffness(c.spec.pull.omega2, nextRate);
         }
+    const int previousStages = stages;
     oversample = nextOversample;
     stages = 0;
     while ((1 << stages) < oversample) ++stages;
+    if (stages < previousStages) {
+        for (auto& side : rankSide) side.KeepStages(stages);
+        bassSide.KeepStages(stages);
+    }
     internalRate = nextRate;
     for (const bool chambered : BuildOf(type).cassotto) cassottoRunning = cassottoRunning || chambered;
     // A new build reaches the sounding reeds too, as a new Life does: their
