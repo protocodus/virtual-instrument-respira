@@ -607,6 +607,45 @@ void NoteTuningLifetime() {
     }
 }
 
+// Two folded treble keys open one physical reed. Its most recent held
+// owner supplies the tuning for every rank, including ranks added mid-note.
+void FoldedKeysKeepOneTuning() {
+    constexpr int frames = 4096;
+    const auto play = [&](bool changeFirst, bool lowerFirst, bool returnToOlder) {
+        auto e = Make(48000.0, 0, [](Controls& c) {
+            c[kAuto] = 1.0;
+            c[kKeyboard] = 1.0;
+            c[kLife] = 0.0;
+            c[kTouch] = 0.0;
+        });
+        const std::uint8_t lower = 24, upper = 36;
+        const std::uint8_t first[] = { 0x90, lowerFirst ? lower : upper, 100 };
+        const std::uint8_t later[] = { 0x90, lowerFirst ? upper : lower, 100 };
+        const std::uint8_t off[] = { 0x80, later[1], 0 };
+        // With no render between the attacks, both paths have identical
+        // physical state when the chosen owner takes over.
+        e->SetMasterTune(changeFirst && !returnToOlder ? 0 : 100);
+        e->Midi(first, 3);
+        e->SetMasterTune(changeFirst && returnToOlder ? 0 : 100);
+        e->Midi(later, 3);
+        if (returnToOlder) e->Midi(off, 3);
+        auto controls = e->GetControls();
+        controls[kRegister] = 3;
+        e->SetControls(controls);
+        std::array<float, frames> l {}, r {};
+        e->Render(l.data(), r.data(), frames);
+        return l;
+    };
+    for (bool lowerFirst : { false, true }) {
+        for (bool returnToOlder : { false, true }) {
+            const auto reference = play(false, lowerFirst, returnToOlder), actual = play(true, lowerFirst, returnToOlder);
+            Expect(reference == actual, "FoldedKeysKeepOneTuning",
+                   returnToOlder ? "last release returns the shared reed to its surviving owner"
+                                 : "new ranks follow the latest held key at either end of the fold", lowerFirst);
+        }
+    }
+}
+
 // Park the chosen processing path with sound still in it, then let the
 // instrument fall silent. Bringing back a path must not replay that sound.
 void BypassedFilterStartsSilent(Control control, double enabled, double bypassed, const char* name) {
@@ -2221,6 +2260,7 @@ int main() {
     TopOctaveKeepsItsPitchAtEveryStepRate();
     MasterTune();
     NoteTuningLifetime();
+    FoldedKeysKeepOneTuning();
     BypassedFilterStartsSilent(kType, 1, 0, "BandoneonBodyStartsSilent");
     BypassedFilterStartsSilent(kOversampling, 2, kOversamplingEco, "DecimationStagesStartSilent");
     PitchBend();

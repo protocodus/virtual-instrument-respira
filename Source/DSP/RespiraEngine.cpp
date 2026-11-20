@@ -887,6 +887,13 @@ void Engine::BuildReed(Cell& c) {
     c.pullValveMass = kPullValveShare * kFlapDensity * FlapArea(c.spec.pull.length, c.spec.pull.width);
 }
 
+void Engine::TuneForKey(Cell& cell, int source) {
+    const NoteTuning tuning = keys[static_cast<std::size_t>(source)].tuning;
+    if (cell.active && cell.tuning.master == tuning.master && cell.tuning.musette == tuning.musette) return;
+    cell.tuning = tuning;
+    BuildReed(cell);
+}
+
 void Engine::StartCell(int rank, int key, int source, double openSeconds) {
     const int reed = rank * 128 + key;
     Cell* cell = nullptr;
@@ -901,14 +908,12 @@ void Engine::StartCell(int rank, int key, int source, double openSeconds) {
             if ((c.held == cell->held && c.order < cell->order) || (!c.held && cell->held)) cell = &c;
         cell->active = false;
     }
-    const NoteTuning tuning = keys[static_cast<std::size_t>(source)].tuning;
-    if (!cell->active || cell->tuning.master != tuning.master || cell->tuning.musette != tuning.musette) {
+    if (!cell->active) {
         cell->rank = rank;
         cell->reed = reed;
-        cell->tuning = tuning;
-        if (!cell->active) cell->lift = 0.0;
-        BuildReed(*cell);
+        cell->lift = 0.0;
     }
+    TuneForKey(*cell, source);
     if (!cell->active) {
         cell->state = CellState {};
         cell->breathA = cell->breathB = 0.0;
@@ -956,6 +961,7 @@ void Engine::NoteOn(int channel, int key, int velocity) {
     Key& k = keys[static_cast<std::size_t>(source)];
     if (k.target > 0.0 && k.group != group) NoteOff(channel, key);
     k.group = group;
+    k.order = ++order;
     k.tuning = { masterTune, controls[kMusette] };
     k.target = channelDepth[static_cast<std::size_t>(channel)];
     // The stroke the finger actually makes (Stroke) moves the key and every
@@ -987,9 +993,16 @@ void Engine::NoteOn(int channel, int key, int velocity) {
 // softest key stroke lifts a pallet, and closes as a pallet does, both at the
 // speed of this press (stroke).
 void Engine::SwitchRegister(const Register& before, const Register& after, double stroke) {
+    std::array<int, kTrebleKeys> owner;
+    owner.fill(-1);
     for (int key = 0; key < 128; ++key) {
         const Key& held = keys[static_cast<std::size_t>(key)];
         if (held.target <= 0.0 || held.group != kTreble) continue;
+        int& previous = owner[static_cast<std::size_t>(TrebleKey(key) - kTrebleLow)];
+        if (previous < 0 || held.order > keys[static_cast<std::size_t>(previous)].order) previous = key;
+    }
+    for (int key = 0; key < 128; ++key) {
+        if (owner[static_cast<std::size_t>(TrebleKey(key) - kTrebleLow)] != key) continue;
         for (int rank = kRankL; rank <= kRankH; ++rank) {
             const bool was = Sounds(before, rank, TrebleKey(key)), is = Sounds(after, rank, TrebleKey(key));
             if (is && !was) StartCell(rank, TrebleKey(key), key, KeyOpeningSeconds(0) / stroke);
@@ -1014,9 +1027,10 @@ void Engine::NoteOff(int channel, int key) {
     Key& released = keys[static_cast<std::size_t>(source)];
     const Group group = released.group;
     const auto reedOf = [group](int k) { return group == kTreble ? TrebleKey(k) : PitchClass(k); };
-    for (int s = 0; s < 3 * 128 && other < 0; ++s)
+    for (int s = 0; s < 3 * 128; ++s)
         if (s != source && keys[static_cast<std::size_t>(s)].target > 0.0 && keys[static_cast<std::size_t>(s)].group == group
-            && reedOf(s % 128) == reedOf(key))
+            && reedOf(s % 128) == reedOf(key)
+            && (other < 0 || keys[static_cast<std::size_t>(s)].order > keys[static_cast<std::size_t>(other)].order))
             other = s;
     // The finger lets the key up a little faster or slower each time: it
     // rides the spring's return part of the way (kStrokeScatter's note).
@@ -1027,6 +1041,7 @@ void Engine::NoteOff(int channel, int key) {
                 c.held = false;
                 c.closeStroke = lift;
             } else {
+                TuneForKey(c, other);
                 c.source = other;
                 c.depth = channelDepth[static_cast<std::size_t>(other / 128)];
             }

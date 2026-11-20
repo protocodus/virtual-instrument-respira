@@ -213,6 +213,7 @@ private:
         double travel = 0.0, target = 0.0, rate = 0.0;   // rate: travel per sample going down
         double up = 1.0;   // this release's return speed against the spring's (Stroke)
         std::uint8_t velocity = 0;
+        std::uint64_t order = 0; // latest press wins a reed shared with other keys
         NoteTuning tuning;       // also used by ranks opened while the key is held
         Group group = kTreble;   // latched when the key is pressed
         bool listed = false;
@@ -221,6 +222,7 @@ private:
     void NoteOn(int channel, int key, int velocity);
     void NoteOff(int channel, int key);
     void BuildReed(Cell& cell);
+    void TuneForKey(Cell& cell, int source);
     void StartCell(int rank, int key, int source, double openSeconds);
     void TakeTargets();   // every glided gain to its target at once
     void SwitchRegister(const Register& before, const Register& after, double stroke);
