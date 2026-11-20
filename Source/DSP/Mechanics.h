@@ -42,6 +42,14 @@ struct Stop {
 // A treble key and the fingertip riding on it, at the key front: 5 mm of dip,
 // as reported for a Scandalli Air.
 inline constexpr Stop kTrebleKey { 0.020, 0.005, &kKeyFelt };
+// What the right hand presses on a build with buttons (ReedBank.h, Frame): a
+// chromatic or diatonic accordion's treble button and the fingertip on it,
+// lighter than a key and shorter of travel, 4 mm; and a bandoneon's wooden
+// button on its long lever, 6 mm, which lands harder for it. Estimates, as
+// the key's are.
+inline constexpr Stop kTrebleButton { 0.012, 0.004, &kKeyFelt };
+inline constexpr Stop kBandoneonButton { 0.016, 0.006, &kKeyFelt };
+inline const Stop* TrebleStop(int action) { return action == 2 ? &kBandoneonButton : action == 1 ? &kTrebleButton : &kTrebleKey; }
 // The key and its pallet, at the pallet: taken to lift as far as the key
 // front dips.
 inline constexpr Stop kTreblePallet { 0.010, 0.005, &kRestCloth };

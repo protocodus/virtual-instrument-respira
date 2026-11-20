@@ -2714,3 +2714,36 @@ What it took with it: every register trim, since the box adds 0.2–1.0 dB at
 these levels (each register's level over fifteen keys is back at 0.6.2's);
 and in `RoomDecorrelatesAndRings` the dry channels' correlation limit, 0.88
 from 0.95 (it reads 0.92), with Room 1's at 0.8 from 0.9 (0.73).
+
+## 2026-11-20 — 0.7.4: each type at its own size (owner's request; candidate by the project's rule)
+
+The owner asked for one more round to make the types more distinct while
+keeping each one's character. Measured first, on each type's own first
+preset and one four-bar waltz phrase (third-octaves, 250 Hz–8 kHz, each
+spectrum against its own total): Irish, German and Italian lay 1.1, 0.6
+and 0.8 dB from Default and French 1.6, the nine 3.07 dB apart on average
+over all pairs. What separates the types in this model is still their reed
+sets, tremolo, tone chamber and cover; the reed and block factors do little
+(a machine-reed German, Q 0.8, clearance 1.5, set and plate 1.15, moved its
+octave bands by 0.7 dB at most and was dropped).
+
+Added: each build's own size (`Frame`, ReedBank.h) for the bellows' box and
+the reflections of NearField.h, flat-lying blocks for tone-chamber ranks and
+the bandoneon's plates, and buttons for the five kinds played on them. All
+estimates from typical instruments. With them the nine lie 3.52 dB apart;
+Irish 2.0, German 1.4, French 2.1, Bandoneon 5.8 (5.1) from Default. Six
+type trims were refitted (`TypesSitTogether`). Default is unchanged.
+
+Listening set, not blind: every type's first preset on that phrase, one
+after another in one file per letter, each type's segment RMS-matched to
+A's. A 0.7.3. B the sizes and buttons (committed). C the same with the
+covers moved to the middle of what the owner's comparison clip measured
+against its German set, where 0.5.0 took the lower end: French 3.0 (from
+2.2), Irish 2.1 (1.7), Italian 1.6 (1.4), and German 0.8 (1.0), since the
+clip's German set is itself darker than Default. C reads 3.73 dB apart;
+against German, 2–8 kHz over 250–800 Hz, French +7.3, Irish +4.0 and
+Italian +3.8 dB (B +4.7, +1.7 and +1.9), where the clip has 6–9, 4–7 and
+0–5. Balkan's and
+Finnish's covers, the owner's ear, are the same in every letter. B ships
+until the owner says otherwise; C is a fit to that one clip, as 0.5.0's
+covers were.

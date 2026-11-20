@@ -51,8 +51,9 @@ inline double NoteHz(double note) { return 440.0 * std::pow(2.0, (note - 69.0) /
 
 // The instrument's build, the Type control: which kind of accordion the
 // reeds, their plates, their chambers, the reed sets the treble carries and
-// the treble's body are made as. The keys, bellows, the bass side and the
-// microphones stay the same. Default is the instrument as it was before
+// the treble's body are made as, at which size and on which keys (Frame).
+// The bellows' air and stiffness, the bass side and the microphones stay the
+// same. Default is the instrument as it was before
 // builds existed and stays bit for bit so: every factor is 1, every rank is
 // there, nothing sits in a tone chamber and nothing encloses the treble.
 //
@@ -170,6 +171,30 @@ struct Body {
     double depth, open, neck, rayl, absorbed, modes;
 };
 
+// The instrument's own size and keyboard, estimates from typical
+// instruments of each kind (makers' catalogue sizes, rounded), not
+// measurements of one: the bellows' section (length and width, m), their
+// depth closed (m), how far the player's lap and the bass half lie from the
+// treble against Default's (reach), and what the right hand presses.
+// NearField.h rings the box these make and Mechanics.h lands the keys.
+//   - Default, Italian: a full-size 41-key piano accordion, 0.41 x 0.19 m.
+//   - Bandoneon: a square box, 0.235 x 0.225 m, on bellows in three sections
+//     that stand 0.20 m deep closed; wooden buttons on long levers, 6 mm of
+//     travel.
+//   - Irish: a two-row B/C box, 0.29 x 0.16 m, on buttons.
+//   - German: a 41-key Hohner of the Morino's size, 0.44 x 0.20 m.
+//   - French: a chromatic button accordion, more compact than a piano
+//     accordion of its range, 0.36 x 0.18 m.
+//   - Jazz: a full-size cassotto piano accordion, 0.43 x 0.20 m.
+//   - Balkan: a six-row button accordion (dugmetara), 0.43 x 0.21 m.
+//   - Finnish: a five-row C-system button accordion, 0.42 x 0.20 m.
+enum Action : int { kPianoKeys, kButtons, kBandoneonButtons };
+struct Frame {
+    double length, width, closed, reach;
+    Action action;
+};
+constexpr Frame kFullSize { 0.41, 0.19, 0.15, 1.0, kPianoKeys };
+
 struct Build {
     const char* name;
     double tremolo;    // the sharp tremolo reed's (M+) detune over the Musette knob's
@@ -186,6 +211,7 @@ struct Build {
     std::array<bool, 5> ranks;      // treble ranks kRankL .. kRankH the instrument carries
     std::array<bool, 5> cassotto;   // treble ranks that sound into the tone chamber
     Body body;
+    Frame frame;
 };
 
 constexpr std::array<bool, 5> kAllRanks { true, true, true, true, true };
@@ -197,16 +223,25 @@ constexpr std::array<bool, 5> kLowAndStraight { true, true, false, false, false 
 constexpr Body kOpenTreble { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 
 inline constexpr std::array<Build, kTypeCount> kBuilds { {
-    { "Default", 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, kAllRanks, kNoRanks, kOpenTreble },
-    { "Bandoneon", 0.05, 1.0, 1.25, 1.3, 1.0, 1.0, 1.2, 0.5, 1.5, 1.0, 0.0, { true, true, false, false, false }, kNoRanks,
-      { 0.04, 0.10, 0.0081, 0.0, 0.04, 2000.0 } },
-    { "Irish", 7.0 / 22.0, 1.0, 0.8, 1.0, 0.85, 1.0, 0.9, 0.7, 0.8, 1.7, -0.6, kLowAndSharp, kNoRanks, kOpenTreble },
-    { "German", 14.0 / 22.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, kAllRanks, kNoRanks, kOpenTreble },
-    { "French", 28.0 / 22.0, 1.0 / 3.0, 0.9, 1.0, 1.0, 1.0, 0.9, 1.0, 1.0, 2.2, -1.7, kMiddleRanks, kNoRanks, kOpenTreble },
-    { "Jazz", 3.0 / 22.0, 1.0, 1.0, 1.15, 1.0, 0.8, 1.0, 1.0, 1.0, 1.0, 0.0, kAllRanks, kLowAndStraight, kOpenTreble },
-    { "Balkan", 15.0 / 22.0, 1.0, 1.0, 1.15, 1.0, 0.8, 1.0, 1.15, 1.0, 0.7, 0.7, kFourVoice, { true, true, false, true, false }, kOpenTreble },
-    { "Italian", 16.0 / 22.0, 1.0, 1.0, 1.15, 1.0, 0.8, 1.0, 1.15, 1.0, 1.4, -1.4, kFourVoice, kNoRanks, kOpenTreble },
-    { "Finnish", 19.0 / 22.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.7, 0.7, kAllRanks, { true, true, true, true, false }, kOpenTreble },
+    { "Default", 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, kAllRanks, kNoRanks, kOpenTreble,
+      kFullSize },
+    { "Bandoneon", 0.05, 1.0, 1.25, 1.3, 1.0, 1.0, 1.2, 0.5, 1.5, 1.0, 0.8, { true, true, false, false, false }, kNoRanks,
+      { 0.04, 0.10, 0.0081, 0.0, 0.04, 2000.0 },
+      { 0.235, 0.225, 0.20, 0.65, kBandoneonButtons } },
+    { "Irish", 7.0 / 22.0, 1.0, 0.8, 1.0, 0.85, 1.0, 0.9, 0.7, 0.8, 1.7, -1.1, kLowAndSharp, kNoRanks, kOpenTreble,
+      { 0.29, 0.16, 0.13, 0.72, kButtons } },
+    { "German", 14.0 / 22.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, kAllRanks, kNoRanks, kOpenTreble,
+      { 0.44, 0.20, 0.15, 1.06, kPianoKeys } },
+    { "French", 28.0 / 22.0, 1.0 / 3.0, 0.9, 1.0, 1.0, 1.0, 0.9, 1.0, 1.0, 2.2, -1.7, kMiddleRanks, kNoRanks, kOpenTreble,
+      { 0.36, 0.18, 0.14, 0.88, kButtons } },
+    { "Jazz", 3.0 / 22.0, 1.0, 1.0, 1.15, 1.0, 0.8, 1.0, 1.0, 1.0, 1.0, 0.35, kAllRanks, kLowAndStraight, kOpenTreble,
+      { 0.43, 0.20, 0.15, 1.04, kPianoKeys } },
+    { "Balkan", 15.0 / 22.0, 1.0, 1.0, 1.15, 1.0, 0.8, 1.0, 1.15, 1.0, 0.7, 1.75, kFourVoice, { true, true, false, true, false }, kOpenTreble,
+      { 0.43, 0.21, 0.16, 1.05, kButtons } },
+    { "Italian", 16.0 / 22.0, 1.0, 1.0, 1.15, 1.0, 0.8, 1.0, 1.15, 1.0, 1.4, -1.7, kFourVoice, kNoRanks, kOpenTreble,
+      kFullSize },
+    { "Finnish", 19.0 / 22.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.7, 1.7, kAllRanks, { true, true, true, true, false }, kOpenTreble,
+      { 0.42, 0.20, 0.15, 1.02, kButtons } },
 } };
 
 inline const Build& BuildOf(int type) { return kBuilds[static_cast<std::size_t>(type < 0 ? 0 : type >= kTypeCount ? kTypeCount - 1 : type)]; }

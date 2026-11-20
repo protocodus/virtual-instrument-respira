@@ -2086,6 +2086,35 @@ void StrapTakesUpAtTheBellowsSpeed() {
     Expect(std::fabs(BellowsEndSpeed(4.0e-3, 1.0) / v - 2.0) < 1.0e-9, "StrapTakesUpAtTheBellowsSpeed", "twice the air, ratio", BellowsEndSpeed(4.0e-3, 1.0) / v);
 }
 
+void TypesHaveTheirOwnSize() {
+    // Default's frame is the near field's own box, so Default plays as it
+    // did before the builds brought theirs; a smaller instrument's box rings
+    // higher and travels further on the same air, and a button lands lighter
+    // than a key (ReedBank.h, Frame; NearField.h, SetFrame).
+    const Frame& usual = BuildOf(kTypeDefault).frame;
+    Expect(usual.length == NearField::kBoxLength && usual.width == NearField::kBoxWidth && usual.closed == NearField::kBoxClosed
+               && usual.reach == 1.0 && usual.action == kPianoKeys,
+           "TypesHaveTheirOwnSize", "Default's frame is the near field's own, 1 if so", 1.0);
+    NearField field;
+    field.Prepare(48000.0);
+    NearField::Frame frame;
+    field.SetFrame(frame);
+    Expect(field.boxGain == 1.0 && field.boxTravelTarget == NearField::kBoxTravel && field.fromHz == NearField::kBoxFrom,
+           "TypesHaveTheirOwnSize", "which leaves its box as it was: gain", field.boxGain);
+    const Frame& irish = BuildOf(kTypeIrish).frame;
+    frame.length = irish.length;
+    frame.width = irish.width;
+    frame.closed = irish.closed;
+    field.SetFrame(frame);
+    Expect(field.boxTravelTarget > 1.5 * NearField::kBoxTravel && field.boxGain > 1.1 && field.fromHz > 1.3 * NearField::kBoxFrom,
+           "TypesHaveTheirOwnSize", "an Irish box travels further and rings higher: travel, m", field.boxTravelTarget);
+    const Stop* key = TrebleStop(kPianoKeys);
+    const Stop* button = TrebleStop(kButtons);
+    const Stop* wooden = TrebleStop(kBandoneonButtons);
+    Expect(button->mass * button->travel < key->mass * key->travel && wooden->travel > key->travel,
+           "TypesHaveTheirOwnSize", "a button lands lighter than a key, a bandoneon's from further: its travel, m", wooden->travel);
+}
+
 void NearFieldBelongsToLife() {
     // The bellows' own air and the reflections off the player (NearField.h)
     // are departures from the ideal instrument, as Life's others are: at
@@ -2334,6 +2363,7 @@ int main() {
     ValvesLandAfterTheirFlight();
     RepeatedStrokesDiffer();
     StrapTakesUpAtTheBellowsSpeed();
+    TypesHaveTheirOwnSize();
     NearFieldBelongsToLife();
     RoomDecorrelatesAndRings();
     respira_room_tests::Run(Expect);

@@ -387,6 +387,18 @@ void Engine::SetBody() {
         if (trebleBoxRunning) box.Set(body.depth, body.open, body.neck, body.rayl, body.absorbed, body.modes, rate);
         else box.Clear();   // a disconnected body cannot retain the last sound until it is selected again
     }
+    // The build's own size rings its own box of bellows air (NearField.h).
+    // Blocks in a tone chamber lie flat, a quarter turned against the
+    // standing ones, and a bandoneon's plates lie on the reed board itself.
+    const Build& build = BuildOf(static_cast<int>(controls[kType]));
+    NearField::Frame frame;
+    frame.length = build.frame.length;
+    frame.width = build.frame.width;
+    frame.closed = build.frame.closed;
+    frame.reach = build.frame.reach;
+    for (std::size_t r = 0; r < frame.flat.size(); ++r) frame.flat[r] = build.cassotto[r] || build.frame.action == kBandoneonButtons;
+    nearField.SetFrame(frame);
+    if (untouched) nearField.TakeFrame();
 }
 
 // Internal steps per host sample at an Oversampling setting. Eco halves the
@@ -879,7 +891,7 @@ void Engine::StepKeys(double seatScale) {
         if (k.travel < k.target) {
             k.travel = Min(k.target, k.travel + k.rate);
             if (k.travel >= 1.0) {
-                stop = button ? &kButton : &kTrebleKey;
+                stop = button ? &kButton : TrebleStop(BuildOf(static_cast<int>(controls[kType])).frame.action);
                 speed = stop->travel * k.rate * rate;
             }
         } else {

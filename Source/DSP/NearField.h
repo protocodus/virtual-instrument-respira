@@ -71,12 +71,15 @@ struct NearField {
     // open, how much of the bellows' travel and of the player's sway (sideways
     // and towards the pair) lengthens it, its level against the direct sound,
     // where it comes from across the pair (-1 left .. 1 right, against the
-    // treble's own place) and how the ranks' row lies along it.
-    struct Path { double metres, travel, side, depth, level, pan, row; };
+    // treble's own place), how the ranks' row lies along it, and whether its
+    // length is the instrument's size (Frame, reach): the lap and the bass
+    // half are as far as the instrument is large, the chest as near behind
+    // any keyboard.
+    struct Path { double metres, travel, side, depth, level, pan, row; bool sized; };
     static constexpr std::array<Path, kPaths> kPath { {
-        { 0.30, 0.0, 0.2, 0.5, 0.30, 0.00, 0.9 },     // the lap under the keyboard
-        { 0.12, 0.0, 1.0, -0.4, 0.26, 0.15, -0.7 },   // the chest and right arm behind it
-        { 0.42, 1.0, -0.6, 0.3, 0.22, -0.45, 0.5 },   // the bass half, beyond the bellows
+        { 0.30, 0.0, 0.2, 0.5, 0.30, 0.00, 0.9, true },      // the lap under the keyboard
+        { 0.12, 0.0, 1.0, -0.4, 0.26, 0.15, -0.7, false },   // the chest and right arm behind it
+        { 0.42, 1.0, -0.6, 0.3, 0.22, -0.45, 0.5, true },    // the bass half, beyond the bellows
     } };
     // The ranks' holes under one pallet, m from the 8' at pitch.
     static constexpr std::array<double, kRanks> kRow { { -0.030, 0.0, -0.015, 0.015, 0.030 } };
@@ -84,6 +87,8 @@ struct NearField {
 
     // The bellows' box: its length and width (kPleatLongWall, kPleatShortWall)
     // and its depth closed and open, the frames' own depth plus the travel.
+    // These are the Default build's; a build of another size brings its own
+    // (Frame, SetFrame).
     static constexpr double kBoxLength = 0.41, kBoxWidth = 0.19, kBoxClosed = 0.15, kBoxTravel = 0.077;
     static constexpr double kBoxKeeps = 0.75;         // of the sound, each pass
     static constexpr double kBoxCorner = 3000.0;      // Hz: the card and cloth absorb the treble first
@@ -97,6 +102,19 @@ struct NearField {
         { 0.9, 0.5, 0.7 }, { 0.6, -0.8, 0.9 }, { -0.7, 0.9, 0.5 }, { 0.8, 0.7, -0.6 }, { -0.5, -0.6, 0.8 },
         { 0.7, 0.6, -0.9 },
     } };
+    // The instrument's own size, which the build brings (ReedBank.h, Build):
+    // the bellows' section and their depth closed, m, and how far the
+    // player's lap and the bass half lie from the treble against the
+    // Default's, since a smaller instrument sits closer to both. `flat` marks
+    // the ranks whose blocks lie flat in a tone chamber, or whose plates lie
+    // on the reed board with no block at all, turned a quarter against the
+    // standing blocks: they drive the box's ways in another order. Every
+    // build's bellows hold the same air over their travel (RespiraEngine.cpp,
+    // kBellowsVolume), so a narrower section travels further.
+    struct Frame {
+        double length = kBoxLength, width = kBoxWidth, closed = kBoxClosed, reach = 1.0;
+        std::array<bool, kRanks> flat {};
+    };
     // Levels at Life 0.5, over each path's own and the box's: the owner's
     // choice by ear (above). 0.7.0 had 1.0 and 0.5.
     static constexpr double kPathLevel = 1.6, kBoxLevel = 0.8;
@@ -111,6 +129,40 @@ struct NearField {
     double glide = 0.0, clothStep = 0.0, boxStep = 0.0, wallStep = 0.0, fromStep = 0.0;
     double clothL = 0.0, clothR = 0.0, clothLC = 0.0, clothRC = 0.0, wall = 0.0, from = 0.0;
     double pathScale = 1.0, boxScale = 1.0;   // other levels over these, for tests and listening sets
+    // The build's frame, gliding where a length can: a new build under held
+    // keys moves the box, it does not cut it.
+    double length = kBoxLength, width = kBoxWidth, closed = kBoxClosed, boxTravel = kBoxTravel, reach = 1.0;
+    double lengthTarget = kBoxLength, widthTarget = kBoxWidth, closedTarget = kBoxClosed, boxTravelTarget = kBoxTravel, reachTarget = 1.0;
+    double boxGain = 1.0, fromHz = kBoxFrom;
+    std::array<std::array<double, kWays>, kRanks + 1> share = kShare;
+
+    // A smaller box rings higher and louder: the same reed's flow makes more
+    // pressure in less air, through less wall, so what leaves goes as one
+    // over the box's size, the cube root of its volume against the
+    // Default's. Below its own first mode it is the bellows' spring, as the
+    // Default's is below 350 Hz, 0.84 of its first mode.
+    void SetFrame(const Frame& frame) {
+        lengthTarget = frame.length;
+        widthTarget = frame.width;
+        closedTarget = frame.closed;
+        boxTravelTarget = kBoxTravel * (kBoxLength * kBoxWidth) / (frame.length * frame.width);
+        reachTarget = frame.reach;
+        const double deep = closedTarget + 0.5 * boxTravelTarget, usual = kBoxClosed + 0.5 * kBoxTravel;
+        boxGain = std::cbrt(kBoxLength * kBoxWidth * usual / (frame.length * frame.width * deep));
+        fromHz = kBoxFrom * Max(kBoxLength, usual) / Max(Max(frame.length, frame.width), deep);
+        fromStep = 1.0 - std::exp(-6.283185307179586 * Min(fromHz, 0.45 * rate) / rate);
+        for (int r = 0; r < kRanks; ++r)
+            for (int w = 0; w < kWays; ++w)
+                share[static_cast<std::size_t>(r)][static_cast<std::size_t>(w)] =
+                    kShare[static_cast<std::size_t>(r)][static_cast<std::size_t>(frame.flat[static_cast<std::size_t>(r)] ? (w + 1) % kWays : w)];
+    }
+    void TakeFrame() {
+        length = lengthTarget;
+        width = widthTarget;
+        closed = closedTarget;
+        boxTravel = boxTravelTarget;
+        reach = reachTarget;
+    }
     bool quiet = true;
 
     void Prepare(double sampleRate) {
@@ -121,7 +173,7 @@ struct NearField {
         clothStep = step(kClothCorner);
         boxStep = step(kBoxCorner);
         wallStep = step(kWallCorner);
-        fromStep = step(kBoxFrom);
+        fromStep = step(fromHz);
         Clear();
     }
 
@@ -134,6 +186,7 @@ struct NearField {
         side = sideTarget;
         depth = depthTarget;
         spread = -1.0;
+        TakeFrame();
         quiet = true;
     }
 
@@ -179,16 +232,21 @@ struct NearField {
         depth += glide * (depthTarget - depth);
         // Width glides as the pair's other gains do, so automating it never steps.
         spread = spread < 0.0 ? apart : spread + glide * (apart - spread);
+        length += glide * (lengthTarget - length);
+        width += glide * (widthTarget - width);
+        closed += glide * (closedTarget - closed);
+        boxTravel += glide * (boxTravelTarget - boxTravel);
+        reach += glide * (reachTarget - reach);
         at = (at + 1) & (kSize - 1);
         std::array<double, kWays> drive {};
         for (int r = 0; r < kRanks; ++r) {
             rank[static_cast<std::size_t>(r)][static_cast<std::size_t>(at)] = static_cast<float>(in[r]);
-            for (int w = 0; w < kWays; ++w) drive[static_cast<std::size_t>(w)] += kShare[static_cast<std::size_t>(r)][static_cast<std::size_t>(w)] * in[r];
+            for (int w = 0; w < kWays; ++w) drive[static_cast<std::size_t>(w)] += share[static_cast<std::size_t>(r)][static_cast<std::size_t>(w)] * in[r];
         }
-        for (int w = 0; w < kWays; ++w) drive[static_cast<std::size_t>(w)] += kShare[kRanks][static_cast<std::size_t>(w)] * bass;
+        for (int w = 0; w < kWays; ++w) drive[static_cast<std::size_t>(w)] += share[kRanks][static_cast<std::size_t>(w)] * bass;
         const double level = amount * kPathLevel * pathScale;
         for (const Path& p : kPath) {
-            const double metres = p.metres + p.travel * kBoxTravel * (travel - 0.5) + p.side * side + p.depth * depth;
+            const double metres = p.metres * (p.sized ? reach : 1.0) + p.travel * boxTravel * (travel - 0.5) + p.side * side + p.depth * depth;
             double open = 0.0, chamber = 0.0;
             for (int r = 0; r < kRanks; ++r) {
                 const double v = Read(rank[static_cast<std::size_t>(r)], at, (metres + p.row * kRow[static_cast<std::size_t>(r)]) * perMetre);
@@ -209,7 +267,7 @@ struct NearField {
         out.leftInside = clothLC;
         out.rightInside = clothRC;
         // The box: there and back along each way.
-        const std::array<double, kWays> there { { 2.0 * kBoxLength, 2.0 * kBoxWidth, 2.0 * (kBoxClosed + kBoxTravel * travel) } };
+        const std::array<double, kWays> there { { 2.0 * length, 2.0 * width, 2.0 * (closed + boxTravel * travel) } };
         std::array<double, kWays> back {};
         double sum = 0.0;
         for (int w = 0; w < kWays; ++w) {
@@ -223,7 +281,7 @@ struct NearField {
         }
         wall += wallStep * (sum - wall);
         from += fromStep * (wall - from);
-        out.box = -amount * kBoxLevel * boxScale * (wall - from);
+        out.box = -amount * kBoxLevel * boxScale * boxGain * (wall - from);
         return out;
     }
 

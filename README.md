@@ -34,6 +34,10 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
+### 0.7.4 — 2026-11-20 — each type in its own size, on its own keys or buttons
+
+Each type is now built at its own kind's size, which rings its own box of bellows air and sits nearer to or further from the player's lap and the bass half: a bandoneon's square 0.235 × 0.225 m box on deep bellows, an Irish two-row box of 0.29 × 0.16 m, a French button accordion of 0.36 × 0.18 m, a Hohner of 0.44 × 0.20 m, and full-size Jazz, Balkan and Finnish instruments a little larger than Default. Reed blocks that lie flat in a tone chamber, and a bandoneon's plates on its reed board, drive that box another way round than standing blocks. Bandoneon, Irish, French, Balkan and Finnish are played on buttons, which land lighter and shorter than piano keys, a bandoneon's wooden ones harder. On each type's own preset and one phrase the types' spectra now lie 3.5 dB apart on average (third-octaves, 250 Hz–8 kHz), from 3.1; Irish, German and French moved furthest from Default (2.0, 1.4 and 2.1 dB, from 1.1, 0.6 and 1.6). Their reeds, tremolo, reed sets, tone chambers and covers are unchanged, and Default plays as in 0.7.3. The sizes are estimates from typical instruments ([Types](#types)).
+
 ### 0.7.3 — 2026-11-20 — the bellows' air and the player's reflections at the level the owner chose
 
 The bellows' own air and the reflections off the player sound at 1.6 times their 0.7.0 levels, the owner's choice by ear from three (0.6.2, 0.7.0's and this). A held note's harmonics are more uneven from key to key (5.0 dB about a straight fall, 4.0 in 0.7.0, 5.9 on the recordings), its partials move further apart (1.12 dB against the fundamental, from 0.78) and a tremolo pair's partials beat to depths further apart (0.090, from 0.064). Each register plays as loud as it did; single keys differ by 1–1.9 dB more than before. Life still scales it, and Life 0 has none ([The bellows' air and the player](#the-bellows-air-and-the-player)).
@@ -603,9 +607,10 @@ has not been measured.
 
 **Type** chooses the kind of accordion the reeds, their chambers, the reed
 sets the treble carries and the treble's body are built as (`kBuilds`,
-`Source/DSP/ReedBank.h`). The keys, the bellows, the bass side and the
-microphones stay the same; each type changes only what its kind of
-instrument is known to do differently. Every change is a part of the
+`Source/DSP/ReedBank.h`). The bellows' air and stiffness, the bass side
+and the microphones stay the same; each type changes only what its kind of
+instrument is known to do differently, its size and what the right hand
+presses among them (below). Every change is a part of the
 physical model but one: the cover, which moves the Grille's corner, the one
 voiced filter the treble side already had:
 
@@ -646,6 +651,28 @@ those boxes are brighter (Known gaps). A tongue's size for its pitch would
 move the tone as much, 5 dB at 2–4 kHz for a tongue 1.3 times as long, but
 no source gives tongue sizes by kind of instrument, so every type keeps
 Default's.
+
+Each type has its own size, which the bellows' box and the reflections off
+the player take (The bellows' air and the player): the bellows' section,
+their depth closed, and how far the lap and the bass half lie from the
+treble against Default's. Default and Italian are a full-size piano
+accordion, 0.41 × 0.19 m; Bandoneon a square 0.235 × 0.225 m on bellows
+0.20 m deep closed (0.65 of the reach); Irish 0.29 × 0.16 m (0.72); French
+0.36 × 0.18 m (0.88); German 0.44 × 0.20 m, Jazz 0.43 × 0.20 m, Balkan
+0.43 × 0.21 m and Finnish 0.42 × 0.20 m (1.02–1.06). Every build's bellows
+hold the same air, so a narrower section travels further. A smaller box
+rings higher (an Irish box along its length at 590 Hz where Default's rings
+at 418) and a little louder, as one over its size. The blocks of a tone
+chamber's ranks lie flat, a quarter turned against the standing ones, and a
+bandoneon's plates lie on its reed board, so those ranks drive the box's
+three ways in another order. Bandoneon, Irish, French, Balkan and Finnish
+are played on buttons: 12 g with the fingertip over 4 mm, against a piano
+key's 20 g over 5 mm, and a bandoneon's wooden buttons on their long levers
+16 g over 6 mm, so their knocks differ (The mechanism). All of it is
+estimated from typical instruments of each kind, not measured on one. On
+each type's own first preset and one four-bar phrase, the nine spectra lie
+3.5 dB apart on average over all pairs (third-octaves from 250 Hz to 8 kHz,
+RMS), from 3.1 before the sizes, and the closest pair 0.76 dB, from 0.65.
 
 The reed sets and tremolo sides follow how each kind is built
 (Docs/research/accordion-construction-by-country-2026-11-19.md): Irish
