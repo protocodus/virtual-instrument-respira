@@ -1020,6 +1020,54 @@ void FoldedKeysShareAReed() {
            "FoldedKeysShareAReed", "and shuts once both are up, cells", 0);
 }
 
+// A held key keeps the reed it opened. Changing the layout affects new
+// presses, including a repeat of a key that is already down.
+void HeldKeysKeepTheirLayout() {
+    auto e = Make(48000.0, 0);
+    const auto layout = [&](bool full) {
+        Controls c = e->GetControls();
+        c[kKeyboard] = full ? 1.0 : 0.0;
+        e->SetControls(c);
+    };
+    const auto key = [&](int note, bool down) {
+        const std::uint8_t message[] = { down ? kOn : kOff, static_cast<std::uint8_t>(note), 100 };
+        e->Midi(message, 3);
+    };
+    const auto check = [&](int expected, const char* why) {
+        float left[64], right[64];
+        for (int i = 0; i < 150; ++i) e->Render(left, right, 64);
+        const int cells = e->Diag().cells;
+        Expect(cells == expected, "HeldKeysKeepTheirLayout", why, cells);
+    };
+
+    layout(true);
+    key(24, true);
+    key(36, true);  // these two treble keys share MIDI 36's reed
+    layout(false);
+    key(36, false);
+    check(1, "releasing the newer folded key keeps the original treble reed");
+    key(24, false);
+    check(0, "the last folded key releases its treble reed");
+
+    key(24, true);  // two bass reeds on Split
+    layout(true);
+    key(36, true);  // one treble reed on Full
+    key(24, false);
+    check(1, "a held treble key does not inherit another key's bass reeds");
+    key(36, false);
+    check(0, "all three reeds are closed");
+
+    key(36, true);
+    key(24, true);  // the latest owner of the treble reed
+    layout(false);
+    key(24, true);  // this time it is a bass button
+    check(3, "reattacking the low key opens its two bass reeds");
+    key(24, false);
+    check(1, "the other folded key still owns the treble reed after the reattack");
+    key(36, false);
+    check(0, "the final release leaves no held reeds");
+}
+
 void AirMeterKeepsItsTimeAtEveryRate() {
     // The air meter (Diag().airFlow) smooths the reeds' pulsing flow over
     // 10 ms. Until 0.1.26 that was 500 samples at any rate, so at 96 kHz a
@@ -2093,6 +2141,7 @@ int main() {
     StressPhrasePlaysTheReeds();
     AirMeterKeepsItsTimeAtEveryRate();
     FoldedKeysShareAReed();
+    HeldKeysKeepTheirLayout();
     AutoRestsWithTheKeys();
     AutoHoldsItsPressure();
     AutoHandsBackToTheWheel();

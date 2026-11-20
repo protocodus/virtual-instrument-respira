@@ -201,13 +201,16 @@ private:
     void UpdateMicrophones();
     double wanderStep = 0.0, wanderScale = 0.0;
 
+    enum Group : std::uint8_t { kTreble, kBassButtons, kChordButtons };
+    static Group GroupOf(int channel, int key, bool split);
     // A key or button of one channel (channel * 128 + key): its travel, 0 up
     // .. 1 down, which its pallets follow, and where it is headed.
     struct Key {
         double travel = 0.0, target = 0.0, rate = 0.0;   // rate: travel per sample going down
         double up = 1.0;   // this release's return speed against the spring's (Stroke)
         std::uint8_t velocity = 0;
-        bool button = false, listed = false;
+        Group group = kTreble;   // latched when the key is pressed
+        bool listed = false;
     };
 
     void NoteOn(int channel, int key, int velocity);
@@ -243,7 +246,6 @@ private:
     double valve = 0.0;   // air valve opening, 0..1
     double valveNoiseA = 0.0, valveNoiseB = 0.0, valveSound = 0.0;   // its jet's flow fluctuation
     int registerIndex = static_cast<int>(kControlInfo[kRegister].initial);
-    std::array<std::uint8_t, 128> trebleHeld {};   // velocity of each held treble key, 0 when up
     std::array<double, 3> channelDepth { 1.0, 1.0, 1.0 };
     int msb = 0, lsb = 0;
     bool fineWheel = false;

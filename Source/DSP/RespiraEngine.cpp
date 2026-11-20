@@ -218,19 +218,6 @@ constexpr double kRustleVoicing = 0.1778279410038923;   // -15 dB
 constexpr double kRoomLevel = 2.32;
 constexpr double kValveVoicing = 0.031622776601683794;   // -30 dB: the push valves' slaps (kFlapDensity), against their estimate
 
-// Rank of the bass side a group sounds: channel 1 bass buttons, channel 2 chords.
-enum Group { kTreble, kBassButtons, kChordButtons };
-
-// Which reeds a key of a channel plays: its own treble reeds, or, on the split
-// keyboard's low keys, the bass or chord buttons'.
-Group GroupOf(int channel, int key, bool split) {
-    if (channel == 1) return kBassButtons;
-    if (channel == 2) return kChordButtons;
-    if (split && key < 36) return kBassButtons;
-    if (split && key < 48) return kChordButtons;
-    return kTreble;
-}
-
 // Where a part lands along its side's key bed (KeyBed), 0..1: a treble key
 // by its place on the keyboard, C3 to C8 across the panel; a bass or chord
 // button by its column, the Stradella board's circle of fifths. The register
@@ -411,7 +398,6 @@ void Engine::Reset() {
     valve = valveNoiseA = valveNoiseB = valveSound = 0.0;
     bend2 = bend2Target = 1.0;
     airPedal = false;
-    trebleHeld.fill(0);
     channelDepth = { 1.0, 1.0, 1.0 };
     msb = lsb = 0;
     fineWheel = false;
@@ -861,23 +847,24 @@ void Engine::StepKeys(double seatScale) {
     for (int i = 0; i < movingCount;) {
         const int source = movingKeys[static_cast<std::size_t>(i)];
         Key& k = keys[static_cast<std::size_t>(source)];
+        const bool button = k.group != kTreble;
         const Stop* stop = nullptr;
         double speed = 0.0;
         if (k.travel < k.target) {
             k.travel = Min(k.target, k.travel + k.rate);
             if (k.travel >= 1.0) {
-                stop = k.button ? &kButton : &kTrebleKey;
+                stop = button ? &kButton : &kTrebleKey;
                 speed = stop->travel * k.rate * rate;
             }
         } else {
             k.travel = Max(k.target, k.travel - up * k.up);
             if (k.travel <= 0.0) {
-                stop = k.button ? &kBassPallet : &kTreblePallet;
+                stop = button ? &kBassPallet : &kTreblePallet;
                 speed = stop->travel * up * k.up * rate;
             }
         }
         // Both landings already carry the stroke's speed (NoteOn, NoteOff).
-        if (stop) StartKnock(*stop, speed, 1.0 + 0.2 * Unit(Hash(2u, static_cast<std::uint32_t>(source))), k.button, false, KeyPlace(source, k.button));
+        if (stop) StartKnock(*stop, speed, 1.0 + 0.2 * Unit(Hash(2u, static_cast<std::uint32_t>(source))), button, false, KeyPlace(source, button));
         if (k.travel == k.target) {
             k.listed = false;
             movingKeys[static_cast<std::size_t>(i)] = movingKeys[static_cast<std::size_t>(--movingCount)];
@@ -948,10 +935,22 @@ void Engine::StartCell(int rank, int key, int source, double openSeconds) {
     cell->closeStroke = 1.0;
 }
 
+// Which reeds a key of a channel plays: its own treble reeds, or, on the split
+// keyboard's low keys, the bass or chord buttons'.
+Engine::Group Engine::GroupOf(int channel, int key, bool split) {
+    if (channel == 1) return kBassButtons;
+    if (channel == 2) return kChordButtons;
+    if (split && key < 36) return kBassButtons;
+    if (split && key < 48) return kChordButtons;
+    return kTreble;
+}
+
 void Engine::NoteOn(int channel, int key, int velocity) {
     const Group group = GroupOf(channel, key, controls[kKeyboard] < 0.5);
     const int source = channel * 128 + key;
     Key& k = keys[static_cast<std::size_t>(source)];
+    if (k.target > 0.0 && k.group != group) NoteOff(channel, key);
+    k.group = group;
     k.target = channelDepth[static_cast<std::size_t>(channel)];
     // The stroke the finger actually makes (Stroke) moves the key and every
     // pallet it lifts, within the mapping's bounded travel. The measured
@@ -961,7 +960,6 @@ void Engine::NoteOn(int channel, int key, int velocity) {
     k.rate = 1.0 / (opening * rate);
     k.up = 1.0;
     k.velocity = static_cast<std::uint8_t>(velocity);
-    k.button = group != kTreble;
     MoveKey(source);
     if (autoHand) touch.Press(velocity);
     if (group == kBassButtons) {
@@ -974,7 +972,6 @@ void Engine::NoteOn(int channel, int key, int velocity) {
         const Register reg = EffectiveRegister(controls[kRegister], controls[kType]);
         for (int rank = kRankL; rank <= kRankH; ++rank)
             if (Sounds(reg, rank, TrebleKey(key))) StartCell(rank, TrebleKey(key), source, opening);
-        trebleHeld[static_cast<std::size_t>(key)] = static_cast<std::uint8_t>(velocity);
     }
 }
 
@@ -985,7 +982,8 @@ void Engine::NoteOn(int channel, int key, int velocity) {
 // speed of this press (stroke).
 void Engine::SwitchRegister(const Register& before, const Register& after, double stroke) {
     for (int key = 0; key < 128; ++key) {
-        if (trebleHeld[static_cast<std::size_t>(key)] == 0) continue;
+        const Key& held = keys[static_cast<std::size_t>(key)];
+        if (held.target <= 0.0 || held.group != kTreble) continue;
         for (int rank = kRankL; rank <= kRankH; ++rank) {
             const bool was = Sounds(before, rank, TrebleKey(key)), is = Sounds(after, rank, TrebleKey(key));
             if (is && !was) StartCell(rank, TrebleKey(key), key, KeyOpeningSeconds(0) / stroke);
@@ -1007,11 +1005,11 @@ void Engine::NoteOff(int channel, int key) {
     // outside C2-C8 fold onto the reeds inside it (TrebleKey) and share them
     // the same way.
     int other = -1;
-    const bool split = controls[kKeyboard] < 0.5;
-    const Group group = GroupOf(channel, key, split);
+    Key& released = keys[static_cast<std::size_t>(source)];
+    const Group group = released.group;
     const auto reedOf = [group](int k) { return group == kTreble ? TrebleKey(k) : PitchClass(k); };
     for (int s = 0; s < 3 * 128 && other < 0; ++s)
-        if (s != source && keys[static_cast<std::size_t>(s)].target > 0.0 && GroupOf(s / 128, s % 128, split) == group
+        if (s != source && keys[static_cast<std::size_t>(s)].target > 0.0 && keys[static_cast<std::size_t>(s)].group == group
             && reedOf(s % 128) == reedOf(key))
             other = s;
     // The finger lets the key up a little faster or slower each time: it
@@ -1027,8 +1025,6 @@ void Engine::NoteOff(int channel, int key) {
                 c.depth = channelDepth[static_cast<std::size_t>(other / 128)];
             }
         }
-    if (channel == 0) trebleHeld[static_cast<std::size_t>(key)] = 0;
-    Key& released = keys[static_cast<std::size_t>(source)];
     released.target = 0.0;
     released.velocity = 0;
     released.up = lift;
@@ -1045,7 +1041,6 @@ void Engine::NoteOff(int channel, int key) {
 void Engine::AllNotesOff() {
     touch.ClearGesture();
     for (auto& c : cells) c.held = false;
-    trebleHeld.fill(0);
     for (int source = 0; source < 3 * 128; ++source) {
         keys[static_cast<std::size_t>(source)].target = 0.0;
         keys[static_cast<std::size_t>(source)].velocity = 0;

@@ -34,6 +34,10 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
+### 0.7.1 — 2026-11-20 — held keys keep their reeds when the keyboard layout changes
+
+- Switching between Split and Full while playing now keeps each held key on the reeds it opened. A folded treble key continues sounding when the other key on its reed is released. Pressing the same low key again plays its new assignment.
+
 ### 0.7.0 — 2026-11-19 — the bellows' own air, and the player around the instrument
 
 - **A reed no longer sounds in free air.** Its pulses also sound into the bellows, a box of air that rings along its length, across it and through its depth, which changes for as long as a note is played, and that sound leaves through the folds; and the treble reaches the microphones by way of the player's lap, the chest and arm behind the keyboard and the bass half beyond the bellows as well, each a little later, softer and from its own side. Every reed rank stands at its own place in both, so every rank has its own colour ([The bellows' air and the player](#the-bellows-air-and-the-player)).
