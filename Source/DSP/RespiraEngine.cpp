@@ -502,20 +502,8 @@ void Engine::SetControls(const Controls& next) {
     // tongues, plates and chambers are rebuilt where they swing. So does Eco,
     // whose longer step needs longer chamber sections.
     if (controls[kLife] != prevLife || controls[kType] != prevType || chamberRate != prevChamberRate)
-        for (auto& c : cells) {
-            if (!c.active) continue;
-            const int r = c.rank, k = c.reed - r * 128;
-            const int idx = TuningIndex(r, k);
-            c.spec = MakeCell(r, k, controls[kMusette], kReedTuning[type][r][idx], chamberRate, controls[kLife], type);
-            if (masterTune != 0.0) {
-                const double scale = std::pow(2.0, masterTune / 1200.0);
-                Retune(c.spec.push, scale);
-                Retune(c.spec.pull, scale);
-            }
-            c.spec.push.stepOmega2 = StepStiffness(c.spec.push.omega2, internalRate);
-            c.spec.pull.stepOmega2 = StepStiffness(c.spec.pull.omega2, internalRate);
-            c.vent = MakeVent(c.spec.chamber, c.lift, internalRate);
-        }
+        for (auto& c : cells)
+            if (c.active) BuildReed(c);
     // A build that carries other ranks opens and shuts them under held keys,
     // as a register switch does, but with no switch to knock.
     if (controls[kType] != prevType) {
@@ -874,6 +862,24 @@ void Engine::StepKeys(double seatScale) {
     }
 }
 
+// A rebuild keeps the tuning of this particular note even if the host's
+// master tune or the player's Musette setting has moved in the meantime.
+void Engine::BuildReed(Cell& c) {
+    const int type = static_cast<int>(controls[kType]), key = c.reed % 128;
+    c.spec = MakeCell(c.rank, key, c.tuning.musette, kReedTuning[type][c.rank][TuningIndex(c.rank, key)],
+                      chamberRate, controls[kLife], type);
+    if (c.tuning.master != 0.0) {
+        const double scale = std::pow(2.0, c.tuning.master / 1200.0);
+        Retune(c.spec.push, scale);
+        Retune(c.spec.pull, scale);
+    }
+    c.spec.push.stepOmega2 = StepStiffness(c.spec.push.omega2, internalRate);
+    c.spec.pull.stepOmega2 = StepStiffness(c.spec.pull.omega2, internalRate);
+    c.vent = MakeVent(c.spec.chamber, c.lift, internalRate);
+    c.valveMass = kFlapDensity * FlapArea(c.spec.push.length, c.spec.push.width);
+    c.pullValveMass = kPullValveShare * kFlapDensity * FlapArea(c.spec.pull.length, c.spec.pull.width);
+}
+
 void Engine::StartCell(int rank, int key, int source, double openSeconds) {
     const int reed = rank * 128 + key;
     Cell* cell = nullptr;
@@ -888,18 +894,15 @@ void Engine::StartCell(int rank, int key, int source, double openSeconds) {
             if ((c.held == cell->held && c.order < cell->order) || (!c.held && cell->held)) cell = &c;
         cell->active = false;
     }
+    const NoteTuning tuning = keys[static_cast<std::size_t>(source)].tuning;
+    if (!cell->active || cell->tuning.master != tuning.master || cell->tuning.musette != tuning.musette) {
+        cell->rank = rank;
+        cell->reed = reed;
+        cell->tuning = tuning;
+        if (!cell->active) cell->lift = 0.0;
+        BuildReed(*cell);
+    }
     if (!cell->active) {
-        const int index = TuningIndex(rank, key);
-        // Musette, master tune and Life changes reach the reeds at their next note.
-        const int type = static_cast<int>(controls[kType]);
-        cell->spec = MakeCell(rank, key, controls[kMusette], kReedTuning[type][rank][index], chamberRate, controls[kLife], type);
-        if (masterTune != 0.0) {
-            const double scale = std::pow(2.0, masterTune / 1200.0);
-            Retune(cell->spec.push, scale);
-            Retune(cell->spec.pull, scale);
-        }
-        cell->spec.push.stepOmega2 = StepStiffness(cell->spec.push.omega2, internalRate);
-        cell->spec.pull.stepOmega2 = StepStiffness(cell->spec.pull.omega2, internalRate);
         cell->state = CellState {};
         cell->breathA = cell->breathB = 0.0;
         cell->state.push.x = cell->spec.push.rest;
@@ -909,12 +912,7 @@ void Engine::StartCell(int rank, int key, int source, double openSeconds) {
         for (double& p : cell->state.p) p = pressure;
         cell->open = cell->lift = 0.0;
         cell->radiated = 0.0;
-        cell->vent = Vent {};
         cell->valveOpen = cell->pullValveOpen = false;
-        cell->valveMass = kFlapDensity * FlapArea(cell->spec.push.length, cell->spec.push.width);
-        cell->pullValveMass = kPullValveShare * kFlapDensity * FlapArea(cell->spec.pull.length, cell->spec.pull.width);
-        cell->reed = reed;
-        cell->rank = rank;
     }
     cell->active = cell->held = true;
     cell->source = source;
@@ -951,6 +949,7 @@ void Engine::NoteOn(int channel, int key, int velocity) {
     Key& k = keys[static_cast<std::size_t>(source)];
     if (k.target > 0.0 && k.group != group) NoteOff(channel, key);
     k.group = group;
+    k.tuning = { masterTune, controls[kMusette] };
     k.target = channelDepth[static_cast<std::size_t>(channel)];
     // The stroke the finger actually makes (Stroke) moves the key and every
     // pallet it lifts, within the mapping's bounded travel. The measured

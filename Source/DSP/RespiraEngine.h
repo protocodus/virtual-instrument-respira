@@ -109,11 +109,15 @@ public:
     const Diagnostics& Diag() const { return diag; }
 
 private:
+    struct NoteTuning {
+        double master = 0.0, musette = 0.0;
+    };
     struct Cell {
         bool active = false, held = false;
         int source = 0;          // channel * 128 + played key, for the note-off
         int reed = 0;            // rank * 128 + table key: one chamber per reed
         int rank = 0;
+        NoteTuning tuning;
         std::uint64_t order = 0;
         double open = 0.0, openRate = 0.0, closedFor = 0.0;   // key travel, 0 closed .. 1 down
         double closeStroke = 1.0;   // this closing's speed against the spring's (Stroke)
@@ -209,12 +213,14 @@ private:
         double travel = 0.0, target = 0.0, rate = 0.0;   // rate: travel per sample going down
         double up = 1.0;   // this release's return speed against the spring's (Stroke)
         std::uint8_t velocity = 0;
+        NoteTuning tuning;       // also used by ranks opened while the key is held
         Group group = kTreble;   // latched when the key is pressed
         bool listed = false;
     };
 
     void NoteOn(int channel, int key, int velocity);
     void NoteOff(int channel, int key);
+    void BuildReed(Cell& cell);
     void StartCell(int rank, int key, int source, double openSeconds);
     void TakeTargets();   // every glided gain to its target at once
     void SwitchRegister(const Register& before, const Register& after, double stroke);

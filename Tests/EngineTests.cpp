@@ -519,6 +519,58 @@ void MasterTune() {
     Expect(std::fabs(cents - 100.0) < 1.0, "MasterTune", "+100 cents against the untuned A4, cents", cents);
 }
 
+// Master Tune and Musette belong to the note-on. Rebuilding or adding
+// ranks under a held key preserves its tuning, while the next attack takes
+// the new value even when the previous strike's reed is still ringing.
+void NoteTuningLifetime() {
+    constexpr int frames = 4096;
+    using Audio = std::array<float, frames>;
+    enum Change { life, type, eco, addRank, retrigger };
+    const auto render = [&](bool master, bool changeTuning, Change change) {
+        auto e = Make(48000.0, 0, [&](Controls& c) {
+            c[kAuto] = 1.0;
+            c[kRegister] = change == addRank ? 0.0 : 3.0;
+            c[kMusette] = 0.0;
+        });
+        const std::uint8_t on[] = { 0x90, 69, 100 }, off[] = { 0x80, 69, 0 };
+        Audio left {}, right {};
+        e->Midi(on, 3);
+        e->Render(left.data(), right.data(), frames);
+        auto controls = e->GetControls();
+        if (changeTuning) {
+            if (master) e->SetMasterTune(100.0);
+            else controls[kMusette] = 40.0;
+        }
+        e->SetControls(controls);
+        switch (change) {
+        case life: controls[kLife] = 0.8; break;
+        case type: controls[kType] = 4; break;
+        case eco: controls[kOversampling] = kOversamplingEco; break;
+        case addRank: controls[kRegister] = 3; break;
+        case retrigger:
+            e->Midi(off, 3);
+            e->Render(left.data(), right.data(), 240);
+            e->Midi(on, 3);
+            break;
+        }
+        e->SetControls(controls);
+        e->Render(left.data(), right.data(), frames);
+        return left;
+    };
+    for (const bool master : { true, false }) {
+        const char* test = master ? "MasterTuneLifetime" : "MusetteLifetime";
+        for (Change change : { life, type, eco, addRank, retrigger }) {
+            const Audio reference = render(master, false, change), actual = render(master, true, change);
+            double difference = 0.0;
+            for (int i = 0; i < frames; ++i)
+                difference = std::max(difference, std::fabs(static_cast<double>(reference[i]) - actual[i]));
+            const char* label[] = { "held through Life", "held through Type", "held through Eco",
+                                    "new rank under a held key", "new attack five ms after release" };
+            Expect(change == retrigger ? difference > 0.001 : difference == 0.0, test, label[change], difference);
+        }
+    }
+}
+
 void PitchBend() {
     // The wheel retunes reeds already sounding: bent fully up half a second
     // into the note, and fully down from before it, against an unbent take.
@@ -2096,6 +2148,7 @@ int main() {
     OversamplingKeepsTheSound();
     TopOctaveKeepsItsPitchAtEveryStepRate();
     MasterTune();
+    NoteTuningLifetime();
     PitchBend();
     MusetteBeat();
     SplitKeyboardRouting();
