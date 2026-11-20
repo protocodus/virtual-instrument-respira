@@ -34,6 +34,10 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
+### 0.7.2 — 2026-11-20 — Held reed tuning and chamber processing
+
+Held notes keep their tuning through register, type and quality changes. A new strike takes the current tuning, including when two keys share a folded reed. Changing body type or oversampling clears the inactive filter history. Adjacent chamber sections now run in parallel with the same floating-point operations per section.
+
 ### 0.7.1 — 2026-11-20 — held keys keep their reeds when the keyboard layout changes
 
 - Switching between Split and Full while playing now keeps each held key on the reeds it opened. A folded treble key continues sounding when the other key on its reed is released. Pressing the same low key again plays its new assignment.
