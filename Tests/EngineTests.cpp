@@ -2159,10 +2159,12 @@ void RoomDecorrelatesAndRings() {
     };
     const Take dry = take(0.0), wet = take(1.0);
     // Dry, the pair hears the reeds alike but for the reflections off the
-    // player and the bass half, each from its own side (NearField.h): 0.97
-    // where it was above 0.99 before them.
-    Expect(likeness(dry) > 0.95, "RoomDecorrelatesAndRings", "dry, the channels' correlation", likeness(dry));
-    Expect(likeness(wet) < 0.9, "RoomDecorrelatesAndRings", "Room 1, the channels' correlation", likeness(wet));
+    // player and the bass half, each from its own side (NearField.h): 0.92 at
+    // the levels the owner chose (0.7.3), where it was above 0.99 before them
+    // and 0.97 at the gentler ones. The room still takes far more away: 0.73,
+    // so its limit comes down from 0.9 with the dry one.
+    Expect(likeness(dry) > 0.88, "RoomDecorrelatesAndRings", "dry, the channels' correlation", likeness(dry));
+    Expect(likeness(wet) < 0.8, "RoomDecorrelatesAndRings", "Room 1, the channels' correlation", likeness(wet));
     const double tail = Db(Rms(wet.left, rate, 1.3, 1.5)) - Db(Rms(dry.left, rate, 1.3, 1.5));
     Expect(tail > 20.0, "RoomDecorrelatesAndRings", "Room 1 against dry 0.3 s after the key, dB", tail);
 

@@ -34,7 +34,8 @@ Kintosh, Pianobook): depth 0.76 (0.28-0.94), spread 0.125; La Melodiosa's
 register III: 0.51 (0.13-0.90), 0.19. Respira, Clarinet Solo and Violin Folk
 on D#4-C6 in threes, each held 6 s on Auto at velocity 80: 0.6.2 jag 3.4,
 rel 0.35, cor 0.99, depth 0.85, spread 0.018; 0.7.0 jag 4.0, rel 0.78, cor
-0.82, depth 0.81, spread 0.064.
+0.82, depth 0.81, spread 0.064; 0.7.3 jag 5.0, rel 1.12, cor 0.66, depth
+0.79, spread 0.090.
 
 Needs numpy and scipy.
 """

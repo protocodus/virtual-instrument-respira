@@ -102,13 +102,16 @@ constexpr double kPascalToFullScale = 1.5;
 // Musette register's RMS. More reeds are louder on a real accordion too (the
 // Master register 1.9 dB, one reed 3.5-3.9 dB); the owner asked for registers
 // that change the colour, not the level (RegistersSitTogether).
-// Re-trimmed where the near field (NearField.h) moved a register's level:
-// over fifteen keys from C3 to F6 the bellows' box adds 0.3-0.6 dB to the
-// registers with the 16' rank, which were 2.98, 0.48, 0.78 and -1.90, and
-// under 0.15 dB either way to the others. The three gestures below now find
-// the registers within 0.9 dB, since a key's level depends on where its
-// partials fall in the box; Bassoon gives 0.2 dB more to stay there.
-constexpr std::array<double, 8> kRegisterTrimDb { { 2.34, 2.18, 1.08, 0.0, -0.12, 0.38, 1.16, -2.17 } };
+// Re-trimmed for the near field (NearField.h), which adds to a register's
+// level, the bellows' box the most on the registers with the 16' rank: at its
+// levels since 0.7.3, over fifteen keys from C3 to F6, 0.2-0.6 dB on the 8'
+// registers and 0.7-1.0 dB on those four, against 0.6.2. Each trim gave that
+// back, so a register plays as loud as it did; before the near field they
+// were 2.34, 2.98, 1.08, 0, 0.48, 0.78, 1.16 and -1.90. A key's level
+// depends on where its partials fall in the box (1-1.9 dB between keys,
+// standard deviation), so the three gestures below find the registers
+// further apart than one trim explains.
+constexpr std::array<double, 8> kRegisterTrimDb { { 1.73, 1.29, 0.82, -0.24, -1.12, -0.45, 0.70, -2.89 } };
 // The output stage, which the owner asked for: no red on Reason's meters
 // however hard the bellows are pushed (OutputStage.h, shared by the newer
 // instruments). Its compressor follows the louder channel's power over 20 ms

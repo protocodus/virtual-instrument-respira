@@ -2698,3 +2698,19 @@ Looked at and left: Default's 1.3–2.5 kHz against the sample libraries
 (B and C take 0.6–1.6 and 0.4–2.7 dB off 1–2 kHz on the phrases, and
 nothing was voiced to take more: 0.6.0's box did that and was heard as
 synthetic); a wetter room (the owner's 0.5 %); more wander of the hand.
+
+## 2026-11-20 — 0.7.3: the near field at C's levels (owner, by ear)
+
+The owner on 0.7.0's set (A 0.6.2, B the near field at 0.7.0's levels, C at
+1.6 times them; three phrases, RMS-matched, the legend with the files):
+"take c". `kPathLevel` and `kBoxLevel` are 1.6 and 0.8, from 1.0 and 0.5.
+On the rulers of `Tools/measure_partials.py` that is 5.0 dB of unevenness,
+1.12 dB of movement against the fundamental, 0.66 correlation and 0.090
+between a pair's partials' beat depths, against the recordings' 5.9, 1.9,
+0.19 and 0.125. The choice is the owner's ear between two fits of estimated
+lengths, not a measurement of an accordion.
+
+What it took with it: every register trim, since the box adds 0.2–1.0 dB at
+these levels (each register's level over fifteen keys is back at 0.6.2's);
+and in `RoomDecorrelatesAndRings` the dry channels' correlation limit, 0.88
+from 0.95 (it reads 0.92), with Room 1's at 0.8 from 0.9 (0.73).

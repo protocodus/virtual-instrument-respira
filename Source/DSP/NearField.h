@@ -47,12 +47,12 @@
 // are fitted to the recorded figures above, and Life scales them as it scales
 // every other departure from the ideal instrument: none at Life 0, where the
 // reeds sound in free air as before, these at 0.5, twice at 1. With them the
-// model's harmonics scatter 4.0 dB and move 0.78 dB against the fundamental
-// (correlation 0.82), and a pair's first four partials beat 0.064 apart in
-// depth (0.018 before; the Hohner's 0.125); at 1.6 times these levels 5.0 dB,
-// 1.12 dB, 0.66 and 0.090. The gentler was taken, pending the owner's ear
-// (Docs/decisions.md, 2026-11-19): the recordings' rooms are in their
-// figures too, and no fit can tell them from the instrument.
+// model's harmonics scatter 5.0 dB and move 1.12 dB against the fundamental
+// (correlation 0.66), and a pair's first four partials beat 0.090 apart in
+// depth (0.018 before; the Hohner's 0.125). The owner chose these by ear
+// (Docs/decisions.md, 2026-11-20) over 1/1.6 of them, 0.7.0's, which read
+// 4.0 dB, 0.78 dB, 0.82 and 0.064, and over none. The recordings' rooms are
+// in their figures too, and no fit can tell them from the instrument.
 
 #include "DspMath.h"
 
@@ -97,8 +97,9 @@ struct NearField {
         { 0.9, 0.5, 0.7 }, { 0.6, -0.8, 0.9 }, { -0.7, 0.9, 0.5 }, { 0.8, 0.7, -0.6 }, { -0.5, -0.6, 0.8 },
         { 0.7, 0.6, -0.9 },
     } };
-    // Levels at Life 0.5, fitted (above).
-    static constexpr double kPathLevel = 1.0, kBoxLevel = 0.5;
+    // Levels at Life 0.5, over each path's own and the box's: the owner's
+    // choice by ear (above). 0.7.0 had 1.0 and 0.5.
+    static constexpr double kPathLevel = 1.6, kBoxLevel = 0.8;
 
     std::array<std::array<float, kSize>, kRanks> rank {};
     std::array<std::array<float, kSize>, kWays> way {};
@@ -109,7 +110,7 @@ struct NearField {
     double travelTarget = 0.5, sideTarget = 0.0, depthTarget = 0.0;
     double glide = 0.0, clothStep = 0.0, boxStep = 0.0, wallStep = 0.0, fromStep = 0.0;
     double clothL = 0.0, clothR = 0.0, clothLC = 0.0, clothRC = 0.0, wall = 0.0, from = 0.0;
-    double pathScale = 1.0, boxScale = 1.0;   // candidates' levels over the fitted ones
+    double pathScale = 1.0, boxScale = 1.0;   // other levels over these, for tests and listening sets
     bool quiet = true;
 
     void Prepare(double sampleRate) {

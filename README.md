@@ -34,6 +34,10 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 
 ## Version history
 
+### 0.7.3 — 2026-11-20 — the bellows' air and the player's reflections at the level the owner chose
+
+The bellows' own air and the reflections off the player sound at 1.6 times their 0.7.0 levels, the owner's choice by ear from three (0.6.2, 0.7.0's and this). A held note's harmonics are more uneven from key to key (5.0 dB about a straight fall, 4.0 in 0.7.0, 5.9 on the recordings), its partials move further apart (1.12 dB against the fundamental, from 0.78) and a tremolo pair's partials beat to depths further apart (0.090, from 0.064). Each register plays as loud as it did; single keys differ by 1–1.9 dB more than before. Life still scales it, and Life 0 has none ([The bellows' air and the player](#the-bellows-air-and-the-player)).
+
 ### 0.7.2 — 2026-11-20 — Held reed tuning and chamber processing
 
 Held notes keep their tuning through register, type and quality changes. A new strike takes the current tuning, including when two keys share a folded reed. Changing body type or oversampling clears the inactive filter history. Adjacent chamber sections now run in parallel with the same floating-point operations per section.
@@ -771,9 +775,9 @@ On Auto, whose bellows are endless, the stroke is folded out and back into
 the bellows' real travel.
 
 **The player and the instrument.** The treble also reaches the pair by the
-player's lap under the keyboard (0.30 m further than the direct sound, 0.30
-of its level), the chest and right arm behind it (0.12 m, 0.26) and the bass
-half beyond the bellows (0.42 m, 0.22, further as the bellows open), each
+player's lap under the keyboard (0.30 m further than the direct sound, 0.48
+of its level), the chest and right arm behind it (0.12 m, 0.42) and the bass
+half beyond the bellows (0.42 m, 0.35, further as the bellows open), each
 duller above 3.5 kHz as cloth and leather reflect, each from its own side of
 the pair, and each moving with the player's sway (Life). The ranks' holes lie
 15 mm apart under one pallet, so each rank's reflections arrive a little
@@ -782,13 +786,13 @@ does.
 
 All of it is a departure from the ideal instrument, as Life's others are:
 none at Life 0, the figures above at 0.5 and twice the level at 1. On
-D#4–C6, held 6 s, the harmonics now scatter 4.0 dB (3.4 before) and move
-0.78 dB against the fundamental (0.35), correlating 0.82 with it (0.99); a
-pair's first four partials beat 0.064 apart (0.018), 0.81 deep at the median
+D#4–C6, held 6 s, the harmonics now scatter 5.0 dB (3.4 before) and move
+1.12 dB against the fundamental (0.35), correlating 0.66 with it (0.99); a
+pair's first four partials beat 0.090 apart (0.018), 0.79 deep at the median
 (0.85). The lengths and places are estimates of a full-size instrument on a
-seated player, and the levels are fitted to those figures, not measured on
-an accordion: at 1.6 times these levels the same rulers read 5.0 dB, 1.12
-dB, 0.66 and 0.090 (Known gaps).
+seated player, and the levels are the owner's choice by ear between two
+fitted to those figures (0.7.0's, 1/1.6 of these, read 4.0 dB, 0.78 dB, 0.82
+and 0.064), not measured on an accordion (Known gaps).
 
 ### The microphones
 
@@ -1023,15 +1027,15 @@ a pitch wheel should do what it says.
 ## Known gaps
 
 - **A held note is still smoother than a recorded one.** Against La
-  Melodiosa's single reeds, a held note's harmonics scatter 4.0 dB about a
-  straight fall where the recorded ones scatter 5.9, move 0.78 dB against
+  Melodiosa's single reeds, a held note's harmonics scatter 5.0 dB about a
+  straight fall where the recorded ones scatter 5.9, move 1.12 dB against
   the fundamental where they move 1.9, and still mostly swell together
-  (0.82 against 0.19); a tremolo pair's partials beat 0.064 apart in depth
+  (0.66 against 0.19); a tremolo pair's partials beat 0.090 apart in depth
   where a Hohner's beat 0.125 apart and La Melodiosa's 0.19
   (`Tools/measure_partials.py`). The bellows' air and the player's
-  reflections (The bellows' air and the player) close about a third of each
-  gap at Life 0.5 and about half at 1.6 times their level; their lengths,
-  places and shares are estimates, their levels a fit to those figures, and
+  reflections (The bellows' air and the player) close about half of each
+  gap at Life 0.5; their lengths, places and shares are estimates, their
+  levels the owner's choice by ear between two fitted to those figures, and
   the recordings' own rooms, which the fit cannot tell from the instrument,
   are in the rest. The model's 2nd to 5th harmonics also stand 5–9 dB under
   the fundamental where the one recorded note in a room has them 12–24 dB

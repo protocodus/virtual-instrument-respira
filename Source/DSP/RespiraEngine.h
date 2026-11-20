@@ -100,7 +100,7 @@ public:
     void Midi(const std::uint8_t* bytes, int size);
     void AllNotesOff();
     void Render(float* left, float* right, int frames);
-    // Candidates' levels over the fitted near field's, for listening tests.
+    // Other levels over the near field's own, for tests and listening sets.
     void SetNearField(double paths, double box) { nearField.pathScale = paths; nearField.boxScale = box; }
     bool Sounding() const { return sounding > 0; }
     // The output stage's look-ahead, samples at the host rate: a front end

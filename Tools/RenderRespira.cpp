@@ -6,7 +6,7 @@
 // --set overrides one of the preset's controls by id, in physical units
 // (RespiraControls.h), for experiments.
 // --near <paths> <box> plays the near field's reflections and the bellows'
-// box at those multiples of their fitted levels (NearField.h), for listening
+// box at those multiples of their levels (NearField.h), for listening
 // tests.
 // The WAV is 48 kHz stereo 24-bit at the demo renderer's block size and runs
 // 2.5 s past the last event, uncut. The trace has, every 5 ms: hand position
