@@ -436,13 +436,40 @@ inline double StepCell(const ReedSpec& push, const ReedSpec& pull, const Chamber
     // wall boundary layer's rate-of-compression stress.
     const double g = dt / chamber.sectionInertance, k = dt * chamber.sectionStiffness;
     const double q = k * (intoChamber - outOfChamber), gd = g * chamber.wallLoss * invDt;
-    for (int i = 1; i < n; ++i) s.u[i] += g * (s.p[i - 1] - s.p[i]);
+    int i = 1;
+#if defined(__clang__) || defined(__GNUC__)
+    // Adjacent duct sections use the same old pressures. For the wall loss
+    // below, carry the preceding pressure increment into the first lane.
+    // All state arrays have ordinary double alignment, including in the Rack.
+    typedef double Pair __attribute__((vector_size(16), aligned(8)));
+    const auto load = [](const double* p) {
+        Pair v;
+        __builtin_memcpy(&v, p, sizeof(v));
+        return v;
+    };
+    const auto store = [](double* p, Pair v) { __builtin_memcpy(p, &v, sizeof(v)); };
+    for (; i + 1 < n; i += 2)
+        store(s.u + i, load(s.u + i) + g * (load(s.p + i - 1) - load(s.p + i)));
+#endif
+    for (; i < n; ++i) s.u[i] += g * (s.p[i - 1] - s.p[i]);
     s.u[n] = vent;
-    double prevDp = 0.0;
-    for (int i = 0; i < n; ++i) {
+    double prevDp = q * chamber.weight[0] + k * (s.u[0] - s.u[1]);
+    s.p[0] += prevDp;
+    i = 1;
+#if defined(__clang__) || defined(__GNUC__)
+    for (; i + 1 < n; i += 2) {
+        const Pair flow = load(s.u + i);
+        const Pair dp = q * load(chamber.weight + i) + k * (flow - load(s.u + i + 1));
+        store(s.p + i, load(s.p + i) + dp);
+        const Pair previous = { prevDp, dp[0] };
+        store(s.u + i, flow + gd * (previous - dp));
+        prevDp = dp[1];
+    }
+#endif
+    for (; i < n; ++i) {
         const double dp = q * chamber.weight[i] + k * (s.u[i] - s.u[i + 1]);
         s.p[i] += dp;
-        if (i > 0) s.u[i] += gd * (prevDp - dp);
+        s.u[i] += gd * (prevDp - dp);
         prevDp = dp;
     }
     fromBellows += intoChamber - outOfChamber;

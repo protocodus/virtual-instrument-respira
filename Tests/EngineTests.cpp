@@ -342,6 +342,42 @@ void StillnessStopsTheSound() {
     Expect(Db(moving) - Db(still) > 30.0, "StillnessStopsTheSound", "level drop once the hand stops, dB", Db(moving) - Db(still));
 }
 
+// Check every real section and its neighbours against the scalar duct
+// equations, including the closed end, the vent and the odd-length tail.
+void ChamberSectionsMatchScalar() {
+    const double rate = 96000.0, dt = 1.0 / rate;
+    const ReedSpec reed = MakeReed(440.0, 20.0);
+    for (int n = 1; n <= kMaxSections; ++n) {
+        ChamberSpec chamber = MakeChamber(reed, 440.0, false, rate);
+        chamber.sections = n;
+        CellState actual;
+        actual.push.x = reed.rest;
+        actual.pull.x = reed.rest;
+        for (int i = 0; i < n; ++i) {
+            chamber.weight[i] = 2.0 * (i + 1) / (n * (n + 1));
+            actual.p[i] = 0.25 * i * i - 1.0;
+            actual.u[i] = 1.0e-8 * i;
+        }
+        CellState scalar = actual;
+        double flow = 0.0;
+        StepCell(reed, reed, chamber, MakeVent(chamber, 0.7, rate), actual, 150.0, dt, rate, 0.0, 0.0, flow);
+        const double g = dt / chamber.sectionInertance, k = dt * chamber.sectionStiffness;
+        const double q = k * flow, gd = g * chamber.wallLoss * rate;
+        for (int i = 1; i < n; ++i) scalar.u[i] += g * (scalar.p[i - 1] - scalar.p[i]);
+        scalar.u[n] = actual.vent;
+        double previous = 0.0;
+        for (int i = 0; i < n; ++i) {
+            const double dp = q * chamber.weight[i] + k * (scalar.u[i] - scalar.u[i + 1]);
+            scalar.p[i] += dp;
+            if (i > 0) scalar.u[i] += gd * (previous - dp);
+            previous = dp;
+        }
+        Expect(std::equal(std::begin(scalar.p), std::end(scalar.p), std::begin(actual.p))
+                   && std::equal(std::begin(scalar.u), std::end(scalar.u), std::begin(actual.u)),
+               "chamber sections", "pressure and flow match the scalar update", n);
+    }
+}
+
 void RatesKeepTheSound() {
     // The calibrated level holds at every host rate, as the pitch does.
     double cents[3] = {}, level[3] = {};
@@ -2178,6 +2214,7 @@ int main() {
     AirFromMotion();
     TurnWithoutClick();
     StillnessStopsTheSound();
+    ChamberSectionsMatchScalar();
     RatesKeepTheSound();
     LowHostRatesHold();
     OversamplingKeepsTheSound();
