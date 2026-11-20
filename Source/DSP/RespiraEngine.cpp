@@ -352,8 +352,10 @@ Engine::Engine() { Prepare(48000.0); }
 void Engine::SetBody() {
     const Body& body = BuildOf(static_cast<int>(controls[kType])).body;
     trebleBoxRunning = body.depth > 0.0;
-    if (trebleBoxRunning)
-        for (auto& box : trebleBox) box.Set(body.depth, body.open, body.neck, body.rayl, body.absorbed, body.modes, rate);
+    for (auto& box : trebleBox) {
+        if (trebleBoxRunning) box.Set(body.depth, body.open, body.neck, body.rayl, body.absorbed, body.modes, rate);
+        else box.Clear();   // a disconnected body cannot retain the last sound until it is selected again
+    }
 }
 
 // Internal steps per host sample at an Oversampling setting. Eco halves the

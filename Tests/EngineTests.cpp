@@ -571,6 +571,41 @@ void NoteTuningLifetime() {
     }
 }
 
+// Park the chosen processing path with sound still in it, then let the
+// instrument fall silent. Bringing back a path must not replay that sound.
+void BypassedFilterStartsSilent(Control control, double enabled, double bypassed, const char* name) {
+    auto e = Make(48000.0, 0, [&](Controls& c) {
+        c[kAuto] = 1.0;
+        c[kLife] = 0.0;
+        c[kMechanics] = -40.0;
+        c[control] = enabled;
+    });
+    std::array<float, 64> left {}, right {};
+    const auto peakOver = [&](int blocks) {
+        double peak = 0.0;
+        for (int b = 0; b < blocks; ++b) {
+            e->Render(left.data(), right.data(), 64);
+            for (std::size_t i = 0; i < left.size(); ++i)
+                peak = std::max({ peak, std::fabs(static_cast<double>(left[i])), std::fabs(static_cast<double>(right[i])) });
+        }
+        return peak;
+    };
+    const std::uint8_t on[] = { 0x90, 69, 125 }, off[] = { 0x80, 69, 0 };
+    e->Midi(on, 3);
+    const double playing = peakOver(500);
+    auto controls = e->GetControls();
+    controls[control] = bypassed;
+    e->SetControls(controls);
+    e->Midi(off, 3);
+    peakOver(3000);
+    const double before = peakOver(375);
+    controls[control] = enabled;
+    e->SetControls(controls);
+    const double after = peakOver(375);
+    Expect(playing > 0.01 && before < 1e-8, name, "the played note has fallen silent before the switch", before);
+    Expect(after < 1e-8, name, "peak when the silent path is selected again", after);
+}
+
 void PitchBend() {
     // The wheel retunes reeds already sounding: bent fully up half a second
     // into the note, and fully down from before it, against an unbent take.
@@ -2149,6 +2184,7 @@ int main() {
     TopOctaveKeepsItsPitchAtEveryStepRate();
     MasterTune();
     NoteTuningLifetime();
+    BypassedFilterStartsSilent(kType, 1, 0, "BandoneonBodyStartsSilent");
     PitchBend();
     MusetteBeat();
     SplitKeyboardRouting();
