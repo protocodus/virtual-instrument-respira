@@ -2867,3 +2867,16 @@ build. Balkan Cassotto was not in the set and follows from it as
 engineering's choice: on a dry build the Musette register is two 8' in
 unison. `kBeatScatter` is not touched by it, since a dry pair has no detune
 to miss. Irish (A, B or C) and German (A or B) are still open.
+
+## 2026-11-25 — Irish C and German B: 0.9.0 goes to main (owner)
+
+The owner on 0.9.0's set: "take candidate", and on the card that asked
+which letters to merge, "Irish C, German B, Balkan B". So German is the
+four-voice LMMH with the two-reed tremolo at 15 cents, and Irish tunes its
+sharp reed against its key's reed and presses and draws with Auto on. The
+choice of C sets aside the owner's 2026-11-03 choice, that Auto's bellows
+never turn by themselves, for the Irish type only; every other type keeps
+it. The branch carried these letters, so nothing changes in the engine.
+The choice licenses the builds as they are. It does not make
+`kBeatScatter`'s growth with the detune a measurement: that stays assumed
+(README, Known gaps).
