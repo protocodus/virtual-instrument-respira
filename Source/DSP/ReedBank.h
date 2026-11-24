@@ -65,16 +65,25 @@ inline double NoteHz(double note) { return 440.0 * std::pow(2.0, (note - 69.0) /
 // Tremolo is set by the Musette knob, in cents at A4, for Default; another
 // build tunes its tremolo reeds at its own share of that, the share its kind
 // of instrument is tuned at against the 22 cents the default is fitted to
-// (ReedBank's RankNote). Tuners' published figures, all approximate (Liberty
-// Bellows' tuning list; accordionists.info's tuning threads): modern Irish
-// 5-7 cents; German 14-15. Balkan is read off one comparison the owner shared
-// (2026-11-18): a digital accordion's demo of its French, Balkan, German,
-// Italian, Finnish and Irish sets, about 11-17 s of busy playing each. Its
-// tremolo is the median beat of the set's sustained notes, from the side
-// peaks round the strongest partial (0.6 s windows) and from the partial's
-// envelope (0.8 s), taken to A4 by RankNote's f^0.51 law: 9-18 cents (about
-// 15); German read 11-16 on the same ruler. Above 2 kHz the Balkan set sits
-// about 8 dB under the German and Irish ones.
+// (ReedBank's RankNote). Each national school has its own tuning, and a
+// tuner's table gives them at A4 (Liberty Bellows' tuning list, after Jack
+// Brantley): dry, the 8' reeds in unison, for Balkan and classical
+// instruments; 7 cents ("demi-swing") for Irish; 15 ("standard") for German
+// and Italian; 22 ("very fast") for the old French and Italian tuning the
+// knob starts at. accordionists.info's tuning threads agree: modern Irish
+// about 6, German 14. A share of 0 is a dry build, which the knob does not
+// move.
+//
+// One comparison the owner shared (2026-11-18) stands beside the tuners: a
+// digital accordion's demo of its French, Balkan, German, Italian, Finnish
+// and Irish sets, about 11-17 s of busy playing each. Its tremolo is the
+// median beat of the set's sustained notes, from the side peaks round the
+// strongest partial (0.6 s windows) and from the partial's envelope (0.8 s),
+// taken to A4 by RankNote's f^0.51 law: Balkan read 9-18 cents (about 15),
+// which was that build's share until 0.9.0 and is one sampled set against
+// the tuners' dry (Docs/decisions.md); German read 11-16 on the same ruler.
+// Above 2 kHz the Balkan set sits about 8 dB under the German and Irish
+// ones.
 //
 // The cover: how much of the reeds' upper harmonics the treble cover lets
 // out, as a factor on the Grille knob's corner (RespiraControls.h, a voiced
@@ -113,15 +122,21 @@ inline double NoteHz(double note) { return 440.0 * std::pow(2.0, (note - 69.0) /
 //     (0.85) and thin at the tip (0.9) for quick ornaments, in shallow blocks
 //     (0.7) behind small pallets (0.8). Its treble grille is no resonator, as
 //     the accordion's is not (RespiraEngine.cpp, the bass box's note).
-//   - German: a Hohner's tremolo; the default reeds were themselves fitted to
-//     a Hohner and an Italian instrument (RespiraControls.h, Grille), so
-//     only its size differs besides (Frame).
+//   - German: a four-voice Hohner, LMMH, with the German tremolo: two 8'
+//     reeds, one at pitch and one sharp, 440 and 444 Hz at A4 (Brantley's
+//     "German 2 reed tremolo"), and no flat third reed, which is the French
+//     musette's (435, 440 and 445 Hz in the same table). The default reeds
+//     were themselves fitted to a Hohner and an Italian instrument
+//     (RespiraControls.h, Grille), so its reeds are the default's and only
+//     its reed sets, their tuning and its size (Frame) differ.
 //   - Balkan: a four-voice LMMH box with a double cassotto (Bugari's Balkan
-//     DM), hand-made reeds (their tongues lose less, Q 1.15 times the
-//     default's, and fit their slots closer, 0.8 of the clearance) in deeper
-//     blocks (1.15), the 16' and both 8's in the cassotto, the tone chamber
-//     whose bend attenuates the upper harmonics and reinforces the lows
-//     (Engine's cassotto, RespiraEngine.cpp), the 4' outside it.
+//     DM; Scandalli's Cromo VI Balkan), tuned dry (the tuning list above):
+//     its two 8' reeds in unison and its 16' and 4' in octaves with them.
+//     Hand-made reeds (their tongues lose less, Q 1.15 times the default's,
+//     and fit their slots closer, 0.8 of the clearance) in deeper blocks
+//     (1.15), the 16' and both 8's in the cassotto, the tone chamber whose
+//     bend attenuates the upper harmonics and reinforces the lows (Engine's
+//     cassotto, RespiraEngine.cpp), the 4' outside it.
 //   Cassotto boxes are usually described with only the 16' and the 8' at
 //   pitch inside (Wikipedia, accordion reed ranks; a Bugari owner on
 //   accordionists.info). With the tremolo 8' outside, Balkan sits only 1.4 dB
@@ -192,9 +207,9 @@ inline constexpr std::array<Build, kTypeCount> kBuilds { {
       kFullSize },
     { "Irish", 7.0 / 22.0, 1.0, 0.8, 1.0, 0.85, 1.0, 0.9, 0.7, 0.8, 1.7, -1.1, kLowAndSharp, kNoRanks, kOpenTreble,
       { 0.29, 0.16, 0.13, 0.72, kButtons } },
-    { "German", 14.0 / 22.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, kAllRanks, kNoRanks, kOpenTreble,
+    { "German", 15.0 / 22.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, kFourVoice, kNoRanks, kOpenTreble,
       { 0.44, 0.20, 0.15, 1.06, kPianoKeys } },
-    { "Balkan", 15.0 / 22.0, 1.0, 1.0, 1.15, 1.0, 0.8, 1.0, 1.15, 1.0, 0.7, 1.75, kFourVoice, { true, true, false, true, false }, kOpenTreble,
+    { "Balkan", 0.0, 1.0, 1.0, 1.15, 1.0, 0.8, 1.0, 1.15, 1.0, 0.7, 1.75, kFourVoice, { true, true, false, true, false }, kOpenTreble,
       { 0.43, 0.21, 0.16, 1.05, kButtons } },
 } };
 
@@ -297,11 +312,21 @@ inline ReedVariation Variation(int rank, int index, int side, double life = 0.5)
 // they share its error: with errors of their own (La Melodiosa's, above) the
 // octaves beat deeply at 0.3-1.3 Hz, which the owner heard
 // as phasing in Balkan and in two builds since taken out, and chose against by ear
-// (Docs/decisions.md, 2026-11-19). Default keeps its reeds' own errors, bit
-// for bit as before builds existed.
-inline double TuneCents(int rank, int index, int side, double life, int type) {
-    const bool dryOctave = type != kTypeDefault && (rank == kRankL || rank == kRankH);
-    return Variation(dryOctave ? kRankM : rank, index, side, life).tuneCents;
+// (Docs/decisions.md, 2026-11-19). Their tremolo reeds are tuned against it
+// too, to a beat: one has its key's 8' reed's error and misses its own
+// detune by a share of that detune, so a dry or a swing tuning stays what
+// its tuner set. With an error of its own a dry pair would beat at up to
+// 1 Hz, the same phasing, and a 7 cent pair sit anywhere from dry to 11.
+// The share is a played Hohner's, whose musette pairs lie 4.6 cents about
+// their beat law at 18 (Tools/measure_musette.py); that it grows with the
+// detune is assumed, one instrument at one tuning being all there is.
+// Default keeps its reeds' own errors, bit for bit as before builds existed.
+constexpr double kBeatScatter = 4.6 / 18.0;
+
+inline double TuneCents(int rank, int index, int side, double life, int type, double detuneCents = 0.0) {
+    const double own = Variation(rank, index, side, life).tuneCents;   // 3 cents at Life 0.5
+    if (type == kTypeDefault || !IsTreble(rank) || rank == kRankM) return own;
+    return Variation(kRankM, index, side, life).tuneCents + own / 3.0 * kBeatScatter * detuneCents;
 }
 
 // The bare tongue's quality factor in air: a voicing estimate, inside the one
@@ -344,7 +369,10 @@ inline CellSpec MakeCell(int rank, int key, double musetteCents, const float* ra
     const Build& build = BuildOf(type);
     const int index = TuningIndex(rank, key);
     const double s = ImperfectionScale(life);
-    spec.hz = NoteHz(RankNote(rank, key, musetteCents * build.tremolo * (rank == kRankMMinus ? build.flat : 1.0)));
+    const double note = RankNote(rank, key, musetteCents * build.tremolo * (rank == kRankMMinus ? build.flat : 1.0));
+    spec.hz = NoteHz(note);
+    const bool tremolo = rank == kRankMMinus || rank == kRankMPlus;
+    const double detune = tremolo ? 100.0 * std::fabs(note - key) : 0.0;   // cents
     spec.bass = !IsTreble(rank);
     spec.cassotto = !spec.bass && build.cassotto[static_cast<std::size_t>(rank)];
     // Probe at 400 Pa (Tools/ProbeReed): 0.64 L/s at C2, 0.47 at C3, 0.22 at C4,
@@ -353,13 +381,12 @@ inline CellSpec MakeCell(int rank, int key, double musetteCents, const float* ra
     spec.airWeight = 440.0 / spec.hz;
     const std::uint32_t hc = Hash(1u, static_cast<std::uint32_t>(rank * 1000 + index * 2));
     spec.voiceGain = 1.0 + s * 0.07 * Unit(Hash(hc, 8));
-    if (rank == kRankMMinus || rank == kRankMPlus)
-        spec.voiceGain *= std::pow(10.0, s * kTremoloSpreadDb * Unit(Hash(hc, 9)) / 20.0);
+    if (tremolo) spec.voiceGain *= std::pow(10.0, s * kTremoloSpreadDb * Unit(Hash(hc, 9)) / 20.0);
     const double q = ReedQ(spec.hz) * build.q;
     const double baseRatio = ratios ? 0.5 * (static_cast<double>(ratios[0]) + static_cast<double>(ratios[1])) : 1.0;
     for (int side = 0; side < 2; ++side) {
         const ReedVariation v = Variation(rank, index, side, life);
-        const double wanted = spec.hz * std::pow(2.0, TuneCents(rank, index, side, life, type) / 1200.0);
+        const double wanted = spec.hz * std::pow(2.0, TuneCents(rank, index, side, life, type, detune) / 1200.0);
         if (side == 0) {
             const ReedSpec chamberReed = MakeReed(wanted, q * v.qScale, v.setScale * build.set, v.clearanceScale * build.clearance,
                                                   v.plateScale * build.plate, v.profileScale * build.profile, s);
