@@ -167,14 +167,27 @@ struct Body {
 // treble against Default's (reach), and what the right hand presses.
 // NearField.h rings the box these make and Mechanics.h lands the keys.
 //   - Default: a full-size 41-key piano accordion, 0.41 x 0.19 m.
-//   - Irish: a two-row B/C box, 0.29 x 0.16 m, on buttons.
+//   - Irish: a two-row B/C box, 0.29 x 0.16 m, on buttons, bisonoric as
+//     every such box is: Auto's hand turns the bellows for each note
+//     (Engine::NoteOn).
 //   - German: a 41-key Hohner of the Morino's size, 0.44 x 0.20 m.
 //   - Balkan: a six-row button accordion (dugmetara), 0.43 x 0.21 m.
 enum Action : int { kPianoKeys, kButtons };
 struct Frame {
     double length, width, closed, reach;
     Action action;
+    bool bisonoric = false;   // a button gives one note on the press and another on the draw
 };
+
+// The way a B/C box's bellows go for each note, C to B. Each row is a
+// diatonic one: pressed, its buttons give the major triad of its key, and
+// drawn, the rest of its scale (Wikipedia, Diatonic button accordion). So
+// the C row gives C, E and G on the press and D, F, A and B on the draw, and
+// the B row, a semitone lower, B, D# and F# and C#, E, G# and A#: E and B
+// come both ways, every other note one way only.
+enum Way : int { kDraw = -1, kEitherWay = 0, kPress = 1 };
+constexpr std::array<Way, 12> kBcBoxWays { kPress, kDraw, kDraw, kPress, kEitherWay, kDraw,
+                                           kPress, kPress, kDraw, kDraw, kDraw, kEitherWay };
 constexpr Frame kFullSize { 0.41, 0.19, 0.15, 1.0, kPianoKeys };
 
 struct Build {
@@ -206,7 +219,7 @@ inline constexpr std::array<Build, kTypeCount> kBuilds { {
     { "Default", 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, kAllRanks, kNoRanks, kOpenTreble,
       kFullSize },
     { "Irish", 7.0 / 22.0, 1.0, 0.8, 1.0, 0.85, 1.0, 0.9, 0.7, 0.8, 1.7, -1.1, kLowAndSharp, kNoRanks, kOpenTreble,
-      { 0.29, 0.16, 0.13, 0.72, kButtons } },
+      { 0.29, 0.16, 0.13, 0.72, kButtons, true } },
     { "German", 15.0 / 22.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, kFourVoice, kNoRanks, kOpenTreble,
       { 0.44, 0.20, 0.15, 1.06, kPianoKeys } },
     { "Balkan", 0.0, 1.0, 1.0, 1.15, 1.0, 0.8, 1.0, 1.15, 1.0, 0.7, 1.75, kFourVoice, { true, true, false, true, false }, kOpenTreble,

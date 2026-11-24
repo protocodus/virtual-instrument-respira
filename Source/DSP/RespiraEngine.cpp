@@ -1026,6 +1026,12 @@ void Engine::NoteOn(int channel, int key, int velocity) {
         StartCell(kRankChord8, PitchClass(key), source, opening);
         StartCell(kRankChord4, PitchClass(key), source, opening);
     } else {
+        // On a bisonoric box a note comes one way only, so Auto's hand turns
+        // for it as a keyswitch would, and plays on that way until a note
+        // wants the other: the latest note decides, as it does on the box,
+        // where two notes of opposite ways cannot sound together at all.
+        const Way way = kBcBoxWays[static_cast<std::size_t>(PitchClass(key))];
+        if (autoHand && BuildOf(static_cast<int>(controls[kType])).frame.bisonoric && way != kEitherWay) player.pull = way == kDraw;
         const Register reg = EffectiveRegister(controls[kRegister], controls[kType]);
         for (int rank = kRankL; rank <= kRankH; ++rank)
             if (Sounds(reg, rank, TrebleKey(key))) StartCell(rank, TrebleKey(key), source, opening);

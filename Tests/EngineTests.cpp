@@ -1196,6 +1196,32 @@ void KeyswitchesTurnTheBellows() {
            static_cast<double>(wheel->Diag().cells));
 }
 
+void BisonoricBoxTurnsWithTheTune() {
+    // A B/C box gives G on the press only, A on the draw only and E both
+    // ways (ReedBank.h, kBcBoxWays): on Irish, Auto's hand turns the bellows
+    // for each note as a keyswitch would, E keeps the way they go, and a
+    // keyswitch still chooses E's. Default gives every note both ways, so the
+    // same tune never turns it.
+    const double rate = 48000.0, band = 400.0 * (0.05 + 0.104);
+    const std::uint8_t g = 67, a = 69, e4 = 64;
+    const std::vector<Note> tune { { 0.0, { kOn, g, 100 } },  { 0.9, { kOff, g, 0 } },  { 1.0, { kOn, a, 100 } },  { 1.9, { kOff, a, 0 } },
+                                   { 2.0, { kOn, e4, 100 } }, { 2.9, { kOff, e4, 0 } }, { 3.0, { kOn, g, 100 } },  { 3.9, { kOff, g, 0 } },
+                                   { 4.0, { kOn, e4, 100 } }, { 4.9, { kOff, e4, 0 } }, { 5.0, { kOn, kPull, 100 } }, { 5.0, { kOff, kPull, 0 } },
+                                   { 5.0, { kOn, e4, 100 } }, { 5.9, { kOff, e4, 0 } } };
+    auto box = MakeAuto(rate, [](Controls& c) { c[kType] = kTypeIrish; });
+    const Take t = PlayAuto(*box, rate, 6.0, tune);
+    const double wanted[] = { 400.0, -400.0, -400.0, 400.0, 400.0, -400.0 };
+    const char* what[] = { "G is pressed, Pa", "A is drawn, Pa", "E keeps the draw, Pa", "G is pressed again, Pa", "E keeps the press, Pa",
+                           "and a keyswitch draws E, Pa" };
+    for (int i = 0; i < 6; ++i)
+        Expect(std::fabs(MeanPressure(t, rate, i + 0.5, i + 0.85) - wanted[i]) < band, "BisonoricBoxTurnsWithTheTune", what[i],
+               MeanPressure(t, rate, i + 0.5, i + 0.85));
+    auto usual = MakeAuto(rate);
+    const Take u = PlayAuto(*usual, rate, 5.0, std::vector<Note>(tune.begin(), tune.begin() + 10));
+    Expect(Turns(u, rate, 0.5).empty(), "BisonoricBoxTurnsWithTheTune", "Default plays it without a turn, turns",
+           static_cast<double>(Turns(u, rate, 0.5).size()));
+}
+
 void FoldedKeysShareAReed() {
     // Keys above C8 fold down by octaves onto the top reeds (TrebleKey), so
     // C#8 opens C#7's chamber. Until 0.1.26 the chamber belonged to the later
@@ -2373,6 +2399,7 @@ int main() {
     NonFiniteControls();
     AutoNeverTurnsByItself();
     KeyswitchesTurnTheBellows();
+    BisonoricBoxTurnsWithTheTune();
     StressPhrasePlaysTheReeds();
     AirMeterKeepsItsTimeAtEveryRate();
     FoldedKeysShareAReed();

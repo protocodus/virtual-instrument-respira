@@ -181,12 +181,13 @@ private:
     // Auto supplies air while keys are held, from an endless bellows: the
     // hand goes the way the keyswitches last latched (pull until one is
     // played) and turns only when they change it, also in a rest, so the
-    // next note speaks the new way at once. The wheel sets pressure and Life
+    // next note speaks the new way at once. On a bisonoric build the treble
+    // notes latch it too, each the way its button gives it (NoteOn). The wheel sets pressure and Life
     // varies the player's effort; all sound still comes from the physical
     // hand, bellows, pallets and reeds.
     struct Player {
         bool running = false, ready = false;
-        bool pull = true;             // the way the keyswitches latched the bellows
+        bool pull = true;             // the way the keyswitches, or a bisonoric box's notes, latched the bellows
         double drive = 0.0, velocity = 0.0;   // the hand's path, in wheel ranges, which the arm follows
         bool pulled = false;          // the way the hand moved last sample
         bool swinging = false;        // turning: the hand goes as fast as it can
