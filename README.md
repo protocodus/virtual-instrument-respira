@@ -2,7 +2,8 @@
 
 Respira is a physically modelled accordion with eight treble registers,
 bass and chord buttons. Auto supplies bellows air while you play, from
-endless bellows that turn only when a keyswitch asks; Life adds irregular
+endless bellows that turn only when a keyswitch asks, or on the Irish type
+when a note comes the other way; Life adds irregular
 effort and movement at the microphones, even on long held notes.
 Select Wheel to shape each pull and push yourself. Every sounding reed is a
 simulated steel tongue in its own chamber, driven by bellows air. Mechanical
@@ -33,6 +34,10 @@ fitted to a target pressure each (`Tools/fit_bellows.py`).
 <!-- audio-demos-end -->
 
 ## Version history
+
+### 0.9.0 — 2026-11-24 — each type tuned as its school tunes, and an Irish box that presses and draws
+
+The three national types now stand on their own rungs of the tuners' table, where two of them shared Default's kind of tremolo. **German** is a four-voice LMMH with the German two-reed tremolo, one 8' at pitch and one 15 cents sharp, and no flat third reed; it had all five ranks at 14 cents either side. **Balkan** is tuned dry, both 8' in unison in its cassotto, as tuners list Balkan instruments; its second 8' was about 15 cents sharp, read off one sampled set. **Irish** keeps its 7 cents. On all three a tremolo reed is now tuned against its own key's reed, as a tuner sets a beat, so from C4 to C6 a pair beats at 0.57–1.43 times its law, where an Irish pair's beat lay anywhere from almost none to 2.8 times it and a German pair's from 0.45 to 1.84. With **Auto** on, the Irish box presses and draws its bellows as a B/C box gives each note (C, D♯, F♯ and G pressed; C♯, D, F, G♯, A and A♯ drawn; E and B either way), so its bellows articulate a tune; the C0 and C♯0 keyswitches still turn them. Irish Session now sounds three voices (the 16' and both 8'), and Balkan Musette is renamed Balkan Cassotto and plays the 16' and 8' pair. Default and its eight presets are unchanged to the bit; songs on the German, Irish and Balkan types sound different, and the Musette knob does nothing on Balkan ([Types](#types), [Auto](#auto), [the schools by country](Docs/research/accordion-schools-by-country-2026-11-24.md)).
 
 ### 0.8.0 — 2026-11-20 — four types: Default, Irish, German and Balkan
 
@@ -352,6 +357,20 @@ go changes nothing. They sit an octave under the bass buttons, where the
 split keyboard only repeats them, and with Auto off they are keys again.
 After a reset the hand pulls, as a player starts with the bellows closed.
 
+The Irish type is the exception to never turning by itself: it is a
+bisonoric box, whose buttons give one note pressed and another drawn, so
+its player has no choice of way for most notes. With Auto on, each treble
+note there turns the hand as a keyswitch would, to the way a B/C box gives
+it (`kBcBoxWays`, `Source/DSP/ReedBank.h`: each row's major triad pressed
+and the rest of its scale drawn, the B row a semitone under the C row): C,
+D♯, F♯ and G on the press, C♯, D, F, G♯, A and A♯ on the draw. E and B,
+which a B/C box has both ways, keep the way the bellows already go, and the
+keyswitches choose it for them. The latest note decides, as on the box; keys
+still held from the other way sound on, the new way, which a box's buttons
+cannot do. Bass and chord buttons never turn the hand. A note that needs a
+turn speaks as after any turn (below): in a reel, 20–30 ms later than one
+that needs none and 1.5 dB softer on average (Known gaps).
+
 The hand does not move at a fixed speed: like a player it feels the air the
 reeds take and gives it, and closes on the pressure it wants in a reaction
 time of 0.1 s at every Momentum. It knows its own arm: it leads the arm by
@@ -595,7 +614,8 @@ Folk's 14 cents and Init's 22 (`Tools/measure_musette.py`). So a low chord
 beats faster and a high note slower than a fixed number of cents would
 have them: against A4, a C3 beats 0.54 times as fast and a C6 1.56 times.
 With each reed's own tuning (above), Respira's beats scatter 22–25 % about
-their law from C4 to C6.
+their law from C4 to C6 on the Default type; the other types tune a tremolo
+reed against its key's reed (Types).
 
 A tremolo reed's level differs from its key's reed at pitch by up to 4.5 dB
 either way at Life 0.5 (`kTremoloSpreadDb`), each key by its own amount, so a
@@ -622,8 +642,8 @@ the treble side already had:
 | --- | --- | --- | --- | --- | --- |
 | Default | 22 cents | all five ranks | as above | open | 0.41 × 0.19 m, piano keys |
 | Irish | 7 cents, sharp side only | 16', 8' and the sharp 8' (LMM) | small plates (0.8×), set low (0.85×), thin tips (0.9×), shallow blocks (0.7×), small holes (0.8×) | open, cover 1.7× | 0.29 × 0.16 m, buttons |
-| German | 14 cents | all five | as Default | open | 0.44 × 0.20 m, piano keys |
-| Balkan | about 15 cents, sharp side only | four: 16', 8', sharp 8', 4' (LMMH) | hand-made (Q 1.15×, 0.8× the clearance), deeper blocks (1.15×) | 16' and both 8' in a cassotto, cover 0.7× | 0.43 × 0.21 m, buttons |
+| German | 15 cents, sharp side only | four: 16', 8', sharp 8', 4' (LMMH) | as Default | open | 0.44 × 0.20 m, piano keys |
+| Balkan | none: tuned dry | four: 16', two 8' in unison, 4' (LMMH) | hand-made (Q 1.15×, 0.8× the clearance), deeper blocks (1.15×) | 16' and both 8' in a cassotto, cover 0.7× | 0.43 × 0.21 m, buttons |
 
 There were eight types beside Default from 0.3.0 to 0.7.4, in development
 builds only; the owner kept these three (Docs/decisions.md, 2026-11-20).
@@ -636,9 +656,18 @@ own preset and phrase, level-matched against Default, the cassotto takes
 4.5–7 dB off 2–4 kHz, while the reed, plate, block and hole factors, pushed
 40–60 % either way one at a time, move Paris Musette's octave bands by
 0.1–2.8 dB, mostly in how the reeds speak. So German differs from Default
-in its tremolo, its octave reeds tuned dry and its size: Default's reeds
-were themselves fitted to a Hohner. Irish differs in its tremolo, its reed
-set, its size and its cover.
+in its reed set, its two-reed tremolo, its octave reeds tuned dry and its
+size: Default's reeds were themselves fitted to a Hohner. It has no flat
+8', so its Musette register sounds the two reeds its Violin does, and its
+Master four voices. Irish differs in its tremolo, its reed set, its size,
+its cover and its bellows, which press and draw with the tune (Auto).
+Balkan differs in its dry tuning, its cassotto, its cover and its size.
+
+The four types stand on four rungs of the tuners' table of tremolo, the
+first thing a listener places an accordion by
+(Docs/research/accordion-schools-by-country-2026-11-24.md): Default 22
+cents with a three-reed musette, German 15 on two reeds, Irish 7, Balkan
+none.
 
 The cover is how much of the reeds' upper harmonics the treble cover lets
 out: a factor on the **Grille** knob's corner. Irish's is read off the
@@ -673,10 +702,14 @@ Balkan's third-octave spectra (250 Hz to 8 kHz) lie 2.0, 1.4 and 4.1 dB
 from Default's, where they lay 1.1, 0.6 and 3.9 dB before the sizes.
 
 The reed sets and tremolo sides follow how each kind is built
-(Docs/research/accordion-construction-by-country-2026-11-19.md): Irish
-three-voice boxes are LMM, one 8' at pitch and one sharp (McNeela's guide);
-Balkan boxes are four-voice LMMH with a one-sided tremolo (Bugari's Balkan
-DM). Where no register has just the ranks a type sounds, the register's
+(Docs/research/accordion-construction-by-country-2026-11-19.md and
+accordion-schools-by-country-2026-11-24.md): Irish three-voice boxes are
+LMM, one 8' at pitch and one sharp (McNeela's guide); a German tremolo is
+two reeds, one at pitch and one sharp (Liberty Bellows' "German 2 reed
+tremolo", 440 and 444 Hz), the flat 8' being "usually only included on
+special musette accordions" (Wikipedia, Accordion reed ranks and switches),
+which Hohner sells as its "M" models; Balkan boxes are four-voice LMMH
+(Bugari's Balkan DM). Where no register has just the ranks a type sounds, the register's
 trim rises by the power of the reeds it lacks. Cassotto boxes are usually
 described with only the 16' and the 8' at pitch inside; moved there,
 Balkan's tremolo reed left it 1.4 dB under Default at 2–4 kHz, against the
@@ -685,21 +718,37 @@ measured. A measured study of reed blocks in seven materials found their
 sound within about 1 dB (Pomberger et al., DAGA 2021), which agrees with
 this model's small response to the reed and block factors.
 
-Balkan is read off a comparison the owner shared, a digital accordion's
-demo of its French, Balkan, German, Italian, Finnish and Irish sets, about
-11–17 s of busy playing each. The tremolo is the median beat of the set's
-sustained notes, from the side peaks round the strongest partial and from
-that partial's envelope, taken to A4 by the beat law above; the two
-readings spread by several cents (Balkan 9–18), and German read 11–16 on
-the same ruler against the 14 its type already takes. Above 2 kHz the
-Balkan set sits about 8 dB under the German and Irish ones, which is what
-the cassotto takes.
+Balkan's darkness is read off a comparison the owner shared, a digital
+accordion's demo of its French, Balkan, German, Italian, Finnish and Irish
+sets, about 11–17 s of busy playing each: above 2 kHz the Balkan set sits
+about 8 dB under the German and Irish ones, which is what the cassotto
+takes. Until 0.9.0 its tremolo was read off that set too, as the median
+beat of its sustained notes, from the side peaks round the strongest
+partial and from that partial's envelope, taken to A4 by the beat law
+above; the two readings spread by several cents (Balkan 9–18, and German
+11–16 on the same ruler). Tuners list Balkan instruments as tuned dry, and
+0.9.0 takes their list over the one sampled set (Docs/decisions.md,
+2026-11-24).
 
-The tremolo figures are tuners' published ones (Liberty Bellows' list and
-accordionists.info's tuning threads: modern Irish 5–7 cents, German
-14–15): a type tunes its M− and M+ reeds at that share of the **Musette**
-knob, so the knob reads cents for Default and scales every other type's
-tremolo. The cassotto is a wooden channel the reed blocks stand in: their
+The tremolo figures are tuners' published ones (Liberty Bellows' list,
+after Jack Brantley: Balkan 0, Irish 7, German and Italian 15, old French
+and Italian 22 cents; accordionists.info's tuning threads agree, modern
+Irish about 6, German 14): a type tunes its M+ reed at that share of the
+**Musette** knob, so the knob reads cents for Default, scales German's and
+Irish's tremolo and does nothing on Balkan.
+
+On these three types a tremolo reed is tuned against its own key's 8' reed,
+as a tuner sets a beat and not two pitches: it takes that reed's tuning
+error and misses its own detune by a share of that detune
+(`kBeatScatter`, 4.6 cents in 18, how far the played Hohner's pairs lie
+about their beat law; that the miss grows with the detune is assumed, Known
+gaps). So a 7 cent pair stays a 7 cent pair on every key and a dry pair
+does not beat: from C4 to C6 the pairs beat at 0.57–1.43 times their law.
+With each reed's own 3 cents, as Default's reeds keep and these types' had
+until 0.9.0, an Irish pair's beat lay from almost none to 2.8 times its
+law, and a dry pair would beat at up to 5 Hz.
+
+The cassotto is a wooden channel the reed blocks stand in: their
 sound turns out of its open top before it reaches the grille, which damps
 the upper harmonics and reinforces the lows. It is modelled as a
 compartment like the bass box (30 mm deep, a fifth open: 1.4 kHz at Q 1.3,
@@ -1011,7 +1060,7 @@ strokes read −1.7 VU at most. Volume sets the level going into the stage.
 | Control | Range | What it does |
 | --- | --- | --- |
 | Register | 8 switches | the treble ranks that sound |
-| Musette | 0–40 cents | tremolo detune at A4 |
+| Musette | 0–40 cents | tremolo detune at A4 on Default; German and Irish take their share of it, Balkan none (Types) |
 | Bellows | 0.5–8 L | air one sweep of the wheel moves |
 | Assist | 0–1 | how far the hand's air follows the open reeds |
 | Grille | 500 Hz–16 kHz | brightness of the treble side |
@@ -1023,7 +1072,7 @@ strokes read −1.7 VU at most. Volume sets the level going into the stage.
 | Momentum | 0–200 ms | how far the arm trails the wheel; 0 follows it exactly |
 | Oversampling | 1×, 2×, 4×, Eco | the reeds' time step: 1× is twice the host rate, 2× four times (1× until 0.1.25) and 4× eight times; 2× and 4× cost about two and four times the CPU; Eco is the host rate, for about 45 % less work on full registers and 6–12 dB less above 8 kHz |
 | Mechanics | −40 to +20 dB | the keys', pallets', buttons' and switches' knocks, the bellows' folds and the push valves' slaps, against the estimate (The mechanism); +5.6 dB by default, by ear; at −40 dB they are all but silent |
-| Auto | off, on | on by default: the hand plays endless bellows, turned by the C0 and C#0 keyswitches, and the wheel softens or swells it (Auto) |
+| Auto | off, on | on by default: the hand plays endless bellows, turned by the C0 and C#0 keyswitches and, on the Irish type, by the notes as a B/C box gives them, and the wheel softens or swells it (Auto) |
 | Room | 0–1 wet | the hall around the microphones: 0 dry, 0.5 % by default, 1 as decorrelated as the solo recordings; sigmoid knob response, actual wet percentage displayed (The microphones) |
 | Type | Default, Irish, German, Balkan | the kind of accordion the reeds and chambers are built as (Types) |
 
@@ -1036,7 +1085,8 @@ and push), with its peak below −3 dBFS.
 MIDI channel 1 is the keyboard (split as above, or all treble), channel 2 the
 bass buttons and channel 3 the chord buttons by pitch class; other channels
 play as channel 1. With Auto on, notes 12 and 13 (C0 and C#0) on channel 1 latch the bellows to pull
-and push. CC1 + CC33 are the hand (with Auto, how hard it presses), CC85 who moves it
+and push, and on the Irish type every treble note latches them the way its
+button gives it (Auto). CC1 + CC33 are the hand (with Auto, how hard it presses), CC85 who moves it
 (below 64 the wheel, from 64 Auto; the demo phrases send 0 first), CC64 the air valve, channel
 pressure how far the channel's held keys rise, CC120 and CC123 release every
 key. Pitch bend retunes every sounding tongue, up to two
@@ -1069,18 +1119,56 @@ a pitch wheel should do what it says.
   kind's construction, not measurements of an instrument, and so are each
   type's size and its buttons. No recording of each type has been measured
   against them. In this model only the ranks, the tremolo and the cassotto
-  move the steady sound by more than about 2 dB, so German stays close to
-  Default apart from its tremolo and its size. Irish is brighter by its
+  move the steady sound by more than about 2 dB, so German stays the
+  nearest to Default: Default's reeds were fitted to a Hohner, and its
+  Violin Folk preset is a two-reed tremolo at 14 cents already, where German
+  Club plays one at 15. German differs in its reed sets (no three-reed
+  musette, a Master of four voices), its dry octaves and its size, and
+  nothing else that is sourced separates a Hohner from the default
+  instrument here. Irish is brighter by its
   cover, a factor on the Grille's corner fitted to a sampled instrument's
   demo (through 64 kbit/s audio, different phrases, good to perhaps 3 dB),
   not a measured grille or a sourced construction. A tongue's size for its
   pitch moves the tone by 5 dB in this model, and no source gives it by
-  kind of instrument, so no type sets it. Balkan is read off the same demo,
-  with its arrangement in the way: its tremolo is known to a few cents, and
-  its cassotto stands for a darker sound measured only as a whole, with its
-  tremolo reed inside where cassotto boxes are usually described with it
-  outside, because only that matches the demo's darkness; Liberty Bellows
-  lists Balkan as dry where the demo beats about 15 cents.
+  kind of instrument, so no type sets it. Balkan's darkness is read off the
+  same demo, with its arrangement in the way: its cassotto stands for a
+  darker sound measured only as a whole, with its second 8' inside where
+  cassotto boxes are usually described with it outside, because only that
+  matches the demo's darkness. Its tuning goes against that demo: from 0.9.0
+  it is dry, as Liberty Bellows lists Balkan instruments, where the demo's
+  set beats about 15 cents (9–18 on two readings). That is a tuners' list
+  against one sampled set, and no recording of a Balkan instrument has been
+  measured here. Its two 8' reeds in unison still drift against each other
+  on a long note (a held C4's level moves about 6 dB over 7 s); how far a
+  real dry pair drifts has not been measured.
+
+- **A tremolo reed's tuning error is assumed to grow with its detune.** On
+  the German, Irish and Balkan types a tremolo reed misses its beat by 4.6
+  cents in 18 of its detune (`kBeatScatter`), the scatter of one played
+  Hohner's pairs at one tuning. Nothing measured says a 7 cent pair is
+  tuned closer in cents than an 18 cent one; the assumption is that a tuner
+  works to a beat. Default's reeds each keep their own 3 cents instead, as
+  it shipped. Every type follows Default's beat law along the keyboard
+  (f^0.51, a Hohner's); a school's own law, and a Cajun box's just
+  intonation, are not modelled.
+
+- **An Irish box turns more slowly than a player's.** Every type's bellows
+  hold the same air and Auto's arm is the same on each, so a small box is
+  no quicker to turn than a big one. In a reel a note that needs a turn
+  speaks 20–30 ms later than one that needs none and 1.5 dB softer on
+  average, 5 dB at worst; a lighter arm (Momentum 10 or 0 ms) does not
+  change that. Auto takes each note the way a B/C box's rows give it and
+  does not choose fingerings as a player does, beyond leaving E and B on
+  the way the bellows already go. Keys of opposite ways held together sound
+  together on the latest one's way, which a box cannot do. The layout is
+  the B/C box's on every key of the keyboard; a C♯/D box and the box's own
+  compass are not modelled.
+
+- **Every type plays Default's bass side.** An Irish box's few light
+  basses, a helikon bass and a bayan's larger bass reeds are the largest
+  differences between the schools that nothing here models, and no type is
+  built for the Russian, Alpine, French, Italian, Scottish, Swiss or Cajun
+  schools (Docs/research/accordion-schools-by-country-2026-11-24.md).
 
 - **No plug-in yet.** There is no JUCE VST3, AU, CLAP or standalone build,
   so there is no editor screenshot, no main-build or release workflow, no

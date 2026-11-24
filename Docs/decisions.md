@@ -2789,3 +2789,68 @@ A's): "lets take b". B is what 0.7.4 and 0.8.0 carry, so nothing changes:
 Irish's cover stays 1.7, German's 1.0 and Balkan's 0.7. The sizes and the
 buttons are thereby chosen by ear over none; they remain estimates from
 typical instruments.
+
+## 2026-11-24 — 0.9.0: each type on its own rung of the tuners' table (owner asked; engineering, by-ear verdicts pending)
+
+The owner: "differentiate types and make each accordeon type distinct and
+authentic", then "look at each country and how does their typical accordeon
+sound (construction schools)". Read as: the four types Type keeps
+(2026-11-20), each built and tuned as its country's school does it; no type
+is added. Docs/research/accordion-schools-by-country-2026-11-24.md has the
+schools and their sources.
+
+Why they read alike in 0.8.0: Irish Button Box and Irish Session sounded
+the same two reeds; German Club was Default's Violin Folk again, two reeds
+at 14 cents; German Master was Master Tutti with a narrower musette; and
+Balkan beat at about 4 Hz at A4, a German tremolo in a tone chamber.
+
+Taken from sources, none of it by ear:
+
+- **German** is LMMH with the German two-reed tremolo at 15 cents, no flat
+  reed (Liberty Bellows' list and its "German 2 reed tremolo"; the flat 8'
+  is "usually only included on special musette accordions"). It had all
+  five ranks at 14 cents either side.
+- **Balkan** is dry (the same list: unison for classical and Balkan). It
+  had its second 8' about 15 cents sharp, read on 2026-11-18 off the
+  Balkan set of the comparison clip the owner shared (9–18 cents on two
+  readings). One sampled set against the tuners' list; the list is taken,
+  and the clip still gives Balkan its darkness.
+- **A tremolo reed is tuned against its key's 8' reed** on the three
+  national types, missing its detune by 4.6 cents in 18 of it, the played
+  Hohner's scatter (2026-10-29). That the miss grows with the detune is
+  assumed: one instrument at one tuning is all there is. Without it a 7
+  cent pair lay anywhere from dry to 20 cents and a dry pair beat at up to
+  5 Hz (C4–C6); with it the pairs beat at 0.57–1.43 times their law.
+  Default keeps each reed's own error, to the bit.
+- **Irish presses and draws** with Auto on: each treble note turns the
+  hand the way a B/C box's rows give it (C, D♯, F♯, G pressed; C♯, D, F,
+  G♯, A, A♯ drawn; E and B either way). This goes against the owner's
+  choice of 2026-11-03, that Auto's bellows never turn by themselves, for
+  the Irish type only, on the ground that a bisonoric box's player has no
+  such choice.
+- Presets: Irish Session takes the Master register, which on Irish is its
+  three voices (16' and both 8'); Balkan Musette, two 8' in unison on a
+  dry build, becomes Balkan Cassotto on the Bandoneon register (16' and 8'
+  in the tone chamber). No Volume trim moved: the presets sit within
+  0.36 dB of Init and the types within 0.29 dB of Default.
+
+Lower Momentum was tried as a way to quicken the Irish turns and did
+nothing (turned notes 1.6 dB softer on average at 25, 10 and 0 ms), so the
+Irish presets keep 25 ms.
+
+Listening set, not blind, sent 2026-11-24: one folder a decision, every
+file the same MIDI on one factory preset through `RenderRespira` (48 kHz,
+Auto's bellows, the preset's room), matched to its folder's A on whole-file
+RMS.
+
+| Folder, preset | A | B | C |
+| --- | --- | --- | --- |
+| irish, Irish Button Box: four long notes, then a reel in D | 0.8.0 (−23.86 dBFS, trim 0): B4 dry, G5 at 4.9 Hz, A5 at 0.8 Hz | the tremolo reed tuned against its key's reed (+0.19 dB): 1.4, 3.0, 1.9 and 2.8 Hz | B with press and draw (+0.36 dB): 16 turns, turned notes 1.5 dB softer on average, 5 dB at worst, 20–30 ms later |
+| german, German Master: a Ländler in thirds | 0.8.0 (−21.74 dBFS, trim 0): five voices, ±14 cents | LMMH, 15 cents on the sharp side (−0.15 dB) | |
+| balkan, Balkan Kolo: a kolo on the hijaz steps | 0.8.0 (−23.25 dBFS, trim 0): the second 8' about 15 cents sharp | dry (−0.41 dB) | |
+
+The branch carries B for German and Balkan and C for Irish. Nothing here is
+chosen by ear yet: the owner's letters are recorded below this entry when
+they come, and a type whose A is chosen goes back to 0.8.0's build. Each
+letter stands on a source of its own, so the set chooses between them and
+fits nothing; `kBeatScatter` is not in the set.

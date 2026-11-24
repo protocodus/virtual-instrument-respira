@@ -328,8 +328,9 @@ inline ReedVariation Variation(int rank, int index, int side, double life = 0.5)
 // (Docs/decisions.md, 2026-11-19). Their tremolo reeds are tuned against it
 // too, to a beat: one has its key's 8' reed's error and misses its own
 // detune by a share of that detune, so a dry or a swing tuning stays what
-// its tuner set. With an error of its own a dry pair would beat at up to
-// 1 Hz, the same phasing, and a 7 cent pair sit anywhere from dry to 11.
+// its tuner set. With an error of its own a dry pair would beat at anything
+// up to 5 Hz from C4 to C6, phasing on one key and a tremolo on the next,
+// and a 7 cent pair sit anywhere from dry to 20.
 // The share is a played Hohner's, whose musette pairs lie 4.6 cents about
 // their beat law at 18 (Tools/measure_musette.py); that it grows with the
 // detune is assumed, one instrument at one tuning being all there is.
