@@ -2854,3 +2854,16 @@ chosen by ear yet: the owner's letters are recorded below this entry when
 they come, and a type whose A is chosen goes back to 0.8.0's build. Each
 letter stands on a source of its own, so the set chooses between them and
 fits nothing; `kBeatScatter` is not in the set.
+
+## 2026-11-25 — Balkan is tuned dry: B chosen by ear (owner)
+
+The owner on 0.9.0's balkan folder (A 0.8.0, the second 8' about 15 cents
+sharp; B tuned dry, both 8' in unison; Balkan Kolo on one kolo phrase, B
+matched to A on whole-file RMS, −0.41 dB): "for balkan, take b". B is what
+the branch carries, so nothing changes: Balkan's share of the Musette knob
+stays 0. The dry tuning, taken from the tuners' list over the comparison
+clip's set, is now chosen by ear as well. The choice licenses the dry
+build. Balkan Cassotto was not in the set and follows from it as
+engineering's choice: on a dry build the Musette register is two 8' in
+unison. `kBeatScatter` is not touched by it, since a dry pair has no detune
+to miss. Irish (A, B or C) and German (A or B) are still open.

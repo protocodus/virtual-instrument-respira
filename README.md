@@ -727,8 +727,8 @@ beat of its sustained notes, from the side peaks round the strongest
 partial and from that partial's envelope, taken to A4 by the beat law
 above; the two readings spread by several cents (Balkan 9–18, and German
 11–16 on the same ruler). Tuners list Balkan instruments as tuned dry, and
-0.9.0 takes their list over the one sampled set (Docs/decisions.md,
-2026-11-24).
+0.9.0 takes their list over the one sampled set; the owner then chose dry
+by ear against it (Docs/decisions.md, 2026-11-24 and 2026-11-25).
 
 The tremolo figures are tuners' published ones (Liberty Bellows' list,
 after Jack Brantley: Balkan 0, Irish 7, German and Italian 15, old French
@@ -1136,7 +1136,8 @@ a pitch wheel should do what it says.
   cassotto boxes are usually described with it outside, because only that
   matches the demo's darkness. Its tuning goes against that demo: from 0.9.0
   it is dry, as Liberty Bellows lists Balkan instruments, where the demo's
-  set beats about 15 cents (9–18 on two readings). That is a tuners' list
+  set beats about 15 cents (9–18 on two readings). The owner chose dry by
+  ear over that set's tuning (2026-11-25); it is still a tuners' list
   against one sampled set, and no recording of a Balkan instrument has been
   measured here. Its two 8' reeds in unison still drift against each other
   on a long note (a held C4's level moves about 6 dB over 7 s); how far a
