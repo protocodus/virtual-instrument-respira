@@ -31,8 +31,8 @@ constexpr double kPalletVentChiff = 0.35;  // pallet-hole orifice-jet fluctuatio
 constexpr double kEddyForceShare = 0.65;   // coherent gap-eddy pressure fluctuation on the speaking reed tongue
 
 // At `extension` of the bellows' travel, 0 closed .. 1 fully open.
-double BellowsStiffness(double extension) {
-    return kBellowsStiffness / (1.0 + kBellowsVolumeSlope * (extension - 0.5));
+double BellowsStiffness(double extension, double stiffnessScale = 1.0) {
+    return kBellowsStiffness * stiffnessScale / (1.0 + kBellowsVolumeSlope * (extension - 0.5));
 }
 constexpr double kBellowsLeak = 2.0e-8;     // m^3/s per Pa: 0.02 L/s at 1 kPa
 // The air button lifts a pad off a 25 mm hole in the bass end. Air leaves
@@ -69,7 +69,7 @@ constexpr int kHandModeCc = 85;
 constexpr int kPullKey = 12, kPushKey = 13;   // C0, C#0 (C4 = 60, as Respira names notes)
 // A full-size accordion's bellows hold about 6 L between closed and open, an
 // estimate: with its 0.41 x 0.19 m section, 77 mm of travel at the bass end.
-constexpr double kBellowsVolume = 6.0e-3;   // m^3
+// Per-build capacities live in Build::frame.bellowsVolume (ReedBank.h).
 constexpr double kAutoFastest = 4.0e-3;     // m^3/s: the most air the hand moves, opening or closing
 // Auto's player is a person, whose arm never presses quite evenly. In a
 // steady contraction the force wanders by a few percent of itself, most of
@@ -159,18 +159,15 @@ constexpr protocodus::CompressorSettings kBellowsGuard { -18.0, 6.0, 5.0, 0.02, 
 // and as a layer, averaged over its plausible depths (25-45 mm), it passes the
 // reeds within 3 dB up to 16 kHz.
 // The cassotto: the reed blocks of a build's tone-chamber ranks stand in a
-// wooden channel and their sound turns out of it through its open top before
-// it reaches the grille, which attenuates the upper harmonics and reinforces
-// the lows (Wikipedia, "Cassotto"; players report the effect fading out near
-// C6, where the fundamental itself reaches the attenuated band:
-// accordionists.info, "What does cassotto actually sound like"). As a
-// compartment (Compartment::Set), all estimates: 30 mm deep, opening over a
-// fifth of its length through a 10 mm lip (with end corrections), no cloth,
-// 6 % absorbed on a round trip: 1.4 kHz at Q 1.3, its depth modes from 2.8 kHz.
-constexpr double kCassottoDepth = 0.03, kCassottoOpen = 0.2, kCassottoNeck = 0.01;
-constexpr double kCassottoAbsorbed = 0.06, kCassottoModes = 2800.0;
-constexpr double kBassBoxDepth = 0.04, kBassBoxOpen = 0.10, kBassHoleLength = 0.0081, kClothRayl = 30.0;
-constexpr double kBassBoxAbsorbed = 0.04, kBassBoxModes = 2000.0;
+// deep wooden channel and their sound turns out of it through its open top
+// before reaching the grille, which strengthens the lower-mid formant around
+// 760 Hz (Wikipedia, "Cassotto": 500-1000 Hz reinforced, above 1 kHz subdued)
+// and rolls off upper harmonics monotonically. Inverting and scaling the
+// depth-mode leak (-0.18) aligns phase with the 2nd-order low-pass above its
+// corner so there is no 3 kHz phase-cancellation notch.
+constexpr double kCassottoDepth = 0.048, kCassottoOpen = 0.14, kCassottoNeck = 0.015;
+constexpr double kCassottoRayl = 18.0, kCassottoAbsorbed = 0.12, kCassottoModes = 2200.0;
+constexpr double kCassottoLeakScale = -0.18;
 constexpr double kOpenSeconds = 0.012;     // register slide / air button; key strokes: Touch.h
 constexpr double kCloseSeconds = 0.008;
 constexpr double kQuietSeconds = 0.02;      // a closed chamber is let go after this
@@ -312,12 +309,48 @@ void RegridChamber(CellState& state, int oldCount, int newCount) {
 
 } // namespace
 
+void Engine::BodyVoicing::SetLowShelf(Compartment::Section& s, double hz, double gainDb, double rate) {
+    if (Abs(gainDb) < 1.0e-6) {
+        s.b0 = 1.0; s.b1 = s.b2 = s.a1 = s.a2 = 0.0;
+        return;
+    }
+    const double a = std::pow(10.0, gainDb / 40.0);
+    const double w0 = 2.0 * kPi * Min(hz, 0.45 * rate) / rate;
+    const double cw = std::cos(w0), sw = std::sin(w0);
+    const double alpha = 0.5 * sw * std::sqrt((a + 1.0 / a) * (1.0 / 0.7 - 1.0) + 2.0);
+    const double sq = 2.0 * std::sqrt(a) * alpha;
+    const double inv = 1.0 / ((a + 1.0) + (a - 1.0) * cw + sq);
+    s.b0 = a * ((a + 1.0) - (a - 1.0) * cw + sq) * inv;
+    s.b1 = 2.0 * a * ((a - 1.0) - (a + 1.0) * cw) * inv;
+    s.b2 = a * ((a + 1.0) - (a - 1.0) * cw - sq) * inv;
+    s.a1 = -2.0 * ((a - 1.0) + (a + 1.0) * cw) * inv;
+    s.a2 = ((a + 1.0) + (a - 1.0) * cw - sq) * inv;
+}
+
+void Engine::BodyVoicing::SetPeak(Compartment::Section& s, double hz, double q, double gainDb, double rate) {
+    if (Abs(gainDb) < 1.0e-6) {
+        s.b0 = 1.0; s.b1 = s.b2 = s.a1 = s.a2 = 0.0;
+        return;
+    }
+    const double a = std::pow(10.0, gainDb / 40.0);
+    const double w0 = 2.0 * kPi * Min(hz, 0.45 * rate) / rate;
+    const double cw = std::cos(w0), alpha = std::sin(w0) / (2.0 * q);
+    const double inv = 1.0 / (1.0 + alpha / a);
+    s.b0 = (1.0 + alpha * a) * inv;
+    s.b1 = -2.0 * cw * inv;
+    s.b2 = (1.0 - alpha * a) * inv;
+    s.a1 = -2.0 * cw * inv;
+    s.a2 = (1.0 - alpha / a) * inv;
+}
+
 // Per unit of cover area the holes' air mass is rho l' / open and the
 // compartment's compliance depth / (rho c^2), so f = c / (2 pi) sqrt(open /
 // (depth l')). The cover is large against the wavelength there, so radiation
 // loads it with rho c, and the cloth behind it adds its flow resistance:
 // Q = sqrt(mass / compliance) / (rho c + cloth).
-void Engine::Compartment::Set(double depth, double open, double neck, double rayl, double absorbed, double modesHz, double rate) {
+void Engine::Compartment::Set(double depth, double open, double neck, double rayl, double absorbed, double modesHz, double rate,
+                              double leakScale) {
+    leakGain = leakScale;
     const double mass = kRho * neck / open, compliance = depth / kRhoC2;
     const double hz = 1.0 / (2.0 * kPi * Sqrt(mass * compliance)), q = Sqrt(mass / compliance) / (Sqrt(kRho * kRhoC2) + rayl);
     double k = std::tan(kPi * Min(hz, 0.45 * rate) / rate), norm = 1.0 / (1.0 + k / q + k * k);
@@ -338,6 +371,18 @@ void Engine::Compartment::Set(double depth, double open, double neck, double ray
 
 void Engine::Compartment::FlushTiny() {
     for (Section* s : { &box, &leak, &modes })
+        if (Abs(s->z1) >= 1.0e-30 || Abs(s->z2) >= 1.0e-30) return;
+    Clear();
+}
+
+void Engine::BodyVoicing::Set(const Voicing& v, double rate) {
+    SetLowShelf(low, v.lowHz, v.lowDb, rate);
+    SetPeak(mid, v.midHz, v.midQ, v.midDb, rate);
+    SetPeak(high, v.highHz, v.highQ, v.highDb, rate);
+}
+
+void Engine::BodyVoicing::FlushTiny() {
+    for (Compartment::Section* s : { &low, &mid, &high })
         if (Abs(s->z1) >= 1.0e-30 || Abs(s->z2) >= 1.0e-30) return;
     Clear();
 }
@@ -381,21 +426,37 @@ void Engine::Hand::Tick(double dt, double momentum, const double* drive, double 
 Engine::Engine() { Prepare(48000.0); }
 
 void Engine::SetBody() {
-    const Body& body = BuildOf(static_cast<int>(controls[kType])).body;
+    const Build& build = BuildOf(static_cast<int>(controls[kType]));
+    const Body& body = build.body;
     trebleBoxRunning = body.depth > 0.0;
     for (auto& box : trebleBox) {
         if (trebleBoxRunning) box.Set(body.depth, body.open, body.neck, body.rayl, body.absorbed, body.modes, rate);
         else box.Clear();   // a disconnected body cannot retain the last sound until it is selected again
     }
+    const bool wasVoicing = bodyVoicingRunning;
+    bodyVoicingRunning = build.voicing.active;
+    for (auto& v : bodyVoicing) {
+        if (bodyVoicingRunning) {
+            v.Set(build.voicing, rate);
+            if (!wasVoicing) v.Clear();
+        } else {
+            v.Clear();
+        }
+    }
+    bassBox.Set(build.bass.depth, build.bass.open, build.bass.neck, build.bass.rayl,
+                build.bass.absorbed, build.bass.modes, rate);
+    if (!cassottoRunning)
+        for (auto& box : cassottoBox) box.Clear();
+    keyBedTreble.SetLength(build.frame.keybedLength);
     // The build's own size rings its own box of bellows air (NearField.h).
     // Blocks in a tone chamber lie flat, a quarter turned against the
     // standing ones.
-    const Build& build = BuildOf(static_cast<int>(controls[kType]));
     NearField::Frame frame;
     frame.length = build.frame.length;
     frame.width = build.frame.width;
     frame.closed = build.frame.closed;
     frame.reach = build.frame.reach;
+    frame.bellowsVolume = build.frame.bellowsVolume;
     for (std::size_t r = 0; r < frame.flat.size(); ++r) frame.flat[r] = build.cassotto[r];
     nearField.SetFrame(frame);
     if (untouched) nearField.TakeFrame();
@@ -412,8 +473,9 @@ void Engine::Prepare(double sampleRate) {
     rate = sampleRate >= kLowestRate && sampleRate < 1.0e6 ? sampleRate : 48000.0;
     baseOversample = rate < kHalfRateFrom ? 4 : 2;
     chamberRate = rate * StepsPerSample(static_cast<int>(controls[kOversampling]) == kOversamplingEco ? kOversamplingEco : 0);
-    bassBox.Set(kBassBoxDepth, kBassBoxOpen, kBassHoleLength, kClothRayl, kBassBoxAbsorbed, kBassBoxModes, rate);
-    for (auto& box : cassottoBox) box.Set(kCassottoDepth, kCassottoOpen, kCassottoNeck, 0.0, kCassottoAbsorbed, kCassottoModes, rate);
+    for (auto& box : cassottoBox)
+        box.Set(kCassottoDepth, kCassottoOpen, kCassottoNeck, kCassottoRayl, kCassottoAbsorbed, kCassottoModes, rate,
+                kCassottoLeakScale);
     nearField.Prepare(rate);
     SetBody();
     rustle.Set(rate);
@@ -454,11 +516,14 @@ void Engine::Reset() {
     bassBox.Clear();
     for (auto& box : cassottoBox) box.Clear();
     for (auto& box : trebleBox) box.Clear();
+    for (auto& v : bodyVoicing) v.Clear();
     nearField.Move(0.5, 0.0, 0.0);
     nearField.Clear();
     nearFieldCount = 0;
+    const Build& build = BuildOf(static_cast<int>(controls[kType]));
     cassottoRunning = false;
-    for (const bool chambered : BuildOf(static_cast<int>(controls[kType])).cassotto) cassottoRunning = cassottoRunning || chambered;
+    for (const bool chambered : build.cassotto) cassottoRunning = cassottoRunning || chambered;
+    bodyVoicingRunning = build.voicing.active;
     grille.fill(0.0);
     output.Reset();
     room.Clear();
@@ -490,7 +555,7 @@ void Engine::Reset() {
     strapPushed = false;
     // Afresh, as every landing's scatter moved their modes and drew on their
     // luck (KeyBed::Scatter).
-    keyBedTreble.Set(rate, false);
+    keyBedTreble.Set(rate, false, build.frame.keybedLength);
     keyBedBass.Set(rate, true);
     UpdateMicrophones();
     TakeTargets();
@@ -547,7 +612,9 @@ void Engine::SetControls(const Controls& next) {
         bassSide.KeepStages(stages);
     }
     internalRate = nextRate;
-    for (const bool chambered : BuildOf(type).cassotto) cassottoRunning = cassottoRunning || chambered;
+    bool wantCassotto = false;
+    for (const bool chambered : BuildOf(type).cassotto) wantCassotto = wantCassotto || chambered;
+    cassottoRunning = wantCassotto;
     // A new build reaches the sounding reeds too, as a new Life does: their
     // tongues, plates and chambers are rebuilt where they swing. So does Eco,
     // whose longer step needs longer chamber sections.
@@ -647,9 +714,10 @@ void Engine::UpdateMicrophones() {
     // / (k a sin theta) ~= 1 - (k a sin theta)^2 / 8).
     const double side = 0.05 * life.amount * Clamp((life.side + life.effort) / 3.0, -1.0, 1.0);
     const double depth = 0.08 * life.amount * Clamp((life.depth + life.effort) / 3.0, -1.0, 1.0);
-    // The bass end also moves with the bellows, over their 77 mm of travel
-    // (kBellowsVolume). Treble stays at the chest.
-    const double extension = life.amount * (kBellowsVolume / kBellowsSection) * (Extension() - 0.5);
+    // The bass end also moves with the bellows. Treble stays at the chest.
+    const Build& build = BuildOf(static_cast<int>(controls[kType]));
+    const double section = build.frame.length * build.frame.width;
+    const double extension = life.amount * (build.frame.bellowsVolume / section) * (Extension() - 0.5);
     const double ca = micCos, sa = micSin;
     const auto panAt = [&](double x0, double shift, float& left, float& right) {
         const double r0 = Sqrt(x0 * x0 + kMicDistance * kMicDistance);
@@ -678,7 +746,7 @@ void Engine::UpdateMicrophones() {
     const double r0 = Sqrt(kTrebleSideX * kTrebleSideX + kMicDistance * kMicDistance);
     const double sin0 = kTrebleSideX / r0;
     const double x = kTrebleSideX + side, z = kMicDistance + depth, r = Sqrt(x * x + z * z);
-    const double yaw = 0.8 * side / kMicDistance - 0.25 * extension / kPleatLongWall;
+    const double yaw = 0.8 * side / kMicDistance - 0.25 * extension / build.frame.length;
     const double sinTheta = Clamp((x - z * yaw) / r, -0.95, 0.95);
     const double aperture = Clamp((1.0 - 0.85 * sinTheta * sinTheta) / (1.0 - 0.85 * sin0 * sin0), 0.65, 1.35);
     grilleCoeffTarget = Clamp(grilleCoeffBase * aperture, 0.0, 1.0);
@@ -715,7 +783,8 @@ double Engine::Extension() const { return autoHand ? 0.5 : Clamp(hand.position, 
 // travel, out and back, since air only flows while they move.
 double Engine::Travel() const {
     if (!autoHand) return Clamp(hand.position, 0.0, 1.0);
-    const double turns = 0.5 + player.drive * controls[kBellows] * 1.0e-3 / kBellowsVolume;
+    const double volume = BuildOf(static_cast<int>(controls[kType])).frame.bellowsVolume;
+    const double turns = 0.5 + player.drive * controls[kBellows] * 1.0e-3 / volume;
     const double fold = turns - 2.0 * std::floor(0.5 * turns);
     return fold > 1.0 ? 2.0 - fold : fold;
 }
@@ -727,6 +796,9 @@ void Engine::StepPlayer(double dt) {
     // reeds. Multiplying the arm's motion by the open reeds' demand, as the
     // wheel's hand does, made a turn in a rest arrive 2-6 times over its
     // pressure when keys went down while the arm still swung at full speed.
+    const Build& build = BuildOf(static_cast<int>(controls[kType]));
+    const double stiffness = kBellowsStiffness * build.bellowsStiffness;
+    const double leakPerPa = kBellowsLeak * build.bellowsLeak;
     const double litres = controls[kBellows] * 1.0e-3;   // per wheel range
     const double perWheel = litres;
     const double fastest = kAutoFastest * (1.0 + controls[kAssist] * (Max(demand, 1.0) - 1.0)) / litres;
@@ -762,7 +834,7 @@ void Engine::StepPlayer(double dt) {
     // The player feels the air the reeds take and gives it, and expects it at
     // the rate the arm can follow, which also keeps the reeds' own ripple out
     // of what they expect.
-    const double air = airFlow + kBellowsLeak * pressure;
+    const double air = airFlow + leakPerPa * pressure;
     const double arm = momentum > 0.0 ? Min(1.0e3 / momentum, 0.5 / dt) : 0.0;   // as Hand::Tick
     player.hold = arm > 0.0 ? player.hold + Min(1.0, dt * arm) * (air - player.hold) : air;
     // A keyswitch turns the bellows: the player expects the reeds to take the
@@ -777,7 +849,7 @@ void Engine::StepPlayer(double dt) {
     // The pressure once the led arm has caught up with the hand. The player
     // feels their own arm and closes on this, so its lag stays out of their
     // loop.
-    const double coming = pressure - kBellowsStiffness * perWheel * (player.drive - hand.position);
+    const double coming = pressure - stiffness * perWheel * (player.drive - hand.position);
     // They close on the pressure they want in a reaction time
     // (above): the air that time asks of the bellows' stiffness. The hand's
     // air is undone through Assist and Bellows into wheel speed; while
@@ -788,7 +860,7 @@ void Engine::StepPlayer(double dt) {
     // sustained velocity speed, and the wheel scales the lot.
     const double targetSize = kAutoPressure * PlayerEffort() * (1.0 - (1.0 - kAutoSoftShare) * hand.wheel);
     const double meant = pulling ? -targetSize : targetSize;
-    const double flow = air + (meant - coming) / (kBellowsStiffness * closing);
+    const double flow = air + (meant - coming) / (stiffness * closing);
     const double wanted = -flow / perWheel;
     const double low = player.swinging && pulling ? 0.0 : -fastest;
     const double high = player.swinging && !pulling ? 0.0 : fastest;
@@ -1181,12 +1253,14 @@ void Engine::Render(float* left, float* right, int frames) {
         groupOf[liveCount] = g;
         live[liveCount++] = &c;
     }
+    const Build& build = BuildOf(static_cast<int>(controls[kType]));
+    const double section = build.frame.length * build.frame.width;
     for (int i = 0; i < frames; ++i) {
         touch.Step(controls[kTouch], autoHand);
         if (life.Step(controls[kLife], heldCells > 0 || Abs(hand.velocity) > 1.0e-5)) UpdateMicrophones();
         if (autoHand) StepPlayer(dt);
         hand.Tick(dt, controls[kMomentum], autoHand ? &player.drive : nullptr, player.velocity);
-        const double bellowsStiffness = BellowsStiffness(Extension());
+        const double bellowsStiffness = BellowsStiffness(Extension(), build.bellowsStiffness);
         // Assist makes the hand's stroke move as much more air as the open
         // reeds take beyond one A4 reed, so one wheel speed gives one pressure
         // whatever is played; at 0 the hand moves the bellows' own air only.
@@ -1258,7 +1332,7 @@ void Engine::Render(float* left, float* right, int frames) {
             hiss = -valveSound * rate;
             valveSound = valveNoiseA = valveNoiseB = 0.0;
         }
-        const double leak = kBellowsLeak * pressure + vented;
+        const double leak = kBellowsLeak * build.bellowsLeak * pressure + vented;
         const double pressureWas = pressure;
         pressure = Clamp(pressure + dt * bellowsStiffness * (handFlow - airFlow - leak), -kMaxPressure, kMaxPressure);
         // On a push-to-pull reversal the left wrist shifts from pressing the
@@ -1269,7 +1343,7 @@ void Engine::Render(float* left, float* right, int frames) {
         // Bellows and independent of it.
         if (pressure > kPleatHold) strapPushed = true;
         else if (strapPushed && pressure < -kPleatHold) {
-            const double slack = BellowsEndSpeed(litres, hand.velocity);
+            const double slack = BellowsEndSpeed(litres, hand.velocity, section);
             if (slack > kFoldsStick) {
                 strapPushed = false;
                 StartKnock(kBassPallet, slack, 1.0, true, false, kStrapPlace);
@@ -1437,7 +1511,6 @@ void Engine::Render(float* left, float* right, int frames) {
         const double valves = mechanicsGain * (kValveVoicing / kForceToFlow);
         // Each rank's sound at its holes, the direct sound of the open ranks
         // and of the tone chamber's, and what reaches the pair by other ways.
-        const Build& build = BuildOf(static_cast<int>(controls[kType]));
         double ranks[NearField::kRanks];
         double direct = 0.0, chambered = 0.0;
         for (int r = 0; r < NearField::kRanks; ++r) {
@@ -1459,6 +1532,7 @@ void Engine::Render(float* left, float* right, int frames) {
             double side = sides[n];
             if (cassottoRunning) side += cassottoBox[n].Process(insides[n]);
             if (trebleBoxRunning) side = trebleBox[n].Process(side);
+            if (bodyVoicingRunning) side = bodyVoicing[n].Process(side);
             grille[n] += grilleCoeff * (side - grille[n]);
         }
         gain += smoothing * (gainTarget - gain);
@@ -1494,7 +1568,7 @@ void Engine::Render(float* left, float* right, int frames) {
         const double extension = Extension();
         const double foldStrain = 1.0 + 0.35 * (2.0 * extension - 1.0) * (2.0 * extension - 1.0);
         const double foldFlow = (1.0 - kFoldDistensionShare) * (airFlow + leak) + kFoldDistensionShare * handFlow;
-        const double rubbing = rustle.Step(foldStrain * foldFlow / kBellowsSection);
+        const double rubbing = rustle.Step(foldStrain * foldFlow / section);
         const double foldsOut = (kFoldVoicing * flips + kRustleVoicing * (rubbing - rustleForce)) * rate
                                 * (kPleatToFlow / kForceToFlow);
         rustleForce = rubbing;
@@ -1537,6 +1611,7 @@ void Engine::Render(float* left, float* right, int frames) {
     bassBox.FlushTiny();
     for (auto& box : cassottoBox) box.FlushTiny();
     for (auto& box : trebleBox) box.FlushTiny();
+    for (auto& v : bodyVoicing) v.FlushTiny();
     for (auto& mic : trebleMicMotion) mic.FlushTiny();
     for (auto& mic : bassMicMotion) mic.FlushTiny();
     for (KeyBed* bed : { &keyBedTreble, &keyBedBass }) bed->FlushTiny();

@@ -150,14 +150,29 @@ private:
             }
         };
         Section box, leak, modes;
+        double leakGain = 1.0;
         // depth m, open fraction of the cover, effective hole length m
         // (thickness plus end corrections), cloth behind it in rayl, the
         // fraction of the sound's energy the box absorbs on a round trip, and
-        // where in Hz the depth modes take over from the lumped resonator
-        void Set(double depth, double open, double neck, double rayl, double absorbed, double modesHz, double rate);
+        // where in Hz the depth modes take over from the lumped resonator.
+        // leakScale sets the depth-mode leak's sign and level against the box.
+        void Set(double depth, double open, double neck, double rayl, double absorbed, double modesHz, double rate,
+                 double leakScale = 1.0);
         void Clear() { box.z1 = box.z2 = leak.z1 = leak.z2 = modes.z1 = modes.z2 = 0.0; }
         void FlushTiny();
-        double Process(double x) { return box.Process(x) + modes.Process(leak.Process(x)); }
+        double Process(double x) { return box.Process(x) + leakGain * modes.Process(leak.Process(x)); }
+    };
+
+    // Passive treble cabinet/grille acoustic coloration for each national build
+    // (Voicing in ReedBank.h), placed ahead of Grille in direct + reflections.
+    struct BodyVoicing {
+        Compartment::Section low, mid, high;
+        static void SetLowShelf(Compartment::Section& s, double hz, double gainDb, double rate);
+        static void SetPeak(Compartment::Section& s, double hz, double q, double gainDb, double rate);
+        void Set(const Voicing& v, double rate);
+        void Clear() { low.z1 = low.z2 = mid.z1 = mid.z2 = high.z1 = high.z2 = 0.0; }
+        void FlushTiny();
+        double Process(double x) { return high.Process(mid.Process(low.Process(x))); }
     };
 
     // The hand on the bellows, from a stepwise controller stream. The wheel's
@@ -277,6 +292,8 @@ private:
     // The box a build's treble sounds out through (Build::body), if it has one.
     std::array<Compartment, 3> trebleBox {};
     bool trebleBoxRunning = false;
+    std::array<BodyVoicing, 3> bodyVoicing {};
+    bool bodyVoicingRunning = false;
     void SetBody();
     double grilleCoeff = 0.0, grilleCoeffBase = 0.0, grilleCoeffTarget = 0.0;
     std::array<double, 3> grille {};

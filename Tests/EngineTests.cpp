@@ -1849,8 +1849,11 @@ void TypesAreAppendOnly() {
     for (int i = 0; i < 4 && same; ++i) same = std::strcmp(kBuilds[static_cast<std::size_t>(i)].name, frozen[i]) == 0;
     Expect(same, "TypesAreAppendOnly", "the shipped types keep their numbers, 1 if so", same ? 1.0 : 0.0);
     const Build& d = kBuilds[0];
-    bool neutral = d.tremolo == 1.0 && d.flat == 1.0 && d.plate == 1.0 && d.q == 1.0 && d.set == 1.0 && d.clearance == 1.0 && d.profile == 1.0
-                   && d.block == 1.0 && d.hole == 1.0 && d.cover == 1.0 && d.trim == 0.0 && d.body.depth == 0.0;
+    bool neutral = d.tremolo == 1.0 && d.flat == 1.0 && d.beatExp == 0.51 && d.lengthScale == 1.0 && d.widthScale == 1.0
+                   && d.plate == 1.0 && d.q == 1.0 && d.set == 1.0 && d.clearance == 1.0 && d.profile == 1.0
+                   && d.block == 1.0 && d.hole == 1.0 && d.outerBlock == 1.0 && d.outerHole == 1.0 && d.outerGainDb == 0.0
+                   && d.cover == 1.0 && d.trim == 0.0 && d.bellowsStiffness == 1.0 && d.bellowsLeak == 1.0
+                   && d.body.depth == 0.0 && !d.voicing.active && d.frame.bellowsVolume == NearField::kBoxVolume;
     for (std::size_t r = 0; r < d.ranks.size(); ++r) neutral = neutral && d.ranks[r] && !d.cassotto[r];
     Expect(neutral, "TypesAreAppendOnly", "Default builds the instrument as before builds, 1 if so", neutral ? 1.0 : 0.0);
     Expect(kControlInfo[kType].initial == 0.0, "TypesAreAppendOnly", "Type's default is Default", kControlInfo[kType].initial);
@@ -2121,7 +2124,7 @@ void TypesHaveTheirOwnSize() {
     // than a key (ReedBank.h, Frame; NearField.h, SetFrame).
     const Frame& usual = BuildOf(kTypeDefault).frame;
     Expect(usual.length == NearField::kBoxLength && usual.width == NearField::kBoxWidth && usual.closed == NearField::kBoxClosed
-               && usual.reach == 1.0 && usual.action == kPianoKeys,
+               && usual.reach == 1.0 && usual.action == kPianoKeys && usual.bellowsVolume == NearField::kBoxVolume,
            "TypesHaveTheirOwnSize", "Default's frame is the near field's own, 1 if so", 1.0);
     NearField field;
     field.Prepare(48000.0);
@@ -2133,9 +2136,16 @@ void TypesHaveTheirOwnSize() {
     frame.length = irish.length;
     frame.width = irish.width;
     frame.closed = irish.closed;
+    frame.bellowsVolume = irish.bellowsVolume;
     field.SetFrame(frame);
-    Expect(field.boxTravelTarget > 1.5 * NearField::kBoxTravel && field.boxGain > 1.1 && field.fromHz > 1.3 * NearField::kBoxFrom,
-           "TypesHaveTheirOwnSize", "an Irish box travels further and rings higher: travel, m", field.boxTravelTarget);
+    // Before 0.10.0 every build shared a 6 L bellows volume, making Irish's
+    // 0.29 x 0.16 m box imply an unrealistic 129 mm travel that caused deep
+    // swept near-field comb notches; with its real 2.7 L volume its travel is
+    // ~58 mm (< Default's 77 mm) while its box still rings higher (~590 Hz)
+    // and louder (boxGain > 1.1).
+    Expect(field.boxTravelTarget < NearField::kBoxTravel && field.boxTravelTarget > 0.04 && field.boxGain > 1.1
+               && field.fromHz > 1.3 * NearField::kBoxFrom,
+           "TypesHaveTheirOwnSize", "an Irish box is compact and rings higher: travel, m", field.boxTravelTarget);
     const Stop* key = TrebleStop(kPianoKeys);
     const Stop* button = TrebleStop(kButtons);
     Expect(button->mass * button->travel < key->mass * key->travel,
@@ -2336,6 +2346,227 @@ void NonFiniteControls() {
     Expect(std::isfinite(Peak(t)) && Peak(t) > 1.0e-3, "NonFiniteControls", "and the engine still plays, peak", Peak(t));
 }
 
+void Fft(std::vector<double>& re, std::vector<double>& im) {
+    const std::size_t n = re.size();
+    for (std::size_t i = 1, j = 0; i < n; ++i) {
+        std::size_t bit = n >> 1;
+        for (; j & bit; bit >>= 1) j ^= bit;
+        j ^= bit;
+        if (i < j) { std::swap(re[i], re[j]); std::swap(im[i], im[j]); }
+    }
+    for (std::size_t len = 2; len <= n; len <<= 1) {
+        const double ang = -2.0 * kPi / static_cast<double>(len);
+        const double wlenRe = std::cos(ang), wlenIm = std::sin(ang);
+        for (std::size_t i = 0; i < n; i += len) {
+            double wRe = 1.0, wIm = 0.0;
+            for (std::size_t j = 0; j < len / 2; ++j) {
+                const std::size_t u = i + j, v = i + j + len / 2;
+                const double uRe = re[u], uIm = im[u];
+                const double vRe = re[v] * wRe - im[v] * wIm;
+                const double vIm = re[v] * wIm + im[v] * wRe;
+                re[u] = uRe + vRe; im[u] = uIm + vIm;
+                re[v] = uRe - vRe; im[v] = uIm - vIm;
+                const double nextRe = wRe * wlenRe - wIm * wlenIm;
+                wIm = wRe * wlenIm + wIm * wlenRe;
+                wRe = nextRe;
+            }
+        }
+    }
+}
+
+std::array<double, 6> OctaveBandsDb(const std::vector<float>& left, const std::vector<float>& right,
+                                    double rate, double from, bool meanSubtract = true) {
+    constexpr std::size_t kN = 32768;
+    const auto start = static_cast<std::size_t>(from * rate);
+    std::vector<double> re(kN, 0.0), im(kN, 0.0);
+    const std::size_t avail = start < left.size() ? std::min(kN, left.size() - start) : 0;
+    for (std::size_t i = 0; i < avail; ++i) {
+        const double w = 0.5 - 0.5 * std::cos(2.0 * kPi * static_cast<double>(i) / static_cast<double>(kN));
+        re[i] = w * 0.5 * (static_cast<double>(left[start + i]) + static_cast<double>(right[start + i]));
+    }
+    Fft(re, im);
+    static constexpr std::array<double, 7> kEdges { 125.0, 250.0, 500.0, 1000.0, 2000.0, 4000.0, 8000.0 };
+    std::array<double, 6> bands {};
+    double mean = 0.0;
+    for (int b = 0; b < 6; ++b) {
+        const auto k0 = static_cast<std::size_t>(std::ceil(kEdges[static_cast<std::size_t>(b)] * kN / rate));
+        const auto k1 = static_cast<std::size_t>(std::ceil(kEdges[static_cast<std::size_t>(b + 1)] * kN / rate));
+        double power = 1.0e-30;
+        for (std::size_t k = k0; k < k1 && k <= kN / 2; ++k) power += re[k] * re[k] + im[k] * im[k];
+        bands[static_cast<std::size_t>(b)] = 10.0 * std::log10(power);
+        mean += bands[static_cast<std::size_t>(b)] / 6.0;
+    }
+    if (meanSubtract)
+        for (double& v : bands) v -= mean;
+    return bands;
+}
+
+void TypesAreSpectrallyDistinct() {
+    const double rate = 48000.0;
+    for (int reg : { 0, 7 }) {
+        std::array<std::array<double, 6>, kTypeCount> spectra {};
+        for (int type = 0; type < kTypeCount; ++type) {
+            auto e = std::make_unique<Engine>();
+            e->Prepare(rate);
+            Controls c {};
+            c[kType] = type;
+            c[kRegister] = reg;
+            c[kAuto] = 1.0;
+            c[kRoom] = 0.0;
+            c[kMechanics] = -40.0;
+            c[kLife] = 0.5;
+            e->SetControls(c);
+            e->Reset();
+            const Take t = PlayAuto(*e, rate, 2.2, { { 0.0, { kOn, 60, 100 } } });
+            spectra[static_cast<std::size_t>(type)] = OctaveBandsDb(t.left, t.right, rate, 1.0);
+        }
+        double minPair = 1.0e9;
+        for (int i = 0; i < kTypeCount; ++i)
+            for (int j = i + 1; j < kTypeCount; ++j) {
+                double maxDelta = 0.0;
+                for (int b = 0; b < 6; ++b)
+                    maxDelta = std::max(maxDelta, std::fabs(spectra[static_cast<std::size_t>(i)][static_cast<std::size_t>(b)]
+                                                            - spectra[static_cast<std::size_t>(j)][static_cast<std::size_t>(b)]));
+                minPair = std::min(minPair, maxDelta);
+            }
+        Expect(minPair > 2.5, "TypesAreSpectrallyDistinct",
+               reg == 0 ? "Clarinet smallest pairwise max octave-band delta, dB" : "Master smallest pairwise max octave-band delta, dB",
+               minPair);
+    }
+}
+
+void NoPhaserCombNotches() {
+    const double rate = 48000.0;
+    // (a) Bounded NearField early-reflection amplitudes prevent deep comb notches.
+    double worstNotchDb = 0.0;
+    constexpr std::size_t kIr = 4096;
+    for (int type = 0; type < kTypeCount; ++type) {
+        const Build& build = BuildOf(type);
+        for (double life : { 0.5, 1.0 }) {
+            for (double travel : { 0.0, 0.5, 1.0 }) {
+                NearField field;
+                field.Prepare(rate);
+                NearField::Frame frame;
+                frame.length = build.frame.length;
+                frame.width = build.frame.width;
+                frame.closed = build.frame.closed;
+                frame.reach = build.frame.reach;
+                frame.bellowsVolume = build.frame.bellowsVolume;
+                for (std::size_t r = 0; r < frame.flat.size(); ++r) frame.flat[r] = build.cassotto[r];
+                field.SetFrame(frame);
+                field.Move(travel, 0.0, 0.0);
+                field.Clear();
+                std::vector<double> reL(kIr, 0.0), imL(kIr, 0.0), reR(kIr, 0.0), imR(kIr, 0.0);
+                const std::array<bool, NearField::kRanks> open {};
+                for (std::size_t n = 0; n < kIr; ++n) {
+                    std::array<double, NearField::kRanks> in {};
+                    if (n == 0) in[kRankM] = 1.0;
+                    const NearField::Out out = field.Process(in.data(), open.data(), 0.0, 2.0 * life, 1.0);
+                    reL[n] = (n == 0 ? 1.0 : 0.0) + out.left;
+                    reR[n] = (n == 0 ? 1.0 : 0.0) + out.right;
+                }
+                Fft(reL, imL);
+                Fft(reR, imR);
+                for (std::size_t k = 1; k <= kIr / 2; ++k) {
+                    const double hz = static_cast<double>(k) * rate / static_cast<double>(kIr);
+                    if (hz < 100.0 || hz > 8000.0) continue;
+                    const double dbL = 10.0 * std::log10(reL[k] * reL[k] + imL[k] * imL[k] + 1.0e-30);
+                    const double dbR = 10.0 * std::log10(reR[k] * reR[k] + imR[k] * imR[k] + 1.0e-30);
+                    worstNotchDb = std::min({ worstNotchDb, dbL, dbR });
+                }
+            }
+        }
+    }
+    Expect(worstNotchDb > -6.0, "NoPhaserCombNotches",
+           "worst NearField reflection comb notch across all types, Life 0.5-1.0, travel 0-1, dB", worstNotchDb);
+
+    // (b) Balkan 2+2 dry unison stays free of slow df/dp drift phasing on held notes.
+    for (int key : { 60, 69 }) {
+        auto e = std::make_unique<Engine>();
+        e->Prepare(rate);
+        Controls c {};
+        c[kType] = 3;
+        c[kRegister] = 2;   // Violin: L & M in cassotto, M+ & H outside -> dry M + M+
+        c[kAuto] = 1.0;
+        c[kLife] = 0.5;
+        c[kRoom] = 0.0;
+        c[kMechanics] = -40.0;
+        e->SetControls(c);
+        e->Reset();
+        const Take t = PlayAuto(*e, rate, 4.0, { { 0.0, { kOn, static_cast<std::uint8_t>(key), 100 } } });
+        const auto from = static_cast<std::size_t>(0.8 * rate);
+        const auto to = static_cast<std::size_t>(3.4 * rate);
+        const auto win = static_cast<std::size_t>(0.4 * rate);
+        const auto hop = static_cast<std::size_t>(0.1 * rate);
+        double minDb = 1.0e9, maxDb = -1.0e9;
+        for (std::size_t i = from; i + win <= to; i += hop) {
+            double sum = 0.0;
+            for (std::size_t j = 0; j < win; ++j) {
+                const double x = 0.5 * (static_cast<double>(t.left[i + j]) + static_cast<double>(t.right[i + j]));
+                sum += x * x;
+            }
+            const double db = Db(std::sqrt(sum / static_cast<double>(win)));
+            minDb = std::min(minDb, db);
+            maxDb = std::max(maxDb, db);
+        }
+        const double spread = maxDb - minDb;
+        Expect(spread < 2.5, "NoPhaserCombNotches",
+               key == 60 ? "Balkan Violin C4 0.4 s RMS spread, dB" : "Balkan Violin A4 0.4 s RMS spread, dB", spread);
+    }
+
+    // (c) Cassotto reinforces 500-1000 Hz and rolls off monotonically into 4-8 kHz without a 3 kHz notch.
+    std::array<double, 6> defRaw {}, balkRaw {};
+    for (int type : { 0, 3 }) {
+        auto e = std::make_unique<Engine>();
+        e->Prepare(rate);
+        Controls c {};
+        c[kType] = type;
+        c[kRegister] = 0;
+        c[kAuto] = 1.0;
+        c[kRoom] = 0.0;
+        c[kMechanics] = -40.0;
+        c[kLife] = 0.0;
+        e->SetControls(c);
+        e->Reset();
+        const Take t = PlayAuto(*e, rate, 2.2, { { 0.0, { kOn, 48, 100 } } });
+        if (type == 0) defRaw = OctaveBandsDb(t.left, t.right, rate, 1.0, false);
+        else balkRaw = OctaveBandsDb(t.left, t.right, rate, 1.0, false);
+    }
+    const double delta2 = balkRaw[2] - defRaw[2];
+    const double delta4 = balkRaw[4] - defRaw[4];
+    const double delta5 = balkRaw[5] - defRaw[5];
+    Expect(delta2 - delta4 > 5.0 && delta5 <= delta4 + 0.5, "NoPhaserCombNotches",
+           "Balkan Clarinet C3 cassotto roll-off (500-1k minus 2-4k dB, and no 4-8k rebound)", delta2 - delta4);
+}
+
+void IrishBellowsTurnsSnappily() {
+    const double rate = 48000.0;
+    const std::vector<Note> notes {
+        { 0.0, { kOn, 67, 100 } }, { 0.0, { kOn, kPush, 100 } }, { 0.05, { kOff, kPush, 0 } },
+        { 1.0, { kOn, kPull, 100 } }, { 1.05, { kOff, kPull, 0 } }
+    };
+    const auto measureTurn = [&](int type, bool& pushedOk) {
+        auto e = MakeAuto(rate, [type](Controls& c) {
+            c[kType] = type;
+            c[kRegister] = 0;
+            c[kMomentum] = 0.0;
+            c[kMechanics] = -40.0;
+        });
+        const Take t = PlayAuto(*e, rate, 2.0, notes);
+        pushedOk = pushedOk && MeanPressure(t, rate, 0.6, 0.95) > 350.0;
+        const std::size_t start = static_cast<std::size_t>(std::ceil(1.0 * rate / 32.0));
+        for (std::size_t i = start; i < t.pressure.size(); ++i)
+            if (t.pressure[i] <= -300.0)
+                return static_cast<double>(i) * 32.0 / rate - 1.0;
+        return 2.0;
+    };
+    bool pushedOk = true;
+    const double defaultTime = measureTurn(0, pushedOk);
+    const double irishTime = measureTurn(1, pushedOk);
+    Expect(pushedOk && irishTime < 0.75 * defaultTime && irishTime < 0.08, "IrishBellowsTurnsSnappily",
+           "Irish push-to-pull reversal time against Default, ratio", irishTime / defaultTime);
+}
+
 } // namespace
 
 int main() {
@@ -2354,7 +2585,9 @@ int main() {
     NoteTuningLifetime();
     EcoDoesNotWakeHeldReed();
     FoldedKeysKeepOneTuning();
-    BypassedFilterStartsSilent(kType, 1, 0, "BandoneonBodyStartsSilent");
+    BypassedFilterStartsSilent(kType, 1, 0, "IrishVoicingStartsSilent");
+    BypassedFilterStartsSilent(kType, 2, 0, "GermanVoicingStartsSilent");
+    BypassedFilterStartsSilent(kType, 3, 0, "BalkanCassottoAndVoicingStartSilent");
     BypassedFilterStartsSilent(kOversampling, 2, kOversamplingEco, "DecimationStagesStartSilent");
     PitchBend();
     MusetteBeat();
@@ -2380,6 +2613,9 @@ int main() {
     RegistersSitTogether();
     TypesAreAppendOnly();
     TypesSitTogether();
+    TypesAreSpectrallyDistinct();
+    NoPhaserCombNotches();
+    IrishBellowsTurnsSnappily();
     TypicalLevel();
     HardStrokesFit();
     HardPushSpeaks();

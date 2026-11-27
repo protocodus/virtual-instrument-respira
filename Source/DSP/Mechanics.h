@@ -222,28 +222,43 @@ struct KeyBed {
     BodyHighPass::Mode modes[kKeyBedModes];
     double hz[kKeyBedModes] {};
     int count = 0;
-    double level = 1.0, rate = 48000.0;
+    double level = 1.0, rate = 48000.0, panelLength = 0.42;
     // Each panel draws its own landings' scatter, so what lands on one never
     // changes how the other rings.
     std::uint32_t luck = 1u;
     bool quiet = true;   // every mode at rest: nothing to step until a part lands
 
-    void Set(double hostRate, bool bassSide) {
-        rate = hostRate;
-        level = bassSide ? kKeyBedBassLevel : kKeyBedTrebleLevel;
-        luck = bassSide ? 2u : 1u;
-        const double length = bassSide ? 0.30 : 0.42, h = 0.004;
+    void UpdateModes(double length, bool keepState) {
+        panelLength = length;
+        const double h = 0.004;
         const double stiffness = 8.0e9 * h * h * h / (12.0 * (1.0 - 0.3 * 0.3));
         const double c = 1.5707963267948966 * std::sqrt(stiffness / (650.0 * h));
         const double across = BodyHighPass::kHz / c - 1.0 / (length * length);   // (1/b)^2
+        const int prevCount = count;
         count = 0;
         for (int m = 1; m <= kKeyBedModes; ++m) {
             const double f = c * (m * m / (length * length) + across);
             if (f > kTop || f > 0.45 * rate) break;
             hz[count++] = f;
         }
-        for (int m = 0; m < count; ++m) modes[m].Set(hz[m], kQ, 1.0, rate);
-        Clear();
+        for (int m = 0; m < count; ++m) {
+            const double z1 = keepState && m < prevCount ? modes[m].z1 : 0.0;
+            const double z2 = keepState && m < prevCount ? modes[m].z2 : 0.0;
+            modes[m].Set(hz[m], kQ, 1.0, rate);
+            modes[m].z1 = z1;
+            modes[m].z2 = z2;
+        }
+        for (int m = count; m < kKeyBedModes; ++m) modes[m].Clear();
+        if (!keepState) Clear();
+    }
+    void Set(double hostRate, bool bassSide, double length = 0.0) {
+        rate = hostRate;
+        level = bassSide ? kKeyBedBassLevel : kKeyBedTrebleLevel;
+        luck = bassSide ? 2u : 1u;
+        UpdateModes(length > 0.0 ? length : (bassSide ? 0.30 : 0.42), false);
+    }
+    void SetLength(double length) {
+        if (length > 0.0 && length != panelLength) UpdateModes(length, !quiet);
     }
     // A part landing at `place` (0..1 along the panel) drives mode m by
     // sin((m + 1) pi place), by the sines' recurrence.
@@ -558,7 +573,9 @@ inline constexpr double kBellowsSection = 0.41 * 0.19, kFoldsStick = 0.001;
 // How fast the bass end moves, m/s, when the hand moves the bellows at
 // `handVelocity` wheel ranges a second and one range is `litres` of air over
 // the bellows' section: the speed the strap's slack meets the wrist at.
-inline double BellowsEndSpeed(double litres, double handVelocity) { return litres * handVelocity / kBellowsSection; }
+inline double BellowsEndSpeed(double litres, double handVelocity, double section = kBellowsSection) {
+    return litres * handVelocity / section;
+}
 struct Rustle {
     std::uint32_t seed = 0x2545F491u;
     double low = 0.0, lowCoeff = 0.0;

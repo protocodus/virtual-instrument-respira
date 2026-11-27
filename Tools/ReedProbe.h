@@ -122,17 +122,15 @@ inline double Pitch(const std::vector<double>& x, double hz) {
 // A reed that never speaks keeps ratio 1. Each build (Type) tunes its own
 // reeds, made on its own plates.
 inline std::array<double, 2> TuneCell(int rank, int key, int type = kTypeDefault) {
-    const Build& build = BuildOf(type);
     const CellSpec base = MakeCell(rank, key, 0.0, nullptr, kRate, 0.5, type);
+    const int index = TuningIndex(rank, key);
     std::array<double, 2> ratios { 1.0, 1.0 };
     for (int side = 0; side < 2; ++side) {
-        const ReedVariation v = Variation(rank, TuningIndex(rank, key), side, 0.5);
-        const double wanted = base.hz * std::pow(2.0, TuneCents(rank, TuningIndex(rank, key), side, 0.5, type) / 1200.0);
-        const double q = ReedQ(base.hz) * build.q * v.qScale;
+        const ReedVariation v = BuildVariation(rank, index, side, 0.5, type);
+        const double wanted = base.hz * std::pow(2.0, TuneCents(rank, index, side, 0.5, type) / 1200.0);
         double natural = wanted;
         for (int pass = 0; pass < 3; ++pass) {
-            const ReedSpec reed = MakeReed(natural, q, v.setScale * build.set, v.clearanceScale * build.clearance, v.plateScale * build.plate,
-                                           v.profileScale * build.profile, 1.0);
+            const ReedSpec reed = BuildReedSpec(natural, base.hz, rank, v, 1.0, type);
             double sounding = SoundingHz(reed, base.chamber, natural, kTuningPressure);
             if (sounding <= 0.0) sounding = SoundingHz(reed, base.chamber, natural, 3.0 * kTuningPressure);
             if (sounding <= 0.0) break;

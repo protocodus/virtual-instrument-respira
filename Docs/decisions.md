@@ -2880,3 +2880,56 @@ it. The branch carried these letters, so nothing changes in the engine.
 The choice licenses the builds as they are. It does not make
 `kBeatScatter`'s growth with the detune a measurement: that stays assumed
 (README, Known gaps).
+
+## 2026-11-27 — 0.10.0: physical school differentiation and phaser elimination (owner asked; engineering, by-ear verdicts pending)
+
+The owner: "focus on implementing `type` properly — the accordeons need to
+be more distinct and authentic", "do a research about their construction and
+then design physical model adjustments or param changes so they fit better
+the specific countries and musical schools", and "avoid phaser-like sound".
+Details and sources are recorded in
+`Docs/research/accordion-type-acoustics-2026-11-27.md`.
+
+What caused 0.9.0's limited separation and phaser sound, measured against
+0.10.0:
+
+- **German sounded within 1.3 dB max (1.0 dB RMS) of Default on Clarinet
+  C4** because German shared Default's reed tongue size, zero body/grille
+  voicing, 960 Hz bass box and 6 L bellows. In 0.10.0 each national type
+  configures its own reed tongue length/width/plate/Q/clearance, inner vs
+  outer reed-block geometry and radiation offset (`outerBlock`,
+  `outerHole`, `outerGainDb`), beat growth exponent (`beatExp` 0.38 Irish /
+  0.65 German / 0.51 Balkan & Default), per-build `bellowsVolume` /
+  stiffness / leak, keybed panel length, `BassSpec`, and 3-section passive
+  `BodyVoicing` (`Engine::BodyVoicing`). Clarinet C4 pairwise octave-band
+  deltas now exceed 2.8 dB (`Default vs German` 3.3 dB max, `EngineTests`
+  min pairwise `3.062 dB` on Clarinet and `3.594 dB` on Master).
+- **NearField swept comb notches (`NearField.h`)** reached `-24.7` to
+  `-35.5 dB` at Life 0.5 (`-36.5` to `-55.2 dB` at Life 1.0), compounded on
+  Irish by a 6 L bellows assumption giving 129.3 mm travel. Bounding early
+  reflections (`0.14 / 0.11 / 0.10`, `kPathLevel = 1.0`), using the true
+  `sin(14°) ≈ 0.25` bass-travel mic projection, warming `kClothCorner` to
+  2200 Hz, applying soft saturation on Life (`1.5 * amount / (0.5 +
+  amount)`), and giving Irish its real 2.7 L bellows (`58.2 mm` travel,
+  `1.8x` stiffness, push-to-pull reversals in `0.556x` Default's time)
+  keeps the worst comb notch at **`-3.382 dB`** across all builds, Life
+  0.5–1.0 and bellows travel 0–1 (`NoPhaserCombNotches`).
+- **Cassotto phase cancellation (`RespiraEngine.cpp`)** produced a
+  `-8.85 dB` notch at `2529 Hz` with a rebound to `-3.3 dB` at 6 kHz from
+  summing opposite-phase 2nd-order LP (`1344 Hz`) and 2nd-order HP depth
+  leak. A deep wooden chamber (`depth 48 mm`, `open 0.14`, `f_H = 761 Hz`,
+  `Q = 1.43`, signed `leakScale = -0.18`) peaks `+3.76 dB` at `663 Hz` and
+  attenuates monotonically (`-13.4` to `-21.8 dB`, `2–6 kHz`).
+- **Balkan 2+2 double cassotto and dry-unison matching:** moving `M+` and
+  `H` outside the cassotto (leaving `L` and `M` inside, matching real
+  Serbian 2+2 *dugmetara* construction) and matching `setScale`/`plateScale`
+  between dry unison `M` and `M+` (`BuildVariation`) cuts held Violin
+  `0.4 s` RMS sweep from `3.34 / 3.14 dB` to **`0.85 / 0.94 dB`** (`1.00 /
+  2.10 dB` on full phrase) at C4 / A4.
+
+Calibrations & compatibility: `Default` reed geometry and `Source/DSP/ReedTuning.h`
+stay unchanged to the digit; `TypesSitTogether` sits within `0.04 dB` of
+Default (`Irish -0.04`, `German -0.03`, `Balkan +0.03`) and all 14 factory
+presets sit within `0.30 dB` of Init (`PresetsSitTogether`, max peak
+`-2.54 dBFS`). A 9-pair RMS-matched A/B listening pack (`0.9.0` vs
+`0.10.0`) awaits owner by-ear verdict.

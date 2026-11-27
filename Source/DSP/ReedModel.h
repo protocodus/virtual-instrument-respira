@@ -84,12 +84,12 @@ struct ReedState {
 // with 0.3 they took 111-311. The share above 30 mm stays a voicing estimate.
 inline ReedSpec MakeReed(double f0, double q, double setScale = 1.0,
                          double clearanceScale = 1.0, double plateScale = 1.0, double profileScale = 1.0,
-                         double imperfection = 1.0) {
+                         double imperfection = 1.0, double lengthScale = 1.0, double widthScale = 1.0) {
     // q is the bare tongue's quality factor in air.
     ReedSpec r;
     const double clearance = kClearance * clearanceScale;
-    r.length = std::fmin(0.075, std::fmax(0.008, 0.026 * std::pow(440.0 / f0, 0.45)));
-    r.width = std::fmin(0.0045, std::fmax(0.0016, 0.0024 * std::pow(440.0 / f0, 0.15)));
+    r.length = std::fmin(0.075, std::fmax(0.008, 0.026 * std::pow(440.0 / f0, 0.45) * lengthScale));
+    r.width = std::fmin(0.0052, std::fmax(0.0014, 0.0024 * std::pow(440.0 / f0, 0.15) * widthScale));
     // The reed plate's thickness, the slot's depth: it varies between
     // instruments. 2.0-3.5 mm was chosen by ear over two thirds of it
     // (Docs/decisions.md). At 70 dBA it keeps A#2-A3 inside their slots,
